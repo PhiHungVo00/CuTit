@@ -225,12 +225,12 @@ export const HonorificMatrixScreen: React.FC<HonorificMatrixScreenProps> = ({
         backgroundColor: isDark ? '#16100B' : '#F6F3EC',
         color: isDark ? '#FDFBF7' : '#1C1917',
         minHeight: '100vh',
-        padding: '1.5rem',
+        padding: '0.85rem 0.75rem 2.5rem 0.75rem',
         boxSizing: 'border-box',
         transition: 'background-color 0.3s ease, color 0.3s ease'
       }}
     >
-      <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
+      <div style={{ maxWidth: '430px', margin: '0 auto' }}>
         {/* TOP BAR / HEADER */}
         <header
           style={{
