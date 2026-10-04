@@ -1,0 +1,21 @@
+{
+  "name": "vietnamese-learning-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Agentic Vietnamese Learning Platform - SE405.R11 Capstone Project (UIT)",
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "test": "turbo run test",
+    "lint": "turbo run lint",
+    "clean": "turbo run clean && rimraf node_modules"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.31",
+    "@types/react-dom": "^18.3.7",
+    "rimraf": "^6.0.1",
+    "turbo": "^2.4.0",
+    "typescript": "^5.7.3"
+  },
+  "packageManager": "pnpm@12.9.1"
+}
