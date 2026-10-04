@@ -1,0 +1,30 @@
+[
+  {
+    "id": "sc1",
+    "title": "Chợ quê trả giá",
+    "location": "Chợ Bến Thành / Chợ Đồng Xuân",
+    "targetDialect": "all",
+    "tasks": ["Chào người bán hàng lễ phép", "Hỏi giá mớ rau muống hoặc nải chuối", "Mặc cả giảm 5,000đ", "Cảm ơn và tạm biệt"]
+  },
+  {
+    "id": "sc2",
+    "title": "Hỏi đường phố cổ",
+    "location": "Phố cổ Hà Nội",
+    "targetDialect": "north",
+    "tasks": ["Chào cụ già hoặc bác xe ôm", "Hỏi đường đến Hồ Gươm", "Lắng nghe chỉ dẫn rẽ trái/phải", "Cảm ơn"]
+  },
+  {
+    "id": "sc3",
+    "title": "Gọi món ở quán phở",
+    "location": "Quán Phở truyền thống",
+    "targetDialect": "all",
+    "tasks": ["Chào chủ quán", "Gọi 1 bát phở bò tái chín", "Yêu cầu không bỏ hành", "Hỏi giá và thanh toán"]
+  },
+  {
+    "id": "sc4",
+    "title": "Làm quen bạn mới ở trường",
+    "location": "Sân trường đại học",
+    "targetDialect": "all",
+    "tasks": ["Chào bạn và tự giới thiệu tên, quốc tịch", "Hỏi tuổi để xưng hô đúng (anh/chị/em)", "Hỏi bạn học ngành gì", "Hẹn cùng nhau đi uống trà đá"]
+  }
+]

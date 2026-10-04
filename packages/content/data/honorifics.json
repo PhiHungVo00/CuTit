@@ -1,0 +1,8 @@
+[
+  { "id": "h1", "relation": "teacher_student", "speakerAge": 35, "listenerAge": 12, "speaker": "thầy/cô", "listener": "em", "example": "Thầy chào em, hôm nay em làm bài tốt lắm." },
+  { "id": "h2", "relation": "teacher_student", "speakerAge": 12, "listenerAge": 35, "speaker": "em", "listener": "thầy/cô", "example": "Em chào cô ạ, thưa cô bài này làm thế nào ạ?" },
+  { "id": "h3", "relation": "kin", "speakerAge": 20, "listenerAge": 55, "listenerGender": "male", "speaker": "cháu", "listener": "bác", "example": "Cháu chào bác, bác đi chợ về ạ?" },
+  { "id": "h4", "relation": "kin", "speakerAge": 20, "listenerAge": 50, "listenerGender": "female", "speaker": "cháu", "listener": "cô", "example": "Cháu chào cô, cô khỏe không ạ?" },
+  { "id": "h5", "relation": "social", "speakerAge": 25, "listenerAge": 20, "speaker": "anh", "listener": "em", "example": "Anh có thể giúp gì cho em không?" },
+  { "id": "h6", "relation": "social", "speakerAge": 20, "listenerAge": 25, "speaker": "em", "listener": "chị", "example": "Chị ơi, cho em hỏi đường ra hồ Hoàn Kiếm với ạ." }
+]

@@ -2,6 +2,9 @@ import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import rateLimit from '@fastify/rate-limit';
 import { chatRoutes } from './routes/chat.js';
+import { speechRoutes } from './routes/speech.js';
+import { practiceRoutes } from './routes/practice.js';
+import { contentRoutes } from './routes/content.js';
 
 const fastify = Fastify({ logger: true });
 
@@ -9,10 +12,13 @@ async function start() {
   await fastify.register(cors, { origin: true });
   await fastify.register(rateLimit, { max: 100, timeWindow: '1 minute' });
 
-  // Đăng ký các Facade Routes
+  // Đăng ký toàn bộ 14 Endpoint RESTful chuẩn /v1 theo Mục 6.3 TDD
   await fastify.register(chatRoutes, { prefix: '/v1' });
+  await fastify.register(speechRoutes, { prefix: '/v1' });
+  await fastify.register(practiceRoutes, { prefix: '/v1' });
+  await fastify.register(contentRoutes, { prefix: '/v1' });
 
-  fastify.get('/health', async () => ({ status: 'healthy', timestamp: new Date().toISOString() }));
+  fastify.get('/healthz', async () => ({ status: 'healthy', timestamp: new Date().toISOString() }));
 
   const port = Number(process.env.PORT) || 4000;
   try {
