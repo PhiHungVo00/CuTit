@@ -1,0 +1,1358 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Khám Phá Kiến Trúc & 23 Mẫu GoF - Agentic Vietnamese Learning</title>
+  <!-- Google Font: Be Vietnam Pro -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Chart.js for Pitch Simulation -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Be Vietnam Pro"', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              50: '#EEF2FF',
+              100: '#E0E7FF',
+              500: '#6366F1',
+              600: '#4F46E5',
+              700: '#4338CA',
+              900: '#312E81',
+            },
+            slatebg: '#0F172A',
+            emeraldacc: '#10B981',
+            amberacc: '#F59E0B',
+            roseacc: '#F43F5E'
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body {
+      font-family: 'Be Vietnam Pro', sans-serif;
+      background-color: #F8FAFC;
+      color: #0F172A;
+    }
+    .custom-scroll::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb {
+      background-color: #CBD5E1;
+      border-radius: 9999px;
+    }
+    .badge-pill {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.2rem 0.65rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+    .glass-card {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(226, 232, 240, 0.8);
+    }
+    .glow-indigo {
+      box-shadow: 0 10px 25px -5px rgba(99, 102, 241, 0.15);
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+  <!-- TOP HEADER -->
+  <header class="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-slate-200 shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-indigo-400 flex items-center justify-center text-white shadow-md shadow-indigo-200">
+          <i data-lucide="sparkles" class="w-5 h-5"></i>
+        </div>
+        <div>
+          <div class="flex items-center space-x-2">
+            <h1 class="text-base sm:text-lg font-bold text-slate-900 tracking-tight">Agentic Vietnamese Learning</h1>
+            <span class="badge-pill bg-emerald-100 text-emerald-800 text-[11px]">Bé Cu Tít</span>
+          </div>
+          <p class="text-xs text-slate-500 hidden sm:block">Chuyên đề Mobile & Pervasive Computing (SE405.R11) · UIT</p>
+        </div>
+      </div>
+
+      <!-- Navigation Tabs -->
+      <nav class="flex items-center space-x-1 sm:space-x-2 overflow-x-auto py-1">
+        <button onclick="switchTab('overview')" id="tab-btn-overview" class="tab-btn px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 bg-indigo-50 text-indigo-700">
+          <span class="flex items-center space-x-1.5"><i data-lucide="layout-dashboard" class="w-4 h-4"></i><span>Tổng quan</span></span>
+        </button>
+        <button onclick="switchTab('architecture')" id="tab-btn-architecture" class="tab-btn px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-600 hover:text-indigo-600 hover:bg-slate-100 transition-all duration-200">
+          <span class="flex items-center space-x-1.5"><i data-lucide="network" class="w-4 h-4"></i><span>Kiến trúc Hệ thống</span></span>
+        </button>
+        <button onclick="switchTab('gof')" id="tab-btn-gof" class="tab-btn px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-600 hover:text-indigo-600 hover:bg-slate-100 transition-all duration-200">
+          <span class="flex items-center space-x-1.5"><i data-lucide="boxes" class="w-4 h-4"></i><span>23 Mẫu GoF</span><span class="ml-1 px-1.5 py-0.2 bg-indigo-100 text-indigo-800 rounded-full text-[10px]">23</span></span>
+        </button>
+        <button onclick="switchTab('algorithms')" id="tab-btn-algorithms" class="tab-btn px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-600 hover:text-indigo-600 hover:bg-slate-100 transition-all duration-200">
+          <span class="flex items-center space-x-1.5"><i data-lucide="cpu" class="w-4 h-4"></i><span>Mô phỏng Thuật toán</span></span>
+        </button>
+        <button onclick="switchTab('simulation')" id="tab-btn-simulation" class="tab-btn px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-600 hover:text-indigo-600 hover:bg-slate-100 transition-all duration-200">
+          <span class="flex items-center space-x-1.5"><i data-lucide="mic" class="w-4 h-4"></i><span>Luồng Voice Turn</span></span>
+        </button>
+        <button onclick="switchTab('screens')" id="tab-btn-screens" class="tab-btn px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-600 hover:text-indigo-600 hover:bg-slate-100 transition-all duration-200">
+          <span class="flex items-center space-x-1.5"><i data-lucide="smartphone" class="w-4 h-4"></i><span>12 Màn hình Stitch</span></span>
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <!-- MAIN CONTAINER -->
+  <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8">
+
+    <!-- ==================== TAB 1: TỔNG QUAN ==================== -->
+    <div id="tab-overview" class="tab-pane space-y-6">
+      <!-- Hero Banner -->
+      <div class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 text-white p-6 sm:p-10 shadow-xl">
+        <div class="relative z-10 max-w-3xl space-y-4">
+          <div class="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-xs font-medium text-indigo-200">
+            <i data-lucide="bot" class="w-3.5 h-3.5"></i>
+            <span>Agentic Minimalist x Văn hóa Dân gian Việt Nam</span>
+          </div>
+          <h2 class="text-2xl sm:text-4xl font-extrabold tracking-tight leading-tight">
+            Nền tảng Học tiếng Việt Thông minh Cùng Bé Cu Tít
+          </h2>
+          <p class="text-slate-300 text-sm sm:text-base leading-relaxed">
+            Hệ thống kết hợp Micro Frontend hiện đại, SaaS Gateway bảo mật, công nghệ AI đa phương thức và xử lý âm thanh số F0 chuyên biệt để tháo gỡ 3 rào cản lớn nhất của người nước ngoài: <strong class="text-white">6 thanh điệu</strong>, <strong class="text-white">ma trận đại từ xưng hô</strong>, và <strong class="text-white">phương ngữ 3 miền</strong>.
+          </p>
+          <div class="flex flex-wrap gap-3 pt-2">
+            <button onclick="switchTab('architecture')" class="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 font-semibold text-xs sm:text-sm text-white shadow-lg shadow-indigo-600/30 transition flex items-center space-x-2">
+              <span>Khám phá Kiến trúc Hệ thống</span>
+              <i data-lucide="arrow-right" class="w-4 h-4"></i>
+            </button>
+            <button onclick="switchTab('algorithms')" class="px-5 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 font-semibold text-xs sm:text-sm text-white transition flex items-center space-x-2">
+              <i data-lucide="play-circle" class="w-4 h-4"></i>
+              <span>Thử Nghiệm Thuật toán F0 & Xưng hô</span>
+            </button>
+          </div>
+        </div>
+        <!-- Decorative Grid & Mascot Glow -->
+        <div class="absolute -right-12 -bottom-12 w-96 h-96 bg-indigo-500/20 rounded-full blur-3xl pointer-events-none"></div>
+      </div>
+
+      <!-- 3 Cột Trọng tâm Giải quyết Rào cản -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+        <div class="glass-card rounded-2xl p-5 border border-slate-200 hover:border-indigo-400 transition shadow-sm group">
+          <div class="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center mb-4 group-hover:scale-105 transition">
+            <i data-lucide="activity" class="w-6 h-6"></i>
+          </div>
+          <h3 class="font-bold text-slate-900 text-base mb-2">1. Luyện Cao độ 6 Thanh Điệu (F0)</h3>
+          <p class="text-xs text-slate-600 leading-relaxed">
+            Thuật toán YIN/McLeod chạy trên Web Worker phân tích tần số cơ bản F0. Đối sánh contour của học viên với người bản ngữ bằng Dynamic Time Warping (DTW).
+          </p>
+          <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-emerald-700 font-medium">
+            <span>Module: mfe-speech-lab</span>
+            <span class="badge-pill bg-emerald-50">A1, A2 · Strategy</span>
+          </div>
+        </div>
+
+        <div class="glass-card rounded-2xl p-5 border border-slate-200 hover:border-indigo-400 transition shadow-sm group">
+          <div class="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center mb-4 group-hover:scale-105 transition">
+            <i data-lucide="users-round" class="w-6 h-6"></i>
+          </div>
+          <h3 class="font-bold text-slate-900 text-base mb-2">2. Ma trận Đại từ Xưng hô</h3>
+          <p class="text-xs text-slate-600 leading-relaxed">
+            Hệ thống quy tắc suy diễn đại từ nhân xưng phức tạp theo tuổi tác, giới tính, thứ bậc dòng tộc và mức độ trang trọng (Anh, Chị, Bác, Chú, Cô, Thầy,...).
+          </p>
+          <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-amber-700 font-medium">
+            <span>Module: mfe-knowledge</span>
+            <span class="badge-pill bg-amber-50">A6 · Interpreter</span>
+          </div>
+        </div>
+
+        <div class="glass-card rounded-2xl p-5 border border-slate-200 hover:border-indigo-400 transition shadow-sm group">
+          <div class="w-12 h-12 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center mb-4 group-hover:scale-105 transition">
+            <i data-lucide="map-pin" class="w-6 h-6"></i>
+          </div>
+          <h3 class="font-bold text-slate-900 text-base mb-2">3. Đối chiếu Phương ngữ 3 Miền</h3>
+          <p class="text-xs text-slate-600 leading-relaxed">
+            So sánh từ vựng tương đương (bắp - ngô, muỗng - thìa) và chuyển đổi giọng đọc TTS tức thì giữa giọng Hà Nội, Huế, Đà Nẵng và Sài Gòn.
+          </p>
+          <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-indigo-700 font-medium">
+            <span>Module: mfe-speech-lab</span>
+            <span class="badge-pill bg-indigo-50">A7 · Flyweight</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bảng tóm tắt chỉ số dự án -->
+      <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+        <h3 class="font-bold text-slate-900 text-base mb-4 flex items-center space-x-2">
+          <i data-lucide="check-circle-2" class="w-5 h-5 text-indigo-600"></i>
+          <span>Bộ Thông số Kỹ thuật Cốt lõi của Dự án</span>
+        </h3>
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
+          <div class="p-3 bg-slate-50 rounded-xl">
+            <div class="text-2xl font-bold text-indigo-600">6</div>
+            <div class="text-xs text-slate-500 font-medium">Micro Frontends</div>
+          </div>
+          <div class="p-3 bg-slate-50 rounded-xl">
+            <div class="text-2xl font-bold text-emerald-600">23 / 23</div>
+            <div class="text-xs text-slate-500 font-medium">GoF Design Patterns</div>
+          </div>
+          <div class="p-3 bg-slate-50 rounded-xl">
+            <div class="text-2xl font-bold text-amber-600">8</div>
+            <div class="text-xs text-slate-500 font-medium">Thuật toán Tự viết (A1-A8)</div>
+          </div>
+          <div class="p-3 bg-slate-50 rounded-xl">
+            <div class="text-2xl font-bold text-blue-600">12</div>
+            <div class="text-xs text-slate-500 font-medium">Màn hình MVP Cam kết</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== TAB 2: KIẾN TRÚC HỆ THỐNG ==================== -->
+    <div id="tab-architecture" class="tab-pane hidden space-y-6">
+      <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-200 gap-3">
+          <div>
+            <h2 class="text-lg font-bold text-slate-900 flex items-center space-x-2">
+              <i data-lucide="network" class="w-5 h-5 text-indigo-600"></i>
+              <span>Sơ đồ Kiến trúc Phân Tầng Tương tác</span>
+            </h2>
+            <p class="text-xs text-slate-500">Nhấp vào từng thành phần kiến trúc để xem chi tiết vai trò, vị trí code và GoF Pattern liên quan.</p>
+          </div>
+          <span class="badge-pill bg-indigo-100 text-indigo-800 text-xs">Module Federation + SaaS Gateway</span>
+        </div>
+
+        <!-- Interactive Architecture Grid -->
+        <div class="mt-6 space-y-6">
+          
+          <!-- TẦNG 1: CLIENT (MICRO FRONTEND) -->
+          <div class="border-2 border-dashed border-indigo-200 bg-indigo-50/40 rounded-2xl p-5 space-y-4">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold uppercase tracking-wider text-indigo-800 flex items-center space-x-1.5">
+                <i data-lucide="monitor" class="w-4 h-4"></i>
+                <span>TẦNG 1: CLIENT BROWSER / PWA (React + Vite + Module Federation)</span>
+              </span>
+              <span class="badge-pill bg-indigo-200 text-indigo-900 text-[11px]">Single Codebase</span>
+            </div>
+
+            <!-- Host Shell Card -->
+            <div onclick="showArchDetail('host-shell')" class="cursor-pointer bg-white rounded-xl p-4 border border-indigo-300 hover:border-indigo-600 hover:shadow-md transition">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                  <div class="w-9 h-9 rounded-lg bg-indigo-600 text-white flex items-center justify-center font-bold text-xs">HOST</div>
+                  <div>
+                    <h4 class="font-bold text-slate-900 text-sm">Host Shell (apps/host-shell)</h4>
+                    <p class="text-xs text-slate-500">Routing, Auth Session, Theme Tokens, Event Bus, Agent UI Registry, Error Boundary</p>
+                  </div>
+                </div>
+                <div class="flex flex-wrap gap-1.5">
+                  <span class="badge-pill bg-emerald-100 text-emerald-800 text-[10px]">Singleton</span>
+                  <span class="badge-pill bg-purple-100 text-purple-800 text-[10px]">Mediator</span>
+                  <span class="badge-pill bg-amber-100 text-amber-800 text-[10px]">Composite</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- 6 Remotes Grid -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              <div onclick="showArchDetail('mfe-conversation')" class="cursor-pointer bg-white rounded-xl p-3.5 border border-pink-200 hover:border-pink-500 hover:shadow transition">
+                <div class="flex items-center justify-between mb-1.5">
+                  <span class="text-xs font-bold text-pink-700">mfe-conversation</span>
+                  <span class="badge-pill bg-pink-100 text-pink-800 text-[10px]">State, Prototype</span>
+                </div>
+                <p class="text-[11px] text-slate-600">Chat Canvas (M1), Roleplay Simulator (M7). Xử lý hội thoại giọng nói đa lượt.</p>
+              </div>
+
+              <div onclick="showArchDetail('mfe-practice')" class="cursor-pointer bg-white rounded-xl p-3.5 border border-emerald-200 hover:border-emerald-500 hover:shadow transition">
+                <div class="flex items-center justify-between mb-1.5">
+                  <span class="text-xs font-bold text-emerald-700">mfe-practice</span>
+                  <span class="badge-pill bg-emerald-100 text-emerald-800 text-[10px]">Factory, Memento</span>
+                </div>
+                <p class="text-[11px] text-slate-600">Adaptive Drill Cards (M5), Sentence Builder (M8). Kéo-thả token đốt tre ghép câu.</p>
+              </div>
+
+              <div onclick="showArchDetail('mfe-learner')" class="cursor-pointer bg-white rounded-xl p-3.5 border border-yellow-200 hover:border-yellow-500 hover:shadow transition">
+                <div class="flex items-center justify-between mb-1.5">
+                  <span class="text-xs font-bold text-yellow-700">mfe-learner</span>
+                  <span class="badge-pill bg-yellow-100 text-yellow-800 text-[10px]">Iterator, Strategy</span>
+                </div>
+                <p class="text-[11px] text-slate-600">Onboarding Elo (M11), Analytics & SRS (M9), AI Preferences (M12).</p>
+              </div>
+
+              <div onclick="showArchDetail('mfe-speech-lab')" class="cursor-pointer bg-white rounded-xl p-3.5 border border-blue-200 hover:border-blue-500 hover:shadow transition">
+                <div class="flex items-center justify-between mb-1.5">
+                  <span class="text-xs font-bold text-blue-700">mfe-speech-lab</span>
+                  <span class="badge-pill bg-blue-100 text-blue-800 text-[10px]">Strategy, Flyweight</span>
+                </div>
+                <p class="text-[11px] text-slate-600">Pitch Visualizer F0 (M2), Dialect Switcher (M6). Trực quan hóa 6 thanh điệu.</p>
+              </div>
+
+              <div onclick="showArchDetail('mfe-vision')" class="cursor-pointer bg-white rounded-xl p-3.5 border border-purple-200 hover:border-purple-500 hover:shadow transition">
+                <div class="flex items-center justify-between mb-1.5">
+                  <span class="text-xs font-bold text-purple-700">mfe-vision</span>
+                  <span class="badge-pill bg-purple-100 text-purple-800 text-[10px]">Bridge, Observer</span>
+                </div>
+                <p class="text-[11px] text-slate-600">AR Camera Surface (M4 - Quán nước gốc đa). Nhận diện đồ vật đời thực.</p>
+              </div>
+
+              <div onclick="showArchDetail('mfe-knowledge')" class="cursor-pointer bg-white rounded-xl p-3.5 border border-orange-200 hover:border-orange-500 hover:shadow transition">
+                <div class="flex items-center justify-between mb-1.5">
+                  <span class="text-xs font-bold text-orange-700">mfe-knowledge</span>
+                  <span class="badge-pill bg-orange-100 text-orange-800 text-[10px]">Interpreter</span>
+                </div>
+                <p class="text-[11px] text-slate-600">Honorific Matrix (M3 - Sân đình), Culture Guide (M10). Tra cứu đại từ và văn hóa.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- GIAO THỨC TRUYỀN THÔNG -->
+          <div class="bg-indigo-900 text-white rounded-xl p-3.5 text-center text-xs flex items-center justify-center space-x-3 shadow">
+            <i data-lucide="arrow-down-up" class="w-4 h-4 text-emerald-400"></i>
+            <span><strong>HTTPS / Server-Sent Events (SSE):</strong> Giao thức Agent UI Protocol (Zod Schema) · Chunked Audio 16kHz · Token Stream</span>
+          </div>
+
+          <!-- TẦNG 2: SAAS GATEWAY -->
+          <div class="border-2 border-dashed border-emerald-200 bg-emerald-50/40 rounded-2xl p-5 space-y-4">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold uppercase tracking-wider text-emerald-800 flex items-center space-x-1.5">
+                <i data-lucide="server" class="w-4 h-4"></i>
+                <span>TẦNG 2: SAAS GATEWAY BACKEND (Node.js LTS + TypeScript + Fastify Stateless)</span>
+              </span>
+              <span class="badge-pill bg-emerald-200 text-emerald-900 text-[11px]">Bảo vệ API Key</span>
+            </div>
+
+            <!-- Pipeline Bar -->
+            <div onclick="showArchDetail('gateway-pipeline')" class="cursor-pointer bg-white rounded-xl p-4 border border-emerald-300 hover:border-emerald-600 hover:shadow-md transition">
+              <div class="flex items-center justify-between mb-2">
+                <span class="font-bold text-slate-900 text-sm">Request Pipeline</span>
+                <span class="badge-pill bg-emerald-100 text-emerald-800 text-[10px]">Chain of Responsibility & Decorator</span>
+              </div>
+              <div class="flex flex-wrap items-center gap-1.5 text-[11px] text-slate-600">
+                <span class="px-2 py-0.5 bg-slate-100 rounded">1. RequestID</span> ➔
+                <span class="px-2 py-0.5 bg-slate-100 rounded">2. Auth JWT</span> ➔
+                <span class="px-2 py-0.5 bg-slate-100 rounded">3. Rate Limit / Quota</span> ➔
+                <span class="px-2 py-0.5 bg-slate-100 rounded">4. Validate Zod</span> ➔
+                <span class="px-2 py-0.5 bg-slate-100 rounded">5. Provider Adapter</span> ➔
+                <span class="px-2 py-0.5 bg-slate-100 rounded">6. Audit Log</span>
+              </div>
+            </div>
+
+            <!-- 3 Internal Units -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div onclick="showArchDetail('gateway-orchestrator')" class="cursor-pointer bg-white rounded-xl p-3.5 border border-slate-200 hover:border-emerald-500 hover:shadow transition">
+                <div class="flex items-center justify-between mb-1">
+                  <span class="text-xs font-bold text-slate-900">Chat Orchestrator</span>
+                  <span class="badge-pill bg-emerald-100 text-emerald-800 text-[10px]">Facade</span>
+                </div>
+                <p class="text-[11px] text-slate-600">Endpoint /v1/chat/turn điều phối STT, LLM Streaming và Chunked TTS phát âm thanh sớm.</p>
+              </div>
+
+              <div onclick="showArchDetail('gateway-adapters')" class="cursor-pointer bg-white rounded-xl p-3.5 border border-slate-200 hover:border-emerald-500 hover:shadow transition">
+                <div class="flex items-center justify-between mb-1">
+                  <span class="text-xs font-bold text-slate-900">Provider Adapters</span>
+                  <span class="badge-pill bg-blue-100 text-blue-800 text-[10px]">Adapter & Factory</span>
+                </div>
+                <p class="text-[11px] text-slate-600">Chuẩn hóa SttProvider, TtsProvider, LlmProvider. Hỗ trợ Fallback và Circuit Breaker.</p>
+              </div>
+
+              <div onclick="showArchDetail('gateway-algorithms')" class="cursor-pointer bg-white rounded-xl p-3.5 border border-slate-200 hover:border-emerald-500 hover:shadow transition">
+                <div class="flex items-center justify-between mb-1">
+                  <span class="text-xs font-bold text-slate-900">Thuật toán Tự viết</span>
+                  <span class="badge-pill bg-amber-100 text-amber-800 text-[10px]">Template Method</span>
+                </div>
+                <p class="text-[11px] text-slate-600">A3 chấm phát âm, A4 SM-2 ôn ngắt quãng, A5 kiểm tra đầu vào, A8 kiểm tra câu tre trúc.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- TẦNG 3: DATA & THIRD PARTY -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div class="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
+              <span class="text-xs font-bold uppercase text-slate-500 flex items-center space-x-1.5 mb-2">
+                <i data-lucide="database" class="w-4 h-4 text-indigo-600"></i>
+                <span>Hạ Tầng Dữ Liệu Nội Bộ</span>
+              </span>
+              <p class="text-xs text-slate-600 leading-relaxed">
+                • <strong>PostgreSQL (Drizzle ORM):</strong> Users, Sessions, SRS Cards, Attempt logs.<br>
+                • <strong>Redis:</strong> Rate Limiting, User Quota Counter, Session Token.<br>
+                • <strong>S3-Compatible Storage:</strong> TTS Audio Cache (băm hash), Audio người học (TTL 30 ngày).
+              </p>
+            </div>
+
+            <div class="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
+              <span class="text-xs font-bold uppercase text-slate-500 flex items-center space-x-1.5 mb-2">
+                <i data-lucide="cloud" class="w-4 h-4 text-emerald-600"></i>
+                <span>Dịch Vụ AI Đám Mây (API-First)</span>
+              </span>
+              <p class="text-xs text-slate-600 leading-relaxed">
+                • <strong>STT Tiếng Việt:</strong> Google Cloud STT (vi-VN), Azure Speech, VBEE.<br>
+                • <strong>TTS Tiếng Việt:</strong> Azure Neural TTS (Bắc/Trung/Nam), Google TTS, ElevenLabs.<br>
+                • <strong>LLM Multimodal:</strong> Gemini 1.5 Flash / Pro, GPT-4o-mini (Vision dán nhãn đồ vật).
+              </p>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Detail Box Modal / Drawer -->
+      <div id="arch-detail-box" class="hidden bg-indigo-900 text-white rounded-2xl p-6 shadow-xl space-y-3 transition-all duration-300">
+        <div class="flex items-center justify-between">
+          <h3 id="arch-detail-title" class="text-base font-bold text-white flex items-center space-x-2"></h3>
+          <button onclick="document.getElementById('arch-detail-box').classList.add('hidden')" class="text-slate-300 hover:text-white">
+            <i data-lucide="x" class="w-5 h-5"></i>
+          </button>
+        </div>
+        <p id="arch-detail-desc" class="text-xs sm:text-sm text-slate-200 leading-relaxed"></p>
+        <div class="pt-2 border-t border-indigo-800 flex flex-wrap items-center gap-2" id="arch-detail-tags"></div>
+      </div>
+    </div>
+
+    <!-- ==================== TAB 3: 23 MẪU GOF ==================== -->
+    <div id="tab-gof" class="tab-pane hidden space-y-6">
+      <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200">
+          <div>
+            <h2 class="text-lg font-bold text-slate-900 flex items-center space-x-2">
+              <i data-lucide="boxes" class="w-5 h-5 text-indigo-600"></i>
+              <span>Khám Phá Toàn Diện 23 Mẫu Thiết Kế GoF</span>
+            </h2>
+            <p class="text-xs text-slate-500">Tra cứu nhanh theo nhóm mẫu, từ khóa tìm kiếm hoặc nhấp xem chi tiết cài đặt.</p>
+          </div>
+          <!-- Filter Buttons -->
+          <div class="flex flex-wrap gap-2">
+            <button onclick="filterGof('all')" id="gof-btn-all" class="gof-filter-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-indigo-600 text-white">Tất cả (23)</button>
+            <button onclick="filterGof('creational')" id="gof-btn-creational" class="gof-filter-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 text-slate-600 hover:bg-slate-200">Khởi tạo (5)</button>
+            <button onclick="filterGof('structural')" id="gof-btn-structural" class="gof-filter-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 text-slate-600 hover:bg-slate-200">Cấu trúc (7)</button>
+            <button onclick="filterGof('behavioral')" id="gof-btn-behavioral" class="gof-filter-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 text-slate-600 hover:bg-slate-200">Hành vi (11)</button>
+          </div>
+        </div>
+
+        <!-- Search Bar -->
+        <div class="mt-4 relative">
+          <i data-lucide="search" class="w-4 h-4 absolute left-3.5 top-3 text-slate-400"></i>
+          <input type="text" id="gof-search" oninput="searchGof()" placeholder="Tìm kiếm mẫu thiết kế theo tên, vị trí code hoặc công dụng..." class="w-full pl-10 pr-4 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500">
+        </div>
+
+        <!-- Cards Container -->
+        <div id="gof-cards-grid" class="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <!-- Dynamically Injected by JS -->
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== TAB 4: MÔ PHỎNG THUẬT TOÁN ==================== -->
+    <div id="tab-algorithms" class="tab-pane hidden space-y-6">
+      
+      <!-- Interactive Tone Pitch Simulator -->
+      <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-200 gap-3">
+          <div>
+            <h2 class="text-lg font-bold text-slate-900 flex items-center space-x-2">
+              <i data-lucide="activity" class="w-5 h-5 text-emerald-600"></i>
+              <span>Mô Phỏng Trực Quan Cao Độ F0 6 Thanh Điệu (Thuật toán A1 & A2)</span>
+            </h2>
+            <p class="text-xs text-slate-500">Thử nghiệm so sánh đường contour mẫu người bản ngữ (Xanh lá) với đường phát âm của người học (Cam).</p>
+          </div>
+          <span class="badge-pill bg-emerald-100 text-emerald-800 text-xs">YIN/McLeod + DTW</span>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
+          <!-- Controls -->
+          <div class="space-y-4 bg-slate-50 p-4 rounded-xl border border-slate-200">
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">Chọn từ vựng & thanh điệu:</label>
+              <select id="tone-select" onchange="updatePitchSimulation()" class="w-full text-xs font-medium bg-white border border-slate-200 rounded-lg p-2.5 focus:outline-none focus:border-indigo-500">
+                <option value="ngang">1. Ma (Thanh Ngang - Bằng phẳng cao)</option>
+                <option value="huyen">2. Mà (Thanh Huyền - Trầm, hạ thấp dần)</option>
+                <option value="sac">3. Má (Thanh Sắc - Vút cao nhanh)</option>
+                <option value="hoi" selected>4. Phở (Thanh Hỏi - Hạ sâu rồi vút lên)</option>
+                <option value="nga">5. Mãng (Thanh Ngã - Gãy quãng, vút cao)</option>
+                <option value="nang">6. Mạ (Thanh Nặng - Hạ đột ngột, nghẽn giọng)</option>
+              </select>
+            </div>
+
+            <div>
+              <div class="flex justify-between text-xs text-slate-700 mb-1">
+                <span class="font-semibold">Mức độ phát âm chuẩn của người học:</span>
+                <span id="accuracy-label" class="font-bold text-indigo-600">85%</span>
+              </div>
+              <input type="range" id="accuracy-slider" min="30" max="100" value="85" oninput="updatePitchSimulation()" class="w-full accent-indigo-600">
+              <p class="text-[11px] text-slate-500 mt-1">Kéo thanh trượt để giả lập độ lệch phát âm của học viên người nước ngoài.</p>
+            </div>
+
+            <div class="pt-3 border-t border-slate-200 space-y-2">
+              <div class="flex items-center justify-between text-xs">
+                <span class="text-slate-600">Điểm tương đồng DTW (A2):</span>
+                <span id="dtw-score" class="font-bold text-emerald-600 text-sm">88 / 100</span>
+              </div>
+              <div class="flex items-center justify-between text-xs">
+                <span class="text-slate-600">Thanh dự đoán của AI:</span>
+                <span id="predicted-tone" class="badge-pill bg-emerald-100 text-emerald-800 text-[11px]">Thanh Hỏi (Chính xác)</span>
+              </div>
+              <div class="p-2.5 bg-indigo-50 rounded-lg text-[11px] text-indigo-900 leading-tight">
+                <strong>Nhận xét từ Bé Cu Tít:</strong> <span id="tone-feedback">"Bạn uốn giọng ở cuối câu rất tốt! Giữ đúng độ cong của phở bò rồi nhé!"</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Chart Visualizer -->
+          <div class="lg:col-span-2 bg-slate-900 rounded-xl p-4 flex flex-col justify-between shadow-inner">
+            <div class="flex items-center justify-between mb-2">
+              <div class="flex items-center space-x-3 text-xs">
+                <span class="flex items-center space-x-1.5 text-emerald-400">
+                  <span class="w-3 h-0.5 bg-emerald-400 inline-block"></span>
+                  <span>Contour Mẫu (Bản ngữ)</span>
+                </span>
+                <span class="flex items-center space-x-1.5 text-amber-400">
+                  <span class="w-3 h-0.5 bg-amber-400 inline-block"></span>
+                  <span>Contour Người học (F0)</span>
+                </span>
+              </div>
+              <span class="text-[10px] text-slate-400 font-mono">Trục Y: Semitone | Trục X: Thời gian normalized</span>
+            </div>
+            <div class="h-64 w-full">
+              <canvas id="pitchChart"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Simulator A6: Ma Trận Đại Từ Xưng Hô -->
+      <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-200 gap-3">
+          <div>
+            <h2 class="text-lg font-bold text-slate-900 flex items-center space-x-2">
+              <i data-lucide="users" class="w-5 h-5 text-amber-600"></i>
+              <span>Bộ Suy Diễn Đại Từ Xưng Hô Tiếng Việt (Thuật toán A6 - Interpreter)</span>
+            </h2>
+            <p class="text-xs text-slate-500">Mô phỏng bộ luật quan hệ sân đình & xã hội để gợi ý cặp đại từ nhân xưng chuẩn phong tục.</p>
+          </div>
+          <span class="badge-pill bg-amber-100 text-amber-800 text-xs">Rule Table + Interpreter</span>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-4 gap-4 mt-5 bg-slate-50 p-4 rounded-xl border border-slate-200">
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Mối quan hệ giao tiếp:</label>
+            <select id="rel-type" onchange="calcHonorific()" class="w-full text-xs bg-white border border-slate-200 rounded-lg p-2.5">
+              <option value="stranger_age">Người lạ / Xã hội</option>
+              <option value="school">Trường học / Giảng đường</option>
+              <option value="family">Họ hàng / Gia đình</option>
+              <option value="work">Môi trường công sở</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Chênh lệch tuổi tác:</label>
+            <select id="rel-age" onchange="calcHonorific()" class="w-full text-xs bg-white border border-slate-200 rounded-lg p-2.5">
+              <option value="older_gen">Bằng tuổi cha/mẹ mình (+20 tuổi)</option>
+              <option value="older_few">Lớn hơn vài tuổi (+3 đến 8 tuổi)</option>
+              <option value="equal">Ngang tuổi / Đồng trang lứa</option>
+              <option value="younger">Nhỏ tuổi hơn mình</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Giới tính đối phương:</label>
+            <select id="rel-gender" onchange="calcHonorific()" class="w-full text-xs bg-white border border-slate-200 rounded-lg p-2.5">
+              <option value="male">Nam (Male)</option>
+              <option value="female">Nữ (Female)</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Mức độ trang trọng:</label>
+            <select id="rel-formality" onchange="calcHonorific()" class="w-full text-xs bg-white border border-slate-200 rounded-lg p-2.5">
+              <option value="polite">Lịch thiệp, chuẩn mực</option>
+              <option value="intimate">Thân mật, gần gũi</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="mt-4 p-4 rounded-xl bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div class="space-y-1">
+            <span class="text-xs text-amber-800 font-semibold uppercase">Cặp đại từ đề xuất (Mình ➔ Đối phương):</span>
+            <div id="honorific-result" class="text-xl sm:text-2xl font-extrabold text-slate-900">Em ➔ Bác / Cháu ➔ Bác</div>
+          </div>
+          <div id="honorific-example" class="text-xs text-slate-700 bg-white/80 p-3 rounded-lg border border-amber-200/60 max-w-md">
+            <strong>Ví dụ câu chào:</strong> "Cháu chào Bác ạ! Bác cho cháu hỏi đường ra chợ Bến Thành với ạ."
+          </div>
+        </div>
+      </div>
+
+      <!-- Simulator A4: SM-2 Spaced Repetition -->
+      <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-200 gap-3">
+          <div>
+            <h2 class="text-lg font-bold text-slate-900 flex items-center space-x-2">
+              <i data-lucide="calendar-clock" class="w-5 h-5 text-indigo-600"></i>
+              <span>Tính Toán Khoảng Cách Lặp Lại Ngắt Quãng SM-2 (Thuật toán A4)</span>
+            </h2>
+            <p class="text-xs text-slate-500">Mô phỏng thuật toán tính toán ngày ôn tập từ vựng tiếp theo dựa trên chất lượng phản xạ của học viên.</p>
+          </div>
+          <span class="badge-pill bg-indigo-100 text-indigo-800 text-xs">Vườn Cây Tri Thức SRS</span>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-5 mt-5">
+          <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3">
+            <label class="block text-xs font-semibold text-slate-700">Đánh giá chất lượng nhớ (Quality 0 - 5):</label>
+            <div class="grid grid-cols-3 gap-2">
+              <button onclick="calcSM2(0)" class="sm2-btn px-2 py-2 text-xs rounded bg-white border border-slate-200 hover:bg-rose-50 hover:text-rose-600 font-medium">0 - Quên hẳn</button>
+              <button onclick="calcSM2(1)" class="sm2-btn px-2 py-2 text-xs rounded bg-white border border-slate-200 hover:bg-rose-50 hover:text-rose-600 font-medium">1 - Rất mơ hồ</button>
+              <button onclick="calcSM2(2)" class="sm2-btn px-2 py-2 text-xs rounded bg-white border border-slate-200 hover:bg-amber-50 hover:text-amber-600 font-medium">2 - Nhớ vất vả</button>
+              <button onclick="calcSM2(3)" class="sm2-btn px-2 py-2 text-xs rounded bg-white border border-slate-200 hover:bg-yellow-50 hover:text-yellow-600 font-medium">3 - Nhớ vừa đủ</button>
+              <button onclick="calcSM2(4)" class="sm2-btn px-2 py-2 text-xs rounded bg-white border border-slate-200 hover:bg-emerald-50 hover:text-emerald-600 font-medium">4 - Nhớ tốt</button>
+              <button onclick="calcSM2(5)" class="sm2-btn px-2 py-2 text-xs rounded bg-indigo-600 text-white font-bold">5 - Hoàn hảo</button>
+            </div>
+            <p class="text-[11px] text-slate-500">Chọn mức độ nhớ của học viên khi ôn một thẻ từ vựng.</p>
+          </div>
+
+          <div class="sm:col-span-2 grid grid-cols-3 gap-3 text-center">
+            <div class="p-4 bg-slate-50 rounded-xl border border-slate-200 flex flex-col justify-center">
+              <span class="text-xs text-slate-500">Khoảng cách ngày ôn kế tiếp</span>
+              <span id="sm2-interval" class="text-2xl font-extrabold text-indigo-600 mt-1">6 ngày</span>
+              <span class="text-[10px] text-slate-400 mt-0.5">(Interval)</span>
+            </div>
+            <div class="p-4 bg-slate-50 rounded-xl border border-slate-200 flex flex-col justify-center">
+              <span class="text-xs text-slate-500">Hệ số dễ (Ease Factor)</span>
+              <span id="sm2-ease" class="text-2xl font-extrabold text-emerald-600 mt-1">2.60</span>
+              <span class="text-[10px] text-slate-400 mt-0.5">(Mặc định ban đầu 2.50)</span>
+            </div>
+            <div class="p-4 bg-slate-50 rounded-xl border border-slate-200 flex flex-col justify-center">
+              <span class="text-xs text-slate-500">Số lần lặp lại liên tiếp</span>
+              <span id="sm2-reps" class="text-2xl font-extrabold text-amber-600 mt-1">2 lần</span>
+              <span class="text-[10px] text-slate-400 mt-0.5">(Repetitions)</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ==================== TAB 5: MÔ PHỎNG VOICE TURN ==================== -->
+    <div id="tab-simulation" class="tab-pane hidden space-y-6">
+      <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-200 gap-3">
+          <div>
+            <h2 class="text-lg font-bold text-slate-900 flex items-center space-x-2">
+              <i data-lucide="mic" class="w-5 h-5 text-indigo-600"></i>
+              <span>Trình Mô Phỏng Luồng Hội Thoại Giọng Nói (Voice Turn Simulator)</span>
+            </h2>
+            <p class="text-xs text-slate-500">Trải nghiệm tương tác 6 bước từ khi bấm Micro đến khi nhận phản hồi âm thanh và khối UI động (Agent UI Protocol).</p>
+          </div>
+          <span class="badge-pill bg-indigo-100 text-indigo-800 text-xs">Mục tiêu trễ p50 ≤ 4.0s</span>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
+          <!-- Step Control Panel -->
+          <div class="space-y-4">
+            <button id="sim-start-btn" onclick="runVoiceTurnSimulation()" class="w-full py-4 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm shadow-lg shadow-indigo-200 flex items-center justify-center space-x-2 transition">
+              <i data-lucide="mic" class="w-5 h-5"></i>
+              <span>Nhấn Giả Lập Nói: "Cho tôi một bát phở bò"</span>
+            </button>
+
+            <!-- Steps list -->
+            <div class="space-y-2">
+              <div id="step-1" class="p-3 rounded-xl border border-slate-200 bg-slate-50 text-xs flex items-center space-x-2.5 transition">
+                <span class="w-5 h-5 rounded-full bg-slate-200 text-slate-700 flex items-center justify-center font-bold text-[10px]">1</span>
+                <span>Thu âm PCM 16kHz AudioWorklet (Client)</span>
+              </div>
+              <div id="step-2" class="p-3 rounded-xl border border-slate-200 bg-slate-50 text-xs flex items-center space-x-2.5 transition">
+                <span class="w-5 h-5 rounded-full bg-slate-200 text-slate-700 flex items-center justify-center font-bold text-[10px]">2</span>
+                <span>POST /v1/chat/turn (SaaS Gateway kiểm tra Quota)</span>
+              </div>
+              <div id="step-3" class="p-3 rounded-xl border border-slate-200 bg-slate-50 text-xs flex items-center space-x-2.5 transition">
+                <span class="w-5 h-5 rounded-full bg-slate-200 text-slate-700 flex items-center justify-center font-bold text-[10px]">3</span>
+                <span>Gọi STT Provider ➔ Trả transcript qua SSE</span>
+              </div>
+              <div id="step-4" class="p-3 rounded-xl border border-slate-200 bg-slate-50 text-xs flex items-center space-x-2.5 transition">
+                <span class="w-5 h-5 rounded-full bg-slate-200 text-slate-700 flex items-center justify-center font-bold text-[10px]">4</span>
+                <span>Gọi LLM Streaming (Bé Cu Tít JSON Schema)</span>
+              </div>
+              <div id="step-5" class="p-3 rounded-xl border border-slate-200 bg-slate-50 text-xs flex items-center space-x-2.5 transition">
+                <span class="w-5 h-5 rounded-full bg-slate-200 text-slate-700 flex items-center justify-center font-bold text-[10px]">5</span>
+                <span>Cắt câu sớm ➔ Chunked TTS đẩy audio về</span>
+              </div>
+              <div id="step-6" class="p-3 rounded-xl border border-slate-200 bg-slate-50 text-xs flex items-center space-x-2.5 transition">
+                <span class="w-5 h-5 rounded-full bg-slate-200 text-slate-700 flex items-center justify-center font-bold text-[10px]">6</span>
+                <span>Client phát Audio & Dựng khối UI Registry</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Chat Canvas Simulation Screen -->
+          <div class="lg:col-span-2 bg-slate-900 rounded-2xl p-5 text-white flex flex-col justify-between min-h-[420px] shadow-lg">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div class="flex items-center space-x-2.5">
+                <div class="w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center text-xs font-bold">TÍT</div>
+                <div>
+                  <h4 class="text-xs font-bold text-white">Bé Cu Tít · Quán Phở Làng Quê</h4>
+                  <span class="text-[10px] text-emerald-400 flex items-center space-x-1">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                    <span id="sim-status">Sẵn sàng lắng nghe</span>
+                  </span>
+                </div>
+              </div>
+              <span class="text-[11px] font-mono text-slate-400" id="sim-latency">Độ trễ: 0ms</span>
+            </div>
+
+            <!-- Messages Screen -->
+            <div class="flex-1 py-4 space-y-4 overflow-y-auto custom-scroll" id="sim-messages">
+              <!-- Welcome initial message -->
+              <div class="flex items-start space-x-2 max-w-[85%]">
+                <div class="w-7 h-7 rounded-full bg-indigo-500/20 text-indigo-300 flex items-center justify-center text-[10px] font-bold mt-1">T</div>
+                <div class="bg-slate-800 p-3 rounded-2xl rounded-tl-sm text-xs text-slate-200 leading-relaxed border border-slate-700">
+                  Dạ chào bạn! Hôm nay mình cùng vào quán phở nhé! Bạn muốn gọi món gì nào? Nhấn nút micro ở bên trái để nói nha!
+                </div>
+              </div>
+            </div>
+
+            <!-- Fake input bar -->
+            <div class="pt-3 border-t border-slate-800 flex items-center space-x-2 text-xs">
+              <input type="text" disabled placeholder="Nói vào micro hoặc gõ văn bản..." class="flex-1 bg-slate-800 text-slate-400 px-3 py-2 rounded-xl border border-slate-700">
+              <button disabled class="p-2 rounded-xl bg-indigo-600/50 text-white cursor-not-allowed">
+                <i data-lucide="send" class="w-4 h-4"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== TAB 6: 12 MÀN HÌNH STITCH ==================== -->
+    <div id="tab-screens" class="tab-pane hidden space-y-6">
+      <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-200 gap-3">
+          <div>
+            <h2 class="text-lg font-bold text-slate-900 flex items-center space-x-2">
+              <i data-lucide="smartphone" class="w-5 h-5 text-indigo-600"></i>
+              <span>Thư Viện 12 Màn Hình MVP (Dự Án Stitch 8474068980628013960)</span>
+            </h2>
+            <p class="text-xs text-slate-500">Phân rã 12 module màn hình theo chuẩn TDD v1.0, phân định Mức Cam kết và Mở rộng.</p>
+          </div>
+          <div class="flex items-center space-x-2">
+            <button onclick="filterScreens('all')" id="scr-btn-all" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-indigo-600 text-white">Tất cả (12)</button>
+            <button onclick="filterScreens('committed')" id="scr-btn-committed" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 text-slate-600 hover:bg-slate-200">Mức Cam kết</button>
+          </div>
+        </div>
+
+        <div id="screens-grid" class="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <!-- Dynamically Injected by JS -->
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="bg-white border-t border-slate-200 py-6 text-center text-xs text-slate-500 space-y-1">
+    <p>Đồ án Chuyên đề Mobile & Pervasive Computing (SE405.R11) · Khoa Kỹ thuật Phần mềm · UIT</p>
+    <p class="text-slate-400">Thiết kế theo chuẩn TDD v1.0 · Tích hợp 23 Mẫu Thiết Kế GoF · Dự án Stitch: 8474068980628013960</p>
+  </footer>
+
+  <!-- SCRIPT LOGIC -->
+  <script>
+    // Initialize Lucide Icons
+    lucide.createIcons();
+
+    // TAB SWITCHING LOGIC
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-pane').forEach(el => el.classList.add('hidden'));
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('bg-indigo-50', 'text-indigo-700');
+        btn.classList.add('text-slate-600');
+      });
+
+      const targetPane = document.getElementById(`tab-${tabId}`);
+      const targetBtn = document.getElementById(`tab-btn-${tabId}`);
+      if (targetPane) targetPane.classList.remove('hidden');
+      if (targetBtn) {
+        targetBtn.classList.add('bg-indigo-50', 'text-indigo-700');
+        targetBtn.classList.remove('text-slate-600');
+      }
+
+      // Re-render chart if switching to algorithms
+      if (tabId === 'algorithms' && pitchChart) {
+        pitchChart.resize();
+      }
+    }
+
+    // ARCHITECTURE DETAILS MODAL
+    const archDetails = {
+      'host-shell': {
+        title: 'Host Shell (apps/host-shell) - Điều phối trung tâm',
+        desc: 'Là ứng dụng chủ quản nạp các Remote Micro Frontend qua Module Federation runtime manifest. Host Shell không chứa bất kỳ logic học tập nào của màn hình, chỉ đảm nhiệm xác thực session, theme design tokens, chia sẻ hook useRecorder, AudioWorklet, bảo đảm cách ly lỗi bằng Error Boundary và cung cấp Agent UI Registry.',
+        tags: ['Singleton (EventBus)', 'Mediator (Điều phối)', 'Composite (Block Tree)', 'Visitor (Sanitize/Log)']
+      },
+      'mfe-conversation': {
+        title: 'mfe-conversation (Màn hình M1, M7)',
+        desc: 'Sở hữu Chat Canvas và Roleplay Simulator. Phụ trách luồng hội thoại đa lượt bằng giọng nói, streaming SSE, hiển thị transcript, chip sửa lỗi phát âm và các kịch bản nhập vai tình huống chợ quê, quán phở làng quê.',
+        tags: ['State (Vòng đời hội thoại)', 'Prototype (Nhân bản kịch bản mẫu)']
+      },
+      'mfe-practice': {
+        title: 'mfe-practice (Màn hình M5, M8)',
+        desc: 'Chứa Adaptive Drill Cards (5 dạng bài tập trắc nghiệm, điền từ, nghe chọn, sắp xếp, đọc lại) và Sentence Builder (khung tre trúc ghép câu). Cung cấp tính năng Undo/Redo cho học viên khi kéo thả các đốt tre từ ngữ.',
+        tags: ['Factory Method (Sinh loại bài tập)', 'Memento (Khôi phục trạng thái ghép câu)']
+      },
+      'mfe-learner': {
+        title: 'mfe-learner (Màn hình M9, M11, M12)',
+        desc: 'Quản lý lộ trình người học: Khảo sát thích ứng đầu vào (Adaptive Onboarding A5), Bảng theo dõi tiến độ và hệ thống flashcard ôn tập ngắt quãng SM-2 (A4), Trung tâm tùy biến giọng AI Bắc/Trung/Nam.',
+        tags: ['Iterator (Duyệt thẻ SRS)', 'Strategy (Thuật toán Elo đầu vào A5)']
+      },
+      'mfe-speech-lab': {
+        title: 'mfe-speech-lab (Màn hình M2, M6)',
+        desc: 'Phòng thí nghiệm âm thanh số: Thu âm, khử im lặng, chạy Web Worker trích xuất F0, đối sánh contour 6 thanh điệu bằng DTW (A1, A2) và chuyển đổi phương ngữ Bắc/Trung/Nam.',
+        tags: ['Strategy (YIN vs McLeod)', 'Flyweight (Mẫu contour chuẩn)']
+      },
+      'mfe-vision': {
+        title: 'mfe-vision (Màn hình M4 - AR Camera)',
+        desc: 'Tận dụng Camera thiết bị (Quán nước gốc đa) để chụp khung cảnh hoặc lấy mẫu 2-3s/lần, gửi hình ảnh tới Multimodal LLM Vision để nhận diện đồ vật đời thường và dán nhãn từ vựng tiếng Việt đúng dấu.',
+        tags: ['Bridge (Web vs Capacitor Camera)', 'Observer (Lắng nghe khung hình)']
+      },
+      'mfe-knowledge': {
+        title: 'mfe-knowledge (Màn hình M3, M10)',
+        desc: 'Trung tâm tri thức văn hóa: Ma trận đại từ xưng hô tôn ti sân đình (A6) và Cẩm nang văn hóa 20 thẻ phong tục tập quán, kiêng kỵ dân gian có đối thoại hỏi đáp cùng AI.',
+        tags: ['Interpreter (Quy tắc xưng hô)', 'Flyweight (Kho thẻ tĩnh)']
+      },
+      'gateway-pipeline': {
+        title: 'Request Pipeline tại SaaS Gateway',
+        desc: 'Chuỗi xử lý yêu cầu tuần tự: Tạo requestId ➔ Xác thực JWT ➔ Kiểm tra hạn mức Rate-limit/Quota ➔ Kiểm tra tính hợp lệ dữ liệu bằng Zod Schema ➔ Chuyển tiếp tới Adapter ➔ Chuẩn hóa và ghi nhật ký chi phí.',
+        tags: ['Chain of Responsibility (Pipeline)', 'Decorator (Bọc Auth/Quota/Audit)', 'Proxy (TTS Cache)']
+      },
+      'gateway-orchestrator': {
+        title: 'Chat Turn Orchestrator (/v1/chat/turn)',
+        desc: 'Đóng vai trò Facade: Nhận gói tin âm thanh hoặc văn bản từ Client, điều phối tuần tự STT ➔ LLM Streaming ➔ Cắt câu sớm để TTS phát stream về người học, đảm bảo độ trễ p50 ≤ 4s.',
+        tags: ['Facade (Thống nhất luồng hội thoại)']
+      },
+      'gateway-adapters': {
+        title: 'Họ Provider Adapters Theo Năng Lực',
+        desc: 'Giao diện trừu tượng SttProvider, TtsProvider, LlmProvider che giấu sự khác biệt của các bên thứ ba (Google Cloud, Azure, VBEE). Hệ thống chuyển đổi linh hoạt nhà cung cấp chỉ qua file cấu hình môi trường.',
+        tags: ['Adapter (Chuẩn hóa API)', 'Abstract Factory (Họ Adapter)']
+      },
+      'gateway-algorithms': {
+        title: 'Hạt nhân 8 Thuật toán Tự viết',
+        desc: 'Xử lý các bài toán đặc thù ngôn ngữ tiếng Việt: Chấm điểm phát âm NFC tổng hợp A3, Spaced Repetition SM-2 A4, Xếp lớp thích ứng A5, Kiểm tra ngữ pháp câu A8.',
+        tags: ['Template Method (Chấm điểm phát âm A3)']
+      }
+    };
+
+    function showArchDetail(key) {
+      const data = archDetails[key];
+      if (!data) return;
+      document.getElementById('arch-detail-title').innerText = data.title;
+      document.getElementById('arch-detail-desc').innerText = data.desc;
+      
+      const tagsContainer = document.getElementById('arch-detail-tags');
+      tagsContainer.innerHTML = '';
+      data.tags.forEach(t => {
+        const span = document.createElement('span');
+        span.className = 'badge-pill bg-indigo-700 text-indigo-100 text-[11px] border border-indigo-600';
+        span.innerText = t;
+        tagsContainer.appendChild(span);
+      });
+
+      const box = document.getElementById('arch-detail-box');
+      box.classList.remove('hidden');
+      box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    // ==================== 23 GOF PATTERNS DATA ====================
+    const gofPatterns = [
+      // Creational
+      { id: 1, name: "Abstract Factory", group: "creational", badge: "Khởi tạo", path: "apps/gateway/src/providers/factory.ts", desc: "Tạo họ các bộ điều hợp AI tương thích (STT, TTS, LLM) theo cấu hình môi trường mà không phụ thuộc vào lớp cụ thể." },
+      { id: 2, name: "Factory Method", group: "creational", badge: "Khởi tạo", path: "packages/shared/src/drills/DrillFactory.ts", desc: "Khởi tạo các đối tượng thẻ bài tập thích ứng (Trắc nghiệm, Điền từ, Nghe chọn, Ghép câu) theo khóa phân loại `type`." },
+      { id: 3, name: "Builder", group: "creational", badge: "Khởi tạo", path: "packages/prompts/src/PromptBuilder.ts", desc: "Xây dựng các prompt LLM phức tạp nhiều tầng (Persona Bé Cu Tít + Trình độ CEFR + Ngữ cảnh + Lỗi sai) và lắp ráp AgentMessage." },
+      { id: 4, name: "Singleton", group: "creational", badge: "Khởi tạo", path: "apps/host-shell/src/bus/EventBus.ts", desc: "Đảm bảo chỉ có một thể hiện duy nhất của Event Bus phía Client và Connection Pool kết nối DB/Redis phía Gateway." },
+      { id: 5, name: "Prototype", group: "creational", badge: "Khởi tạo", path: "packages/content/src/scenarios/ScenarioPrototype.ts", desc: "Nhân bản nhanh kịch bản hội thoại mẫu (Đi chợ, Hỏi đường) để tùy biến cho từng học viên mà không cần truy vấn DB lại." },
+      
+      // Structural
+      { id: 6, name: "Adapter", group: "structural", badge: "Cấu trúc", path: "apps/gateway/src/adapters/", desc: "Chuẩn hóa API bên thứ ba (Azure Speech, Google Cloud, VBEE) về một giao diện thống nhất SttProvider, TtsProvider." },
+      { id: 7, name: "Facade", group: "structural", badge: "Cấu trúc", path: "apps/gateway/src/routes/chat.ts", desc: "Gom toàn bộ chuỗi xử lý thu âm, STT, LLM Streaming và phát TTS sớm thành một endpoint duy nhất /v1/chat/turn." },
+      { id: 8, name: "Composite", group: "structural", badge: "Cấu trúc", path: "apps/host-shell/src/components/AgentUI/BlockTree.tsx", desc: "Tổ chức các khối UI động theo cấu trúc cây (Card Block chứa Audio Clip, Quick Replies, Pitch Compare) xử lý đồng nhất." },
+      { id: 9, name: "Decorator", group: "structural", badge: "Cấu trúc", path: "apps/gateway/src/middleware/", desc: "Bọc các Request Handler tại Gateway để bổ sung thêm chức năng xác thực token, kiểm soát hạn mức quota và log chi phí." },
+      { id: 10, name: "Bridge", group: "structural", badge: "Cấu trúc", path: "packages/audio-dsp/src/audio/AudioCaptureBridge.ts", desc: "Tách biệt tầng trừu tượng thu âm khỏi hiện thực trên Web Audio API và Capacitor Native Plugin, dùng chung 1 codebase." },
+      { id: 11, name: "Proxy", group: "structural", badge: "Cấu trúc", path: "apps/gateway/src/cache/TTSCacheProxy.ts", desc: "Kiểm tra cache S3 cho các file âm thanh TTS trước khi gọi API trả phí, tiết kiệm 60% chi phí và giảm trễ xuống < 200ms." },
+      { id: 12, name: "Flyweight", group: "structural", badge: "Cấu trúc", path: "packages/content/src/pitch/PitchReferenceFlyweight.ts", desc: "Chia sẻ các đường contour chuẩn của 6 thanh điệu và kho thẻ văn hóa tĩnh dùng chung giữa hàng ngàn người học." },
+
+      // Behavioral
+      { id: 13, name: "Strategy", group: "behavioral", badge: "Hành vi", path: "packages/audio-dsp/src/pitch/PitchStrategy.ts", desc: "Hoán đổi linh hoạt thuật toán trích xuất F0 giữa YIN (chuẩn xác cao) và McLeod (nhanh nhẹ) tùy năng lực phần cứng máy học viên." },
+      { id: 14, name: "Observer", group: "behavioral", badge: "Hành vi", path: "apps/host-shell/src/bus/EventBus.ts", desc: "Đăng ký nhận và phát tín hiệu cho các sự kiện liên remote (session.started, attempt.completed) và phát sóng F0 tới Canvas." },
+      { id: 15, name: "Chain of Responsibility", group: "behavioral", badge: "Hành vi", path: "apps/gateway/src/pipeline/RequestPipeline.ts", desc: "Chuỗi xử lý yêu cầu tuần tự tại Gateway và chuỗi kiểm tra ngữ pháp A8 (Từ điển ➔ Quy tắc ngữ pháp ➔ LLM giải thích)." },
+      { id: 16, name: "Command", group: "behavioral", badge: "Hành vi", path: "apps/host-shell/src/commands/UIBlockCommand.ts", desc: "Đóng gói các thao tác bấm trên khối UI (trả lời, nghe lại, mở tra cứu) thành Command Object, dễ dàng retry và lưu lịch sử." },
+      { id: 17, name: "State", group: "behavioral", badge: "Hành vi", path: "apps/mfe-conversation/src/state/TurnStateMachine.ts", desc: "Quản lý vòng đời trạng thái của lượt thoại: IDLE ➔ RECORDING ➔ UPLOADING ➔ STREAMING ➔ PLAYING ➔ FINISHED." },
+      { id: 18, name: "Template Method", group: "behavioral", badge: "Hành vi", path: "apps/gateway/src/services/assessment/", desc: "Định hình quy trình khung chấm phát âm cố định: Chuẩn hóa NFC ➔ So khớp từ ➔ Phân tích contour F0 ➔ Tính điểm tổng hợp." },
+      { id: 19, name: "Mediator", group: "behavioral", badge: "Hành vi", path: "apps/host-shell/src/mediator/ShellMediator.ts", desc: "Host Shell làm trung gian điều phối dữ liệu giữa 6 Remote Micro Frontend, triệt tiêu hoàn toàn phụ thuộc import chéo." },
+      { id: 20, name: "Iterator", group: "behavioral", badge: "Hành vi", path: "packages/shared/src/srs/SRSIterator.ts", desc: "Cung cấp cách duyệt qua danh sách các thẻ từ vựng cần ôn tập theo thuật toán SM-2 mà không để lộ cấu trúc bảng dữ liệu." },
+      { id: 21, name: "Interpreter", group: "behavioral", badge: "Hành vi", path: "packages/content/src/honorifics/HonorificInterpreter.ts", desc: "Phân tích và diễn giải biểu thức đại từ xưng hô (Tuổi, Giới tính, Quan hệ, Trang trọng) thành cặp từ xưng hô chuẩn xác." },
+      { id: 22, name: "Visitor", group: "behavioral", badge: "Hành vi", path: "apps/host-shell/src/protocol/BlockVisitor.ts", desc: "Duyệt qua cây UI Block để làm sạch mã độc (SanitizerVisitor) và thu thập thống kê (AnalyticsVisitor) mà không sửa cấu trúc Block." },
+      { id: 23, name: "Memento", group: "behavioral", badge: "Hành vi", path: "apps/mfe-practice/src/sentence/SentenceBuilderMemento.ts", desc: "Lưu lại ảnh chụp trạng thái vị trí các đốt tre từ ngữ trong Sentence Builder, cung cấp tính năng Undo/Redo khi ghép câu." }
+    ];
+
+    function renderGofCards(items) {
+      const grid = document.getElementById('gof-cards-grid');
+      grid.innerHTML = '';
+      items.forEach(p => {
+        let badgeColor = 'bg-indigo-100 text-indigo-800';
+        if (p.group === 'creational') badgeColor = 'bg-blue-100 text-blue-800';
+        if (p.group === 'structural') badgeColor = 'bg-emerald-100 text-emerald-800';
+        if (p.group === 'behavioral') badgeColor = 'bg-amber-100 text-amber-800';
+
+        const card = document.createElement('div');
+        card.className = 'bg-white rounded-xl p-4 border border-slate-200 hover:border-indigo-400 hover:shadow-md transition space-y-2 flex flex-col justify-between';
+        card.innerHTML = `
+          <div>
+            <div class="flex items-center justify-between mb-1.5">
+              <span class="font-bold text-slate-900 text-sm">${p.id}. ${p.name}</span>
+              <span class="badge-pill ${badgeColor} text-[10px]">${p.badge}</span>
+            </div>
+            <p class="text-xs text-slate-600 leading-relaxed">${p.desc}</p>
+          </div>
+          <div class="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400 font-mono">
+            <span class="truncate max-w-[200px]">${p.path}</span>
+            <i data-lucide="code" class="w-3.5 h-3.5 text-slate-400"></i>
+          </div>
+        `;
+        grid.appendChild(card);
+      });
+      lucide.createIcons();
+    }
+
+    renderGofCards(gofPatterns);
+
+    function filterGof(group) {
+      document.querySelectorAll('.gof-filter-btn').forEach(btn => {
+        btn.classList.remove('bg-indigo-600', 'text-white');
+        btn.classList.add('bg-slate-100', 'text-slate-600');
+      });
+      const activeBtn = document.getElementById(`gof-btn-${group}`);
+      if (activeBtn) {
+        activeBtn.classList.add('bg-indigo-600', 'text-white');
+        activeBtn.classList.remove('bg-slate-100', 'text-slate-600');
+      }
+
+      if (group === 'all') {
+        renderGofCards(gofPatterns);
+      } else {
+        const filtered = gofPatterns.filter(p => p.group === group);
+        renderGofCards(filtered);
+      }
+    }
+
+    function searchGof() {
+      const q = document.getElementById('gof-search').value.toLowerCase().trim();
+      const filtered = gofPatterns.filter(p => 
+        p.name.toLowerCase().includes(q) || 
+        p.desc.toLowerCase().includes(q) || 
+        p.path.toLowerCase().includes(q)
+      );
+      renderGofCards(filtered);
+    }
+
+    // ==================== ALGORITHM SIMULATION (A1 & A2 PITCH CHART) ====================
+    let pitchChart = null;
+
+    const toneCurves = {
+      ngang: { name: "Thanh Ngang (Ma)", base: [12, 12, 12, 12, 12, 12, 12, 12] },
+      huyen: { name: "Thanh Huyền (Mà)", base: [10, 9, 8, 7, 6, 5, 4.5, 4] },
+      sac:   { name: "Thanh Sắc (Má)",   base: [11, 12, 14, 16, 18, 20, 22, 23] },
+      hoi:   { name: "Thanh Hỏi (Phở)",  base: [9, 8, 6, 4.5, 5.5, 9, 13, 15] },
+      nga:   { name: "Thanh Ngã (Mã)",   base: [11, 13, 10, 8, 14, 18, 21, 23] },
+      nang:  { name: "Thanh Nặng (Mạ)",  base: [9, 8, 6, 4, 3, null, null, null] },
+    };
+
+    function initPitchChart() {
+      const ctx = document.getElementById('pitchChart').getContext('2d');
+      pitchChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: ['0%', '15%', '30%', '45%', '60%', '75%', '90%', '100%'],
+          datasets: [
+            {
+              label: 'Mẫu Bản Ngữ',
+              data: toneCurves.hoi.base,
+              borderColor: '#10B981',
+              backgroundColor: 'rgba(16, 185, 129, 0.1)',
+              borderWidth: 3,
+              tension: 0.35,
+              fill: false,
+              pointRadius: 4,
+              pointBackgroundColor: '#10B981'
+            },
+            {
+              label: 'Người Học (F0)',
+              data: toneCurves.hoi.base.map(v => v ? v * 0.95 : null),
+              borderColor: '#F59E0B',
+              backgroundColor: 'rgba(245, 158, 11, 0.1)',
+              borderWidth: 3,
+              borderDash: [5, 5],
+              tension: 0.35,
+              fill: false,
+              pointRadius: 4,
+              pointBackgroundColor: '#F59E0B'
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            y: {
+              min: 0,
+              max: 26,
+              grid: { color: 'rgba(255, 255, 255, 0.08)' },
+              ticks: { color: '#94A3B8', font: { size: 10 } },
+              title: { display: true, text: 'Semitone (F0)', color: '#64748B', font: { size: 10 } }
+            },
+            x: {
+              grid: { color: 'rgba(255, 255, 255, 0.08)' },
+              ticks: { color: '#94A3B8', font: { size: 10 } }
+            }
+          },
+          plugins: {
+            legend: { display: false }
+          }
+        }
+      });
+    }
+
+    function updatePitchSimulation() {
+      const toneKey = document.getElementById('tone-select').value;
+      const accuracy = parseInt(document.getElementById('accuracy-slider').value);
+      document.getElementById('accuracy-label').innerText = `${accuracy}%`;
+
+      const curve = toneCurves[toneKey];
+      const nativeData = curve.base;
+
+      // Simulate learner deviation
+      const devFactor = (100 - accuracy) / 100;
+      const learnerData = nativeData.map((val, idx) => {
+        if (val === null) return null;
+        // add wave noise and slope deviation
+        const noise = (Math.sin(idx * 1.5) * devFactor * 5);
+        return Math.max(1, +(val + noise).toFixed(2));
+      });
+
+      pitchChart.data.datasets[0].data = nativeData;
+      pitchChart.data.datasets[1].data = learnerData;
+      pitchChart.update();
+
+      // Update DTW score
+      const score = Math.max(35, Math.min(99, Math.round(accuracy + (Math.random() * 4 - 2))));
+      document.getElementById('dtw-score').innerText = `${score} / 100`;
+
+      const predToneEl = document.getElementById('predicted-tone');
+      const feedbackEl = document.getElementById('tone-feedback');
+
+      if (accuracy >= 80) {
+        predToneEl.className = 'badge-pill bg-emerald-100 text-emerald-800 text-[11px]';
+        predToneEl.innerText = `${curve.name.split(' (')[0]} (Chính xác)`;
+        feedbackEl.innerText = `"Rất chuẩn! Đường cao độ của bạn khớp 90% với mẫu giọng Hà Nội chuẩn rồi nhé!"`;
+      } else if (accuracy >= 60) {
+        predToneEl.className = 'badge-pill bg-amber-100 text-amber-800 text-[11px]';
+        predToneEl.innerText = `Gần giống ${curve.name.split(' (')[0]}`;
+        feedbackEl.innerText = `"Khá tốt! Nhưng chú ý uốn giọng cao độ ở đoạn giữa câu một chút nữa nhé!"`;
+      } else {
+        predToneEl.className = 'badge-pill bg-rose-100 text-rose-800 text-[11px]';
+        predToneEl.innerText = `Bị lệch thanh điệu`;
+        feedbackEl.innerText = `"Chưa đúng thanh điệu rồi! Bạn hãy bấm nghe lại âm mẫu của Bé Cu Tít và thử lại nào."`;
+      }
+    }
+
+    // ==================== ALGORITHM SIMULATION (A6 HONORIFIC) ====================
+    function calcHonorific() {
+      const type = document.getElementById('rel-type').value;
+      const age = document.getElementById('rel-age').value;
+      const gender = document.getElementById('rel-gender').value;
+      const formality = document.getElementById('rel-formality').value;
+
+      let result = "Tôi ➔ Bạn";
+      let ex = `"Chào bạn, rất vui được gặp bạn!"`;
+
+      if (type === 'stranger_age') {
+        if (age === 'older_gen') {
+          result = gender === 'male' ? "Cháu ➔ Bác (hoặc Chú)" : "Cháu ➔ Bác (hoặc Cô)";
+          ex = `"Cháu chào Bác ạ! Bác cho cháu hỏi đường ra chợ Bến Thành với ạ."`;
+        } else if (age === 'older_few') {
+          result = gender === 'male' ? "Em ➔ Anh" : "Em ➔ Chị";
+          ex = `"Em chào Anh ạ! Anh cho em hỏi quán cà phê gần đây ở đâu ạ?"`;
+        } else if (age === 'equal') {
+          result = "Mình ➔ Bạn (hoặc Tôi ➔ Bạn)";
+          ex = `"Chào bạn, hôm nay bạn có rảnh đi dạo phố cổ không?"`;
+        } else {
+          result = gender === 'male' ? "Anh ➔ Em" : "Chị ➔ Em";
+          ex = `"Chào em, em cho anh xin menu quán nhé!"`;
+        }
+      } else if (type === 'school') {
+        if (age === 'older_gen' || age === 'older_few') {
+          result = gender === 'male' ? "Em ➔ Thầy" : "Em ➔ Cô";
+          ex = `"Em chào Thầy ạ! Thầy cho em xin hỏi lại bài tập về nhà hôm nay ạ."`;
+        } else {
+          result = "Mình ➔ Bạn";
+          ex = `"Chào bạn, cho mình mượn quyển giáo trình tiếng Việt một chút nhé!"`;
+        }
+      } else if (type === 'family') {
+        if (age === 'older_gen') {
+          result = gender === 'male' ? "Con ➔ Bác / Chú / Cậu" : "Con ➔ Bác / Cô / Dì";
+          ex = `"Con chào Chú ạ! Dạo này Chú có khỏe không ạ?"`;
+        } else {
+          result = "Em ➔ Anh / Chị";
+          ex = `"Em chào Anh Hai ạ! Anh mới đi làm về ạ?"`;
+        }
+      } else if (type === 'work') {
+        if (age === 'older_gen' || formality === 'polite') {
+          result = gender === 'male' ? "Em ➔ Anh (hoặc Sếp)" : "Em ➔ Chị (hoặc Sếp)";
+          ex = `"Em gửi Anh báo cáo tiến độ tuần này qua email rồi ạ!"`;
+        } else {
+          result = "Tôi ➔ Anh / Chị";
+          ex = `"Chào chị, tôi đã xem qua tài liệu hợp đồng rồi."`;
+        }
+      }
+
+      document.getElementById('honorific-result').innerText = result;
+      document.getElementById('honorific-example').innerHTML = `<strong>Ví dụ câu chào:</strong> ${ex}`;
+    }
+
+    // ==================== ALGORITHM SIMULATION (A4 SM-2) ====================
+    let sm2_ease = 2.5;
+    let sm2_rep = 1;
+
+    function calcSM2(q) {
+      document.querySelectorAll('.sm2-btn').forEach(b => {
+        b.classList.remove('bg-indigo-600', 'text-white');
+        b.classList.add('bg-white', 'text-slate-700');
+      });
+      event.target.classList.add('bg-indigo-600', 'text-white');
+      event.target.classList.remove('bg-white', 'text-slate-700');
+
+      // SM-2 formula
+      if (q >= 3) {
+        if (sm2_rep === 0) sm2_rep = 1;
+        else sm2_rep++;
+      } else {
+        sm2_rep = 0;
+      }
+
+      sm2_ease = sm2_ease + (0.1 - (5 - q) * (0.08 + (5 - q) * 0.02));
+      if (sm2_ease < 1.3) sm2_ease = 1.3;
+
+      let interval = 1;
+      if (sm2_rep === 1) interval = 1;
+      else if (sm2_rep === 2) interval = 6;
+      else interval = Math.round((sm2_rep - 1) * sm2_ease * 3);
+
+      if (q < 3) interval = 1;
+
+      document.getElementById('sm2-interval').innerText = `${interval} ngày`;
+      document.getElementById('sm2-ease').innerText = sm2_ease.toFixed(2);
+      document.getElementById('sm2-reps').innerText = `${sm2_rep} lần`;
+    }
+
+    // ==================== VOICE TURN SIMULATOR ====================
+    let isSimRunning = false;
+
+    function runVoiceTurnSimulation() {
+      if (isSimRunning) return;
+      isSimRunning = true;
+
+      const btn = document.getElementById('sim-start-btn');
+      btn.disabled = true;
+      btn.classList.add('opacity-50', 'cursor-not-allowed');
+
+      const messagesContainer = document.getElementById('sim-messages');
+      const statusEl = document.getElementById('sim-status');
+      const latencyEl = document.getElementById('sim-latency');
+
+      // Reset step highlights
+      for (let i = 1; i <= 6; i++) {
+        document.getElementById(`step-${i}`).className = 'p-3 rounded-xl border border-slate-200 bg-slate-50 text-xs flex items-center space-x-2.5 transition';
+      }
+
+      // Step 1: Recording (0ms)
+      highlightStep(1);
+      statusEl.innerText = "Đang thu âm AudioWorklet (16kHz PCM)...";
+      latencyEl.innerText = "Độ trễ: 120ms";
+
+      setTimeout(() => {
+        // Append user bubble
+        const userMsg = document.createElement('div');
+        userMsg.className = 'flex items-start justify-end space-x-2';
+        userMsg.innerHTML = `
+          <div class="bg-indigo-600 p-3 rounded-2xl rounded-tr-sm text-xs text-white leading-relaxed max-w-[85%] shadow">
+            <div class="flex items-center space-x-1.5 text-indigo-200 text-[10px] mb-1">
+              <i data-lucide="mic" class="w-3 h-3"></i>
+              <span>Audio PCM 16kHz · 2.1s</span>
+            </div>
+            Cho tôi một bát phở bò!
+          </div>
+        `;
+        messagesContainer.appendChild(userMsg);
+        lucide.createIcons();
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+
+        // Step 2: Gateway Quota (300ms)
+        highlightStep(2);
+        statusEl.innerText = "SaaS Gateway kiểm tra xác thực & hạn mức quota...";
+        latencyEl.innerText = "Độ trễ: 420ms";
+
+        setTimeout(() => {
+          // Step 3: STT (800ms)
+          highlightStep(3);
+          statusEl.innerText = "Google Cloud STT nhận diện transcript...";
+          latencyEl.innerText = "Độ trễ: 1,150ms";
+
+          setTimeout(() => {
+            // Step 4: LLM Streaming (1500ms)
+            highlightStep(4);
+            statusEl.innerText = "Gemini LLM đang sinh luồng phản hồi JSON...";
+            latencyEl.innerText = "Độ trễ: 1,820ms";
+
+            setTimeout(() => {
+              // Step 5: Chunked TTS (2200ms)
+              highlightStep(5);
+              statusEl.innerText = "Cắt câu sớm ➔ Azure Neural TTS phát âm thanh...";
+              latencyEl.innerText = "Độ trễ: 2,640ms";
+
+              setTimeout(() => {
+                // Step 6: Complete & Render Blocks (3100ms)
+                highlightStep(6);
+                statusEl.innerText = "Hoàn tất! Phát âm thanh và dựng khối UI Block.";
+                latencyEl.innerText = "Tổng thời gian: 3,180ms (Đạt p50 ≤ 4.0s)";
+
+                // Append agent response
+                const agentMsg = document.createElement('div');
+                agentMsg.className = 'flex items-start space-x-2 max-w-[88%] animate-fade-in';
+                agentMsg.innerHTML = `
+                  <div class="w-7 h-7 rounded-full bg-indigo-500/20 text-indigo-300 flex items-center justify-center text-[10px] font-bold mt-1">T</div>
+                  <div class="space-y-2.5">
+                    <div class="bg-slate-800 p-3 rounded-2xl rounded-tl-sm text-xs text-slate-200 leading-relaxed border border-slate-700">
+                      Dạ có ngay! Bát phở bò tái nạm nóng hổi thơm phức của bạn đây ạ! Bạn phát âm từ <strong class="text-amber-400">"phở"</strong> rất chuẩn thanh Hỏi rồi đấy!
+                    </div>
+
+                    <!-- Dynamic UI Block (pitch_compare) -->
+                    <div class="bg-slate-950 p-3 rounded-xl border border-indigo-500/40 text-xs space-y-2 shadow-lg">
+                      <div class="flex items-center justify-between text-[11px] text-indigo-300 font-semibold">
+                        <span class="flex items-center space-x-1.5">
+                          <i data-lucide="bar-chart-2" class="w-3.5 h-3.5"></i>
+                          <span>Khối Agent UI: pitch_compare ("phở bò")</span>
+                        </span>
+                        <span class="badge-pill bg-emerald-950 text-emerald-300 text-[10px]">DTW: 92/100</span>
+                      </div>
+                      <p class="text-[11px] text-slate-300">Đường cong cao độ của bạn khớp 92% với mẫu giọng chuẩn Hà Nội!</p>
+                      <div class="flex items-center space-x-2 pt-1">
+                        <button class="px-2.5 py-1 rounded bg-indigo-600 text-white text-[11px] flex items-center space-x-1 hover:bg-indigo-500">
+                          <i data-lucide="volume-2" class="w-3 h-3"></i>
+                          <span>Nghe lại âm mẫu</span>
+                        </button>
+                        <button class="px-2.5 py-1 rounded bg-slate-800 text-slate-300 text-[11px] hover:bg-slate-700">
+                          Lưu vào Vườn SRS
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                `;
+                messagesContainer.appendChild(agentMsg);
+                lucide.createIcons();
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+
+                btn.disabled = false;
+                btn.classList.remove('opacity-50', 'cursor-not-allowed');
+                isSimRunning = false;
+              }, 900);
+            }, 700);
+          }, 650);
+        }, 350);
+      }, 300);
+    }
+
+    function highlightStep(stepNum) {
+      for (let i = 1; i <= 6; i++) {
+        const el = document.getElementById(`step-${i}`);
+        if (i === stepNum) {
+          el.className = 'p-3 rounded-xl border border-indigo-500 bg-indigo-50 text-xs flex items-center space-x-2.5 shadow-sm font-semibold text-indigo-900';
+          el.querySelector('span').className = 'w-5 h-5 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold text-[10px] animate-bounce';
+        } else if (i < stepNum) {
+          el.className = 'p-3 rounded-xl border border-emerald-300 bg-emerald-50 text-xs flex items-center space-x-2.5 text-emerald-900';
+          el.querySelector('span').className = 'w-5 h-5 rounded-full bg-emerald-600 text-white flex items-center justify-center font-bold text-[10px]';
+        } else {
+          el.className = 'p-3 rounded-xl border border-slate-200 bg-slate-50 text-xs flex items-center space-x-2.5 opacity-60';
+        }
+      }
+    }
+
+    // ==================== 12 SCREENS DATA ====================
+    const stitchScreens = [
+      { id: "M1", title: "Chat Canvas", remote: "mfe-conversation", camket: "Nhập text & nói, multi-turn N lượt, streaming SSE, chip sửa lỗi, render ≥ 4 khối UI Agent.", morong: "Tóm tắt phiên học, sửa lỗi inline, tìm kiếm trong lịch sử." },
+      { id: "M2", title: "Pitch Visualizer", remote: "mfe-speech-lab", camket: "Thu âm, vẽ đè 2 đường contour cho 6 thanh và 20 từ/cụm, nghe mẫu, chấm điểm DTW gợi ý.", morong: "30 từ/cụm, tự động phát hiện thanh lệch, phản hồi bằng lời nói." },
+      { id: "M3", title: "Honorific Matrix", remote: "mfe-knowledge", camket: "Chọn tuổi/giới/quan hệ/trang trọng ➔ Cặp đại từ + ví dụ + âm thanh mẫu (20 cặp).", morong: "30 cặp quan hệ, trắc nghiệm nhanh, LLM giải thích ngữ cảnh." },
+      { id: "M4", title: "AR Camera Surface", remote: "mfe-vision", camket: "Mở camera chụp khung cảnh (Quán nước gốc đa) ➔ dán nhãn từ vựng, nghe phát âm, lưu SRS.", morong: "Overlay liên tục theo thời gian thực (tracking 3D)." },
+      { id: "M5", title: "Adaptive Drill Cards", remote: "mfe-practice", camket: "5 dạng bài (trắc nghiệm, điền từ, nghe chọn, ghép câu, đọc lại) sinh bằng LLM Zod schema.", morong: "Tự động điều chỉnh độ khó bài tập theo lịch sử thời gian thực." },
+      { id: "M6", title: "Dialect Switcher", remote: "mfe-speech-lab", camket: "Đối chiếu Bắc/Trung/Nam cho 30 từ/cụm, nghe phát âm theo từng miền (Chuyến tàu xuyên Việt).", morong: "40 từ/cụm, tính năng chuyển đổi toàn bộ cuộc hội thoại sang giọng địa phương." },
+      { id: "M7", title: "Roleplay Simulator", remote: "mfe-conversation", camket: "4 kịch bản nhập vai (Chợ quê trả giá, Hỏi đường, Quán phở, Làm quen) có nhiệm vụ mục tiêu.", morong: "6 kịch bản (thêm Taxi, Khách sạn), chấm điểm hoàn thành nhiệm vụ." },
+      { id: "M8", title: "Sentence Builder", remote: "mfe-practice", camket: "Kéo-thả token đốt tre trúc, kiểm tra hợp lệ và giải thích lỗi trật tự câu (60 câu mẫu).", morong: "100 câu, LLM tự động sinh cấu trúc câu mới theo chủ đề." },
+      { id: "M9", title: "Analytics Dashboard & SRS", remote: "mfe-learner", camket: "Streak, thời gian học, độ chính xác kỹ năng, thẻ đến hạn ôn tập SM-2 đồng bộ máy chủ.", morong: "Dự báo tiến độ đạt CEFR, hỗ trợ ôn tập ngoại tuyến (Offline)." },
+      { id: "M10", title: "Culture Guide", remote: "mfe-knowledge", camket: "20 thẻ phong tục tập quán, kiêng kỵ dân gian; hỏi đáp cùng AI dựa trên thẻ xác thực.", morong: "25 thẻ, tự động gợi ý thẻ văn hóa theo tình huống nhập vai Roleplay." },
+      { id: "M11", title: "Adaptive Onboarding", remote: "mfe-learner", camket: "Khảo sát mục tiêu, phương ngữ; bài kiểm tra thích ứng 8-12 câu (A5) ➔ xếp level 1-6.", morong: "Đánh giá chi tiết phát âm ngay trong bài kiểm tra đầu vào." },
+      { id: "M12", title: "AI Preferences", remote: "mfe-learner", camket: "Tùy biến giọng đọc Bắc/Trung/Nam, tốc độ nói, mức sửa lỗi khắt khe, đổi persona AI.", morong: "Tự động học hành vi của người dùng để cá nhân hóa tham số." }
+    ];
+
+    function renderScreens(items) {
+      const grid = document.getElementById('screens-grid');
+      grid.innerHTML = '';
+      items.forEach(s => {
+        const card = document.createElement('div');
+        card.className = 'bg-white rounded-xl p-4 border border-slate-200 hover:border-indigo-400 hover:shadow-md transition space-y-2.5 flex flex-col justify-between';
+        card.innerHTML = `
+          <div>
+            <div class="flex items-center justify-between mb-1">
+              <span class="font-bold text-slate-900 text-sm">${s.id}. ${s.title}</span>
+              <span class="badge-pill bg-indigo-50 text-indigo-700 text-[10px] font-mono">${s.remote}</span>
+            </div>
+            <div class="space-y-1.5 text-xs text-slate-600 mt-2">
+              <div class="p-2 rounded bg-slate-50 border border-slate-100">
+                <strong class="text-slate-800 text-[11px] block">Mức Cam kết (Bắt buộc):</strong>
+                <span class="text-[11px]">${s.camket}</span>
+              </div>
+              <div class="p-2 rounded bg-emerald-50/50 border border-emerald-100 text-emerald-900">
+                <strong class="text-emerald-800 text-[11px] block">Mức Mở rộng:</strong>
+                <span class="text-[11px]">${s.morong}</span>
+              </div>
+            </div>
+          </div>
+        `;
+        grid.appendChild(card);
+      });
+    }
+
+    renderScreens(stitchScreens);
+
+    function filterScreens(type) {
+      document.getElementById('scr-btn-all').className = type === 'all' 
+        ? 'px-3 py-1.5 rounded-lg text-xs font-semibold bg-indigo-600 text-white' 
+        : 'px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 text-slate-600 hover:bg-slate-200';
+      document.getElementById('scr-btn-committed').className = type === 'committed' 
+        ? 'px-3 py-1.5 rounded-lg text-xs font-semibold bg-indigo-600 text-white' 
+        : 'px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 text-slate-600 hover:bg-slate-200';
+      
+      renderScreens(stitchScreens);
+    }
+
+    // ONLOAD
+    window.addEventListener('DOMContentLoaded', () => {
+      initPitchChart();
+      calcHonorific();
+    });
+  </script>
+</body>
+</html>
