@@ -20,6 +20,7 @@ Hệ thống được tổ chức theo mô hình **Turborepo + PNPM Workspaces**
 │   └── mfe-learner/         # Remote MFE: Bảng phân tích SM-2, Khảo sát xếp lớp A5
 ├── packages/
 │   ├── contracts/           # Hợp đồng API (Zod) & Lược đồ cơ sở dữ liệu (Drizzle)
+│   ├── ui/                  # Design System, Design Tokens & Thành phần giao diện dùng chung
 │   ├── audio-dsp/           # Xử lý âm thanh Web Worker: YIN F0, DTW, AudioBridge
 │   ├── content/             # Ma trận xưng hô, Từ điển phương ngữ, Kịch bản mẫu
 │   ├── prompts/             # Lắp ráp Prompt Bé Cu Tít đa tầng (PromptBuilder)
@@ -62,7 +63,8 @@ pnpm dev
 ---
 
 ## 📚 4. Tài Liệu Kỹ Thuật Tham Khảo (Trong thư mục `docs/`)
-- `docs/So_Tay_Toan_Dien_Tech_Stack_Va_Kien_Truc_He_Thong.docx`: Tài liệu Word chuẩn ASD-STE100 hợp nhất toàn bộ kiến trúc & tech stack.
+- `docs/Bao_Cao_Thiet_Ke_Kien_Truc_Toan_Dien_TDD_UIT.docx`: Tài liệu đặc tả kiến trúc chuẩn (Master TDD) gồm đầy đủ 16 mục theo chuẩn quốc tế ASD-STE100.
 - `docs/diagram_architecture_gof.png`: Sơ đồ kiến trúc 3 phân tầng 300 DPI tích hợp 23 mẫu GoF.
 - `docs/interactive_architecture.html`: Ứng dụng web HTML tương tác chạy trực tiếp F0, SM-2, Voice Turn và GoF Explorer.
 - `docs/02_Bao_cao_ky_thuat_TDD_UIT.pdf`: Báo cáo kỹ thuật gốc đồ án SE405.R11.
+- `docs/archive/`: Thư mục lưu trữ các bản thảo và tài liệu trung gian.
