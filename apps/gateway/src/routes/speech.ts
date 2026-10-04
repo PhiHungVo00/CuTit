@@ -11,15 +11,18 @@ export const speechRoutes: FastifyPluginAsync = async (server) => {
     };
   });
 
-  // POST /v1/speech/synthesize
-  server.post('/speech/synthesize', async (req, reply) => {
+  // POST /v1/speech/synthesize & POST /speech/tts (Task requirement alias)
+  const handleSynthesize = async (req: any, reply: any) => {
     const parse = SynthesizeRequestSchema.safeParse(req.body);
     return {
       audioUrl: 'https://audio.vietlearning.app/sample.mp3',
       durationMs: 1450,
       cached: true
     };
-  });
+  };
+
+  server.post('/speech/synthesize', handleSynthesize);
+  server.post('/speech/tts', handleSynthesize);
 
   // GET /v1/speech/voices
   server.get('/speech/voices', async (req, reply) => {
