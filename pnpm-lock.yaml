@@ -432,6 +432,22 @@ importers:
         specifier: ^5.7.3
         version: 5.9.3
 
+  packages/ui:
+    dependencies:
+      clsx:
+        specifier: ^2.1.1
+        version: 2.1.1
+      tailwind-merge:
+        specifier: ^2.6.0
+        version: 2.6.1
+    devDependencies:
+      '@types/react':
+        specifier: ^18.3.31
+        version: 18.3.31
+      typescript:
+        specifier: ^5.7.3
+        version: 5.9.3
+
 packages:
 
   '@babel/code-frame@7.29.7':
@@ -949,6 +965,10 @@ packages:
   caniuse-lite@1.0.30001814:
     resolution: {integrity: sha512-/Uaf1lAzr59XcMpW0o96WoEfr+VXK2OX4U9AgFoiSHsVJ4HppnIFUjtYzsyDH2+tgANaQb2/oxYGwCPapN1FpA==}
 
+  clsx@2.1.1:
+    resolution: {integrity: sha512-eYm0QWBtUrBWZWG0d386OGAw16Z995PiOVo2B7bjWSbHedGl5e0ZWaq65kOGgUSNesEIDkB9ISbTg/JK9dhCZA==}
+    engines: {node: '>=6'}
+
   convert-source-map@2.0.0:
     resolution: {integrity: sha512-Kvp459HrV2FEJ1CAsi1Ku+MY3kasH19TFykTz2xWmMeq6bk2NU3XXvfJ+Q61m0xktWwt+1HSYf3JZsTms3aRJg==}
 
@@ -1302,6 +1322,9 @@ packages:
   split2@4.2.0:
     resolution: {integrity: sha512-UcjcJOWknrNkF6PLX83qcHM6KHgVKNkV62Y8a5uYDVv9ydGQVwAHMKqHdJje1VTWpljG0WYpCDhrCdAOYH4TWg==}
     engines: {node: '>= 10.x'}
+
+  tailwind-merge@2.6.1:
+    resolution: {integrity: sha512-Oo6tHdpZsGpkKG88HJ8RR1rg/RdnEkQEfMoEk2x1XRI3F1AxeU+ijRXpiVUF4UbLfcxxRGw6TbUINKYdWVsQTQ==}
 
   thread-stream@3.2.0:
     resolution: {integrity: sha512-zLBvqpwr4Esa0kRjcrzGU6zL25lePWaCLMx0RQFrmteozIfeNdaMLpG5U7PeHzvlFkAWaRKA9/KVW4F60iB+qw==}
@@ -1788,6 +1811,8 @@ snapshots:
 
   caniuse-lite@1.0.30001814: {}
 
+  clsx@2.1.1: {}
+
   convert-source-map@2.0.0: {}
 
   cookie@0.7.2: {}
@@ -2080,6 +2105,8 @@ snapshots:
   source-map-js@1.2.2: {}
 
   split2@4.2.0: {}
+
+  tailwind-merge@2.6.1: {}
 
   thread-stream@3.2.0:
     dependencies:

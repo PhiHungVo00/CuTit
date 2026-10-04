@@ -1,0 +1,30 @@
+[
+  {
+    "id": "c1",
+    "title": "Khoanh tay chào hỏi",
+    "category": "Chào hỏi & Lễ phép",
+    "content": "Trẻ em và người nhỏ tuổi thường khoanh hai tay trước ngực và hơi cúi đầu khi chào người lớn để thể hiện sự lễ độ.",
+    "reviewed": true
+  },
+  {
+    "id": "c2",
+    "title": "Mời cơm trước khi ăn",
+    "category": "Bữa cơm gia đình",
+    "content": "Trước khi bắt đầu bữa cơm, người nhỏ tuổi lần lượt mời từ người lớn nhất: 'Con mời ông bà, con mời bố mẹ ăn cơm'.",
+    "reviewed": true
+  },
+  {
+    "id": "c3",
+    "title": "Kiêng cắm đũa thẳng vào bát cơm",
+    "category": "Kiêng kỵ dân gian",
+    "content": "Tuyệt đối không cắm thẳng đứng đôi đũa vào giữa bát cơm vì giống hình ảnh bát cơm cúng người đã khuất.",
+    "reviewed": true
+  },
+  {
+    "id": "c4",
+    "title": "Văn hóa trả giá ở chợ quê",
+    "category": "Giao thương chợ truyền thống",
+    "content": "Tránh mặc cả trả giá quá gắt vào sáng sớm khi người bán hàng mở hàng (khách mở hàng mang ý nghĩa may mắn cho cả ngày).",
+    "reviewed": true
+  }
+]

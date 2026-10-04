@@ -1,0 +1,12 @@
+[
+  { "id": "d1", "north": "ngô", "central": "bắp", "south": "bắp", "meaning": "Bắp ngô (Corn)" },
+  { "id": "d2", "north": "lạc", "central": "đậu phụng", "south": "đậu phộng", "meaning": "Hạt lạc (Peanut)" },
+  { "id": "d3", "north": "dứa", "central": "khóm", "south": "thơm", "meaning": "Quả dứa (Pineapple)" },
+  { "id": "d4", "north": "mận", "central": "mận", "south": "roi", "meaning": "Quả roi / mận Bắc" },
+  { "id": "d5", "north": "muỗng", "central": "thìa", "south": "muỗng", "meaning": "Cái thìa (Spoon)" },
+  { "id": "d6", "north": "chậu", "central": "thau", "south": "thau", "meaning": "Chậu rửa (Basin)" },
+  { "id": "d7", "north": "váy", "central": "váy", "south": "đầm", "meaning": "Cái đầm / váy (Dress)" },
+  { "id": "d8", "north": "ngã", "central": "ngã", "south": "té", "meaning": "Bị ngã (Fall down)" },
+  { "id": "d9", "north": "vào", "central": "vô", "south": "vô", "meaning": "Đi vào (Enter)" },
+  { "id": "d10", "north": "gầy", "central": "ốm", "south": "ốm", "meaning": "Gầy gò (Thin)" }
+]
