@@ -2,15 +2,19 @@
   "name": "@vietlearning/mfe-knowledge",
   "version": "1.0.0",
   "private": true,
+  "main": "./src/index.ts",
   "scripts": {
     "dev": "vite",
-    "build": "tsc --noEmit && vite build"
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview"
   },
   "dependencies": {
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "@vietlearning/contracts": "workspace:*",
-    "@vietlearning/shared": "workspace:*"
+    "@vietlearning/shared": "workspace:*",
+    "@vietlearning/content": "workspace:*",
+    "@vietlearning/ui": "workspace:*"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.3.4",

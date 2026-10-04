@@ -15,6 +15,7 @@ async function start() {
   // Đăng ký toàn bộ 14 Endpoint RESTful chuẩn /v1 theo Mục 6.3 TDD
   await fastify.register(chatRoutes, { prefix: '/v1' });
   await fastify.register(speechRoutes, { prefix: '/v1' });
+  await fastify.register(speechRoutes, { prefix: '/api' });
   await fastify.register(practiceRoutes, { prefix: '/v1' });
   await fastify.register(contentRoutes, { prefix: '/v1' });
 

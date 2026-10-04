@@ -221,9 +221,15 @@ importers:
       '@vietlearning/contracts':
         specifier: workspace:*
         version: link:../../packages/contracts
+      '@vietlearning/mfe-knowledge':
+        specifier: workspace:*
+        version: link:../mfe-knowledge
       '@vietlearning/shared':
         specifier: workspace:*
         version: link:../../packages/shared
+      '@vietlearning/ui':
+        specifier: workspace:*
+        version: link:../../packages/ui
       react:
         specifier: ^18.3.1
         version: 18.3.1
@@ -268,12 +274,18 @@ importers:
 
   apps/mfe-knowledge:
     dependencies:
+      '@vietlearning/content':
+        specifier: workspace:*
+        version: link:../../packages/content
       '@vietlearning/contracts':
         specifier: workspace:*
         version: link:../../packages/contracts
       '@vietlearning/shared':
         specifier: workspace:*
         version: link:../../packages/shared
+      '@vietlearning/ui':
+        specifier: workspace:*
+        version: link:../../packages/ui
       react:
         specifier: ^18.3.1
         version: 18.3.1
