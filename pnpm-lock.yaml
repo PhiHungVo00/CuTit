@@ -205,6 +205,9 @@ importers:
       '@vietlearning/audio-dsp':
         specifier: workspace:*
         version: link:../../packages/audio-dsp
+      '@vietlearning/content':
+        specifier: workspace:*
+        version: link:../../packages/content
       '@vietlearning/contracts':
         specifier: workspace:*
         version: link:../../packages/contracts

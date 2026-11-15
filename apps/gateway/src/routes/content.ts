@@ -10,6 +10,7 @@ import {
   VisionLabelRequestSchema,
   VisionLabelResponseSchema
 } from '@vietlearning/contracts';
+import { searchCulture } from '@vietlearning/content';
 import type { RouteDeps } from '../app.js';
 import { parseOr400, respond } from '../lib/validate.js';
 
@@ -47,10 +48,14 @@ export const contentRoutes: FastifyPluginAsync<RouteDeps> = async (server, { pip
     const body = parseOr400(CultureAskRequestSchema, req.body, reply);
     if (!body) return reply;
     await pipeline.consume(req, 'llm', Math.ceil(body.question.length / 3) + 300);
+    // Truy hồi thẻ liên quan là THẬT (packages/content); bước LLM diễn giải từ các thẻ còn MOCK
+    // (ghép câu trả lời theo mẫu) cho tới khi có Provider LLM.
+    const cards = searchCulture(body.question, 2);
     return respond(CultureAskResponseSchema, {
-      answer:
-        'Ở Việt Nam, khi chào người lớn tuổi, người nhỏ thường khoanh tay trước ngực để bày tỏ sự kính trọng.',
-      sources: ['card_c1_khoanh_tay']
+      answer: cards.length
+        ? cards.map((c) => `${c.title}: ${c.content}`).join('\n\n')
+        : 'Bé Cu Tít chưa có thẻ văn hóa nào khớp với câu hỏi này. Bạn thử hỏi về chào hỏi, bữa cơm, ngày Tết hoặc kiêng kỵ nhé!',
+      sources: cards.map((c) => c.id)
     });
   });
 

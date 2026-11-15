@@ -20,7 +20,7 @@ test.describe('Khung app', () => {
   test('trang chủ: liệt kê 6 màn hình, thanh tab, bố cục mobile chuẩn', async ({ page }) => {
     await page.goto('/');
     await expect(page.getByRole('heading', { name: 'Học Tiếng Việt Cùng Bé Cu Tít' })).toBeVisible();
-    await expect(page.locator('.screen-card')).toHaveCount(6);
+    await expect(page.locator('.screen-card')).toHaveCount(7);
     await expect(page.getByRole('navigation', { name: 'Điều hướng chính' })).toBeVisible();
     await assertMobileLayout(page);
   });
@@ -78,6 +78,28 @@ test.describe('M3 Ma trận xưng hô', () => {
     await expect(dialog).toBeHidden();
     await expect(page.locator('blockquote').first()).toContainText('Thầy');
     await expect(page.getByRole('radio', { name: /Thầy trò/ })).toHaveAttribute('aria-checked', 'true');
+  });
+});
+
+test.describe('M10 Cẩm nang văn hóa', () => {
+  test('tìm thẻ, hỏi Bé Cu Tít (mất mạng => trả lời offline từ thẻ), nhảy tới thẻ nguồn', async ({ page }) => {
+    // Giả lập mất mạng tới Gateway một cách xác định (không phụ thuộc mạng của máy chạy test)
+    await page.route('**/v1/**', (route) => route.abort('internetdisconnected'));
+    await page.goto('/van-hoa');
+    await expect(page.getByRole('heading', { name: 'Cẩm nang văn hóa' })).toBeVisible();
+    await assertMobileLayout(page);
+    await page.getByRole('searchbox').fill('cam dua'); // "dua" một mình khớp cả "đũa" lẫn "đưa" (đúng khi tìm không dấu)
+    await expect(page.getByRole('listitem')).toHaveCount(1);
+    await expect(page.getByRole('listitem').first()).toContainText('Kiêng cắm đũa');
+    await page.getByRole('searchbox').fill('');
+
+    await page.getByLabel('Câu hỏi về văn hóa').fill('Ngày Tết trẻ em được lì xì không?');
+    await page.getByRole('button', { name: 'Hỏi', exact: true }).click();
+    const answer = page.getByRole('status');
+    await expect(answer).toContainText('ngoại tuyến');
+    await expect(answer).toContainText('Lì xì đầu năm');
+    await answer.getByRole('button', { name: 'Lì xì đầu năm' }).click();
+    await expect(page.getByRole('listitem').filter({ hasText: 'Lì xì đầu năm' })).toHaveClass(/ring-accent/);
   });
 });
 

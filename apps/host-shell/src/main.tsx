@@ -16,7 +16,7 @@ import { ThemeProvider } from './theme/ThemeContext';
 import { configureGateway } from '@vietlearning/api-client';
 
 // Một nơi duy nhất cấu hình Gateway cho mọi màn hình (URL nhúng lúc build, KHÔNG có secret)
-configureGateway({ baseUrl: import.meta.env.VITE_GATEWAY_URL ?? 'http://localhost:4000' });
+configureGateway({ baseUrl: import.meta.env.VITE_GATEWAY_URL ?? 'http://localhost:4000', timeoutMs: 10_000 });
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

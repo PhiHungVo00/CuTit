@@ -121,3 +121,12 @@ test('Quota: vượt hạn mức TTS trong ngày trả 429', async () => {
   assert.equal(over.json().error, 'quota_exceeded');
   await a.close();
 });
+
+test('/culture/ask: truy hồi đúng thẻ văn hóa và trả id nguồn', async () => {
+  const a = await app();
+  const res = await a.inject({ method: 'POST', url: '/v1/culture/ask', payload: { question: 'Có được cắm đũa vào bát cơm không?' } });
+  assert.equal(res.statusCode, 200);
+  assert.equal(res.json().sources[0], 'c3');
+  assert.match(res.json().answer, /đũa/);
+  await a.close();
+});

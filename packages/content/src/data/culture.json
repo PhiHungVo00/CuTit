@@ -26,5 +26,117 @@
     "category": "Giao thương chợ truyền thống",
     "content": "Tránh mặc cả trả giá quá gắt vào sáng sớm khi người bán hàng mở hàng (khách mở hàng mang ý nghĩa may mắn cho cả ngày).",
     "reviewed": true
+  },
+  {
+    "id": "c5",
+    "title": "Lì xì đầu năm",
+    "category": "Lễ Tết",
+    "content": "Dịp Tết Nguyên Đán, người lớn mừng tuổi trẻ em bằng phong bao lì xì màu đỏ kèm lời chúc. Trẻ nhận bằng hai tay và nói lời cảm ơn, chúc lại người lớn.",
+    "reviewed": false
+  },
+  {
+    "id": "c6",
+    "title": "Xông đất đầu năm",
+    "category": "Lễ Tết",
+    "content": "Người bước vào nhà đầu tiên sau giao thừa được tin là ảnh hưởng tới may mắn cả năm, nên nhiều gia đình chủ động mời người hợp tuổi, vui vẻ đến xông đất.",
+    "reviewed": false
+  },
+  {
+    "id": "c7",
+    "title": "Tiễn ông Công ông Táo",
+    "category": "Lễ Tết",
+    "content": "Ngày 23 tháng Chạp âm lịch, nhiều gia đình làm lễ tiễn ông Công ông Táo về trời, thường kèm cá chép làm phương tiện, mở đầu không khí Tết.",
+    "reviewed": false
+  },
+  {
+    "id": "c8",
+    "title": "Thờ cúng tổ tiên",
+    "category": "Tín ngưỡng & thờ cúng",
+    "content": "Hầu hết gia đình có bàn thờ gia tiên ở nơi trang trọng nhất trong nhà. Vào ngày giỗ, ngày Tết, con cháu thắp hương và dâng mâm cơm để tưởng nhớ người đã khuất.",
+    "reviewed": false
+  },
+  {
+    "id": "c9",
+    "title": "Đưa và nhận bằng hai tay",
+    "category": "Chào hỏi & Lễ phép",
+    "content": "Khi đưa hoặc nhận đồ, nhất là với người lớn tuổi hay người bề trên, người Việt dùng cả hai tay để thể hiện sự kính trọng.",
+    "reviewed": false
+  },
+  {
+    "id": "c10",
+    "title": "Tránh xoa đầu người khác",
+    "category": "Kiêng kỵ dân gian",
+    "content": "Đầu được coi là phần quan trọng của cơ thể. Không nên tùy tiện xoa đầu người lớn; ngay cả với trẻ nhỏ, nhiều gia đình cũng không thích người lạ xoa đầu con mình.",
+    "reviewed": false
+  },
+  {
+    "id": "c11",
+    "title": "Gắp thức ăn mời người khác",
+    "category": "Bữa cơm gia đình",
+    "content": "Trong bữa cơm, chủ nhà hay người nhỏ tuổi thường gắp miếng ngon mời khách hoặc ông bà, cha mẹ như một cách bày tỏ quan tâm.",
+    "reviewed": false
+  },
+  {
+    "id": "c12",
+    "title": "Mời nước khi khách đến nhà",
+    "category": "Khách khứa",
+    "content": "Khách đến chơi, chủ nhà thường mời chén trà hoặc cốc nước trước khi trò chuyện. Khách nên nhận và uống một chút để đáp lễ.",
+    "reviewed": false
+  },
+  {
+    "id": "c13",
+    "title": "Cởi giày dép trước khi vào nhà",
+    "category": "Khách khứa",
+    "content": "Nhiều gia đình cởi giày dép ở cửa để giữ nhà sạch. Khi đến chơi, hãy để ý nếu thấy dép để ngoài cửa thì cũng cởi giày theo.",
+    "reviewed": false
+  },
+  {
+    "id": "c14",
+    "title": "Kiêng quét nhà ngày mùng Một Tết",
+    "category": "Lễ Tết",
+    "content": "Theo quan niệm dân gian, quét nhà hay đổ rác ngày mùng Một Tết là quét tài lộc ra khỏi nhà, nên nhiều gia đình dọn dẹp xong từ trước giao thừa.",
+    "reviewed": false
+  },
+  {
+    "id": "c15",
+    "title": "Ăn mặc kín đáo khi vào chùa, đình",
+    "category": "Tín ngưỡng & thờ cúng",
+    "content": "Khi đến chùa, đình, đền, nên mặc trang phục lịch sự, che vai và đầu gối, nói nhỏ nhẹ và không chỉ trỏ tượng thờ.",
+    "reviewed": false
+  },
+  {
+    "id": "c16",
+    "title": "Tết Trung thu",
+    "category": "Lễ Tết",
+    "content": "Rằm tháng Tám âm lịch, trẻ em rước đèn ông sao, đèn lồng, xem múa lân và cùng gia đình phá cỗ với bánh nướng, bánh dẻo dưới trăng.",
+    "reviewed": false
+  },
+  {
+    "id": "c17",
+    "title": "Lời chào bằng câu hỏi thăm",
+    "category": "Chào hỏi & Lễ phép",
+    "content": "Những câu như \"Ăn cơm chưa?\" hay \"Đi đâu đấy?\" thường chỉ là lời chào thân mật, không cần trả lời chi tiết; đáp \"Dạ, cháu ăn rồi ạ\" là đủ lịch sự.",
+    "reviewed": false
+  },
+  {
+    "id": "c18",
+    "title": "Hỏi tuổi để xưng hô",
+    "category": "Chào hỏi & Lễ phép",
+    "content": "Người Việt hay hỏi tuổi khi mới quen không phải để tò mò, mà để chọn cách xưng hô đúng (anh, chị, em, cô, chú...). Xem thêm màn hình Ma trận xưng hô.",
+    "reviewed": false
+  },
+  {
+    "id": "c19",
+    "title": "Mâm ngũ quả ngày Tết",
+    "category": "Lễ Tết",
+    "content": "Ngày Tết, bàn thờ thường có mâm ngũ quả gồm năm loại quả, tượng trưng cho mong ước đủ đầy. Loại quả cụ thể khác nhau giữa các miền.",
+    "reviewed": false
+  },
+  {
+    "id": "c20",
+    "title": "Mừng cưới bằng phong bì",
+    "category": "Khách khứa",
+    "content": "Khi được mời dự đám cưới, khách thường mừng cô dâu chú rể bằng phong bì tiền, trao trực tiếp hoặc bỏ vào hòm mừng tại tiệc.",
+    "reviewed": false
   }
 ]

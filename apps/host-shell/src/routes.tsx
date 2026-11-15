@@ -40,6 +40,17 @@ export const SCREENS: ScreenRoute[] = [
     load: () => import('./screens/HonorificScreen')
   }),
   screen({
+    path: '/van-hoa',
+    label: 'Cẩm nang văn hóa',
+    shortLabel: 'Văn hóa',
+    icon: '📜',
+    description: 'M10 · 20 thẻ phong tục, kiêng kỵ; hỏi đáp cùng Bé Cu Tít',
+    owner: 'mfe-knowledge',
+    ready: true,
+    inTabBar: false,
+    load: () => import('./screens/CultureRoute')
+  }),
+  screen({
     path: '/hoi-thoai',
     label: 'Trò chuyện cùng Cu Tít',
     shortLabel: 'Hội thoại',
