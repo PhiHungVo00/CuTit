@@ -30,7 +30,9 @@ Lưu ý: ban đầu tôi hiểu nhầm thành "web chạy trên trình duyệt �
 | 3 | `32457cb` | **Host-shell ghép lúc build**: route lazy, thanh tab dưới, PWA, font tự host (subset tiếng Việt), safe-area, `100dvh`, dependency-cruiser; các package dùng chung chuyển sang ESM; sửa tràn ngang ở 320px | Trình duyệt 375/320px, tắt server vẫn tải được (offline) |
 | 4 | `9c76b6d` | **Capacitor 7 + project Android**: nút Back, status bar, splash, icon; `packages/native` (TTS native/Web Speech); viết lại SpeechService (sửa race condition, bỏ giả vờ đọc 1.2s, báo lỗi thật) | Trình duyệt: phát → dừng → phát lại hoạt động đúng. **Chưa chạy trên Android** |
 | 5 | — | Cài **JDK 21** (Microsoft OpenJDK 21.0.13) bằng winget | `C:\Program Files\Microsoft\jdk-21.0.13.21-hotspot` |
-| 6 | — | Tải **Android command-line tools** (16111833) vào `%LOCALAPPDATA%\Android\Sdk\cmdline-tools\latest` | Có `sdkmanager.bat` |
+| 6 | — | Tải **Android command-line tools** (16111833) vào `%LOCALAPPDATA%\Android\Sdk\cmdline-tools\latest`. Lưu ý: lần giải nén đầu bằng Bash bị sandbox chặn ghi thật, phải làm lại bằng PowerShell | Có `sdkmanager.bat`, `android.exe` |
+| 7 | — | Người dùng đồng ý giấy phép Android SDK. Cài `platform-tools` 37.0.1, `platforms/android-35`, `build-tools/35.0.0` bằng `android sdk install` (sdkmanager đã deprecated). Gradle tự cài thêm build-tools 34 | `android sdk list` |
+| 8 | `e319a77` | **Build APK debug thành công.** Gặp 3 lỗi: (a) đường dẫn có dấu tiếng Việt làm Gradle hỏng => map ổ ảo bằng `subst`; (b) ổ ảo phải trỏ vào **gốc repo** vì `capacitor.settings.gradle` dùng `../../../node_modules`; (c) Gradle daemon giữ ống dẫn output làm script treo => dùng `--no-daemon`. Gói lại thành `apps/host-shell/scripts/build-apk.ps1` (`android:apk:win`). Thêm `.gitattributes` cho `gradlew` | `aapt2 dump badging`: package `vn.edu.uit.becutit`, targetSdk 35, minSdk 23, nhãn "Bé Cu Tít", có 40 file web trong `assets/public`. APK 4.1MB |
 
 ## 4. Môi trường máy dev (Windows)
 
@@ -41,19 +43,21 @@ Lưu ý: ban đầu tôi hiểu nhầm thành "web chạy trên trình duyệt �
 | JDK 17 | Có sẵn | Không đủ cho Capacitor 7 |
 | JDK 21 | Đã cài | `C:\Program Files\Microsoft\jdk-21.0.13.21-hotspot`. Gradle dùng qua `JAVA_HOME` |
 | Android Studio | Có sẵn | `C:\Program Files\Android\Android Studio` (thư mục `jbr` thiếu `java.exe`) |
-| Android SDK | **Đang cài** | `C:\Users\ADMIN\AppData\Local\Android\Sdk` (biến `ANDROID_HOME` đã trỏ sẵn tới đây) |
+| Android SDK | Đã cài | `C:\Users\ADMIN\AppData\Local\Android\Sdk`: cmdline-tools 23, platform-tools 37.0.1, platforms android-35, build-tools 35.0.0 + 34.0.0. Quản lý gói bằng `cmdline-tools\latest\bin\android.exe sdk ...` |
 | Emulator | Chưa cài | Tùy chọn. Có thể dùng điện thoại thật qua USB debugging |
 
 ## 5. Việc còn lại (cập nhật liên tục)
 
-- [ ] Chấp nhận giấy phép Android SDK, cài `platform-tools`, `platforms;android-35`, `build-tools;35.0.0`
-- [ ] Build APK debug: `pnpm --filter @vietlearning/host-shell android:apk`
+- [x] Chấp nhận giấy phép Android SDK, cài platform 35 + build-tools 35
+- [x] Build APK debug (Windows: `pnpm --filter @vietlearning/host-shell android:apk:win`)
+- [ ] Cài emulator + system image (~1.5GB) HOẶC cài APK lên điện thoại thật qua USB (`adb install`)
+- [ ] Bản release: tạo keystore ký app (giữ keystore NGOÀI repo), build AAB để lên Google Play
 - [ ] Chạy thử trên emulator hoặc máy thật: nút Back, TTS tiếng Việt, edge-to-edge Android 15, gọi gateway qua `10.0.2.2`
 - [ ] Giai đoạn 2: refactor M3 (Tailwind/CSS variables, nút ≥ 44px, drawer dùng Radix, một nguồn dữ liệu 20 cặp, sửa dữ liệu A7 thìa/muỗng)
 - [ ] Giai đoạn 3: thu âm AudioWorklet/plugin native, YIN theo frame trong Worker, DTW trên semitone + Pearson
 - [ ] Giai đoạn 4: Lighthouse/size-limit, Playwright, kiểm thử máy thật
 - [ ] iOS: cần máy Mac hoặc dịch vụ build cloud (Codemagic)
-- [ ] Thêm `.gitattributes` (`gradlew text eol=lf`) để `gradlew` không bị đổi sang CRLF khi build trên macOS/Linux
+- [x] Thêm `.gitattributes` (`gradlew text eol=lf`)
 - [ ] Quyết định có commit `BAO_CAO_AUDIT_MOBILE.md` không; tắt khối `agentGuidance` của turbo trong `AGENTS.md` nếu không muốn
 
 ## 6. Lệnh hay dùng
@@ -63,6 +67,7 @@ pnpm build                                           # build toàn monorepo
 pnpm test                                            # test (content + gateway)
 pnpm lint:boundaries                                 # kiểm tra không import chéo remote
 pnpm --filter @vietlearning/host-shell cap:sync      # build web + chép vào project Android
-pnpm --filter @vietlearning/host-shell android:apk   # build APK debug
+pnpm --filter @vietlearning/host-shell android:apk:win  # build APK debug trên Windows (tự xử lý đường dẫn tiếng Việt)
+pnpm --filter @vietlearning/host-shell android:apk   # build APK debug trên macOS/Linux
 pnpm --filter @vietlearning/host-shell android:open  # mở Android Studio
 ```
