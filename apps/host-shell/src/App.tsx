@@ -1,5 +1,6 @@
 import { Suspense, useEffect, useState } from 'react';
-import { NavLink, Route, Routes, useLocation } from 'react-router-dom';
+import { NavLink, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
+import { bootstrapNative } from './native/bootstrap';
 import { SCREENS, prefetchScreen } from './routes';
 import { Home } from './screens/Home';
 import { ScreenErrorBoundary } from './components/ScreenErrorBoundary';
@@ -31,6 +32,13 @@ function ScreenLoading() {
 export function App() {
   const online = useOnline();
   const { pathname } = useLocation();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    bootstrapNative(() => navigate(-1)).catch((err) => console.error('[Native] Khởi tạo lỗi', err));
+    // chỉ chạy một lần khi mở app
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Mỗi lần đổi màn hình: cuộn về đầu (hành vi giống app native)
   useEffect(() => {

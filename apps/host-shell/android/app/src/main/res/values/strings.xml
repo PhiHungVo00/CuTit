@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Bé Cu Tít</string>
+    <string name="title_activity_main">Bé Cu Tít</string>
+    <string name="package_name">vn.edu.uit.becutit</string>
+    <string name="custom_url_scheme">vn.edu.uit.becutit</string>
+</resources>

@@ -47,6 +47,10 @@ export const HonorificMatrixScreen: React.FC<HonorificMatrixScreenProps> = ({
   // Audio state
   const [isSpeaking, setIsSpeaking] = useState<boolean>(false);
   const [speechSpeed, setSpeechSpeed] = useState<number>(1.0);
+  const [speechError, setSpeechError] = useState<string | null>(null);
+
+  // Rời màn hình thì dừng đọc (tránh âm thanh tiếp tục chạy ở màn hình khác)
+  useEffect(() => () => speechService.stop(), []);
 
   const interpreter = useMemo(() => new HonorificInterpreter(), []);
 
@@ -158,10 +162,20 @@ export const HonorificMatrixScreen: React.FC<HonorificMatrixScreenProps> = ({
     }
 
     setIsSpeaking(true);
+    setSpeechError(null);
     speechService.speak(evaluatedResult.sampleSentence, {
       speed: speechSpeed,
       onEnd: () => setIsSpeaking(false),
-      onError: () => setIsSpeaking(false)
+      onError: ({ code }) => {
+        setIsSpeaking(false);
+        setSpeechError(
+          code === 'no-voice-available'
+            ? 'Máy chưa có giọng đọc tiếng Việt. Vào Cài đặt › Chuyển văn bản thành giọng nói để tải giọng "Tiếng Việt".'
+            : code === 'network'
+            ? 'Không kết nối được máy chủ phát âm. Kiểm tra mạng rồi thử lại.'
+            : 'Không phát được âm thanh. Vui lòng thử lại.'
+        );
+      }
     });
   };
 
@@ -1208,6 +1222,22 @@ export const HonorificMatrixScreen: React.FC<HonorificMatrixScreenProps> = ({
                   ))}
                 </div>
               </div>
+
+              {speechError && (
+                <div
+                  role="alert"
+                  style={{
+                    fontSize: '0.85rem',
+                    lineHeight: 1.5,
+                    padding: '0.6rem 0.75rem',
+                    borderRadius: '10px',
+                    backgroundColor: isDark ? '#3B1515' : '#FEE2E2',
+                    color: isDark ? '#FECACA' : '#991B1B'
+                  }}
+                >
+                  {speechError}
+                </div>
+              )}
             </div>
 
             {/* BÉ CU TÍT FOLK WISDOM CARD */}

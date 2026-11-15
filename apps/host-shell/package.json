@@ -5,9 +5,19 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "cap:sync": "vite build && cap sync android",
+    "android:open": "cap open android",
+    "android:apk": "vite build && cap sync android && cd android && gradlew.bat assembleDebug",
+    "android:run": "vite build && cap run android"
   },
   "dependencies": {
+    "@capacitor-community/text-to-speech": "^6.1.0",
+    "@capacitor/android": "^7.6.10",
+    "@capacitor/app": "^7.1.2",
+    "@capacitor/core": "^7.6.10",
+    "@capacitor/splash-screen": "^7.0.5",
+    "@capacitor/status-bar": "^7.0.6",
     "@fontsource/be-vietnam-pro": "^5.3.0",
     "@vietlearning/contracts": "workspace:*",
     "@vietlearning/mfe-conversation": "workspace:*",
@@ -16,6 +26,7 @@
     "@vietlearning/mfe-practice": "workspace:*",
     "@vietlearning/mfe-speech-lab": "workspace:*",
     "@vietlearning/mfe-vision": "workspace:*",
+    "@vietlearning/native": "workspace:*",
     "@vietlearning/shared": "workspace:*",
     "@vietlearning/ui": "workspace:*",
     "react": "^18.3.1",
@@ -23,6 +34,7 @@
     "react-router-dom": "^6.30.6"
   },
   "devDependencies": {
+    "@capacitor/cli": "^7.6.10",
     "@vitejs/plugin-react": "^4.3.4",
     "typescript": "^5.7.3",
     "vite": "^5.4.11",
