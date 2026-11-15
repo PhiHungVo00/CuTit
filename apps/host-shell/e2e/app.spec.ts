@@ -414,6 +414,67 @@ test.describe('M1 Trò chuyện & M7 Nhập vai', () => {
   });
 });
 
+test.describe('M4 Camera từ vựng', () => {
+  test('camera giả lập => chụp, ảnh thu nhỏ gửi Gateway, nhãn mẫu được ghi rõ, lưu thẻ ôn, tắt camera', async ({ page }) => {
+    await page.addInitScript(() => {
+      // Camera giả: luồng video thật từ canvas 1280×720 (đi qua đúng đường chụp → canvas → JPEG)
+      navigator.mediaDevices.getUserMedia = async () => {
+        const c = document.createElement('canvas');
+        c.width = 1280;
+        c.height = 720;
+        const ctx = c.getContext('2d')!;
+        const draw = () => {
+          ctx.fillStyle = '#c33';
+          ctx.fillRect(0, 0, 1280, 720);
+          ctx.fillStyle = '#fff';
+          ctx.fillRect(400, 200, 300, 300);
+          requestAnimationFrame(draw);
+        };
+        draw();
+        const stream = c.captureStream(15);
+        (window as unknown as { __camStream: MediaStream }).__camStream = stream;
+        return stream;
+      };
+    });
+    let sent: { imageBase64: string } | null = null;
+    await page.route('**/v1/vision/label', async (route) => {
+      sent = route.request().postDataJSON();
+      await route.fulfill({ json: { items: [{ vi: 'cái cốc', en: 'cup' }, { vi: 'quyển sách', en: 'book' }], mock: true } });
+    });
+    await page.goto('/camera');
+    await expect(page.getByRole('heading', { name: 'Camera từ vựng' })).toBeVisible();
+    await assertMobileLayout(page);
+    await page.getByRole('button', { name: /Mở camera/ }).click();
+    await expect(page.getByLabel('Hình ảnh từ camera')).toBeVisible();
+    await expect.poll(() => page.getByLabel('Hình ảnh từ camera').evaluate((v: HTMLVideoElement) => v.videoWidth)).toBeGreaterThan(0);
+    await page.getByRole('button', { name: /Chụp/ }).first().click();
+    await expect(page.getByRole('heading', { name: 'Đồ vật trong ảnh' })).toBeVisible();
+    await expect(page.getByText('Nhãn mẫu: dịch vụ nhận diện ảnh chưa được nối')).toBeVisible();
+    // ảnh đã thu nhỏ: JPEG, ≤ 640px nên nhỏ hơn nhiều so với khung 1280×720 gốc
+    expect(sent!.imageBase64.startsWith('/9j/')).toBe(true);
+    expect(sent!.imageBase64.length).toBeLessThan(200_000);
+    const trackLive = await page.evaluate(() => (window as unknown as { __camStream: MediaStream }).__camStream.getVideoTracks()[0].readyState);
+    expect(trackLive).toBe('ended');
+    await page.getByRole('button', { name: '+ Lưu ôn' }).first().click();
+    await expect(page.getByRole('button', { name: '✓ Đã lưu' })).toHaveCount(1);
+    await assertMobileLayout(page);
+    const srs = await page.evaluate(() => JSON.parse(localStorage.getItem('becutit.learner')!).state.srs);
+    expect(srs['vision:cái cốc']).toMatchObject({ front: 'cái cốc', back: 'cup', source: 'vision' });
+  });
+
+  test('từ chối quyền camera => báo rõ, vẫn chọn được ảnh có sẵn', async ({ page }) => {
+    await page.addInitScript(() => {
+      navigator.mediaDevices.getUserMedia = async () => {
+        throw new DOMException('denied', 'NotAllowedError');
+      };
+    });
+    await page.goto('/camera');
+    await page.getByRole('button', { name: /Mở camera/ }).click();
+    await expect(page.getByRole('alert')).toContainText('chưa được cấp quyền camera');
+    await expect(page.getByRole('button', { name: /Chọn ảnh có sẵn/ })).toBeEnabled();
+  });
+});
+
 test.describe('M2 Luyện thanh điệu', () => {
   test('micro giả lập giọng đi lên => chấm đúng thanh sắc (AudioWorklet → resample → Worker)', async ({ page }) => {
     await page.addInitScript(() => {

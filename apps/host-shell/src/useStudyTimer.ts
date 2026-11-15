@@ -13,10 +13,11 @@ export function useStudyTimer(): void {
   useEffect(() => {
     let lastInput = Date.now();
     let since = Date.now();
-    const active = () => document.visibilityState === 'visible' && Date.now() - lastInput < IDLE_MS;
-    const flush = () => {
+    const recentInput = () => Date.now() - lastInput < IDLE_MS;
+    /** wasVisible: lúc nhận sự kiện ẩn trang, trạng thái đã là 'hidden' nhưng khoảng vừa qua vẫn hiển thị */
+    const flush = (wasVisible = document.visibilityState === 'visible') => {
       const now = Date.now();
-      if (active()) learnerStore.getState().addStudyTime((now - since) / 1000);
+      if (wasVisible && recentInput()) learnerStore.getState().addStudyTime((now - since) / 1000);
       since = now;
     };
     const onInput = () => {
@@ -24,10 +25,10 @@ export function useStudyTimer(): void {
       lastInput = Date.now();
     };
     const onVisibility = () => {
-      if (document.visibilityState === 'hidden') flush();
+      if (document.visibilityState === 'hidden') flush(true);
       else since = Date.now();
     };
-    const id = window.setInterval(flush, TICK_MS);
+    const id = window.setInterval(() => flush(), TICK_MS);
     window.addEventListener('pointerdown', onInput, { passive: true });
     window.addEventListener('keydown', onInput);
     document.addEventListener('visibilitychange', onVisibility);

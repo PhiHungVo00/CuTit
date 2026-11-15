@@ -19,16 +19,23 @@ const ItemIdParams = z.object({ id: z.string().regex(/^[\w-]{1,64}$/) });
 
 /** Các route nội dung / học viên. Hiện vẫn trả dữ liệu MOCK nhưng đã xác thực đầu vào/đầu ra. */
 export const contentRoutes: FastifyPluginAsync<RouteDeps> = async (server, { pipeline, config }) => {
-  // POST /v1/vision/label (ảnh base64 nên cần giới hạn body lớn hơn)
+  // POST /v1/vision/label (ảnh base64 nên cần giới hạn body lớn hơn). Nhận diện còn MOCK: trả nhãn mẫu, mock: true
   server.post('/vision/label', { bodyLimit: config.AUDIO_BODY_LIMIT_MB * MB }, async (req, reply) => {
     const body = parseOr400(VisionLabelRequestSchema, req.body, reply);
     if (!body) return reply;
+    // Chỉ nhận ảnh thật (kiểm tra chữ ký tệp), không chuyển dữ liệu tùy ý sang nhà cung cấp Vision
+    const head = Buffer.from(body.imageBase64.slice(0, 16), 'base64');
+    const isJpeg = head[0] === 0xff && head[1] === 0xd8 && head[2] === 0xff;
+    const isPng = head.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]));
+    if (!isJpeg && !isPng) return reply.status(415).send({ error: 'unsupported_image', message: 'Chỉ nhận ảnh JPEG hoặc PNG' });
     await pipeline.consume(req, 'vision', 1);
     return respond(VisionLabelResponseSchema, {
       items: [
-        { vi: 'Nón lá', en: 'Conical hat', box: [10, 20, 80, 90] },
-        { vi: 'Quán nước gốc đa', en: 'Banyan tree tea stall', box: [50, 60, 200, 300] }
-      ]
+        { vi: 'cái cốc', en: 'cup', box: [0.1, 0.2, 0.3, 0.4] },
+        { vi: 'quyển sách', en: 'book', box: [0.5, 0.5, 0.4, 0.3] },
+        { vi: 'cái bàn', en: 'table' }
+      ],
+      mock: true
     });
   });
 

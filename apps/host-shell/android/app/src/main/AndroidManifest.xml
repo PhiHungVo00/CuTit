@@ -41,6 +41,10 @@
     <!-- M2 luyện thanh điệu: thu âm qua getUserMedia trong WebView (Capacitor tự xin quyền khi cần) -->
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
+    <!-- M4 camera từ vựng: getUserMedia video trong WebView (Capacitor xin quyền lúc dùng) -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    <!-- Không bắt buộc có camera: máy không có camera vẫn cài được (dùng "Chọn ảnh có sẵn") -->
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
 
     <!-- Android 11+: khai báo để app thấy được dịch vụ TTS của hệ thống (giọng đọc tiếng Việt) -->
     <queries>
