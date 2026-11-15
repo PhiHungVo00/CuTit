@@ -17,6 +17,7 @@ export const AgentUIBlockSchema = z.object({
 
 export const VoiceTurnRequestSchema = z.object({
   sessionId: z.string().uuid(),
+  /** @deprecated Gửi âm thanh qua multipart ở /speech/transcribe rồi dùng userText; base64 tốn thêm ~33% dữ liệu */
   userAudioBase64: z.string().optional(),
   userText: z.string().optional(),
   targetDialect: z.enum(['north', 'central', 'south']).default('north'),

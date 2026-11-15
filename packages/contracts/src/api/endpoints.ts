@@ -93,6 +93,23 @@ export const CultureAskResponseSchema = z.object({
   sources: z.array(z.string())
 });
 
+/**
+ * Tải âm thanh lên (POST /speech/transcribe, /speech/assess): multipart/form-data, KHÔNG base64.
+ * - Phần file tên "audio": WAV PCM 16-bit mono 16 kHz (khuyến nghị; client dùng encodeWav của audio-dsp),
+ *   hoặc audio/webm, audio/ogg.
+ * - Các trường text đi kèm theo schema bên dưới.
+ * Base64 trong JSON làm dữ liệu tăng ~33% trên mạng di động (hàng chờ Q13).
+ */
+export const AUDIO_UPLOAD_MIME_TYPES = ['audio/wav', 'audio/x-wav', 'audio/wave', 'audio/webm', 'audio/ogg'] as const;
+
+export const AudioUploadFieldsSchema = z.object({
+  /** id mục luyện tập (vd. âm tiết "má") */
+  itemId: z.string().regex(/^[\w-]{1,64}$/).optional(),
+  targetTone: z.enum(['ngang', 'huyen', 'sac', 'hoi', 'nga', 'nang']).optional(),
+  expectedText: z.string().min(1).max(200).optional()
+});
+export type AudioUploadFields = z.infer<typeof AudioUploadFieldsSchema>;
+
 // POST /speech/transcribe
 export const TranscribeResponseSchema = z.object({
   text: z.string(),

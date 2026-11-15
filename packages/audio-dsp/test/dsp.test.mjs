@@ -150,3 +150,16 @@ test('Hiệu năng (TDD: F0 ≤ 1 s cho đoạn 5 s): YIN và McLeod trên 5 s �
     assert.ok(ms < 1000, `${name} mất ${ms} ms`);
   }
 });
+
+test('WAV: encodeWav ra header PCM16 mono hợp lệ, readWavInfo đọc lại đúng thời lượng', async () => {
+  const { encodeWav, readWavInfo } = await import('../dist/index.js');
+  const pcm = voice(() => 200, 1.5);
+  const wav = new Uint8Array(encodeWav(pcm, 16000));
+  assert.equal(wav.length, 44 + pcm.length * 2, 'Int16 = 2 byte/mẫu (Float32 là 4)');
+  const info = readWavInfo(wav);
+  assert.equal(info.sampleRate, 16000);
+  assert.equal(info.channels, 1);
+  assert.equal(info.bitsPerSample, 16);
+  assert.ok(Math.abs(info.durationSec - 1.5) < 0.001);
+  assert.equal(readWavInfo(new TextEncoder().encode('không phải wav nhưng dài hơn bốn mươi bốn byte nhé.....')), null);
+});
