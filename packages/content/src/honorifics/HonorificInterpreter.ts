@@ -54,6 +54,9 @@ export interface HonorificPairItem {
  * 20 cặp quan hệ mẫu: NGUỒN DUY NHẤT là src/data/honorifics.json (sửa nội dung ở đó).
  * Hình dạng dữ liệu được kiểm tra trong test/honorific.test.mjs.
  */
+/** Chênh tuổi (năm) coi là khác thế hệ trong gia đình: dưới mức này xưng anh/chị – em */
+export const GENERATION_GAP = 18;
+
 export const HONORIFIC_PAIRS_20 = pairsData as HonorificPairItem[];
 
 export class HonorificInterpreter {
@@ -259,8 +262,9 @@ export class HonorificInterpreter {
         };
       }
 
-      // 5.4 Hàng cô chú bác họ hàng (12 <= ageDiff < 40)
-      if (ageDiff >= 12) {
+      // 5.4 Hàng cô chú bác (18 <= ageDiff < 40). Không có ngưỡng chính thức: cô/chú dành cho người
+      // trạc tuổi cha mẹ (khác thế hệ); chênh dưới ~18 tuổi vẫn là anh/chị – em (hàng chờ Q11)
+      if (ageDiff >= GENERATION_GAP) {
         if (ctx.listenerGender === 'female') {
           // Kiểm tra xem là Thím/Mợ hay Cô/Dì
           return {
@@ -310,8 +314,8 @@ export class HonorificInterpreter {
         }
       }
 
-      // 5.5 Người lớn tuổi nói với thế hệ con cháu (ageDiff <= -12)
-      if (ageDiff <= -12) {
+      // 5.5 Người lớn tuổi nói với thế hệ con cháu (ageDiff <= -18)
+      if (ageDiff <= -GENERATION_GAP) {
         let speakerTitle = 'bác';
         let sample = 'Bác chào cháu nhé, cháu ngoan lắm, lại đây bác cho quả thị thơm của vườn đình!';
 
