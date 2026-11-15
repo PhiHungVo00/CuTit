@@ -1,14 +1,25 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
-import { getDeviceSpeech } from '@vietlearning/native';
+import { canOpenAppSettings, getDeviceSpeech, openAppSettings } from '@vietlearning/native';
 import { speechRate } from '@vietlearning/state';
 import { AgentBlockView } from './AgentBlockView';
 import type { useChatSession } from './useChatSession';
+import { useVoiceInput, type VoiceError } from './useVoiceInput';
 
 type Session = ReturnType<typeof useChatSession>;
 
 const say = (text: string) => getDeviceSpeech().speak(text, { rate: speechRate(0.95) }).catch(() => undefined);
 
 const STATUS: Record<string, string> = { UPLOADING: 'Đang gửi…', STREAMING: 'Đang trả lời…', PLAYING: 'Đang đọc…' };
+
+const VOICE_ERROR: Record<VoiceError, string> = {
+  'permission-denied': 'Ứng dụng chưa được cấp quyền micro.',
+  'no-microphone': 'Không tìm thấy micro trên thiết bị.',
+  unsupported: 'Thiết bị này không thu âm được trong ứng dụng. Hãy gõ chữ.',
+  'too-short': 'Bấm 🎤, nói hết câu rồi bấm lại để dừng.',
+  'no-speech': 'Chưa nghe rõ lời nói. Hãy nói to, gần micro hơn.',
+  network: 'Không gửi được âm thanh. Kiểm tra kết nối mạng.',
+  failed: 'Không nhận dạng được giọng nói. Thử lại hoặc gõ chữ.'
+};
 
 /** Khung chat dùng chung cho M1 (tự do) và M7 (nhập vai). Nhập bằng chữ; câu trả lời có nút nghe. */
 export function ChatPanel({ session, placeholder, emptyHint, tutorName }: { session: Session; placeholder: string; emptyHint: string; tutorName: string }) {
@@ -17,6 +28,15 @@ export function ChatPanel({ session, placeholder, emptyHint, tutorName }: { sess
   const [announce, setAnnounce] = useState('');
   const endRef = useRef<HTMLDivElement>(null);
   const lastDoneId = useRef<string | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [voiceNote, setVoiceNote] = useState('');
+  const voice = useVoiceInput(({ text, mock }) => {
+    // Chữ nghe được vào ô nhập để người học kiểm tra, sửa rồi mới gửi
+    setDraft((d) => (d.trim() ? `${d.trim()} ${text}` : text).slice(0, 500));
+    setVoiceNote(mock ? 'Chữ mẫu: dịch vụ nhận dạng giọng nói chưa được nối.' : 'Kiểm tra chữ nghe được rồi bấm Gửi.');
+    inputRef.current?.focus();
+  });
+  const recording = voice.status === 'recording';
 
   // Cuộn xuống tin mới; thông báo câu trả lời MỘT lần khi xong (không đọc từng token)
   useEffect(() => {
@@ -33,6 +53,7 @@ export function ChatPanel({ session, placeholder, emptyHint, tutorName }: { sess
     if (!draft.trim() || busy) return;
     void send(draft);
     setDraft('');
+    setVoiceNote('');
   };
 
   return (
@@ -95,16 +116,30 @@ export function ChatPanel({ session, placeholder, emptyHint, tutorName }: { sess
           Tin nhắn
         </label>
         <input
+          ref={inputRef}
           id="ct-chat-input"
           lang="vi"
           value={draft}
           maxLength={500}
           onChange={(e) => setDraft(e.target.value)}
-          placeholder={placeholder}
+          placeholder={recording ? 'Đang nghe…' : placeholder}
           autoComplete="off"
           enterKeyHint="send"
           className="min-h-12 min-w-0 flex-1 rounded-xl border border-line bg-surface-2 px-3 text-[16px] text-ink"
         />
+        {!busy && (
+          <button
+            type="button"
+            onClick={() => void (recording ? voice.stop() : voice.start())}
+            disabled={voice.status === 'starting' || voice.status === 'transcribing'}
+            aria-pressed={recording}
+            aria-label={recording ? 'Dừng ghi âm' : 'Nói bằng giọng'}
+            className={`relative min-h-12 min-w-12 rounded-xl border px-3 text-lg font-bold disabled:opacity-50 ${recording ? 'border-danger bg-danger-soft text-danger-ink' : 'border-line-strong bg-surface-2 text-ink'}`}
+          >
+            <span aria-hidden="true">{voice.status === 'transcribing' ? '⏳' : recording ? '⏹' : '🎤'}</span>
+            {recording && <span aria-hidden="true" className="absolute inset-x-1 bottom-1 h-1 origin-left rounded bg-danger" style={{ transform: `scaleX(${Math.max(0.08, voice.level)})` }} />}
+          </button>
+        )}
         {busy ? (
           <button type="button" onClick={cancel} className="min-h-12 rounded-xl border border-line-strong bg-surface-2 px-4 font-bold text-ink">
             Dừng
@@ -119,6 +154,22 @@ export function ChatPanel({ session, placeholder, emptyHint, tutorName }: { sess
         <p role="status" className="m-0 text-sm text-ink-muted">
           {STATUS[turnState]}
         </p>
+      )}
+      {(recording || voice.status === 'transcribing') && (
+        <p role="status" className="m-0 text-sm text-ink-muted">
+          {recording ? 'Đang nghe… bấm ⏹ khi nói xong (tối đa 15 giây).' : 'Đang chuyển giọng nói thành chữ…'}
+        </p>
+      )}
+      {voiceNote && !voice.error && voice.status === 'idle' && <p className="m-0 text-sm text-ink-muted">{voiceNote}</p>}
+      {voice.error && (
+        <div role="alert" className="flex flex-col gap-2 rounded-xl bg-danger-soft p-3 text-danger-ink">
+          <p className="m-0 text-[15px]">{VOICE_ERROR[voice.error]}</p>
+          {voice.error === 'permission-denied' && canOpenAppSettings() && (
+            <button type="button" onClick={() => void openAppSettings()} className="min-h-12 rounded-xl border border-line-strong bg-surface px-4 font-bold text-ink">
+              Mở cài đặt quyền
+            </button>
+          )}
+        </div>
       )}
     </div>
   );

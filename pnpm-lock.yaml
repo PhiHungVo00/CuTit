@@ -369,6 +369,9 @@ importers:
       '@vietlearning/api-client':
         specifier: workspace:*
         version: link:../../packages/api-client
+      '@vietlearning/audio-dsp':
+        specifier: workspace:*
+        version: link:../../packages/audio-dsp
       '@vietlearning/content':
         specifier: workspace:*
         version: link:../../packages/content
