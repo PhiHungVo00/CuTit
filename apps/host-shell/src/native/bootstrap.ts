@@ -1,4 +1,4 @@
-import { Capacitor } from '@capacitor/core';
+import { Capacitor, registerPlugin } from '@capacitor/core';
 
 /**
  * Khởi tạo các hành vi native khi chạy trong app Capacitor.
@@ -6,16 +6,26 @@ import { Capacitor } from '@capacitor/core';
  */
 export const isNativeApp = Capacitor.isNativePlatform();
 
+/** Plugin nội bộ (android/.../SystemBarsPlugin.java): màu dải status/navigation bar theo giao diện */
+interface SystemBarsPlugin {
+  setTheme(opts: { dark: boolean; color?: string }): Promise<void>;
+}
+const SystemBars = registerPlugin<SystemBarsPlugin>('SystemBars');
+
+/** Gọi khi giao diện đổi. Không trả proxy plugin khỏi hàm async (Promise sẽ dò `.then` trên proxy). */
+export function applySystemBars(theme: 'dark' | 'light'): void {
+  if (!isNativeApp || Capacitor.getPlatform() !== 'android') return;
+  SystemBars.setTheme({ dark: theme === 'dark', color: theme === 'dark' ? '#16100B' : '#F6F3EC' }).catch((err) =>
+    console.warn('[Native] Không đổi được màu thanh hệ thống', err)
+  );
+}
+
 export async function bootstrapNative(navigateBack: () => void): Promise<void> {
   if (!isNativeApp) return;
 
   document.documentElement.classList.add('native-app', `platform-${Capacitor.getPlatform()}`);
 
-  const [{ App }, { StatusBar, Style }, { SplashScreen }] = await Promise.all([
-    import('@capacitor/app'),
-    import('@capacitor/status-bar'),
-    import('@capacitor/splash-screen')
-  ]);
+  const [{ App }, { SplashScreen }] = await Promise.all([import('@capacitor/app'), import('@capacitor/splash-screen')]);
 
   // Nút Back cứng của Android: lùi trong lịch sử điều hướng; ở trang chủ thì thoát app.
   // Một màn hình (vd. drawer đang mở) có thể chặn bằng cách gọi event.preventDefault()
@@ -27,12 +37,7 @@ export async function bootstrapNative(navigateBack: () => void): Promise<void> {
     else App.exitApp();
   });
 
-  try {
-    await StatusBar.setStyle({ style: Style.Dark });
-  } catch {
-    /* iOS không hỗ trợ một số tùy chọn: bỏ qua */
-  }
-
+  // Màu thanh hệ thống do ThemeProvider gọi applySystemBars() theo giao diện hiện tại
   // React đã vẽ khung đầu tiên => ẩn splash
   await SplashScreen.hide({ fadeOutDuration: 150 });
 }
