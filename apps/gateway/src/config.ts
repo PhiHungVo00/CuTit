@@ -29,7 +29,7 @@ const EnvSchema = z
     // LLM + Vision (Nguyên tắc 1, 2, 4): khóa chỉ nằm ở server. Không đặt => Gateway dùng bộ giả lập (mock: true)
     GEMINI_API_KEY: z.string().min(20).optional(),
     GEMINI_MODEL: z.string().regex(/^[a-z0-9.-]+$/).default('gemini-3.5-flash-lite'),
-    LLM_TIMEOUT_MS: z.coerce.number().int().positive().max(12000, "LLM_TIMEOUT_MS phải nhỏ hơn timeout 15 giây của client").default(10000)
+    LLM_TIMEOUT_MS: z.coerce.number().int().positive().max(9000, "LLM_TIMEOUT_MS phải nhỏ hơn timeout 10 giây của client (ảnh, giọng nói)").default(8000)
   })
   .transform((env) => ({
     ...env,

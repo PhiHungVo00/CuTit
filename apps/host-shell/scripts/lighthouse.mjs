@@ -9,7 +9,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 const PORT = 4175;
-const ROUTES = ['/', '/xung-ho', '/phat-am'];
+const ROUTES = process.env.LH_ROUTES ? process.env.LH_ROUTES.split(',') : ['/', '/xung-ho', '/phat-am'];
 /** Lighthouse dao động giữa các lần đo: chạy nhiều lần, lấy TRUNG VỊ (cách Lighthouse CI làm) */
 const RUNS = Number(process.env.LH_RUNS ?? 3);
 const median = (xs) => [...xs].sort((a, b) => a - b)[Math.floor(xs.length / 2)];

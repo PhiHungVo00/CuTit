@@ -13,7 +13,7 @@ export const CuTitWisdomCard = memo(function CuTitWisdomCard({ wisdom, explanati
   return (
     <section
       aria-labelledby="ct-wisdom-title"
-      className="flex flex-col gap-4 rounded-2xl border border-line-strong bg-surface-2 p-4 shadow-card"
+      className="[contain-intrinsic-size:auto_520px] [content-visibility:auto] flex flex-col gap-4 rounded-2xl border border-line-strong bg-surface-2 p-4 shadow-card"
     >
       <div className="flex items-center gap-3">
         <div
