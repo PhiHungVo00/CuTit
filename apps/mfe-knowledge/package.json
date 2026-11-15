@@ -9,16 +9,17 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
+    "@fontsource/be-vietnam-pro": "^5.3.0",
+    "@vietlearning/content": "workspace:*",
     "@vietlearning/contracts": "workspace:*",
     "@vietlearning/shared": "workspace:*",
-    "@vietlearning/content": "workspace:*",
-    "@vietlearning/ui": "workspace:*"
+    "@vietlearning/ui": "workspace:*",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.3.4",
-    "vite": "^5.4.11",
-    "typescript": "^5.7.3"
+    "typescript": "^5.7.3",
+    "vite": "^5.4.11"
   }
 }
