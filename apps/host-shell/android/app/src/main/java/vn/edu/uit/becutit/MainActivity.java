@@ -9,6 +9,7 @@ public class MainActivity extends BridgeActivity {
     public void onCreate(Bundle savedInstanceState) {
         // Plugin nội bộ của app phải đăng ký TRƯỚC super.onCreate
         registerPlugin(SystemBarsPlugin.class);
+        registerPlugin(AppSettingsPlugin.class);
         super.onCreate(savedInstanceState);
     }
 }
