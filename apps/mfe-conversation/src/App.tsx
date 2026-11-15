@@ -1,10 +1,11 @@
-import React from 'react';
+import { MemoryRouter } from 'react-router-dom';
+import { ChatScreen } from './chat/ChatScreen';
 
-export const App: React.FC = () => {
+/** Chạy độc lập (pnpm dev trong package này) để phát triển màn hình mà không cần Host. */
+export function App() {
   return (
-    <div style={{ padding: '1rem', border: '1px dashed #6366F1', borderRadius: '6px' }}>
-      <h4>Remote MFE: mfe-conversation</h4>
-      <p>Voice & Chat Canvas, Roleplay</p>
-    </div>
+    <MemoryRouter>
+      <ChatScreen />
+    </MemoryRouter>
   );
-};
+}

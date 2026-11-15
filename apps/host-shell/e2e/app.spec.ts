@@ -22,7 +22,7 @@ test.describe('Khung app', () => {
   test('trang chủ: liệt kê 6 màn hình, thanh tab, bố cục mobile chuẩn', async ({ page }) => {
     await page.goto('/');
     await expect(page.getByRole('heading', { name: 'Học Tiếng Việt Cùng Bé Cu Tít' })).toBeVisible();
-    await expect(page.locator('.screen-card')).toHaveCount(11);
+    await expect(page.locator('.screen-card')).toHaveCount(12);
     await expect(page.getByRole('navigation', { name: 'Điều hướng chính' })).toBeVisible();
     await assertMobileLayout(page);
   });
@@ -324,7 +324,7 @@ test.describe('M9 Tiến độ & M12 Tùy chỉnh', () => {
     await page.getByText('Miền Nam', { exact: true }).click();
     await expect(page.getByText('Giọng Nam Sài Gòn (máy chủ)')).toBeVisible();
     await expect(page.getByRole('status').filter({ hasText: 'Đã lưu và đồng bộ' })).toBeVisible();
-    expect(puts.at(-1)).toMatchObject({ dialect: 'south', voiceId: 'v-south' });
+    expect(puts[puts.length - 1]).toMatchObject({ dialect: 'south', voiceId: 'v-south' });
     offline = true;
     await page.getByText('Kỹ lưỡng').click();
     await expect(page.getByRole('status').filter({ hasText: 'chưa đồng bộ' })).toBeVisible();
@@ -332,6 +332,85 @@ test.describe('M9 Tiến độ & M12 Tùy chỉnh', () => {
     const prefs = await page.evaluate(() => JSON.parse(localStorage.getItem('becutit.learner')!).state.preferences);
     expect(prefs).toMatchObject({ dialect: 'south', voiceId: 'v-south', correctionLevel: 'strict' });
     await expect(page.getByRole('radio', { name: /Kỹ lưỡng/ })).toBeChecked();
+  });
+});
+
+test.describe('M1 Trò chuyện & M7 Nhập vai', () => {
+  const sse = (events: object[]) => events.map((e) => `data: ${JSON.stringify(e)}\n\n`).join('');
+  const TURN = '7d444840-9dc0-11d1-b245-5ffdce74fad2';
+
+  test('gửi câu thiếu dấu => câu trả lời stream, lời sửa, khối gợi ý dẫn tới M10; mất mạng => Thử lại', async ({ page }) => {
+    let offline = false;
+    const bodies: Record<string, unknown>[] = [];
+    await page.route('**/v1/chat/turn', async (route) => {
+      if (offline) return route.abort('internetdisconnected');
+      bodies.push(route.request().postDataJSON());
+      await route.fulfill({
+        headers: { 'content-type': 'text/event-stream' },
+        body: sse([
+          { type: 'transcript', text: 'xin chao' },
+          { type: 'token', text: 'Chào ' },
+          { type: 'token', text: 'bạn!' },
+          { type: 'correction', correction: { original: 'xin chao', corrected: 'xin chào', explanation: 'Tiếng Việt cần đủ dấu thanh.' } },
+          { type: 'blocks', blocks: [{ id: 'b1', type: 'culture_pill', title: 'Văn hóa chào hỏi', payload: { tip: 'Thêm "ạ" khi chào người lớn.', onClick: 'alert(1)' } }] },
+          { type: 'done', turnId: TURN, reply: 'Chào bạn!', completedTasks: [], mock: true }
+        ])
+      });
+    });
+    await page.goto('/hoi-thoai');
+    await expect(page.getByRole('heading', { name: 'Trò chuyện' })).toBeVisible();
+    await assertMobileLayout(page);
+    await page.getByLabel('Tin nhắn').fill('xin chao');
+    await page.getByRole('button', { name: 'Gửi' }).click();
+    const log = page.getByRole('log', { name: 'Hội thoại' });
+    await expect(log.getByText('Chào bạn!')).toBeVisible();
+    await expect(log.getByText('trả lời mẫu (chưa nối AI)')).toBeVisible();
+    await expect(log.getByText('xin chào', { exact: true })).toBeVisible();
+    expect(bodies[0]).toMatchObject({ userText: 'xin chao', correctionLevel: 'gentle', persona: 'be_cu_tit', history: [] });
+    await assertMobileLayout(page);
+
+    offline = true;
+    await page.getByLabel('Tin nhắn').fill('Hôm nay tôi học bài');
+    await page.getByRole('button', { name: 'Gửi' }).click();
+    await expect(page.getByRole('alert')).toContainText('Không có kết nối mạng');
+    offline = false;
+    await page.getByRole('button', { name: 'Thử lại' }).click();
+    await expect(page.getByRole('alert')).toHaveCount(0);
+    await expect(log.getByText('Chào bạn!')).toHaveCount(2);
+    // lượt thử lại: không lặp câu của người học trong lịch sử, gửi kèm 2 lượt trước
+    expect(bodies[1]).toMatchObject({ userText: 'Hôm nay tôi học bài', history: [{ role: 'user', text: 'xin chao' }, { role: 'tutor', text: 'Chào bạn!' }] });
+
+    await log.getByRole('link', { name: /Xem cẩm nang văn hóa/ }).first().click();
+    await expect(page).toHaveURL(/\/van-hoa$/);
+  });
+
+  test('nhập vai quán phở: nhiệm vụ do Gateway chấm, tổng kết + lưu lỗi vào thẻ ôn', async ({ page }) => {
+    let n = 0;
+    await page.route('**/v1/chat/turn', async (route) => {
+      n++;
+      const body = route.request().postDataJSON();
+      expect(body.scenarioId).toBe('sc3');
+      const events: object[] = [{ type: 'transcript', text: body.userText }, { type: 'token', text: n === 1 ? 'Chào em, em ăn gì?' : 'Bát phở năm mươi nghìn em ạ.' }];
+      if (n === 1) events.push({ type: 'correction', correction: { original: 'chao anh', corrected: 'chào anh', explanation: 'Thiếu dấu thanh.' } });
+      events.push({ type: 'done', turnId: TURN, reply: n === 1 ? 'Chào em, em ăn gì?' : 'Bát phở năm mươi nghìn em ạ.', completedTasks: n === 1 ? [0] : [0, 1, 2, 3], mock: true });
+      await route.fulfill({ headers: { 'content-type': 'text/event-stream' }, body: sse(events) });
+    });
+    await page.goto('/nhap-vai');
+    await page.getByRole('button', { name: /Gọi món ở quán phở/ }).click();
+    const tasks = page.getByRole('list', { name: 'Nhiệm vụ' });
+    await expect(tasks.getByText('(chưa xong)')).toHaveCount(4);
+    await page.getByLabel('Tin nhắn').fill('chao anh');
+    await page.getByRole('button', { name: 'Gửi' }).click();
+    await expect(tasks.getByText('(đã xong)')).toHaveCount(1);
+    await assertMobileLayout(page);
+    await page.getByLabel('Tin nhắn').fill('Cho em một bát phở bò tái chín, không hành, bao nhiêu tiền ạ?');
+    await page.getByRole('button', { name: 'Gửi' }).click();
+    await expect(tasks.getByText('(đã xong)')).toHaveCount(4);
+    await page.getByRole('button', { name: 'Hoàn thành! Xem tổng kết' }).click();
+    await expect(page.getByRole('heading', { name: 'Tổng kết: 4/4 nhiệm vụ' })).toBeVisible();
+    await expect(page.getByText('Lỗi cần nhớ (1)')).toBeVisible();
+    const srs = await page.evaluate(() => JSON.parse(localStorage.getItem('becutit.learner')!).state.srs);
+    expect(srs['roleplay:chào anh']).toMatchObject({ front: 'chào anh', source: 'conversation' });
   });
 });
 

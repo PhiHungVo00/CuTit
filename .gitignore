@@ -41,3 +41,4 @@ tmp/
 # Playwright
 apps/host-shell/test-results/
 apps/host-shell/playwright-report/
+*.timestamp-*.mjs

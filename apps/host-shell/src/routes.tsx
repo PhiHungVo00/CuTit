@@ -55,11 +55,22 @@ export const SCREENS: ScreenRoute[] = [
     label: 'Trò chuyện cùng Cu Tít',
     shortLabel: 'Hội thoại',
     icon: '💬',
-    description: 'M1 · Chat giọng nói, M7 · Nhập vai tình huống',
+    description: 'M1 · Trò chuyện, sửa lỗi theo mức bạn chọn (trả lời mẫu, chưa nối AI)',
     owner: 'mfe-conversation',
-    ready: false,
+    ready: true,
     inTabBar: true,
-    load: () => import('@vietlearning/mfe-conversation')
+    load: () => import('./screens/ChatRoute')
+  }),
+  screen({
+    path: '/nhap-vai',
+    label: 'Nhập vai tình huống',
+    shortLabel: 'Nhập vai',
+    icon: '🎭',
+    description: 'M7 · Chợ, hỏi đường, quán phở, làm quen: nhiệm vụ + tổng kết lỗi',
+    owner: 'mfe-conversation',
+    ready: true,
+    inTabBar: false,
+    load: () => import('./screens/RoleplayRoute')
   }),
   screen({
     path: '/phat-am',

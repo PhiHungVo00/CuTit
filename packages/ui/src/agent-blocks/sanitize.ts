@@ -1,6 +1,6 @@
 /**
  * GoF Visitor Pattern (22): duyệt danh sách Agent UI Block do LLM sinh ra (qua Gateway)
- * trước khi Host dựng component.
+ * trước khi màn hình (vd. M1 Trò chuyện) dựng component. Đặt ở packages/ui để mọi MFE dùng chung (Nguyên tắc 7).
  *
  * Nguyên tắc 6: đầu ra LLM luôn là JSON có cấu trúc, UI KHÔNG render HTML thô.
  * Gateway đã kiểm tra bằng Zod; đây là lớp phòng thủ thứ hai ở client, vì block có thể
@@ -95,7 +95,7 @@ export class BlockStatsVisitor implements BlockVisitor<AgentUIBlock['type']> {
   }
 }
 
-/** Điểm vào dùng trong Host: làm sạch + giới hạn số block của một lượt. */
+/** Điểm vào dùng chung: làm sạch + giới hạn số block của một lượt. */
 export function sanitizeAgentBlocks(raw: unknown): AgentUIBlock[] {
   return visitBlocks(raw, new SanitizerVisitor()).slice(0, MAX_BLOCKS_PER_TURN);
 }

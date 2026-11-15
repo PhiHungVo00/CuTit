@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { BlockStatsVisitor, MAX_BLOCKS_PER_TURN, sanitizeAgentBlocks, visitBlocks } from './BlockVisitor';
+import { BlockStatsVisitor, MAX_BLOCKS_PER_TURN, sanitizeAgentBlocks, visitBlocks } from './sanitize';
 
 const block = (over: Record<string, unknown> = {}) => ({
   id: 'b1',
