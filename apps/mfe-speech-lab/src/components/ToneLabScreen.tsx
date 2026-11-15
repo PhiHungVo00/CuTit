@@ -1,14 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
 import type { ToneId } from '@vietlearning/audio-dsp';
 import { PitchReferenceFlyweight } from '@vietlearning/content';
-import { getDeviceSpeech } from '@vietlearning/native';
+import { canOpenAppSettings, getDeviceSpeech, openAppSettings } from '@vietlearning/native';
 import { ContourChart } from './ContourChart';
 import { MAX_RECORD_MS, useToneRecorder, type RecorderError } from '../hooks/useToneRecorder';
 
 const TONES = PitchReferenceFlyweight.all();
 
 const ERRORS: Record<RecorderError, string> = {
-  'permission-denied': 'App chưa được phép dùng micro. Vào Cài đặt › Ứng dụng › Bé Cu Tít › Quyền để bật Micro.',
+  'permission-denied': 'App chưa được phép dùng micro. Bật quyền Micro cho Bé Cu Tít trong Cài đặt › Ứng dụng › Bé Cu Tít › Quyền.',
   'no-microphone': 'Không tìm thấy micro trên thiết bị.',
   unsupported: 'Thiết bị này không hỗ trợ thu âm trong app.',
   failed: 'Không thu âm được. Vui lòng thử lại.',
@@ -146,9 +146,19 @@ export function ToneLabScreen() {
           </div>
 
           {error && (
-            <p role="alert" className="m-0 rounded-xl bg-danger-soft p-3 text-sm leading-relaxed text-danger-ink">
-              {ERRORS[error]}
-            </p>
+            <div role="alert" className="flex flex-col gap-3 rounded-xl bg-danger-soft p-3 text-sm leading-relaxed text-danger-ink">
+              <p className="m-0">{ERRORS[error]}</p>
+              {/* Đã từ chối vĩnh viễn thì Android không hỏi lại: đưa thẳng tới trang quyền của app */}
+              {error === 'permission-denied' && canOpenAppSettings() && (
+                <button
+                  type="button"
+                  onClick={() => void openAppSettings()}
+                  className="min-h-11 self-start rounded-xl bg-danger px-4 font-bold text-white"
+                >
+                  ⚙️ Mở Cài đặt của app
+                </button>
+              )}
+            </div>
           )}
 
           {result && v && best && (
