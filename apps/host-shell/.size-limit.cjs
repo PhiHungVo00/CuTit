@@ -14,5 +14,6 @@ module.exports = [
   { name: 'M3 Bảng 20 cặp + Radix Dialog (lazy khi mở)', path: 'dist/assets/HonorificExplorerDrawer-*.js', limit: '18 kB', gzip: true },
   { name: 'M2 Luyện thanh điệu (lazy)', path: 'dist/assets/ToneLabRoute-*.js', limit: '9 kB', gzip: true },
   { name: 'M10 Cẩm nang văn hóa (lazy)', path: 'dist/assets/CultureRoute-*.js', limit: '6.5 kB', gzip: true },
+  { name: 'M6 Phương ngữ (lazy)', path: 'dist/assets/DialectRoute-*.js', limit: '5 kB', gzip: true },
   { name: 'Worker phân tích cao độ A1/A2', path: 'dist/assets/pitch.worker-*.js', limit: '5 kB', gzip: true }
 ];

@@ -36,7 +36,10 @@ test('A7 phương ngữ: Bắc "thìa" ↔ Nam "muỗng", Bắc "roi" ↔ Nam "m
   assert.equal(translateDialect('roi', 'south'), 'mận');
   assert.equal(translateDialect('Thơm', 'north'), 'dứa');
   assert.equal(translateDialect('không-có', 'north'), undefined);
-  assert.ok(DIALECT_DICTIONARY.length >= 10);
+  assert.ok(DIALECT_DICTIONARY.length >= 20);
+  assert.equal(new Set(DIALECT_DICTIONARY.map((d) => d.id)).size, DIALECT_DICTIONARY.length);
+  for (const d of DIALECT_DICTIONARY) assert.equal(typeof d.reviewed, 'boolean');
+  assert.equal(translateDialect('mô', 'north'), 'đâu');
 });
 
 test('M10 văn hóa: đủ 20 thẻ, id duy nhất, có cờ reviewed; truy hồi đúng thẻ theo câu hỏi không dấu', async () => {

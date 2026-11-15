@@ -4,6 +4,9 @@
   "type": "module",
   "private": true,
   "main": "./src/index.ts",
+  "sideEffects": [
+    "*.css"
+  ],
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
@@ -16,6 +19,7 @@
     "@vietlearning/contracts": "workspace:*",
     "@vietlearning/native": "workspace:*",
     "@vietlearning/shared": "workspace:*",
+    "@vietlearning/state": "workspace:*",
     "@vietlearning/ui": "workspace:*",
     "comlink": "^4.4.2",
     "react": "^18.3.1",
