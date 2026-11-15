@@ -32,6 +32,7 @@ Lưu ý: ban đầu tôi hiểu nhầm thành "web chạy trên trình duyệt �
 | 5 | — | Cài **JDK 21** (Microsoft OpenJDK 21.0.13) bằng winget | `C:\Program Files\Microsoft\jdk-21.0.13.21-hotspot` |
 | 6 | — | Tải **Android command-line tools** (16111833) vào `%LOCALAPPDATA%\Android\Sdk\cmdline-tools\latest`. Lưu ý: lần giải nén đầu bằng Bash bị sandbox chặn ghi thật, phải làm lại bằng PowerShell | Có `sdkmanager.bat`, `android.exe` |
 | 7 | — | Người dùng đồng ý giấy phép Android SDK. Cài `platform-tools` 37.0.1, `platforms/android-35`, `build-tools/35.0.0` bằng `android sdk install` (sdkmanager đã deprecated). Gradle tự cài thêm build-tools 34 | `android sdk list` |
+| 9 | (commit này) | **Cài emulator + chạy thử trên Android 15.** Cài `emulator` 37.2.13 + `system-images/android-35/google_apis_playstore/x86_64` (có Google TTS). Tạo AVD `BeCuTit_Pixel_API35` (Pixel 7), tăng tốc WHPX. Chạy thử phát hiện và sửa **3 lỗi thật**: (a) status bar/navigation bar màu trắng, chữ giờ trắng không đọc được (Android 15 tràn viền) => đặt `windowBackground`/`statusBarColor` tối trong `styles.xml`; (b) **TTS native treo** với lỗi `"TextToSpeech.then()" is not implemented on android`: trả proxy plugin Capacitor từ hàm async làm Promise dò `.then` => bọc proxy trong object; (c) Gateway không khởi động với `.env` mẫu vì `JWT_SECRET=` rỗng bị coi là chuỗi => coi dòng trống là chưa đặt (+1 test). Script build APK giờ build trước các package phụ thuộc (trước đó sửa `packages/native` không vào APK) | Emulator: mở app 3.6 giây (cold start, bản debug); tab Xưng hô mở được; nút Back: M3 → Trang chủ → thoát app; phát âm: Google TTS đọc ~5 giây, nút trở về trạng thái nghỉ, không lỗi. Gateway 9/9 test |
 | 8 | `e319a77` | **Build APK debug thành công.** Gặp 3 lỗi: (a) đường dẫn có dấu tiếng Việt làm Gradle hỏng => map ổ ảo bằng `subst`; (b) ổ ảo phải trỏ vào **gốc repo** vì `capacitor.settings.gradle` dùng `../../../node_modules`; (c) Gradle daemon giữ ống dẫn output làm script treo => dùng `--no-daemon`. Gói lại thành `apps/host-shell/scripts/build-apk.ps1` (`android:apk:win`). Thêm `.gitattributes` cho `gradlew` | `aapt2 dump badging`: package `vn.edu.uit.becutit`, targetSdk 35, minSdk 23, nhãn "Bé Cu Tít", có 40 file web trong `assets/public`. APK 4.1MB |
 
 ## 4. Môi trường máy dev (Windows)
@@ -44,13 +45,15 @@ Lưu ý: ban đầu tôi hiểu nhầm thành "web chạy trên trình duyệt �
 | JDK 21 | Đã cài | `C:\Program Files\Microsoft\jdk-21.0.13.21-hotspot`. Gradle dùng qua `JAVA_HOME` |
 | Android Studio | Có sẵn | `C:\Program Files\Android\Android Studio` (thư mục `jbr` thiếu `java.exe`) |
 | Android SDK | Đã cài | `C:\Users\ADMIN\AppData\Local\Android\Sdk`: cmdline-tools 23, platform-tools 37.0.1, platforms android-35, build-tools 35.0.0 + 34.0.0. Quản lý gói bằng `cmdline-tools\latest\bin\android.exe sdk ...` |
-| Emulator | Chưa cài | Tùy chọn. Có thể dùng điện thoại thật qua USB debugging |
+| Emulator | Đã cài | AVD `BeCuTit_Pixel_API35` (Pixel 7, Android 15, Google Play image). Mở: `%LOCALAPPDATA%\Android\Sdk\emulator\emulator.exe -avd BeCuTit_Pixel_API35`. App trong emulator gọi gateway qua `http://10.0.2.2:4000` (đặt trong `apps/host-shell/.env.local`, không commit) |
 
 ## 5. Việc còn lại (cập nhật liên tục)
 
 - [x] Chấp nhận giấy phép Android SDK, cài platform 35 + build-tools 35
 - [x] Build APK debug (Windows: `pnpm --filter @vietlearning/host-shell android:apk:win`)
-- [ ] Cài emulator + system image (~1.5GB) HOẶC cài APK lên điện thoại thật qua USB (`adb install`)
+- [x] Cài emulator, chạy thử: điều hướng, nút Back, TTS native, thanh hệ thống
+- [ ] Chạy thử trên điện thoại thật (TTS tiếng Việt và hiệu năng trên máy tầm trung/thấp)
+- [ ] Chưa thử: luồng dự phòng TTS qua gateway trong app (emulator có sẵn giọng Việt nên không đi tới nhánh đó), drawer "Bảng 20 Cặp" + nút Back khi drawer đang mở (hiện Back sẽ rời màn hình thay vì đóng drawer)
 - [ ] Bản release: tạo keystore ký app (giữ keystore NGOÀI repo), build AAB để lên Google Play
 - [ ] Chạy thử trên emulator hoặc máy thật: nút Back, TTS tiếng Việt, edge-to-edge Android 15, gọi gateway qua `10.0.2.2`
 - [ ] Giai đoạn 2: refactor M3 (Tailwind/CSS variables, nút ≥ 44px, drawer dùng Radix, một nguồn dữ liệu 20 cặp, sửa dữ liệu A7 thìa/muỗng)

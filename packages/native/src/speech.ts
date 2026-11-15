@@ -53,16 +53,22 @@ class NativeSpeech implements DeviceSpeech {
   private guard = new TurnGuard();
   private supportCache = new Map<string, boolean>();
 
-  private async plugin() {
-    const { TextToSpeech } = await import('@capacitor-community/text-to-speech');
-    return TextToSpeech;
+  /**
+   * KHÔNG được trả thẳng proxy plugin từ hàm async: Promise sẽ dò `.then` trên proxy, Capacitor coi
+   * đó là lời gọi native "TextToSpeech.then()" => lỗi "not implemented on android" và lượt đọc treo.
+   * Bọc trong object thường để tránh.
+   */
+  private async plugin(): Promise<{ tts: import('@capacitor-community/text-to-speech').TextToSpeechPlugin }> {
+    const mod = await import('@capacitor-community/text-to-speech');
+    return { tts: mod.TextToSpeech };
   }
 
   async isAvailable(lang = VI): Promise<boolean> {
     const cached = this.supportCache.get(lang);
     if (cached !== undefined) return cached;
     try {
-      const { supported } = await (await this.plugin()).isLanguageSupported({ lang });
+      const { tts } = await this.plugin();
+      const { supported } = await tts.isLanguageSupported({ lang });
       this.supportCache.set(lang, supported);
       return supported;
     } catch {
@@ -73,7 +79,7 @@ class NativeSpeech implements DeviceSpeech {
   async speak(text: string, options: SpeakOptions = {}): Promise<void> {
     const lang = options.lang ?? VI;
     const token = this.guard.next();
-    const tts = await this.plugin();
+    const { tts } = await this.plugin();
     await tts.stop().catch(() => undefined);
 
     if (!(await this.isAvailable(lang))) {
@@ -93,7 +99,8 @@ class NativeSpeech implements DeviceSpeech {
 
   async stop(): Promise<void> {
     this.guard.invalidate();
-    await (await this.plugin()).stop().catch(() => undefined);
+    const { tts } = await this.plugin();
+    await tts.stop().catch(() => undefined);
   }
 }
 
