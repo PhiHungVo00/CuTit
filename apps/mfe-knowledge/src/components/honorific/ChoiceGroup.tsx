@@ -14,6 +14,8 @@ interface ChoiceGroupProps<T extends string | number> {
   columns?: number;
   hint?: ReactNode;
   size?: 'md' | 'sm';
+  /** 'start': căn trái (nhãn dài có icon), mặc định căn giữa */
+  align?: 'center' | 'start';
 }
 
 const COLS: Record<number, string> = {
@@ -37,7 +39,8 @@ function ChoiceGroupInner<T extends string | number>({
   onChange,
   columns,
   hint,
-  size = 'md'
+  size = 'md',
+  align = 'center'
 }: ChoiceGroupProps<T>) {
   const labelId = useId();
   const index = options.findIndex((o) => o.id === value);
@@ -75,7 +78,8 @@ function ChoiceGroupInner<T extends string | number>({
               data-choice={String(o.id)}
               onClick={() => onChange(o.id)}
               className={[
-                'flex min-h-11 items-center justify-center gap-1.5 rounded-xl border px-2 text-center leading-tight transition-colors',
+                'flex min-h-11 items-center gap-1.5 rounded-xl border px-2 leading-tight transition-colors',
+                align === 'start' ? 'justify-start px-3 text-left' : 'justify-center text-center',
                 size === 'sm' ? 'text-sm' : 'text-[15px]',
                 active
                   ? 'border-accent bg-accent-soft font-bold text-heading'

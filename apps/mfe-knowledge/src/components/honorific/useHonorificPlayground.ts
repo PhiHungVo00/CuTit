@@ -25,6 +25,17 @@ function agesFor(step: AgeStep, relation: RelationCategory): { user: number; par
   }
 }
 
+/**
+ * Quan hệ hiển thị trên bàn điều khiển. Dữ liệu có cả 'work' (công sở) và 'civic' (đoàn thể, đình làng);
+ * thuật toán phân biệt hai loại nhưng giao diện gộp chung một nút "Công việc & đoàn thể".
+ * 'stranger' được thuật toán xử lý như 'social'.
+ */
+export function toUiRelation(r: RelationCategory): RelationCategory {
+  if (r === 'civic') return 'work';
+  if (r === 'stranger') return 'social';
+  return r;
+}
+
 function ageStepFromPair(pair: HonorificPairItem): AgeStep {
   const diff = pair.listenerAge - pair.speakerAge;
   if (diff > 10) return 0;
@@ -96,7 +107,8 @@ export function useHonorificPlayground() {
   /** Áp dụng một cặp từ Bảng 20 cặp lên bàn điều khiển. */
   const applyPair = useCallback((pair: HonorificPairItem) => {
     setExplicitPair(pair);
-    setRelationRaw(pair.relation);
+    // Thuật toán vẫn dùng đúng pair.relation (qua explicitPair); giao diện đánh dấu nhóm tương ứng
+    setRelationRaw(toUiRelation(pair.relation));
     setAgeStepRaw(ageStepFromPair(pair));
     setContextStepRaw(contextStepFromPair(pair));
     if (pair.listenerGender) setPartnerGenderRaw(pair.listenerGender);

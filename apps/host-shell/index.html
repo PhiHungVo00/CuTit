@@ -14,6 +14,13 @@
     <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
     <link rel="manifest" href="/manifest.webmanifest" />
     <title>Học Tiếng Việt Cùng Bé Cu Tít</title>
+    <script>
+      // Gắn giao diện đã lưu TRƯỚC lần vẽ đầu tiên (tránh chớp tối rồi mới sáng). Đồng bộ với ThemeContext.tsx
+      try {
+        var t = localStorage.getItem('becutit.theme');
+        if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t;
+      } catch (e) {}
+    </script>
   </head>
   <body>
     <div id="root"></div>

@@ -14,12 +14,15 @@ import './styles/app.css';
 
 import { App } from './App';
 import { isNativeApp } from './native/bootstrap';
+import { ThemeProvider } from './theme/ThemeContext';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <BrowserRouter>
-      <App />
-    </BrowserRouter>
+    <ThemeProvider>
+      <BrowserRouter>
+        <App />
+      </BrowserRouter>
+    </ThemeProvider>
   </React.StrictMode>
 );
 

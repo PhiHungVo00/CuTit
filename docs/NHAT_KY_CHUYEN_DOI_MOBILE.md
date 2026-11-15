@@ -32,7 +32,8 @@ Lưu ý: ban đầu tôi hiểu nhầm thành "web chạy trên trình duyệt �
 | 5 | — | Cài **JDK 21** (Microsoft OpenJDK 21.0.13) bằng winget | `C:\Program Files\Microsoft\jdk-21.0.13.21-hotspot` |
 | 6 | — | Tải **Android command-line tools** (16111833) vào `%LOCALAPPDATA%\Android\Sdk\cmdline-tools\latest`. Lưu ý: lần giải nén đầu bằng Bash bị sandbox chặn ghi thật, phải làm lại bằng PowerShell | Có `sdkmanager.bat`, `android.exe` |
 | 7 | — | Người dùng đồng ý giấy phép Android SDK. Cài `platform-tools` 37.0.1, `platforms/android-35`, `build-tools/35.0.0` bằng `android sdk install` (sdkmanager đã deprecated). Gradle tự cài thêm build-tools 34 | `android sdk list` |
-| 10 | (commit này) | **Giai đoạn 2: refactor M3.** (1) Design tokens `packages/ui/src/theme.css` cho Tailwind v4, màu theo `data-theme` => đổi giao diện không remount, bỏ `key={theme}`, giữ nguyên lựa chọn; (2) tách `HonorificMatrixScreen` (1.233 dòng inline style) thành `useHonorificPlayground` (logic A6) + `ControlPanel` + `SentencePanel` + `ChoiceGroup` (radiogroup, phím mũi tên); bỏ thanh trượt trùng với nút bậc; bỏ chữ kỹ thuật ("Kiến trúc Micro Frontend", "Thuật toán A6") khỏi giao diện người học; (3) drawer dùng Radix Dialog: focus trap, Esc, khóa cuộn, trả focus về nút mở, nút Back Android đóng drawer; tải lười (chunk riêng 15.4KB, tải trước khi chạm); tìm kiếm không dấu dùng chỉ mục tính sẵn; (4) **một nguồn dữ liệu**: 20 cặp + phương ngữ chuyển về `packages/content/src/data/*.json`, TS chỉ import; sửa dữ liệu A7 bị đảo (thìa/muỗng, roi/mận); (5) SpeechService báo kết thúc cho lượt bị thay thế (trước đó drawer phát âm làm nút ở câu mẫu kẹt "Đang đọc"); (6) mọi app sang `"type": "module"` (giải quyết Q5; plugin Tailwind là ESM-only) | Trình duyệt 375px: 25/25 nút ≥ 44px, không chữ < 12px, không tràn ngang; đổi giao diện giữ lựa chọn; drawer: chunk chỉ tải khi mở, focus vào trong, ô tìm 16px, "thay" ra "Thầy", Esc đóng + trả focus, "Áp dụng" đưa cặp lên. Emulator: Back khi drawer mở chỉ đóng drawer. Chunk M3 13.5KB gzip (bản gốc 14.8KB). Test: content 15/15 (+3 test dữ liệu), gateway 9/9 |
+| 11 | (commit này) | **Xử lý hàng chờ.** Sửa Q2, Q4 (sanitizer), Q6, Q7, Q8, Q9, Q10; Q3 kết luận không cần sửa; Q1 và Q11 cần người phụ trách nội dung quyết; thêm Q12, tách Q4b | 49 test qua (content 15, gateway 9, M3 17, host 8). Trình duyệt: giao diện sáng áp dụng cả thanh tab, giữ sau khi tải lại. Emulator: giữ sau khi tắt hẳn app |
+| 10 | `0002b77` | **Giai đoạn 2: refactor M3.** (1) Design tokens `packages/ui/src/theme.css` cho Tailwind v4, màu theo `data-theme` => đổi giao diện không remount, bỏ `key={theme}`, giữ nguyên lựa chọn; (2) tách `HonorificMatrixScreen` (1.233 dòng inline style) thành `useHonorificPlayground` (logic A6) + `ControlPanel` + `SentencePanel` + `ChoiceGroup` (radiogroup, phím mũi tên); bỏ thanh trượt trùng với nút bậc; bỏ chữ kỹ thuật ("Kiến trúc Micro Frontend", "Thuật toán A6") khỏi giao diện người học; (3) drawer dùng Radix Dialog: focus trap, Esc, khóa cuộn, trả focus về nút mở, nút Back Android đóng drawer; tải lười (chunk riêng 15.4KB, tải trước khi chạm); tìm kiếm không dấu dùng chỉ mục tính sẵn; (4) **một nguồn dữ liệu**: 20 cặp + phương ngữ chuyển về `packages/content/src/data/*.json`, TS chỉ import; sửa dữ liệu A7 bị đảo (thìa/muỗng, roi/mận); (5) SpeechService báo kết thúc cho lượt bị thay thế (trước đó drawer phát âm làm nút ở câu mẫu kẹt "Đang đọc"); (6) mọi app sang `"type": "module"` (giải quyết Q5; plugin Tailwind là ESM-only) | Trình duyệt 375px: 25/25 nút ≥ 44px, không chữ < 12px, không tràn ngang; đổi giao diện giữ lựa chọn; drawer: chunk chỉ tải khi mở, focus vào trong, ô tìm 16px, "thay" ra "Thầy", Esc đóng + trả focus, "Áp dụng" đưa cặp lên. Emulator: Back khi drawer mở chỉ đóng drawer. Chunk M3 13.5KB gzip (bản gốc 14.8KB). Test: content 15/15 (+3 test dữ liệu), gateway 9/9 |
 | 9 | `4c80dca` | **Cài emulator + chạy thử trên Android 15.** Cài `emulator` 37.2.13 + `system-images/android-35/google_apis_playstore/x86_64` (có Google TTS). Tạo AVD `BeCuTit_Pixel_API35` (Pixel 7), tăng tốc WHPX. Chạy thử phát hiện và sửa **3 lỗi thật**: (a) status bar/navigation bar màu trắng, chữ giờ trắng không đọc được (Android 15 tràn viền) => đặt `windowBackground`/`statusBarColor` tối trong `styles.xml`; (b) **TTS native treo** với lỗi `"TextToSpeech.then()" is not implemented on android`: trả proxy plugin Capacitor từ hàm async làm Promise dò `.then` => bọc proxy trong object; (c) Gateway không khởi động với `.env` mẫu vì `JWT_SECRET=` rỗng bị coi là chuỗi => coi dòng trống là chưa đặt (+1 test). Script build APK giờ build trước các package phụ thuộc (trước đó sửa `packages/native` không vào APK) | Emulator: mở app 3.6 giây (cold start, bản debug); tab Xưng hô mở được; nút Back: M3 → Trang chủ → thoát app; phát âm: Google TTS đọc ~5 giây, nút trở về trạng thái nghỉ, không lỗi. Gateway 9/9 test |
 | 8 | `e319a77` | **Build APK debug thành công.** Gặp 3 lỗi: (a) đường dẫn có dấu tiếng Việt làm Gradle hỏng => map ổ ảo bằng `subst`; (b) ổ ảo phải trỏ vào **gốc repo** vì `capacitor.settings.gradle` dùng `../../../node_modules`; (c) Gradle daemon giữ ống dẫn output làm script treo => dùng `--no-daemon`. Gói lại thành `apps/host-shell/scripts/build-apk.ps1` (`android:apk:win`). Thêm `.gitattributes` cho `gradlew` | `aapt2 dump badging`: package `vn.edu.uit.becutit`, targetSdk 35, minSdk 23, nhãn "Bé Cu Tít", có 40 file web trong `assets/public`. APK 4.1MB |
 
@@ -57,9 +58,8 @@ Lưu ý: ban đầu tôi hiểu nhầm thành "web chạy trên trình duyệt �
 - [ ] Chưa thử: luồng dự phòng TTS qua gateway trong app (emulator có sẵn giọng Việt nên không đi tới nhánh đó)
 - [x] Nút Back khi drawer đang mở: đã sửa ở GĐ2, đóng drawer thay vì rời màn hình (đã thử trên emulator)
 - [ ] Bản release: tạo keystore ký app (giữ keystore NGOÀI repo), build AAB để lên Google Play
-- [ ] Chạy thử trên emulator hoặc máy thật: nút Back, TTS tiếng Việt, edge-to-edge Android 15, gọi gateway qua `10.0.2.2`
 - [x] Giai đoạn 2: refactor M3 (Tailwind/CSS variables, nút ≥ 44px, drawer dùng Radix, một nguồn dữ liệu 20 cặp, sửa dữ liệu A7)
-- [ ] Xử lý hàng chờ mục 5b (Q1–Q10) theo ưu tiên P1 → P2 → P3
+- [x] Xử lý hàng chờ mục 5b (Q1–Q10). Còn mở: Q1, Q11 (cần người quyết nội dung), Q12, Q4b
 - [ ] Giai đoạn 3: thu âm AudioWorklet/plugin native, YIN theo frame trong Worker, DTW trên semitone + Pearson
 - [ ] Giai đoạn 4: Lighthouse/size-limit, Playwright, kiểm thử máy thật
 - [ ] iOS: cần máy Mac hoặc dịch vụ build cloud (Codemagic)
@@ -73,16 +73,28 @@ Lưu ý: ban đầu tôi hiểu nhầm thành "web chạy trên trình duyệt �
 
 | # | Ưu tiên | Vấn đề | Vị trí | Ghi nhận lúc |
 |---|---|---|---|---|
-| Q1 | P2 | Dữ liệu phương ngữ cần người bản ngữ duyệt (bảng `content_items.reviewedBy` đã có cột này). Ví dụ "ngã/té" miền Trung chưa chắc | `packages/content/data/dialects.json` | GĐ2, khi sửa thìa/muỗng |
-| Q2 | P3 | Hai khái niệm "Công sở" lệch nhau: nút quan hệ dùng `relation: 'work'`, drawer lọc theo `category: 'civic'`. Nên thống nhất một id | `HonorificInterpreter.ts`, drawer | GĐ2 |
-| Q3 | P3 | `MobileSimulatorFrame` (khung điện thoại giả lập) chỉ dùng cho trang demo desktop của mfe-knowledge, không cần trong app; cân nhắc bỏ | `apps/mfe-knowledge/src/components/MobileSimulatorFrame.tsx` | GĐ2 |
-| Q4 | P2 | Các stub GoF rỗng (`ShellMediator`, `SanitizerVisitor`, `BlockTree`, `PitchStrategy`, `AudioCaptureBridge`) vẫn còn; `SanitizerVisitor` rỗng là lỗ XSS nếu nối Agent UI Block | `apps/host-shell/src/...`, `packages/audio-dsp` | Báo cáo audit #7 |
-| ~~Q5~~ | ✅ | ~~Vite cảnh báo "CJS build of Vite's Node API is deprecated"~~: đã sửa ở GĐ2 vì chặn Tailwind (`"type": "module"` cho mọi app) | | GĐ1 → xong GĐ2 |
-| Q6 | P2 | Thanh tab của Shell luôn tối; khi M3 chuyển "Tre trúc" (sáng) thì thanh tab không đổi theo. Nên đưa theme lên mức Shell (state/Event Bus) và lưu lựa chọn của người học | `apps/host-shell/src/styles/global.css`, `App.tsx` | GĐ2 |
-| Q7 | P3 | Lựa chọn giao diện không được lưu: mở lại app luôn về "Gỗ mộc" | `HonorificMatrixScreen` | GĐ2 |
-| Q8 | P2 | Chưa có test component cho UI (chỉ test logic content/gateway). Nên thêm Vitest + Testing Library cho `useHonorificPlayground`, `ChoiceGroup`, drawer | `apps/mfe-knowledge` | GĐ2 |
-| Q9 | P3 | Rule `prefers-reduced-motion` trong `global.css` đặt `transition-duration` cho `*`, khiến mọi thay đổi màu thành transition 0.01ms (vô hại nhưng thừa). Nên chỉ tắt animation/transition đã khai báo | `apps/host-shell/src/styles/global.css` | GĐ2 |
-| Q10 | P3 | Nhãn nút quan hệ 2 dòng đang căn giữa với icon bên trái, trông lệch; cân nhắc căn trái | `ControlPanel.tsx` | GĐ2 |
+**Còn mở:**
+
+| # | Ưu tiên | Vấn đề | Vị trí | Ghi nhận lúc |
+|---|---|---|---|---|
+| Q1 | P2 · cần người | Dữ liệu phương ngữ cần người bản ngữ duyệt (ví dụ "ngã/té" miền Trung chưa chắc). Không tự quyết được, giao cho M2 (chủ `packages/content`); cột `content_items.reviewedBy` đã có sẵn để ghi người duyệt | `packages/content/src/data/dialects.json` | GĐ2 |
+| Q11 | P2 · cần người | A6: trong quan hệ gia tộc, preset "Nhỏ hơn" (28 và 16 tuổi, lệch đúng 12) chạm ngưỡng `ageDiff <= -12` nên ra "chú/cháu", trong khi mô tả nút là "em út, hậu bối". M2 cần quyết: đổi preset (ví dụ 26/16) hay đổi ngưỡng | `useHonorificPlayground.ts` (`agesFor`), `HonorificInterpreter.ts` | phát hiện khi viết test |
+| Q12 | P3 | Giao diện sáng: dải status bar/navigation bar Android vẫn tối (màu nền native của cửa sổ khi vẽ tràn viền). Cần đổi màu phía native theo theme | `apps/host-shell/android`, `native/bootstrap.ts` | thử trên emulator |
+| Q4b | P3 | Các stub GoF còn lại (`ShellMediator`, `BlockTree`, `PitchStrategy`, `AudioCaptureBridge`) chưa có hành vi thật; không phải lỗ bảo mật. Phần âm thanh làm ở GĐ3 | `apps/host-shell/src/...`, `packages/audio-dsp` | tách từ Q4 |
+
+**Đã xử lý:**
+
+| # | Kết quả | Ghi chú |
+|---|---|---|
+| Q2 | ✅ sửa | Thực chất là lỗi: áp dụng cặp h20 (`relation: 'civic'`) thì không nút quan hệ nào được chọn. Sửa bằng `toUiRelation` (civic→work, stranger→social ở giao diện; thuật toán vẫn dùng relation gốc) + test |
+| Q3 | ✅ không sửa | `MobileSimulatorFrame` không có trong bundle app (0 lần xuất hiện, bị tree-shake); là phần bạn vừa làm cho trang demo desktop nên giữ lại |
+| Q4 | ✅ sửa | `SanitizerVisitor` giờ làm thật: kiểm tra contract từng block, bỏ key nguy hiểm, chặn URL `javascript:`/`data:`, giới hạn độ sâu/độ dài/4 block mỗi lượt; 8 test (test bắt được 1 lỗi lệch-một ở giới hạn độ sâu). Thêm `@vietlearning/contracts/api` để client không kéo Drizzle |
+| Q5 | ✅ sửa | `"type": "module"` cho mọi app (GĐ2, vì chặn Tailwind) |
+| Q6 | ✅ sửa | Theme đưa lên Shell (`ThemeProvider`, `data-theme` trên `<html>`); thanh tab dùng token chung; M3 nhận theme dạng controlled |
+| Q7 | ✅ sửa | Lưu vào localStorage (`becutit.theme`); script trong `<head>` gắn theme trước lần vẽ đầu (không chớp tối). Đã thử: giữ sau khi tải lại trang và sau khi tắt hẳn app Android |
+| Q8 | ✅ sửa | Vitest + Testing Library: M3 17 test (hook A6, ChoiceGroup, SpeechService, drawer + nút Back), host 8 test. Tổng monorepo 49 test |
+| Q9 | ✅ sửa | Rule giảm chuyển động giờ tắt hẳn `animation`/`transition` |
+| Q10 | ✅ sửa | Nhãn nút quan hệ căn trái (`ChoiceGroup align="start"`) |
 
 ## 6. Lệnh hay dùng
 
