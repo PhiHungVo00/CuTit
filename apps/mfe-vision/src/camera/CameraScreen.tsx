@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { canOpenAppSettings, getDeviceSpeech, openAppSettings } from '@vietlearning/native';
 import { learnerStore, speechRate, useLearner } from '@vietlearning/state';
 import { fileToJpegBase64, toJpegBase64 } from './image';
+import { t as tCam, useT } from '../i18n';
 
 interface Label {
   vi: string;
@@ -28,11 +29,12 @@ async function labelImage(imageBase64: string): Promise<{ labels: Label[]; mock:
 
 async function describeError(err: unknown): Promise<string> {
   const { describeGatewayError } = await import('@vietlearning/api-client');
-  return describeGatewayError(err);
+  return describeGatewayError(err, learnerStore.getState().preferences.uiLanguage);
 }
 
 /** Màn hình M4: chụp ảnh đồ vật (hoặc chọn ảnh) → Gateway dán nhãn tiếng Việt → nghe, lưu thẻ ôn. */
 export function CameraScreen() {
+  const t = useT();
   const [phase, setPhase] = useState<Phase>({ kind: 'idle' });
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -56,7 +58,7 @@ export function CameraScreen() {
 
   const startCamera = async () => {
     if (!navigator.mediaDevices?.getUserMedia) {
-      setPhase({ kind: 'error', message: 'Thiết bị này không mở được camera trong ứng dụng. Hãy dùng “Chọn ảnh có sẵn”.' });
+      setPhase({ kind: 'error', message: tCam('noCamera') });
       return;
     }
     setPhase({ kind: 'starting' });
@@ -67,9 +69,9 @@ export function CameraScreen() {
       setPhase({ kind: 'live' });
     } catch (err) {
       const name = (err as DOMException).name;
-      if (name === 'NotAllowedError') setPhase({ kind: 'error', message: 'Ứng dụng chưa được cấp quyền camera.', settings: true });
-      else if (name === 'NotFoundError' || name === 'OverconstrainedError') setPhase({ kind: 'error', message: 'Không tìm thấy camera. Hãy dùng “Chọn ảnh có sẵn”.' });
-      else setPhase({ kind: 'error', message: 'Không mở được camera (có thể ứng dụng khác đang dùng).' });
+      if (name === 'NotAllowedError') setPhase({ kind: 'error', message: tCam('denied'), settings: true });
+      else if (name === 'NotFoundError' || name === 'OverconstrainedError') setPhase({ kind: 'error', message: tCam('notFound') });
+      else setPhase({ kind: 'error', message: tCam('busy') });
     }
   };
 
@@ -107,7 +109,7 @@ export function CameraScreen() {
     try {
       await analyze(await fileToJpegBase64(file));
     } catch {
-      setPhase({ kind: 'error', message: 'Không đọc được ảnh này. Hãy chọn ảnh JPEG hoặc PNG khác.' });
+      setPhase({ kind: 'error', message: tCam('badFile') });
     }
   };
 
@@ -118,18 +120,18 @@ export function CameraScreen() {
     <div className="min-h-dvh bg-canvas px-4 pb-8 pt-[calc(16px+env(safe-area-inset-top))] font-sans text-ink">
       <div className="mx-auto flex max-w-[560px] flex-col gap-4">
         <header className="flex items-center justify-between gap-2 border-b-2 border-line pb-4">
-          <h1 className="m-0 text-[26px] font-black leading-tight tracking-tight text-heading">Camera từ vựng</h1>
+          <h1 className="m-0 text-[26px] font-black leading-tight tracking-tight text-heading">{t('title')}</h1>
           <Link to="/ho-so" className="flex min-h-11 items-center rounded-xl border border-line-strong bg-surface px-3 text-sm font-bold text-ink no-underline">
-            📈 Thẻ ôn
+            {t('cardsLink')}
           </Link>
         </header>
 
         <div className="relative aspect-[4/3] overflow-hidden rounded-2xl border border-line-strong bg-sunken">
-          {phase.kind === 'live' && <video ref={videoRef} playsInline muted aria-label="Hình ảnh từ camera" className="size-full object-cover" />}
-          {preview && phase.kind !== 'live' && <img src={preview} alt="Ảnh vừa chụp" className="size-full object-cover" />}
+          {phase.kind === 'live' && <video ref={videoRef} playsInline muted aria-label={t('videoLabel')} className="size-full object-cover" />}
+          {preview && phase.kind !== 'live' && <img src={preview} alt={t('photoAlt')} className="size-full object-cover" />}
           {!preview && phase.kind !== 'live' && (
             <p className="m-0 grid size-full place-items-center p-4 text-center text-[15px] text-ink-muted">
-              {phase.kind === 'starting' ? 'Đang mở camera…' : 'Hướng camera vào một đồ vật quanh bạn để học tên tiếng Việt.'}
+              {phase.kind === 'starting' ? t('opening') : t('intro')}
             </p>
           )}
         </div>
@@ -137,7 +139,7 @@ export function CameraScreen() {
         {phase.kind === 'live' ? (
           <div className="flex flex-col gap-2">
             <button type="button" className={`${btn} bg-accent text-accent-ink`} onClick={() => void capture()}>
-              📸 Chụp
+              {t('capture')}
             </button>
             <button
               type="button"
@@ -147,16 +149,16 @@ export function CameraScreen() {
                 setPhase({ kind: 'idle' });
               }}
             >
-              Tắt camera
+              {t('cameraOff')}
             </button>
           </div>
         ) : (
           <div className="flex flex-col gap-2">
             <button type="button" className={`${btn} bg-accent text-accent-ink`} disabled={phase.kind === 'starting' || phase.kind === 'analyzing'} onClick={() => void startCamera()}>
-              {phase.kind === 'result' || phase.kind === 'error' ? '📷 Chụp ảnh khác' : '📷 Mở camera'}
+              {phase.kind === 'result' || phase.kind === 'error' ? t('another') : t('openCamera')}
             </button>
             <button type="button" className={`${btn} border border-line-strong bg-surface-2 text-ink`} disabled={phase.kind === 'analyzing'} onClick={() => fileRef.current?.click()}>
-              🖼️ Chọn ảnh có sẵn
+              {t('pick')}
             </button>
             <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={(e) => void onFile(e)} aria-hidden="true" tabIndex={-1} />
           </div>
@@ -164,7 +166,7 @@ export function CameraScreen() {
 
         {phase.kind === 'analyzing' && (
           <p role="status" className="m-0 text-[15px] text-ink-muted">
-            Đang nhận diện đồ vật…
+            {t('analyzing')}
           </p>
         )}
 
@@ -173,7 +175,7 @@ export function CameraScreen() {
             <p className="m-0 text-[15px]">{phase.message}</p>
             {phase.settings && canOpenAppSettings() && (
               <button type="button" className={`${btn} border border-line-strong bg-surface text-ink`} onClick={() => void openAppSettings()}>
-                Mở cài đặt quyền
+                {t('openSettings')}
               </button>
             )}
           </div>
@@ -182,9 +184,9 @@ export function CameraScreen() {
         {phase.kind === 'result' && (
           <section aria-labelledby="ct-labels" className="flex flex-col gap-3 rounded-2xl border border-line-strong bg-surface p-4 shadow-card">
             <h2 id="ct-labels" aria-live="polite" className="m-0 text-lg font-extrabold text-ink">
-              {phase.labels.length ? 'Đồ vật trong ảnh' : 'Chưa nhận ra đồ vật nào'}
+              {phase.labels.length ? t('found') : t('none')}
             </h2>
-            {phase.mock && <p className="m-0 rounded-lg bg-surface-2 p-2 text-sm text-ink-muted">Nhãn mẫu: dịch vụ nhận diện ảnh chưa được nối, kết quả chưa phản ánh ảnh của bạn.</p>}
+            {phase.mock && <p className="m-0 rounded-lg bg-surface-2 p-2 text-sm text-ink-muted">{t('mock')}</p>}
             <ul className="m-0 flex list-none flex-col gap-2 p-0">
               {phase.labels.map((l) => {
                 const saved = !!srs[`vision:${l.vi.toLowerCase()}`];
@@ -198,11 +200,11 @@ export function CameraScreen() {
                         {l.en}
                       </span>
                     </span>
-                    <button type="button" onClick={() => say(l.vi)} aria-label={`Nghe “${l.vi}”`} className="min-h-11 min-w-11 rounded-xl border border-line bg-surface px-3 font-bold text-ink">
+                    <button type="button" onClick={() => say(l.vi)} aria-label={t('listenTo', { word: l.vi })} className="min-h-11 min-w-11 rounded-xl border border-line bg-surface px-3 font-bold text-ink">
                       🔈
                     </button>
                     <button type="button" disabled={saved} onClick={() => save(l)} className="min-h-11 rounded-xl border border-line bg-surface px-3 text-sm font-bold text-ink disabled:opacity-60">
-                      {saved ? '✓ Đã lưu' : '+ Lưu ôn'}
+                      {saved ? t('saved') : t('save')}
                     </button>
                   </li>
                 );

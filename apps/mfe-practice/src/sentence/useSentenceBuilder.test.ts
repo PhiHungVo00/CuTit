@@ -1,7 +1,11 @@
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
 import { SENTENCE_ITEMS } from '@vietlearning/content';
 import { shuffledIndices, useSentenceBuilder } from './useSentenceBuilder';
+import { learnerStore } from '@vietlearning/state';
+
+// Lời giải thích A8 trong test là tiếng Việt
+beforeEach(() => learnerStore.getState().setPreferences({ uiLanguage: 'vi' }));
 
 const s13 = SENTENCE_ITEMS.find((s) => s.id === 's13')!; // Cô ấy | mặc | áo | đỏ
 

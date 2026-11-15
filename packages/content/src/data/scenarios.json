@@ -2,29 +2,41 @@
   {
     "id": "sc1",
     "title": "Chợ quê trả giá",
+    "titleEn": "Bargaining at the market",
     "location": "Chợ Bến Thành / Chợ Đồng Xuân",
+    "locationEn": "Bến Thành / Đồng Xuân market",
     "targetDialect": "all",
-    "tasks": ["Chào người bán hàng lễ phép", "Hỏi giá mớ rau muống hoặc nải chuối", "Mặc cả giảm 5,000đ", "Cảm ơn và tạm biệt"]
+    "tasks": ["Chào người bán hàng lễ phép", "Hỏi giá mớ rau muống hoặc nải chuối", "Mặc cả giảm 5,000đ", "Cảm ơn và tạm biệt"],
+    "tasksEn": ["Greet the seller politely", "Ask the price of a bunch of water spinach or bananas", "Bargain 5,000đ off", "Say thank you and goodbye"]
   },
   {
     "id": "sc2",
     "title": "Hỏi đường phố cổ",
+    "titleEn": "Asking the way in the Old Quarter",
     "location": "Phố cổ Hà Nội",
+    "locationEn": "Hanoi Old Quarter",
     "targetDialect": "north",
-    "tasks": ["Chào cụ già hoặc bác xe ôm", "Hỏi đường đến Hồ Gươm", "Lắng nghe chỉ dẫn rẽ trái/phải", "Cảm ơn"]
+    "tasks": ["Chào cụ già hoặc bác xe ôm", "Hỏi đường đến Hồ Gươm", "Lắng nghe chỉ dẫn rẽ trái/phải", "Cảm ơn"],
+    "tasksEn": ["Greet an elderly person or a motorbike-taxi driver", "Ask the way to Hoàn Kiếm Lake (Hồ Gươm)", "Follow the left/right directions", "Say thank you"]
   },
   {
     "id": "sc3",
     "title": "Gọi món ở quán phở",
+    "titleEn": "Ordering at a phở shop",
     "location": "Quán Phở truyền thống",
+    "locationEn": "a traditional phở shop",
     "targetDialect": "all",
-    "tasks": ["Chào chủ quán", "Gọi 1 bát phở bò tái chín", "Yêu cầu không bỏ hành", "Hỏi giá và thanh toán"]
+    "tasks": ["Chào chủ quán", "Gọi 1 bát phở bò tái chín", "Yêu cầu không bỏ hành", "Hỏi giá và thanh toán"],
+    "tasksEn": ["Greet the owner", "Order a bowl of rare-and-well-done beef phở", "Ask for no spring onions", "Ask the price and pay"]
   },
   {
     "id": "sc4",
     "title": "Làm quen bạn mới ở trường",
+    "titleEn": "Making a new friend at university",
     "location": "Sân trường đại học",
+    "locationEn": "the university campus",
     "targetDialect": "all",
-    "tasks": ["Chào bạn và tự giới thiệu tên, quốc tịch", "Hỏi tuổi để xưng hô đúng (anh/chị/em)", "Hỏi bạn học ngành gì", "Hẹn cùng nhau đi uống trà đá"]
+    "tasks": ["Chào bạn và tự giới thiệu tên, quốc tịch", "Hỏi tuổi để xưng hô đúng (anh/chị/em)", "Hỏi bạn học ngành gì", "Hẹn cùng nhau đi uống trà đá"],
+    "tasksEn": ["Say hi and introduce your name and nationality", "Ask their age to pick the right pronoun (anh/chị/em)", "Ask what they study", "Arrange to go for iced tea (trà đá) together"]
   }
 ]

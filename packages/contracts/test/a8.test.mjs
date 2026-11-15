@@ -55,3 +55,10 @@ test('A8: thiếu/thừa/lạ từ => yêu cầu dùng đủ từ; không phân 
   assert.match(checkSentenceOrder(item('s1'), ['Tôi', 'ăn', 'cơm']).errors[0], /đủ và đúng/);
   assert.equal(checkSentenceOrder(item('s1'), ['tôi', 'ăn', 'phở'.normalize('NFD')]).valid, true);
 });
+
+test('A8: lời giải thích tiếng Anh khi giao diện tiếng Anh', () => {
+  const r = checkSentenceOrder(item('s13'), ['Cô ấy', 'mặc', 'đỏ', 'áo'], 'en');
+  assert.equal(r.valid, false);
+  assert.ok(r.errors.some((e) => /adjective "đỏ" comes AFTER/.test(e)), r.errors.join(' | '));
+  assert.match(r.hint, /^Hint: the sentence starts with/);
+});

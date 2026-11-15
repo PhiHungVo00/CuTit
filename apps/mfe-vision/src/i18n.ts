@@ -1,0 +1,57 @@
+import { defineMessages } from '@vietlearning/state';
+
+/** Chuỗi giao diện M4. Nhãn tiếng Việt của đồ vật là nội dung học, không dịch. */
+export const { useT, t } = defineMessages(
+  {
+    title: 'Camera từ vựng',
+    cardsLink: '📈 Thẻ ôn',
+    noCamera: 'Thiết bị này không mở được camera trong ứng dụng. Hãy dùng “Chọn ảnh có sẵn”.',
+    denied: 'Ứng dụng chưa được cấp quyền camera.',
+    notFound: 'Không tìm thấy camera. Hãy dùng “Chọn ảnh có sẵn”.',
+    busy: 'Không mở được camera (có thể ứng dụng khác đang dùng).',
+    badFile: 'Không đọc được ảnh này. Hãy chọn ảnh JPEG hoặc PNG khác.',
+    videoLabel: 'Hình ảnh từ camera',
+    photoAlt: 'Ảnh vừa chụp',
+    opening: 'Đang mở camera…',
+    intro: 'Hướng camera vào một đồ vật quanh bạn để học tên tiếng Việt.',
+    capture: '📸 Chụp',
+    cameraOff: 'Tắt camera',
+    another: '📷 Chụp ảnh khác',
+    openCamera: '📷 Mở camera',
+    pick: '🖼️ Chọn ảnh có sẵn',
+    analyzing: 'Đang nhận diện đồ vật…',
+    openSettings: 'Mở cài đặt quyền',
+    found: 'Đồ vật trong ảnh',
+    none: 'Chưa nhận ra đồ vật nào',
+    mock: 'Nhãn mẫu: dịch vụ nhận diện ảnh chưa được nối, kết quả chưa phản ánh ảnh của bạn.',
+    listenTo: 'Nghe “{word}”',
+    saved: '✓ Đã lưu',
+    save: '+ Lưu ôn'
+  },
+  {
+    title: 'Camera vocabulary',
+    cardsLink: '📈 Review cards',
+    noCamera: 'This device can’t open the camera in the app. Use “Choose a photo” instead.',
+    denied: 'The app does not have camera permission.',
+    notFound: 'No camera found. Use “Choose a photo” instead.',
+    busy: 'Couldn’t open the camera (another app may be using it).',
+    badFile: 'Couldn’t read this image. Please choose another JPEG or PNG.',
+    videoLabel: 'Camera view',
+    photoAlt: 'Photo just taken',
+    opening: 'Opening the camera…',
+    intro: 'Point the camera at an object around you to learn its Vietnamese name.',
+    capture: '📸 Capture',
+    cameraOff: 'Turn camera off',
+    another: '📷 Take another photo',
+    openCamera: '📷 Open camera',
+    pick: '🖼️ Choose a photo',
+    analyzing: 'Recognising objects…',
+    openSettings: 'Open permission settings',
+    found: 'Objects in the photo',
+    none: 'No objects recognised',
+    mock: 'Sample labels: image recognition is not connected, so these don’t reflect your photo.',
+    listenTo: 'Listen to “{word}”',
+    saved: '✓ Saved',
+    save: '+ Save'
+  }
+);

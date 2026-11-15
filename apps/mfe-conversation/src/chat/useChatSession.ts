@@ -4,6 +4,7 @@ import { learnerStore } from '@vietlearning/state';
 import { sanitizeAgentBlocks } from '@vietlearning/ui/agent-blocks';
 import { TurnStateMachine, type TurnState } from '../state/TurnStateMachine';
 import { sendTurn, TurnError } from './chatClient';
+import { t as tConv } from '../i18n';
 
 export interface ChatMessage {
   id: string;
@@ -97,6 +98,7 @@ export function useChatSession({ scenarioId, dialect, onTurnDone }: UseChatOptio
             learnerLevel: profile.level,
             correctionLevel: preferences.correctionLevel,
             persona: preferences.persona,
+            explanationLanguage: preferences.uiLanguage,
             scenarioId,
             history
           },
@@ -132,7 +134,7 @@ export function useChatSession({ scenarioId, dialect, onTurnDone }: UseChatOptio
         m.reset();
         setMessages((list) => list.filter((x) => x.id !== tutorId));
         if (controller.signal.aborted && !(err instanceof TurnError)) return; // người dùng hủy / rời màn hình
-        setError(err instanceof TurnError ? err.message : 'Có lỗi xảy ra. Vui lòng thử lại.');
+        setError(err instanceof TurnError ? err.message : tConv('errGeneric'));
       } finally {
         if (abortRef.current === controller) abortRef.current = null;
       }

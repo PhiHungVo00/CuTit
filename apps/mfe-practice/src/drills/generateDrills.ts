@@ -5,6 +5,11 @@
  * GoF Factory Method: mỗi dạng bài có một hàm dựng riêng (make*).
  */
 import { DIALECT_DICTIONARY, HONORIFIC_PAIRS_20, SENTENCE_ITEMS, type Dialect } from '@vietlearning/content';
+import { learnerStore } from '@vietlearning/state';
+import { meaningFor, t as tr } from '../i18n';
+
+/** Đề bài sinh theo ngôn ngữ giao diện lúc tạo phiên */
+const lang = () => learnerStore.getState().preferences.uiLanguage;
 
 export type DrillType = 'quiz' | 'fill' | 'listen' | 'match' | 'repeat';
 
@@ -32,8 +37,6 @@ export interface RepeatDrill extends Base {
   translation: string;
 }
 export type Drill = ChoiceDrill | MatchDrill | RepeatDrill;
-
-const REGION: Record<Dialect, string> = { north: 'Bắc', central: 'Trung', south: 'Nam' };
 
 function rng(seed: number) {
   let s = Math.abs(Math.floor(seed)) % 2147483646 || 1;
@@ -66,10 +69,10 @@ function makeDialectQuiz(r: () => number, n: number): ChoiceDrill {
   return {
     key: `dialect:${e.id}:${target}`,
     type: 'quiz',
-    prompt: `Người miền ${REGION[target]} gọi “${e.north}” là gì?`,
+    prompt: tr('qDialect', { region: tr(`region.${target}`), word: e.north }),
     options: options(answer, DIALECT_DICTIONARY.map((x) => x[target]).concat(DIALECT_DICTIONARY.map((x) => x.north)), n, r),
     answer,
-    explanation: `${e.meaning}: Bắc “${e.north}”, Trung “${e.central}”, Nam “${e.south}”.`
+    explanation: tr('qDialectExplain', { meaning: meaningFor(e.meaning, lang()), north: e.north, central: e.central, south: e.south })
   };
 }
 
@@ -78,10 +81,10 @@ function makeHonorificQuiz(r: () => number, n: number): ChoiceDrill {
   return {
     key: `honorific:${p.id}`,
     type: 'quiz',
-    prompt: `${p.relationName}: người nói xưng là gì và gọi người nghe là “${p.listener}”?`,
+    prompt: tr('qHonorific', { relation: lang() === 'en' && p.relationNameEn ? p.relationNameEn : p.relationName, listener: p.listener }),
     options: options(p.speaker, HONORIFIC_PAIRS_20.map((x) => x.speaker), n, r),
     answer: p.speaker,
-    explanation: `${p.example} — ${p.explanation}`
+    explanation: `${p.example} — ${lang() === 'en' && p.explanationEn ? p.explanationEn : p.explanation}`
   };
 }
 
@@ -96,10 +99,10 @@ function makeFill(r: () => number, n: number, maxLevel: number): ChoiceDrill {
   return {
     key: `fill:${s.id}:${i}`,
     type: 'fill',
-    prompt: `Điền từ thích hợp: “${shown}” (${s.translation})`,
+    prompt: tr('qFill', { shown, translation: s.translation }),
     options: options(t.text, sameTag, n, r),
     answer: t.text,
-    explanation: `Câu đúng: “${order.map((idx) => s.tokens[idx].text).join(' ')}”.`
+    explanation: tr('qFillExplain', { sentence: order.map((idx) => s.tokens[idx].text).join(' ') })
   };
 }
 
@@ -110,22 +113,22 @@ function makeListen(r: () => number, n: number): ChoiceDrill {
     return {
       key: `listen:tone:${answer}`,
       type: 'listen',
-      prompt: 'Nghe và chọn âm tiết bạn nghe được',
+      prompt: tr('qTone'),
       speak: answer,
       options: options(answer, tones, n, r),
       answer,
-      explanation: 'Sáu thanh: ma (ngang), mà (huyền), má (sắc), mả (hỏi), mã (ngã), mạ (nặng).'
+      explanation: tr('qToneExplain')
     };
   }
   const e = pick(DIALECT_DICTIONARY, r);
   return {
     key: `listen:word:${e.id}`,
     type: 'listen',
-    prompt: 'Nghe và chọn từ bạn nghe được',
+    prompt: tr('qWord'),
     speak: e.north,
     options: options(e.north, DIALECT_DICTIONARY.map((x) => x.north), n, r),
     answer: e.north,
-    explanation: `“${e.north}”: ${e.meaning}.`
+    explanation: `“${e.north}”: ${meaningFor(e.meaning, lang())}.`
   };
 }
 
@@ -137,7 +140,7 @@ function makeMatch(r: () => number): MatchDrill {
   return {
     key: `match:${chosen.map((e) => e.id).sort().join('-')}`,
     type: 'match',
-    prompt: 'Ghép từ miền Bắc với từ miền Nam cùng nghĩa',
+    prompt: tr('qMatch'),
     pairs: chosen.map((e) => ({ left: e.north, right: e.south }))
   };
 }
@@ -150,7 +153,7 @@ function makeRepeat(r: () => number, maxLevel: number): RepeatDrill {
   return {
     key: `repeat:${s.id}`,
     type: 'repeat',
-    prompt: 'Nghe rồi đọc to câu sau, sau đó tự đánh giá',
+    prompt: tr('qRepeat'),
     text: s.accepted[0].map((i) => s.tokens[i].text).join(' '),
     translation: s.translation
   };
@@ -168,10 +171,10 @@ export function drillFromKey(key: string, level: number, seed: number): Drill | 
     return {
       key,
       type: 'quiz',
-      prompt: `Người miền ${REGION[target]} gọi “${e.north}” là gì?`,
+      prompt: tr('qDialect', { region: tr(`region.${target}`), word: e.north }),
       options: options(e[target], DIALECT_DICTIONARY.map((x) => x[target]), n, r),
       answer: e[target],
-      explanation: `${e.meaning}: Bắc “${e.north}”, Trung “${e.central}”, Nam “${e.south}”.`
+      explanation: tr('qDialectExplain', { meaning: meaningFor(e.meaning, lang()), north: e.north, central: e.central, south: e.south })
     };
   }
   if (kind === 'honorific') {
@@ -180,10 +183,10 @@ export function drillFromKey(key: string, level: number, seed: number): Drill | 
     return {
       key,
       type: 'quiz',
-      prompt: `${p.relationName}: người nói xưng là gì và gọi người nghe là “${p.listener}”?`,
+      prompt: tr('qHonorific', { relation: lang() === 'en' && p.relationNameEn ? p.relationNameEn : p.relationName, listener: p.listener }),
       options: options(p.speaker, HONORIFIC_PAIRS_20.map((x) => x.speaker), n, r),
       answer: p.speaker,
-      explanation: `${p.example} — ${p.explanation}`
+      explanation: `${p.example} — ${lang() === 'en' && p.explanationEn ? p.explanationEn : p.explanation}`
     };
   }
   return null;

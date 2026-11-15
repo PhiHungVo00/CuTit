@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { checkSentenceOrder, type OrderCheckResult, type SentenceItem } from '@vietlearning/contracts/a8';
 import type { SentenceBank } from '@vietlearning/content';
+import { learnerStore } from '@vietlearning/state';
 import { SentenceOriginator, type SentenceMemento } from './SentenceBuilderMemento';
 
 /** Xáo trộn xác định (theo seed) và bảo đảm KHÔNG trùng một thứ tự đúng nào (tránh "đề cho sẵn đáp án") */
@@ -68,7 +69,11 @@ export function useSentenceBuilder(item: SentenceBank, seed: number) {
   };
 
   const check = (): OrderCheckResult => {
-    const r = checkSentenceOrder(item as unknown as SentenceItem, placedRef.current.map((i) => item.tokens[i].text));
+    const r = checkSentenceOrder(
+      item as unknown as SentenceItem,
+      placedRef.current.map((i) => item.tokens[i].text),
+      learnerStore.getState().preferences.uiLanguage
+    );
     setResult(r);
     return r;
   };
