@@ -248,9 +248,6 @@ importers:
       '@capacitor/splash-screen':
         specifier: ^7.0.5
         version: 7.0.5(@capacitor/core@7.6.10)
-      '@capacitor/status-bar':
-        specifier: ^7.0.6
-        version: 7.0.6(@capacitor/core@7.6.10)
       '@fontsource/be-vietnam-pro':
         specifier: ^5.3.0
         version: 5.3.0
@@ -1215,11 +1212,6 @@ packages:
 
   '@capacitor/splash-screen@7.0.5':
     resolution: {integrity: sha512-bPG2SamFL7VT5I3XsgsGgJhkiyxq3OXCOVKEDupSieVdtEiG7j2vLbSD0xL+91zteF/qLuxsjbugGy5LD8mS2A==}
-    peerDependencies:
-      '@capacitor/core': '>=7.0.0'
-
-  '@capacitor/status-bar@7.0.6':
-    resolution: {integrity: sha512-7AVqj46b26QikImQzWfsJmzG8NUJZBGkrVSuoeTo+SX/YH3hXH0MqwwFgMqMGHfa/BICDgSvTjM9miVFlq0+RQ==}
     peerDependencies:
       '@capacitor/core': '>=7.0.0'
 
@@ -5550,10 +5542,6 @@ snapshots:
       tslib: 2.9.1
 
   '@capacitor/splash-screen@7.0.5(@capacitor/core@7.6.10)':
-    dependencies:
-      '@capacitor/core': 7.6.10
-
-  '@capacitor/status-bar@7.0.6(@capacitor/core@7.6.10)':
     dependencies:
       '@capacitor/core': 7.6.10
 

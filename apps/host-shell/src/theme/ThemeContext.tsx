@@ -1,4 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { applySystemBars } from '../native/bootstrap';
 
 export type AppTheme = 'dark' | 'light';
 
@@ -32,6 +33,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     // Chỉ ghi khi khác: ghi lại cùng giá trị ở <html>/color-scheme vẫn có thể buộc tính lại style toàn trang
     const root = document.documentElement;
     if (root.dataset.theme !== theme) root.dataset.theme = theme;
+    applySystemBars(theme); // app Android: dải status/navigation bar đổi theo
     const themeMeta = document.querySelector('meta[name="theme-color"]');
     if (themeMeta && themeMeta.getAttribute('content') !== META_COLOR[theme]) themeMeta.setAttribute('content', META_COLOR[theme]);
   }, [theme]);
