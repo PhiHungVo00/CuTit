@@ -22,7 +22,7 @@ test.describe('Khung app', () => {
   test('trang chủ: liệt kê 6 màn hình, thanh tab, bố cục mobile chuẩn', async ({ page }) => {
     await page.goto('/');
     await expect(page.getByRole('heading', { name: 'Học Tiếng Việt Cùng Bé Cu Tít' })).toBeVisible();
-    await expect(page.locator('.screen-card')).toHaveCount(9);
+    await expect(page.locator('.screen-card')).toHaveCount(11);
     await expect(page.getByRole('navigation', { name: 'Điều hướng chính' })).toBeVisible();
     await assertMobileLayout(page);
   });
@@ -250,6 +250,88 @@ test.describe('M11 Làm quen & xếp lớp', () => {
     await page.getByText('Biết câu cơ bản').click();
     await page.getByRole('button', { name: 'Tiếp →' }).click();
     await expect(page.getByRole('heading', { name: 'Trình độ của bạn: A2' })).toBeVisible();
+  });
+});
+
+test.describe('M9 Tiến độ & M12 Tùy chỉnh', () => {
+  test('thống kê từ dữ liệu trên máy; ôn 2 thẻ đến hạn => SM-2 dời lịch', async ({ page }) => {
+    await page.addInitScript(() => {
+      if (localStorage.getItem('becutit.learner')) return;
+      const d = (offsetDays: number) => {
+        const x = new Date();
+        x.setDate(x.getDate() + offsetDays);
+        return x;
+      };
+      const key = (x: Date) => `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, '0')}-${String(x.getDate()).padStart(2, '0')}`;
+      const card = (itemRef: string, front: string, back: string, due: number) => ({ itemRef, front, back, source: 'dialect', ease: 250, intervalDays: 0, repetitions: 0, dueAt: d(due).toISOString() });
+      localStorage.setItem(
+        'becutit.learner',
+        JSON.stringify({
+          version: 1,
+          state: {
+            profile: { onboarded: true, level: 2, goal: 'daily', nativeLang: 'en', dialect: 'north' },
+            preferences: { voiceId: 'vi-VN-Standard-A', speed: 1, dialect: 'north', correctionLevel: 'gentle', persona: 'be_cu_tit' },
+            srs: { a: card('a', 'ngô', 'bắp (miền Nam)', -1), b: card('b', 'dứa', 'thơm, khóm', 0), c: card('c', 'bát', 'chén', 3) },
+            attempts: [
+              { skill: 'drill', correct: true, at: d(0).toISOString() },
+              { skill: 'drill', correct: false, at: d(0).toISOString() },
+              { skill: 'sentence', correct: true, at: d(0).toISOString() }
+            ],
+            activity: { [key(d(0))]: 600, [key(d(-1))]: 300, [key(d(-2))]: 120 }
+          }
+        })
+      );
+    });
+    await page.goto('/ho-so');
+    await expect(page.getByRole('heading', { name: 'Tiến độ học' })).toBeVisible();
+    await expect(page.getByText('3 ngày', { exact: true })).toBeVisible();
+    await expect(page.getByText('17 phút', { exact: true })).toBeVisible();
+    await expect(page.getByText('A2', { exact: true })).toBeVisible();
+    await expect(page.getByText('50% · 1/2 bài')).toBeVisible();
+    await assertMobileLayout(page);
+    await page.getByRole('button', { name: 'Ôn 2 thẻ' }).click();
+    await expect(page.getByRole('heading', { name: 'ngô' })).toBeVisible();
+    await page.getByRole('button', { name: 'Lật thẻ' }).click();
+    await expect(page.getByText('bắp (miền Nam)')).toBeVisible();
+    await assertMobileLayout(page);
+    await page.getByRole('button', { name: /^Nhớ/ }).click();
+    await page.getByRole('button', { name: 'Lật thẻ' }).click();
+    await page.getByRole('button', { name: /^Quên/ }).click();
+    await expect(page.getByRole('heading', { name: 'Ôn xong! Nhớ 1/2 thẻ' })).toBeVisible();
+    const srs = await page.evaluate(() => JSON.parse(localStorage.getItem('becutit.learner')!).state.srs);
+    expect(srs.a.repetitions).toBe(1);
+    expect(new Date(srs.a.dueAt).getTime()).toBeGreaterThan(Date.now() + 12 * 3600_000);
+    expect(srs.b.repetitions).toBe(0);
+    await page.getByRole('button', { name: 'Xong' }).click();
+    // SM-2: thẻ "Quên" đặt lại khoảng 1 ngày => hôm nay không còn thẻ đến hạn
+    await expect(page.getByText('Đã ôn hết 3 thẻ. Thẻ tiếp theo đến hạn ngày mai.')).toBeVisible();
+  });
+
+  test('đổi tùy chỉnh: lưu trên máy ngay, đồng bộ Gateway; mất mạng => báo chưa đồng bộ', async ({ page }) => {
+    const puts: unknown[] = [];
+    let offline = false;
+    await page.route('**/v1/speech/voices', (route) =>
+      route.fulfill({ json: [{ id: 'v-south', name: 'Giọng Nam Sài Gòn (máy chủ)', dialect: 'south' }, { id: 'v-north', name: 'Giọng Bắc (máy chủ)', dialect: 'north' }] })
+    );
+    await page.route('**/v1/preferences', async (route) => {
+      if (offline) return route.abort('internetdisconnected');
+      puts.push(route.request().postDataJSON());
+      await route.fulfill({ json: route.request().postDataJSON() });
+    });
+    await page.goto('/tuy-chinh');
+    await expect(page.getByText('Giọng Bắc (máy chủ)')).toBeVisible();
+    await assertMobileLayout(page);
+    await page.getByText('Miền Nam', { exact: true }).click();
+    await expect(page.getByText('Giọng Nam Sài Gòn (máy chủ)')).toBeVisible();
+    await expect(page.getByRole('status').filter({ hasText: 'Đã lưu và đồng bộ' })).toBeVisible();
+    expect(puts.at(-1)).toMatchObject({ dialect: 'south', voiceId: 'v-south' });
+    offline = true;
+    await page.getByText('Kỹ lưỡng').click();
+    await expect(page.getByRole('status').filter({ hasText: 'chưa đồng bộ' })).toBeVisible();
+    await page.reload();
+    const prefs = await page.evaluate(() => JSON.parse(localStorage.getItem('becutit.learner')!).state.preferences);
+    expect(prefs).toMatchObject({ dialect: 'south', voiceId: 'v-south', correctionLevel: 'strict' });
+    await expect(page.getByRole('radio', { name: /Kỹ lưỡng/ })).toBeChecked();
   });
 });
 

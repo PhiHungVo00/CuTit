@@ -4,6 +4,7 @@ import { bootstrapNative } from './native/bootstrap';
 import { SCREENS, prefetchScreen } from './routes';
 import { Home } from './screens/Home';
 import { ScreenErrorBoundary } from './components/ScreenErrorBoundary';
+import { useStudyTimer } from './useStudyTimer';
 
 function useOnline(): boolean {
   const [online, setOnline] = useState(() => navigator.onLine);
@@ -33,6 +34,7 @@ export function App() {
   const online = useOnline();
   const { pathname } = useLocation();
   const navigate = useNavigate();
+  useStudyTimer();
 
   useEffect(() => {
     bootstrapNative(() => navigate(-1)).catch((err) => console.error('[Native] Khởi tạo lỗi', err));
