@@ -20,10 +20,20 @@ export interface SpeechOptions {
   onError?: (error: { code: SpeechFailure; message: string }) => void;
 }
 
-function gatewayBaseUrl(): string {
-  const fromWindow = typeof window !== 'undefined' ? (window as { __GATEWAY_URL__?: string }).__GATEWAY_URL__ : undefined;
-  const fromEnv = (import.meta as { env?: Record<string, string | undefined> }).env?.VITE_GATEWAY_URL;
-  return (fromWindow || fromEnv || 'http://localhost:4000').replace(/\/$/, '');
+/**
+ * Gọi TTS của Gateway qua client chung (kiểm tra contract, lỗi chuẩn hóa). Import LƯỜI: client kéo theo
+ * Zod (~13 KB) nên chỉ tải khi thiết bị không có giọng Việt, không làm nặng chunk M3.
+ */
+async function synthesizeViaGateway(text: string, speed: number): Promise<string> {
+  const [{ request }, { SynthesizeResponseSchema }] = await Promise.all([
+    import('@vietlearning/api-client'),
+    import('@vietlearning/contracts/api')
+  ]);
+  const data = await request('/v1/speech/synthesize', {
+    body: { text, voiceId: 'vi-VN-Standard-A', speed, dialect: 'north' },
+    schema: SynthesizeResponseSchema
+  });
+  return data.audioUrl;
 }
 
 class SpeechService {
@@ -88,31 +98,26 @@ class SpeechService {
     }
 
     // 2. TTS của Gateway
+    let audioUrl: string;
     try {
-      const res = await fetch(`${gatewayBaseUrl()}/v1/speech/synthesize`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text, voiceId: 'vi-VN-Standard-A', speed: options.speed ?? 1.0, dialect: 'north' })
-      });
+      audioUrl = await synthesizeViaGateway(text, options.speed ?? 1.0);
+    } catch (err) {
       if (!isCurrent()) return;
-      if (!res.ok) {
-        fail('no-voice-available', `Thiết bị không có giọng tiếng Việt và Gateway trả về ${res.status}`);
-        return;
-      }
-      const data: { audioUrl?: string } = await res.json();
-      if (!data.audioUrl) {
-        fail('no-voice-available', 'Gateway không trả về audioUrl');
-        return;
-      }
-      if (!isCurrent()) return;
+      const kind = (err as { kind?: string }).kind;
+      if (kind === 'offline' || kind === 'timeout') fail('network', String(err));
+      else fail('no-voice-available', `Thiết bị không có giọng tiếng Việt và Gateway lỗi (${kind ?? 'không rõ'})`);
+      return;
+    }
+    if (!isCurrent()) return;
 
-      const audio = new Audio(data.audioUrl);
+    try {
+      const audio = new Audio(audioUrl);
       this.audio = audio;
       audio.onended = finish;
       audio.onerror = () => fail('playback', 'Không phát được file âm thanh');
       await audio.play();
     } catch (err) {
-      fail('network', err instanceof Error ? err.message : String(err));
+      fail('playback', err instanceof Error ? err.message : String(err));
     }
   }
 }

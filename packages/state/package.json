@@ -1,0 +1,20 @@
+{
+  "name": "@vietlearning/state",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -b",
+    "dev": "tsc -b -w",
+    "test": "node --test \"test/**/*.test.mjs\""
+  },
+  "devDependencies": {
+    "react": "^18.3.1",
+    "typescript": "^5.7.3"
+  },
+  "dependencies": {
+    "@vietlearning/shared": "workspace:*",
+    "zustand": "^5.1.0"
+  }
+}
