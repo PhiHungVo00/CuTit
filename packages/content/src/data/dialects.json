@@ -1,7 +1,7 @@
 [
   {"id": "d1", "north": "ngô", "central": "bắp", "south": "bắp", "meaning": "Bắp ngô (Corn)", "reviewed": false},
   {"id": "d2", "north": "lạc", "central": "đậu phụng", "south": "đậu phộng", "meaning": "Hạt lạc (Peanut)", "reviewed": false},
-  {"id": "d3", "north": "dứa", "central": "thơm", "south": "khóm", "meaning": "Quả dứa (Pineapple)", "reviewed": false},
+  {"id": "d3", "north": "dứa", "central": "thơm", "south": "thơm", "meaning": "Quả dứa (Pineapple)", "reviewed": false},
   {"id": "d4", "north": "roi", "central": "mận", "south": "mận", "meaning": "Quả roi / quả mận (Wax apple)", "reviewed": false},
   {"id": "d5", "north": "thìa", "central": "muỗng", "south": "muỗng", "meaning": "Cái thìa / cái muỗng (Spoon)", "reviewed": false},
   {"id": "d6", "north": "chậu", "central": "thau", "south": "thau", "meaning": "Chậu rửa (Basin)", "reviewed": false},

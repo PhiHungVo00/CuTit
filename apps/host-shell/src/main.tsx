@@ -10,11 +10,14 @@ import './styles/app.css';
 import { App } from './App';
 import { SCREENS, prefetchScreen } from './routes';
 import { isNativeApp } from './native/bootstrap';
+import { applySwapFontsForNativeApp } from './styles/nativeFonts';
 import { ThemeProvider } from './theme/ThemeContext';
 import { configureGateway } from '@vietlearning/api-client';
 
 // Một nơi duy nhất cấu hình Gateway cho mọi màn hình (URL nhúng lúc build, KHÔNG có secret)
 configureGateway({ baseUrl: import.meta.env.VITE_GATEWAY_URL ?? 'http://localhost:4000', timeoutMs: 10_000 });
+
+if (isNativeApp) applySwapFontsForNativeApp();
 
 // Mở thẳng một màn hình (link, khôi phục tab, deep link): tải chunk của nó NGAY, song song với lúc React
 // khởi tạo, thay vì đợi Router render rồi lazy() mới bắt đầu tải (giảm LCP của các route lazy)

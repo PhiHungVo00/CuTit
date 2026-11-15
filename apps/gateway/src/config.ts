@@ -27,7 +27,12 @@ const EnvSchema = z
     MAX_LLM_TOKENS_PER_DAY: z.coerce.number().int().positive().default(100000),
     AUDIO_BODY_LIMIT_MB: z.coerce.number().positive().default(8),
     // LLM + Vision (Nguyên tắc 1, 2, 4): khóa chỉ nằm ở server. Không đặt => Gateway dùng bộ giả lập (mock: true)
-    GEMINI_API_KEY: z.string().min(20).optional(),
+    // Giá trị giữ chỗ trong .env cũ (vd. "AIzaSy...") hoặc quá ngắn => coi như CHƯA cấu hình (chạy bộ giả lập),
+    // không làm Gateway từ chối khởi động
+    GEMINI_API_KEY: z
+      .string()
+      .optional()
+      .transform((v) => (v && v.length >= 20 && !v.includes('...') ? v : undefined)),
     GEMINI_MODEL: z.string().regex(/^[a-z0-9.-]+$/).default('gemini-3.5-flash-lite'),
     LLM_TIMEOUT_MS: z.coerce.number().int().positive().max(9000, "LLM_TIMEOUT_MS phải nhỏ hơn timeout 10 giây của client (ảnh, giọng nói)").default(8000)
   })

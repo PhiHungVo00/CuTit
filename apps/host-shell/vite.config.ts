@@ -2,6 +2,26 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 import tailwindcss from '@tailwindcss/vite';
+import type { Plugin } from 'vite';
+
+/**
+ * Preload 4 file font (latin/vietnamese × 400/800) ngay trong HTML. Font khai báo font-display: optional
+ * (styles/fonts.css); không preload thì trình duyệt chỉ phát hiện font SAU khi React vẽ chữ => luôn lỡ
+ * khung ~100 ms và web không bao giờ hiện Be Vietnam Pro (đo bằng CSS.getPlatformFontsForNode).
+ */
+function preloadFonts(): Plugin {
+  return {
+    name: 'becutit-preload-fonts',
+    apply: 'build',
+    transformIndexHtml: {
+      order: 'post',
+      handler(_html, ctx) {
+        const fonts = Object.keys(ctx.bundle ?? {}).filter((f) => /be-vietnam-pro-(latin|vietnamese)-(400|800)-normal-[\w-]+\.woff2$/.test(f));
+        return fonts.map((f) => ({ tag: 'link', attrs: { rel: 'preload', as: 'font', type: 'font/woff2', href: `/${f}`, crossorigin: '' }, injectTo: 'head' as const }));
+      }
+    }
+  };
+}
 
 /**
  * Host Shell ghép các remote MFE lúc build (không dùng Module Federation runtime).
@@ -13,6 +33,7 @@ export default defineConfig({
   plugins: [
     react(),
     tailwindcss(),
+    preloadFonts(),
     VitePWA({
       registerType: 'autoUpdate',
       injectRegister: false, // tự đăng ký trong main.tsx sau khi trang đã hiển thị

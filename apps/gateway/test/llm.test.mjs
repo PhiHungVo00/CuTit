@@ -140,3 +140,10 @@ test('GeminiProvider: khóa ở header (không ở URL), lỗi nhà cung cấp k
   const slow = new GeminiProvider('k'.repeat(30), 'm', 20, (_u, init) => new Promise((_r, rej) => init.signal.addEventListener('abort', () => rej(init.signal.reason))));
   await assert.rejects(slow.generateJson({ system: 's', turns: [], schema: {} }), (e) => e.statusCode === 504);
 });
+
+test('cấu hình: khóa giữ chỗ/quá ngắn trong .env cũ => chạy bộ giả lập thay vì không khởi động được', async () => {
+  assert.equal(loadConfig({ NODE_ENV: 'development', GEMINI_API_KEY: 'AIzaSy...' }).GEMINI_API_KEY, undefined);
+  assert.equal(loadConfig({ NODE_ENV: 'development', GEMINI_API_KEY: 'short' }).GEMINI_API_KEY, undefined);
+  assert.equal(loadConfig({ NODE_ENV: 'development', GEMINI_API_KEY: 'x'.repeat(39) }).GEMINI_API_KEY, 'x'.repeat(39));
+  assert.throws(() => loadConfig({ NODE_ENV: 'development', LLM_TIMEOUT_MS: '15000' }), /LLM_TIMEOUT_MS/);
+});
