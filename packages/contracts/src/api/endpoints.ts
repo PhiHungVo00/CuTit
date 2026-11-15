@@ -93,6 +93,66 @@ export const CultureAskResponseSchema = z.object({
   sources: z.array(z.string())
 });
 
+// POST /speech/transcribe
+export const TranscribeResponseSchema = z.object({
+  text: z.string(),
+  confidence: z.number().min(0).max(1),
+  words: z.array(z.object({ w: z.string(), start: z.number(), end: z.number() }))
+});
+
+// GET /speech/voices
+export const VoiceListResponseSchema = z.array(
+  z.object({
+    id: z.string(),
+    name: z.string(),
+    dialect: z.enum(['north', 'central', 'south'])
+  })
+);
+
+// POST /speech/assess (A3 + A2)
+export const AssessResponseSchema = z.object({
+  transcript: z.string(),
+  diff: z.array(z.object({ expected: z.string(), actual: z.string() })),
+  score: z.number().min(0).max(100),
+  hints: z.array(z.string())
+});
+
+export const DrillListResponseSchema = z.array(DrillItemSchema);
+
+// GET /pitch/reference/:id
+export const PitchReferenceResponseSchema = z.object({
+  itemId: z.string(),
+  tone: z.enum(['ngang', 'huyen', 'sac', 'hoi', 'nga', 'nang']),
+  contourSemitones: z.array(z.number())
+});
+
+// GET /srs/due
+export const SrsDueResponseSchema = z.array(
+  z.object({
+    id: z.string(),
+    itemRef: z.string(),
+    ease: z.number().int(),
+    intervalDays: z.number().int(),
+    dueAt: z.string().datetime()
+  })
+);
+
+// GET & PUT /preferences
+export const PreferencesSchema = z.object({
+  voiceId: z.string(),
+  speed: z.number().min(0.5).max(2.0),
+  dialect: z.enum(['north', 'central', 'south']),
+  correctionLevel: z.enum(['gentle', 'strict', 'off']),
+  persona: z.string()
+});
+
+// Lỗi chuẩn hóa của Gateway
+export const ApiErrorSchema = z.object({
+  error: z.string(),
+  message: z.string().optional(),
+  issues: z.array(z.unknown()).optional()
+});
+
 // GET /analytics/summary
 export const AnalyticsSummaryResponseSchema = z.object({
   streakDays: z.number().int(),

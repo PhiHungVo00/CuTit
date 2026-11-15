@@ -84,7 +84,7 @@ class SpeechService {
       (typeof import.meta !== 'undefined' && (import.meta as any).env?.VITE_GATEWAY_URL) ||
       'http://localhost:4000';
 
-    const endpoints = [`${gatewayBase}/api/speech/tts`, `${gatewayBase}/v1/speech/synthesize`];
+    const endpoints = [`${gatewayBase}/v1/speech/synthesize`];
 
     for (const endpoint of endpoints) {
       try {
