@@ -88,11 +88,22 @@ export const SCREENS: ScreenRoute[] = [
     label: 'Luyện tập',
     shortLabel: 'Luyện tập',
     icon: '🧩',
-    description: 'M5 · Bài tập thích ứng, M8 · Ghép câu',
+    description: 'M5 · 8 bài/phiên, 5 dạng, ôn lại bài sai theo SM-2 (A4)',
     owner: 'mfe-practice',
-    ready: false,
+    ready: true,
     inTabBar: true,
-    load: () => import('@vietlearning/mfe-practice')
+    load: () => import('./screens/DrillRoute')
+  }),
+  screen({
+    path: '/ghep-cau',
+    label: 'Ghép câu',
+    shortLabel: 'Ghép câu',
+    icon: '🧱',
+    description: 'M8 · Xếp từ thành câu đúng trật tự, giải thích lỗi (A8)',
+    owner: 'mfe-practice',
+    ready: true,
+    inTabBar: false,
+    load: () => import('./screens/SentenceRoute')
   }),
   screen({
     path: '/camera',

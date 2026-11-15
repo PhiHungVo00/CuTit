@@ -12,17 +12,23 @@
     "./api": {
       "types": "./dist/api/index.d.ts",
       "default": "./dist/api/index.js"
+    },
+    "./a8": {
+      "types": "./dist/a8/sentenceOrder.d.ts",
+      "default": "./dist/a8/sentenceOrder.js"
     }
   },
   "scripts": {
     "build": "tsc -b",
-    "dev": "tsc -b -w"
+    "dev": "tsc -b -w",
+    "test": "node --test \"test/**/*.test.mjs\""
   },
   "dependencies": {
     "zod": "^3.24.2",
     "drizzle-orm": "^0.39.3"
   },
   "devDependencies": {
-    "typescript": "^5.7.3"
+    "typescript": "^5.7.3",
+    "@vietlearning/content": "workspace:*"
   }
 }

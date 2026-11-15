@@ -130,3 +130,16 @@ test('/culture/ask: truy hồi đúng thẻ văn hóa và trả id nguồn', asy
   assert.match(res.json().answer, /đũa/);
   await a.close();
 });
+
+test('/sentence/check: A8 thật — đúng/sai trật tự, câu không tồn tại => 404', async () => {
+  const a = await app();
+  const post = (payload) => a.inject({ method: 'POST', url: '/v1/sentence/check', payload });
+  const ok = await post({ itemId: 's13', tokens: ['Cô ấy', 'mặc', 'áo', 'đỏ'] });
+  assert.equal(ok.json().valid, true);
+  const bad = await post({ itemId: 's13', tokens: ['Cô ấy', 'mặc', 'đỏ', 'áo'] });
+  assert.equal(bad.json().valid, false);
+  assert.ok(bad.json().errors[0].includes('SAU danh từ'));
+  assert.deepEqual(bad.json().correctOrder, ['Cô ấy', 'mặc', 'áo', 'đỏ']);
+  assert.equal((await post({ itemId: 'khong-co', tokens: ['a'] })).statusCode, 404);
+  await a.close();
+});

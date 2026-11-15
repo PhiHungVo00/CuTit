@@ -22,7 +22,7 @@ test.describe('Khung app', () => {
   test('trang chủ: liệt kê 6 màn hình, thanh tab, bố cục mobile chuẩn', async ({ page }) => {
     await page.goto('/');
     await expect(page.getByRole('heading', { name: 'Học Tiếng Việt Cùng Bé Cu Tít' })).toBeVisible();
-    await expect(page.locator('.screen-card')).toHaveCount(8);
+    await expect(page.locator('.screen-card')).toHaveCount(9);
     await expect(page.getByRole('navigation', { name: 'Điều hướng chính' })).toBeVisible();
     await assertMobileLayout(page);
   });
@@ -124,6 +124,63 @@ test.describe('M6 Phương ngữ', () => {
     await page.getByLabel('Chỉ hiện từ khác nhau ở cả 3 miền').check();
     await expect(page.getByRole('listitem').filter({ hasText: 'Thế nào' })).toBeVisible();
     await expect(page.getByRole('listitem').filter({ hasText: 'Con lợn' })).toHaveCount(0);
+  });
+});
+
+test.describe('M8 Ghép câu', () => {
+  test('ghép đúng câu đầu (A8 chấm đúng), ghép sai câu sau => giải thích lỗi + lưu để ôn', async ({ page }) => {
+    await page.goto('/ghep-cau');
+    await expect(page.getByRole('heading', { name: 'Ghép câu' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'I eat phở.' })).toBeVisible();
+    await assertMobileLayout(page);
+    const pool = page.getByRole('group', { name: 'Các từ để ghép' });
+    for (const w of ['Tôi', 'ăn', 'phở']) await pool.getByRole('button', { name: w, exact: true }).click();
+    await page.getByRole('button', { name: 'Kiểm tra' }).click();
+    await expect(page.getByRole('status')).toContainText('Chính xác');
+    await page.getByRole('button', { name: 'Câu tiếp →' }).click();
+
+    // Câu 2: "Chị ấy đang học tiếng Việt" — cố tình đặt "đang" sau động từ
+    await expect(page.getByRole('heading', { name: 'She is studying Vietnamese.' })).toBeVisible();
+    for (const w of ['Chị ấy', 'học', 'đang', 'tiếng Việt']) await pool.getByRole('button', { name: w, exact: true }).click();
+    await page.getByRole('button', { name: 'Kiểm tra' }).click();
+    await expect(page.getByRole('alert')).toContainText('TRƯỚC động từ');
+    const saved = await page.evaluate(() => Object.keys(JSON.parse(localStorage.getItem('becutit.learner') || '{}').state?.srs ?? {}));
+    expect(saved).toContain('sentence:s2');
+  });
+});
+
+test.describe('M5 Luyện tập', () => {
+  test('làm hết một phiên 8 bài (đủ dạng), có tổng kết, ghi lịch sử làm bài', async ({ page }) => {
+    await page.goto('/luyen-tap');
+    await expect(page.getByRole('heading', { name: 'Luyện tập' })).toBeVisible();
+    await assertMobileLayout(page);
+    const seen = new Set<string>();
+    for (let i = 0; i < 8; i++) {
+      const label = (await page.locator('section p').first().textContent()) ?? '';
+      seen.add(label.split('·')[0].trim());
+      if (label.startsWith('Ghép từ')) {
+        const lefts = page.getByRole('group', { name: 'Miền Bắc' }).getByRole('button');
+        const rights = page.getByRole('group', { name: 'Miền Nam' }).getByRole('button');
+        for (let l = 0; l < 4; l++) {
+          for (let r = 0; r < 4; r++) {
+            if (await lefts.nth(l).isDisabled()) break;
+            await lefts.nth(l).click();
+            if (await rights.nth(r).isDisabled()) continue;
+            await rights.nth(r).click();
+          }
+        }
+        await page.getByRole('button', { name: 'Tiếp →' }).click();
+      } else if (label.startsWith('Đọc lại')) {
+        await page.getByRole('button', { name: 'Được' }).click();
+      } else {
+        await page.getByRole('group', { name: 'Lựa chọn' }).getByRole('button').first().click();
+        await page.getByRole('button', { name: 'Tiếp →' }).click();
+      }
+    }
+    await expect(page.getByRole('status')).toContainText('Xong phiên!');
+    expect(seen.size).toBeGreaterThanOrEqual(4);
+    const attempts = await page.evaluate(() => JSON.parse(localStorage.getItem('becutit.learner') || '{}').state?.attempts?.length ?? 0);
+    expect(attempts).toBe(8);
   });
 });
 
