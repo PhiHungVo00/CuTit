@@ -4,3 +4,4 @@ export * from './components/CuTitWisdomCard';
 export type { HonorificExplorerDrawerProps } from './components/HonorificExplorerDrawer';
 export * from './services/speechSynthesis';
 export { App } from './App';
+export { CultureGuideScreen } from './components/culture/CultureGuideScreen';

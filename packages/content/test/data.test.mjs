@@ -38,3 +38,14 @@ test('A7 phương ngữ: Bắc "thìa" ↔ Nam "muỗng", Bắc "roi" ↔ Nam "m
   assert.equal(translateDialect('không-có', 'north'), undefined);
   assert.ok(DIALECT_DICTIONARY.length >= 10);
 });
+
+test('M10 văn hóa: đủ 20 thẻ, id duy nhất, có cờ reviewed; truy hồi đúng thẻ theo câu hỏi không dấu', async () => {
+  const { CULTURE_CARDS, searchCulture } = await import('../dist/index.js');
+  assert.equal(CULTURE_CARDS.length, 20);
+  assert.equal(new Set(CULTURE_CARDS.map((c) => c.id)).size, 20);
+  for (const c of CULTURE_CARDS) assert.equal(typeof c.reviewed, 'boolean', `${c.id} thiếu cờ reviewed`);
+  assert.equal(searchCulture('Có được cắm đũa vào bát cơm không?')[0].id, 'c3');
+  assert.equal(searchCulture('li xi ngay Tet la gi')[0].id, 'c5');
+  assert.equal(searchCulture('Vì sao người Việt hỏi tuổi?')[0].id, 'c18');
+  assert.deepEqual(searchCulture('xyz qwerty'), []);
+});
