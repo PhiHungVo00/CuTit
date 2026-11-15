@@ -51,7 +51,7 @@ export const ControlPanel = memo(function ControlPanel(p: ControlPanelProps) {
         <span aria-hidden="true">🎛️</span> Chọn ngữ cảnh
       </h2>
 
-      <ChoiceGroup label="1. Mối quan hệ" value={p.relation} options={relationChoices} onChange={p.setRelation} columns={2} size="sm" />
+      <ChoiceGroup label="1. Mối quan hệ" value={p.relation} options={relationChoices} onChange={p.setRelation} columns={2} size="sm" align="start" />
 
       <ChoiceGroup
         label="2. Chênh lệch tuổi"
