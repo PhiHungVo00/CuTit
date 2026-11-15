@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { getDeviceSpeech } from '@vietlearning/native';
-import { learnerStore, useLearner, type CorrectionLevel, type Dialect, type Preferences } from '@vietlearning/state';
+import { learnerStore, useLearner, type CorrectionLevel, type Dialect, type Preferences, type UiLanguage } from '@vietlearning/state';
 import { ChoiceGroup, ScreenFrame, card, linkBtn, secondaryBtn } from '../common/ui';
+import { useT } from '../i18n';
 
 interface Voice {
   id: string;
@@ -11,28 +12,18 @@ interface Voice {
 }
 
 /** Dùng khi chưa tải được danh sách từ Gateway (trùng danh sách mặc định của Gateway) */
-const OFFLINE_VOICES: Voice[] = [
-  { id: 'vi-VN-Standard-A', name: 'Giọng Nữ Bắc (Hà Nội)', dialect: 'north' },
-  { id: 'vi-VN-Standard-B', name: 'Giọng Nam Bắc (Hà Nội)', dialect: 'north' },
-  { id: 'vi-VN-Standard-C', name: 'Giọng Nữ Nam (Sài Gòn)', dialect: 'south' },
-  { id: 'vi-VN-Standard-D', name: 'Giọng Nữ Trung (Huế)', dialect: 'central' }
+const OFFLINE_VOICES: (Voice & { en: string })[] = [
+  { id: 'vi-VN-Standard-A', name: 'Giọng Nữ Bắc (Hà Nội)', en: 'Northern female (Hanoi)', dialect: 'north' },
+  { id: 'vi-VN-Standard-B', name: 'Giọng Nam Bắc (Hà Nội)', en: 'Northern male (Hanoi)', dialect: 'north' },
+  { id: 'vi-VN-Standard-C', name: 'Giọng Nữ Nam (Sài Gòn)', en: 'Southern female (Saigon)', dialect: 'south' },
+  { id: 'vi-VN-Standard-D', name: 'Giọng Nữ Trung (Huế)', en: 'Central female (Huế)', dialect: 'central' }
 ];
 
-const DIALECTS: { value: Dialect; label: string }[] = [
-  { value: 'north', label: 'Miền Bắc' },
-  { value: 'central', label: 'Miền Trung' },
-  { value: 'south', label: 'Miền Nam' }
-];
-
-const CORRECTION: { value: CorrectionLevel; label: string; hint: string }[] = [
-  { value: 'gentle', label: 'Nhẹ nhàng', hint: 'Chỉ sửa lỗi quan trọng, nhiều lời khen' },
-  { value: 'strict', label: 'Kỹ lưỡng', hint: 'Sửa cả lỗi nhỏ về thanh điệu, xưng hô' },
-  { value: 'off', label: 'Không sửa', hint: 'Chỉ trò chuyện tự do' }
-];
-
-const PERSONAS = [
-  { value: 'be_cu_tit', label: 'Bé Cu Tít', hint: 'Vui tươi, hay khích lệ' },
-  { value: 'co_giao', label: 'Cô giáo Lan', hint: 'Điềm đạm, giải thích kỹ' }
+const DIALECTS: Dialect[] = ['north', 'central', 'south'];
+const CORRECTION: CorrectionLevel[] = ['gentle', 'strict', 'off'];
+const UI_LANGS: { value: UiLanguage; label: string }[] = [
+  { value: 'en', label: 'English' },
+  { value: 'vi', label: 'Tiếng Việt' }
 ];
 
 const SAMPLE = 'Xin chào, mình là Bé Cu Tít. Hôm nay mình cùng học tiếng Việt nhé!';
@@ -62,8 +53,9 @@ async function fetchVoices(): Promise<Voice[] | null> {
 
 /** Màn hình M12: giọng đọc, tốc độ, phương ngữ, mức sửa lỗi, nhân vật; nghe thử; xóa dữ liệu trên máy. */
 export function PreferencesScreen() {
+  const t = useT();
   const prefs = useLearner((s) => s.preferences);
-  const [voices, setVoices] = useState<Voice[]>(OFFLINE_VOICES);
+  const [voices, setVoices] = useState<Voice[]>(() => OFFLINE_VOICES.map((v) => ({ ...v, name: prefs.uiLanguage === 'en' ? v.en : v.name })));
   const [sync, setSync] = useState<Sync>('idle');
   const [speakError, setSpeakError] = useState<string | null>(null);
   const [confirmReset, setConfirmReset] = useState(false);
@@ -96,7 +88,7 @@ export function PreferencesScreen() {
       await getDeviceSpeech().speak(SAMPLE, { rate: prefs.speed });
     } catch (err) {
       const code = (err as { code?: string }).code;
-      if (code !== 'interrupted') setSpeakError(code === 'no-vietnamese-voice' ? 'Máy chưa có giọng đọc tiếng Việt. Hãy cài trong phần Cài đặt > Chuyển văn bản thành giọng nói.' : 'Không phát được giọng đọc trên máy này.');
+      if (code !== 'interrupted') setSpeakError(code === 'no-vietnamese-voice' ? t('noViVoice') : t('voiceFailed'));
     }
   };
 
@@ -105,37 +97,44 @@ export function PreferencesScreen() {
 
   return (
     <ScreenFrame
-      title="Tùy chỉnh"
+      title={t('prefsTitle')}
       action={
         <Link to="/ho-so" className={linkBtn}>
-          📈 Tiến độ
+          {t('progressLink')}
         </Link>
       }
     >
       <p role="status" className="m-0 min-h-5 text-sm text-ink-muted">
-        {sync === 'saving' && 'Đang lưu…'}
-        {sync === 'synced' && '✓ Đã lưu và đồng bộ'}
-        {sync === 'local' && '✓ Đã lưu trên máy · chưa đồng bộ được với máy chủ'}
+        {sync === 'saving' && t('saving')}
+        {sync === 'synced' && t('synced')}
+        {sync === 'local' && t('localOnly')}
       </p>
+
+      <section className={card} aria-labelledby="ct-app">
+        <h2 id="ct-app" className="m-0 text-lg font-extrabold text-ink">
+          {t('appSection')}
+        </h2>
+        <ChoiceGroup name="uilang" legend={t('uiLangLegend')} value={prefs.uiLanguage} options={UI_LANGS} onChange={(uiLanguage) => update({ uiLanguage })} />
+      </section>
 
       <section className={card} aria-labelledby="ct-voice">
         <h2 id="ct-voice" className="m-0 text-lg font-extrabold text-ink">
-          Giọng đọc
+          {t('voiceSection')}
         </h2>
         <ChoiceGroup
           name="dialect"
-          legend="Phương ngữ"
+          legend={t('dialectLegend')}
           value={prefs.dialect}
-          options={DIALECTS}
+          options={DIALECTS.map((d) => ({ value: d, label: t(`dialect.${d}`) }))}
           onChange={(dialect) => {
             const first = voices.find((v) => v.dialect === dialect);
             update(first && !voices.some((v) => v.id === prefs.voiceId && v.dialect === dialect) ? { dialect, voiceId: first.id } : { dialect });
           }}
         />
-        <ChoiceGroup name="voice" legend="Giọng (máy chủ dùng khi đọc bằng AI)" value={prefs.voiceId} options={shownVoices.map((v) => ({ value: v.id, label: v.name }))} onChange={(voiceId) => update({ voiceId })} />
+        <ChoiceGroup name="voice" legend={t('voiceLegend')} value={prefs.voiceId} options={shownVoices.map((v) => ({ value: v.id, label: v.name }))} onChange={(voiceId) => update({ voiceId })} />
         <label className="flex flex-col gap-2">
           <span className="flex justify-between text-[15px] font-bold text-ink-soft">
-            <span>Tốc độ đọc</span>
+            <span>{t('speed')}</span>
             <span className="text-ink">{prefs.speed.toFixed(2).replace(/\.?0+$/, '')}×</span>
           </span>
           <input
@@ -145,12 +144,12 @@ export function PreferencesScreen() {
             step={0.25}
             value={prefs.speed}
             onChange={(e) => update({ speed: Number(e.target.value) })}
-            aria-valuetext={`${prefs.speed} lần`}
+            aria-valuetext={t('speedValue', { n: prefs.speed })}
             className="min-h-11 w-full accent-[var(--color-accent)]"
           />
         </label>
         <button type="button" className={secondaryBtn} onClick={() => void listen()}>
-          🔈 Nghe thử
+          {t('tryVoice')}
         </button>
         {speakError && (
           <p role="alert" className="m-0 rounded-xl bg-danger-soft p-3 text-[15px] text-danger-ink">
@@ -161,24 +160,39 @@ export function PreferencesScreen() {
 
       <section className={card} aria-labelledby="ct-tutor">
         <h2 id="ct-tutor" className="m-0 text-lg font-extrabold text-ink">
-          Gia sư
+          {t('tutorSection')}
         </h2>
-        <ChoiceGroup name="persona" legend="Nhân vật trò chuyện" value={prefs.persona} options={PERSONAS} onChange={(persona) => update({ persona })} />
-        <ChoiceGroup name="correction" legend="Mức sửa lỗi" value={prefs.correctionLevel} options={CORRECTION} onChange={(correctionLevel) => update({ correctionLevel })} />
+        <ChoiceGroup
+          name="persona"
+          legend={t('personaLegend')}
+          value={prefs.persona}
+          options={[
+            { value: 'be_cu_tit', label: 'Bé Cu Tít', hint: t('persona.be_cu_tit.hint') },
+            { value: 'co_giao', label: t('persona.co_giao'), hint: t('persona.co_giao.hint') }
+          ]}
+          onChange={(persona) => update({ persona })}
+        />
+        <ChoiceGroup
+          name="correction"
+          legend={t('correctionLegend')}
+          value={prefs.correctionLevel}
+          options={CORRECTION.map((c) => ({ value: c, label: t(`correction.${c}`), hint: t(`correction.${c}.hint`) }))}
+          onChange={(correctionLevel) => update({ correctionLevel })}
+        />
       </section>
 
       <section className={card} aria-labelledby="ct-data">
         <h2 id="ct-data" className="m-0 text-lg font-extrabold text-ink">
-          Dữ liệu trên máy
+          {t('dataSection')}
         </h2>
-        <p className="m-0 text-[15px] text-ink-soft">Tiến độ, thẻ ôn và tùy chỉnh đang lưu trên điện thoại này.</p>
+        <p className="m-0 text-[15px] text-ink-soft">{t('dataHint')}</p>
         {!confirmReset ? (
           <button type="button" className={secondaryBtn} onClick={() => setConfirmReset(true)}>
-            Xóa dữ liệu học…
+            {t('resetAsk')}
           </button>
         ) : (
           <div role="alert" className="flex flex-col gap-2 rounded-xl bg-danger-soft p-3 text-danger-ink">
-            <p className="m-0 text-[15px] font-bold">Xóa toàn bộ tiến độ, thẻ ôn và tùy chỉnh? Không thể hoàn tác.</p>
+            <p className="m-0 text-[15px] font-bold">{t('resetConfirm')}</p>
             <button
               type="button"
               className="min-h-12 w-full rounded-xl bg-danger px-4 font-extrabold text-white"
@@ -188,10 +202,10 @@ export function PreferencesScreen() {
                 setSync('idle');
               }}
             >
-              Xóa hết
+              {t('resetYes')}
             </button>
             <button type="button" className={secondaryBtn} onClick={() => setConfirmReset(false)}>
-              Hủy
+              {t('cancel')}
             </button>
           </div>
         )}

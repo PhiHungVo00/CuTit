@@ -27,5 +27,12 @@ describe('thống kê M9', () => {
     expect(d.getDate()).toBe(16);
     expect(formatDue(d, today)).toBe('ngày mai');
     expect(nextDue({}, today)).toBeNull();
+    expect(formatDue(d, today, 'en')).toBe('tomorrow');
+  });
+
+  it('nhãn ngày theo ngôn ngữ giao diện', () => {
+    const days = lastSevenDays({}, today, 'en');
+    expect(days[0].label).toBe('Mon');
+    expect(days[6].label).toBe('Today');
   });
 });

@@ -1,7 +1,9 @@
 import { Suspense, useEffect, useState } from 'react';
 import { NavLink, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import { bootstrapNative } from './native/bootstrap';
-import { SCREENS, prefetchScreen } from './routes';
+import { SCREENS, prefetchScreen, screenId } from './routes';
+import { t as tShell, useT } from './i18n';
+import { useUiLanguage } from '@vietlearning/state';
 import { Home } from './screens/Home';
 import { ScreenErrorBoundary } from './components/ScreenErrorBoundary';
 import { useStudyTimer } from './useStudyTimer';
@@ -25,7 +27,7 @@ function ScreenLoading() {
   return (
     <div className="screen-fallback" role="status">
       <div className="spinner" aria-hidden="true" />
-      <span>Đang mở màn hình…</span>
+      <span>{tShell('loading')}</span>
     </div>
   );
 }
@@ -35,6 +37,14 @@ export function App() {
   const { pathname } = useLocation();
   const navigate = useNavigate();
   useStudyTimer();
+  const t = useT();
+  const lang = useUiLanguage();
+
+  // Ngôn ngữ của trang theo giao diện (trình đọc màn hình đọc đúng giọng); nội dung học tự gắn lang="vi"
+  useEffect(() => {
+    document.documentElement.lang = lang;
+    document.title = t('appTitle');
+  }, [lang, t]);
 
   useEffect(() => {
     bootstrapNative(() => navigate(-1)).catch((err) => console.error('[Native] Khởi tạo lỗi', err));
@@ -53,7 +63,7 @@ export function App() {
     <div className="shell">
       {!online && (
         <div className="offline-banner" role="status">
-          Đang ngoại tuyến · Nội dung đã tải vẫn dùng được
+          {t('offline')}
         </div>
       )}
 
@@ -71,12 +81,12 @@ export function App() {
         </ScreenErrorBoundary>
       </main>
 
-      <nav className="tabbar" aria-label="Điều hướng chính">
+      <nav className="tabbar" aria-label={t('mainNav')}>
         <NavLink to="/" end>
           <span className="tab-icon" aria-hidden="true">
             🏠
           </span>
-          <span>Trang chủ</span>
+          <span>{t('home')}</span>
         </NavLink>
         {tabs.map((s) => (
           <NavLink
@@ -88,7 +98,7 @@ export function App() {
             <span className="tab-icon" aria-hidden="true">
               {s.icon}
             </span>
-            <span>{s.shortLabel}</span>
+            <span>{t(`${screenId(s)}.short`)}</span>
           </NavLink>
         ))}
       </nav>

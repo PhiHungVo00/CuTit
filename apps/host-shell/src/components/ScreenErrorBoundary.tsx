@@ -1,4 +1,5 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react';
+import { t } from '../i18n';
 
 interface Props {
   children: ReactNode;
@@ -40,12 +41,10 @@ export class ScreenErrorBoundary extends Component<Props, State> {
     return (
       <div className="screen-fallback" role="alert">
         <p>
-          {chunkFailed
-            ? 'Không tải được màn hình. Kiểm tra kết nối mạng rồi thử lại.'
-            : 'Màn hình này gặp lỗi.'}
+          {chunkFailed ? t('chunkFailed') : t('screenError')}
         </p>
         <button className="btn" onClick={() => window.location.reload()}>
-          Thử lại
+          {t('retry')}
         </button>
       </div>
     );

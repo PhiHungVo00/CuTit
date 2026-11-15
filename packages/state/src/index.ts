@@ -13,6 +13,16 @@ import { calculateSM2 } from '@vietlearning/shared';
 export type Dialect = 'north' | 'central' | 'south';
 export type Skill = 'pronunciation' | 'honorific' | 'drill' | 'sentence' | 'dialect' | 'vision' | 'conversation';
 export type CorrectionLevel = 'gentle' | 'strict' | 'off';
+export type UiLanguage = 'vi' | 'en';
+
+/** Ngôn ngữ giao diện mặc định theo máy: máy tiếng Việt => vi, còn lại (người nước ngoài) => en */
+export function deviceLanguage(): UiLanguage {
+  try {
+    return /^vi(-|$)/i.test(navigator.language) ? 'vi' : 'en';
+  } catch {
+    return 'en';
+  }
+}
 
 export interface Profile {
   onboarded: boolean;
@@ -29,6 +39,7 @@ export interface Preferences {
   dialect: Dialect;
   correctionLevel: CorrectionLevel;
   persona: string;
+  uiLanguage: UiLanguage;
 }
 
 export interface SrsCard {
@@ -76,7 +87,7 @@ export const dayKey = (d: Date): string =>
 
 const initialData = () => ({
   profile: { onboarded: false, level: 1, goal: null, nativeLang: 'en', dialect: 'north' as Dialect },
-  preferences: { voiceId: 'vi-VN-Standard-A', speed: 1, dialect: 'north' as Dialect, correctionLevel: 'gentle' as CorrectionLevel, persona: 'be_cu_tit' },
+  preferences: { voiceId: 'vi-VN-Standard-A', speed: 1, dialect: 'north' as Dialect, correctionLevel: 'gentle' as CorrectionLevel, persona: 'be_cu_tit', uiLanguage: deviceLanguage() },
   srs: {} as Record<string, SrsCard>,
   attempts: [] as Attempt[],
   activity: {} as Record<string, number>
@@ -162,6 +173,11 @@ export const learnerStore = createStore<LearnerState>()(
       name: 'becutit.learner',
       version: 1,
       storage: createJSONStorage(safeStorage),
+      // Gộp sâu với mặc định: bản lưu cũ thiếu trường mới (vd. uiLanguage) vẫn nhận giá trị mặc định
+      merge: (persisted, current) => {
+        const p = (persisted ?? {}) as Partial<LearnerState>;
+        return { ...current, ...p, profile: { ...current.profile, ...p.profile }, preferences: { ...current.preferences, ...p.preferences } };
+      },
       partialize: (s) => ({ profile: s.profile, preferences: s.preferences, srs: s.srs, attempts: s.attempts, activity: s.activity })
     }
   )
@@ -208,3 +224,5 @@ export const cefrLabel = (level: number): string => CEFR[Math.max(1, Math.min(6,
 
 /** Tốc độ đọc theo tùy chỉnh M12, nhân với tốc độ gốc mỗi màn hình chọn (vd. 0.85 cho từ đơn) */
 export const speechRate = (base = 1): number => Math.max(0.3, Math.min(2.5, learnerStore.getState().preferences.speed * base));
+
+export * from './i18n.js';

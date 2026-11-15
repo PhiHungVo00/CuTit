@@ -163,6 +163,31 @@ textarea {
   color: var(--shell-accent);
 }
 
+.home-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.home-head h1 {
+  flex: 1;
+  min-width: 0;
+}
+
+.lang-switch {
+  flex: none;
+  min-height: 44px;
+  padding: 0 12px;
+  border-radius: 12px;
+  border: 1px solid var(--shell-border);
+  background: var(--shell-surface);
+  color: var(--shell-text);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
 .home .lead {
   margin: 6px 0 20px;
   color: var(--shell-muted);
