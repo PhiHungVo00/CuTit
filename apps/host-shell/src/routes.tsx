@@ -121,11 +121,11 @@ export const SCREENS: ScreenRoute[] = [
     label: 'Camera từ vựng',
     shortLabel: 'Camera',
     icon: '📷',
-    description: 'M4 · Chụp ảnh và dán nhãn từ vựng',
+    description: 'M4 · Chụp đồ vật, học tên tiếng Việt, lưu để ôn (nhãn mẫu, chưa nối AI)',
     owner: 'mfe-vision',
-    ready: false,
+    ready: true,
     inTabBar: false,
-    load: () => import('@vietlearning/mfe-vision')
+    load: () => import('./screens/CameraRoute')
   }),
   screen({
     path: '/ho-so',

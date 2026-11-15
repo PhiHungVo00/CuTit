@@ -14,19 +14,29 @@ export const SynthesizeResponseSchema = z.object({
   cached: z.boolean()
 });
 
-// POST /vision/label
+// POST /vision/label (M4) — client thu nhỏ ảnh ≤ 640px JPEG trước khi gửi (~50–150 KB)
 export const VisionLabelRequestSchema = z.object({
-  imageBase64: z.string().min(1)
+  /** JPEG/PNG mã hóa base64 (không kèm tiền tố data:). Tối đa ~1.5 MB ảnh */
+  imageBase64: z
+    .string()
+    .min(100)
+    .max(2_000_000)
+    .regex(/^[A-Za-z0-9+/]+={0,2}$/, 'Không phải base64')
 });
 
 export const VisionLabelResponseSchema = z.object({
-  items: z.array(
-    z.object({
-      vi: z.string(),
-      en: z.string(),
-      box: z.array(z.number()).optional()
-    })
-  )
+  items: z
+    .array(
+      z.object({
+        vi: z.string().max(60),
+        en: z.string().max(60),
+        /** khung [x, y, rộng, cao] theo tỉ lệ 0–1 của ảnh */
+        box: z.array(z.number()).length(4).optional()
+      })
+    )
+    .max(10),
+  /** true khi nhãn do bộ giả lập trả (chưa nối dịch vụ nhận diện ảnh) */
+  mock: z.boolean().default(false)
 });
 
 // POST /practice/generate

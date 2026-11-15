@@ -22,5 +22,6 @@ module.exports = [
   { name: 'M12 Tùy chỉnh (lazy)', path: 'dist/assets/PreferencesRoute-*.js', limit: '5 kB', gzip: true },
   { name: 'M1 Trò chuyện (lazy)', path: 'dist/assets/ChatRoute-*.js', limit: '6 kB', gzip: true },
   { name: 'M7 Nhập vai (lazy)', path: 'dist/assets/RoleplayRoute-*.js', limit: '6 kB', gzip: true },
+  { name: 'M4 Camera từ vựng (lazy)', path: 'dist/assets/CameraRoute-*.js', limit: '5 kB', gzip: true },
   { name: 'Worker phân tích cao độ A1/A2', path: 'dist/assets/pitch.worker-*.js', limit: '5 kB', gzip: true }
 ];
