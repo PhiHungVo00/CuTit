@@ -94,7 +94,7 @@ Lưu ý: ban đầu tôi hiểu nhầm thành "web chạy trên trình duyệt �
 - Ký app: tạo keystore (giữ **ngoài repo**, không commit), rồi ký bằng `apksigner` hoặc khai báo `signingConfigs` đọc mật khẩu từ biến môi trường. Lên Google Play nên dùng `bundleRelease` (AAB).
 
 ## 5b. Hàng chờ
-- **Q17** (mới): các màn hình M5/M6/M8/M10 vẫn đọc với tốc độ cố định 0.85, chưa dùng `preferences.speed` của M12 (M9 đã dùng). Sửa: đọc tốc độ từ `learnerStore` ở chỗ gọi `speak`.
+- ~~**Q17**~~ ✅ (đã sửa: thêm `speechRate()` trong `@vietlearning/state`, dùng ở M2/M5/M6/M8/M9; M3 giữ thanh tốc độ riêng của nó): các màn hình M5/M6/M8/M10 vẫn đọc với tốc độ cố định 0.85, chưa dùng `preferences.speed` của M12 (M9 đã dùng). Sửa: đọc tốc độ từ `learnerStore` ở chỗ gọi `speak`.
 
 > Quy ước: thấy vấn đề ngoài phạm vi việc đang làm thì ghi vào đây thay vì sửa ngay. P1 = ảnh hưởng người dùng/bảo mật · P2 = chất lượng/hiệu năng · P3 = dọn dẹp
 

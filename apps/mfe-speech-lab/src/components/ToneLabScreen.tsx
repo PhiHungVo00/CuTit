@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { ToneId } from '@vietlearning/audio-dsp';
 import { PitchReferenceFlyweight } from '@vietlearning/content';
 import { canOpenAppSettings, getDeviceSpeech, openAppSettings } from '@vietlearning/native';
+import { speechRate } from '@vietlearning/state';
 import { ContourChart } from './ContourChart';
 import { MAX_RECORD_MS, useToneRecorder, type RecorderError } from '../hooks/useToneRecorder';
 
@@ -43,7 +44,7 @@ export function ToneLabScreen() {
 
   const playSample = () => {
     getDeviceSpeech()
-      .speak(tone.syllable, { rate: 0.8 })
+      .speak(tone.syllable, { rate: speechRate(0.8) })
       .catch(() => undefined); // máy không có giọng Việt: bỏ qua, người học vẫn xem được biểu đồ mẫu
   };
 

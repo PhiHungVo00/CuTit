@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { getDeviceSpeech } from '@vietlearning/native';
-import { dueCards, learnerStore, useLearner } from '@vietlearning/state';
+import { dueCards, learnerStore, speechRate, useLearner } from '@vietlearning/state';
 import { generateSession, type ChoiceDrill, type Drill, type MatchDrill, type RepeatDrill } from './generateDrills';
 
-const say = (text: string) => getDeviceSpeech().speak(text, { rate: 0.85 }).catch(() => undefined);
+const say = (text: string) => getDeviceSpeech().speak(text, { rate: speechRate(0.85) }).catch(() => undefined);
 
 const TYPE_LABEL: Record<Drill['type'], string> = {
   quiz: 'Trắc nghiệm',

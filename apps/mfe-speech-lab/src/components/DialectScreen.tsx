@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { DIALECT_DICTIONARY, foldVietnamese, type Dialect, type DialectEntry } from '@vietlearning/content';
 import { getDeviceSpeech } from '@vietlearning/native';
-import { useLearner } from '@vietlearning/state';
+import { speechRate, useLearner } from '@vietlearning/state';
 
 const REGIONS: { id: Dialect; label: string }[] = [
   { id: 'north', label: 'Bắc' },
@@ -33,7 +33,7 @@ export function DialectScreen() {
   const speak = (key: string, word: string) => {
     setSpeaking(key);
     getDeviceSpeech()
-      .speak(word, { rate: 0.85 })
+      .speak(word, { rate: speechRate(0.85) })
       .catch(() => undefined)
       .finally(() => setSpeaking((k) => (k === key ? null : k)));
   };
