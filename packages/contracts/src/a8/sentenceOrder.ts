@@ -86,7 +86,48 @@ function lcs(a: number[], b: number[]): { length: number; inA: Set<number> } {
 }
 
 /** Luật trật tự tiếng Việt, kiểm tra trên câu người học xếp (theo nhãn của token) */
-function ruleErrors(item: SentenceItem, order: number[]): string[] {
+export type OrderLang = 'vi' | 'en';
+
+/** Lời giải thích lỗi trật tự theo ngôn ngữ giao diện (ví dụ tiếng Việt giữ nguyên trong ngoặc kép) */
+const M: Record<OrderLang, {
+  clf(w: string): string;
+  num(w: string): string;
+  dem(w: string): string;
+  mod(w: string): string;
+  q(w: string): string;
+  aux(w: string, verb: string): string;
+  svo(subj: string): string;
+  useAll: string;
+  misplaced(list: string): string;
+  hint(first: string): string;
+}> = {
+  vi: {
+    clf: (w) => `Loại từ "${w}" phải đứng ngay trước danh từ (vd. "con mèo", "quyển sách").`,
+    num: (w) => `Số lượng "${w}" đứng trước loại từ hoặc danh từ (vd. "hai con mèo").`,
+    dem: (w) => `Từ chỉ định "${w}" đứng ngay SAU danh từ (vd. "quyển sách này").`,
+    mod: (w) => `Tính từ "${w}" đứng SAU danh từ nó bổ nghĩa (vd. "áo đỏ", không nói "đỏ áo").`,
+    q: (w) => `Tiểu từ hỏi "${w}" đứng ở cuối câu.`,
+    aux: (w, verb) => `"${w}" đứng ngay TRƯỚC động từ "${verb}".`,
+    svo: (subj) => `Chủ ngữ "${subj}" thường đứng trước động từ (Chủ ngữ – Động từ – Tân ngữ).`,
+    useAll: 'Hãy dùng đủ và đúng các từ đã cho, mỗi từ một lần.',
+    misplaced: (list) => `Vị trí của ${list} chưa đúng.`,
+    hint: (first) => `Gợi ý: câu bắt đầu bằng "${first}".`
+  },
+  en: {
+    clf: (w) => `The classifier "${w}" must come right before its noun (e.g. "con mèo", "quyển sách").`,
+    num: (w) => `The number "${w}" comes before the classifier or noun (e.g. "hai con mèo").`,
+    dem: (w) => `The demonstrative "${w}" comes right AFTER the noun (e.g. "quyển sách này").`,
+    mod: (w) => `The adjective "${w}" comes AFTER the noun it describes (e.g. "áo đỏ", not "đỏ áo").`,
+    q: (w) => `The question particle "${w}" goes at the end of the sentence.`,
+    aux: (w, verb) => `"${w}" goes right BEFORE the verb "${verb}".`,
+    svo: (subj) => `The subject "${subj}" usually comes before the verb (Subject – Verb – Object).`,
+    useAll: 'Use every given word exactly once.',
+    misplaced: (list) => `${list} ${list.includes(',') ? 'are' : 'is'} in the wrong place.`,
+    hint: (first) => `Hint: the sentence starts with "${first}".`
+  }
+};
+
+function ruleErrors(item: SentenceItem, order: number[], lang: OrderLang = 'vi'): string[] {
   const tag = (pos: number) => item.tokens[order[pos]]?.tag;
   const text = (pos: number) => item.tokens[order[pos]].text;
   const errors = new Set<string>();
@@ -95,20 +136,20 @@ function ruleErrors(item: SentenceItem, order: number[]): string[] {
   order.forEach((tokIdx, pos) => {
     const t = item.tokens[tokIdx].tag;
     if (t === 'CLF' && tag(pos + 1) !== 'N')
-      errors.add(`Loại từ "${text(pos)}" phải đứng ngay trước danh từ (vd. "con mèo", "quyển sách").`);
+      errors.add(M[lang].clf(text(pos)));
     if (t === 'NUM' && tag(pos + 1) !== 'CLF' && tag(pos + 1) !== 'N')
-      errors.add(`Số lượng "${text(pos)}" đứng trước loại từ hoặc danh từ (vd. "hai con mèo").`);
+      errors.add(M[lang].num(text(pos)));
     if (t === 'DEM' && tag(pos - 1) !== 'N')
-      errors.add(`Từ chỉ định "${text(pos)}" đứng ngay SAU danh từ (vd. "quyển sách này").`);
+      errors.add(M[lang].dem(text(pos)));
     if (t === 'MOD' && tag(pos - 1) !== 'N')
-      errors.add(`Tính từ "${text(pos)}" đứng SAU danh từ nó bổ nghĩa (vd. "áo đỏ", không nói "đỏ áo").`);
-    if (t === 'Q' && pos !== order.length - 1) errors.add(`Tiểu từ hỏi "${text(pos)}" đứng ở cuối câu.`);
+      errors.add(M[lang].mod(text(pos)));
+    if (t === 'Q' && pos !== order.length - 1) errors.add(M[lang].q(text(pos)));
     if (t === 'AUX' || t === 'NEG') {
       // trong câu chuẩn, từ này đứng ngay trước một động từ: người học cũng phải đặt ngay trước động từ đó
       const cPos = canonical.indexOf(tokIdx);
       const verb = canonical[cPos + 1];
       if (verb !== undefined && item.tokens[verb].tag === 'V' && order[pos + 1] !== verb)
-        errors.add(`"${text(pos)}" đứng ngay TRƯỚC động từ "${item.tokens[verb].text}".`);
+        errors.add(M[lang].aux(text(pos), item.tokens[verb].text));
     }
   });
 
@@ -116,18 +157,18 @@ function ruleErrors(item: SentenceItem, order: number[]): string[] {
   const firstVerb = canonical.find((i) => item.tokens[i].tag === 'V');
   if (subj >= 0 && firstVerb !== undefined && canonical.indexOf(subj) < canonical.indexOf(firstVerb)) {
     if (order.indexOf(subj) > order.indexOf(firstVerb))
-      errors.add(`Chủ ngữ "${item.tokens[subj].text}" thường đứng trước động từ (Chủ ngữ – Động từ – Tân ngữ).`);
+      errors.add(M[lang].svo(item.tokens[subj].text));
   }
   return [...errors];
 }
 
-export function checkSentenceOrder(item: SentenceItem, userTexts: string[]): OrderCheckResult {
+export function checkSentenceOrder(item: SentenceItem, userTexts: string[], lang: OrderLang = 'vi'): OrderCheckResult {
   const correctOrder = item.accepted[0].map((i) => item.tokens[i].text);
   const order = toIndices(item, userTexts);
   if (!order) {
     return {
       valid: false,
-      errors: ['Hãy dùng đủ và đúng các từ đã cho, mỗi từ một lần.'],
+      errors: [M[lang].useAll],
       misplaced: [],
       correctOrder
     };
@@ -139,15 +180,15 @@ export function checkSentenceOrder(item: SentenceItem, userTexts: string[]): Ord
   // Thứ tự đúng gần nhất (LCS dài nhất) để chỉ ra các từ lệch chỗ
   const best = item.accepted.map((acc) => lcs(order, acc)).reduce((a, b) => (b.length > a.length ? b : a));
   const misplaced = order.map((_, pos) => pos).filter((pos) => !best.inA.has(pos));
-  const errors = ruleErrors(item, order);
+  const errors = ruleErrors(item, order, lang);
   if (errors.length === 0 && misplaced.length) {
-    errors.push(`Vị trí của ${misplaced.map((p) => `"${item.tokens[order[p]].text}"`).join(', ')} chưa đúng.`);
+    errors.push(M[lang].misplaced(misplaced.map((p) => `"${item.tokens[order[p]].text}"`).join(', ')));
   }
   const first = item.tokens[item.accepted[0][0]].text;
   return {
     valid: false,
     errors,
-    hint: `Gợi ý: câu bắt đầu bằng "${first}".`,
+    hint: M[lang].hint(first),
     misplaced,
     correctOrder
   };

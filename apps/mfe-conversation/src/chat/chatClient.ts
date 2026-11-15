@@ -4,6 +4,7 @@
  * - Luồng kết thúc mà không có 'done' => lỗi (không coi câu trả lời dở dang là hoàn chỉnh).
  */
 import type { ChatEvent, ChatHistoryItem } from '@vietlearning/contracts/api';
+import { t } from '../i18n';
 
 export const STALL_MS = 15_000;
 
@@ -16,6 +17,7 @@ export interface TurnRequest {
   persona: string;
   scenarioId?: string;
   history: ChatHistoryItem[];
+  explanationLanguage: 'vi' | 'en';
 }
 
 export type DoneEvent = Extract<ChatEvent, { type: 'done' }>;
@@ -53,7 +55,7 @@ export async function sendTurn(req: TurnRequest, onEvent: (e: ChatEvent) => void
       ChatEventSchema,
       (e) => {
         kick();
-        if (e.type === 'error') throw new TurnError('server', e.message ?? 'Gia sư gặp lỗi khi trả lời.');
+        if (e.type === 'error') throw new TurnError('server', e.message ?? t('errTutor'));
         if (e.type === 'done') done = e;
         onEvent(e);
       },
@@ -61,15 +63,15 @@ export async function sendTurn(req: TurnRequest, onEvent: (e: ChatEvent) => void
     );
   } catch (err) {
     if (err instanceof TurnError) throw err;
-    if (stalled) throw new TurnError('timeout', 'Gia sư không phản hồi. Vui lòng thử lại.');
+    if (stalled) throw new TurnError('timeout', t('errStalled'));
     if (signal.aborted) throw err; // người dùng hủy / rời màn hình: để nơi gọi tự bỏ qua
-    if (err instanceof GatewayRequestError) throw new TurnError(err.kind, describeGatewayError(err));
-    throw new TurnError('offline', 'Mất kết nối giữa chừng. Vui lòng thử lại.');
+    if (err instanceof GatewayRequestError) throw new TurnError(err.kind, describeGatewayError(err, req.explanationLanguage));
+    throw new TurnError('offline', t('errDropped'));
   } finally {
     clearTimeout(watchdog);
     signal.removeEventListener('abort', onOuterAbort);
     local.abort(); // đóng luồng nếu thoát sớm (vd. sự kiện error) để không giữ kết nối
   }
-  if (!done) throw new TurnError('incomplete', 'Câu trả lời bị ngắt giữa chừng. Vui lòng thử lại.');
+  if (!done) throw new TurnError('incomplete', t('errIncomplete'));
   return done;
 }

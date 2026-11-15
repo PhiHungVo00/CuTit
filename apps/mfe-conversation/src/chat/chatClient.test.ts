@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { sendTurn, TurnError, type TurnRequest } from './chatClient';
 
-const req: TurnRequest = { sessionId: '7d444840-9dc0-11d1-b245-5ffdce74fad2', userText: 'chào', targetDialect: 'north', learnerLevel: 1, correctionLevel: 'gentle', persona: 'be_cu_tit', history: [] };
+const req: TurnRequest = { sessionId: '7d444840-9dc0-11d1-b245-5ffdce74fad2', userText: 'chào', targetDialect: 'north', learnerLevel: 1, correctionLevel: 'gentle', persona: 'be_cu_tit', history: [], explanationLanguage: 'vi' };
 
 function sseResponse(chunks: string[]) {
   const body = new ReadableStream<Uint8Array>({

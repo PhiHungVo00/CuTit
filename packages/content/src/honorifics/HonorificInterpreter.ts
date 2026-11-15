@@ -46,6 +46,10 @@ export interface HonorificPairItem {
   example: string;
   explanation: string;
   wisdom: string;
+  /** Bản tiếng Anh cho giao diện tiếng Anh (câu mẫu `example` vẫn là tiếng Việt) */
+  relationNameEn?: string;
+  explanationEn?: string;
+  wisdomEn?: string;
   listenerGender?: 'male' | 'female' | 'neutral';
   speakerGender?: 'male' | 'female';
 }

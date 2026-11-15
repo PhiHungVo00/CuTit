@@ -1,5 +1,9 @@
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
+import { learnerStore } from '@vietlearning/state';
 import { drillFromKey, generateSession, type ChoiceDrill } from './generateDrills';
+
+// Các khẳng định đề bài bên dưới dùng câu tiếng Việt
+beforeEach(() => learnerStore.getState().setPreferences({ uiLanguage: 'vi' }));
 
 describe('generateSession (M5)', () => {
   it('đủ 8 bài, có cả 5 dạng, không trùng nội dung, xác định theo seed', () => {
@@ -53,5 +57,13 @@ describe('chất lượng câu hỏi phương ngữ', () => {
         }
       }
     }
+  });
+
+  it('giao diện tiếng Anh: đề bài tiếng Anh, từ cần học vẫn là tiếng Việt', () => {
+    learnerStore.getState().setPreferences({ uiLanguage: 'en' });
+    const d = drillFromKey('dialect:d1:south', 2, 1) as ChoiceDrill;
+    expect(d.prompt).toBe('What do Southern speakers call “ngô”?');
+    expect(d.answer).toBe('bắp');
+    expect(d.explanation).toMatch(/^Corn: North “ngô”/);
   });
 });

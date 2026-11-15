@@ -2,22 +2,16 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { getDeviceSpeech } from '@vietlearning/native';
 import { dueCards, learnerStore, speechRate, useLearner } from '@vietlearning/state';
-import { generateSession, type ChoiceDrill, type Drill, type MatchDrill, type RepeatDrill } from './generateDrills';
+import { generateSession, type ChoiceDrill, type MatchDrill, type RepeatDrill } from './generateDrills';
+import { useT } from '../i18n';
 
 const say = (text: string) => getDeviceSpeech().speak(text, { rate: speechRate(0.85) }).catch(() => undefined);
-
-const TYPE_LABEL: Record<Drill['type'], string> = {
-  quiz: 'Trắc nghiệm',
-  fill: 'Điền từ',
-  listen: 'Nghe chọn',
-  match: 'Ghép từ',
-  repeat: 'Đọc lại'
-};
 
 /** Kết quả một bài: quality 0–5 cho SM-2 */
 type Done = (quality: number, correct: boolean, reviewBack: string) => void;
 
 function ChoiceView({ drill, onDone }: { drill: ChoiceDrill; onDone: Done }) {
+  const t = useT();
   const [chosen, setChosen] = useState<string | null>(null);
   useEffect(() => {
     if (drill.speak) void say(drill.speak);
@@ -27,10 +21,10 @@ function ChoiceView({ drill, onDone }: { drill: ChoiceDrill; onDone: Done }) {
     <div className="flex flex-col gap-3">
       {drill.speak && (
         <button type="button" onClick={() => say(drill.speak!)} className="min-h-12 self-start rounded-xl border border-line bg-surface-2 px-4 font-bold text-ink">
-          🔈 Nghe lại
+          {t('replay')}
         </button>
       )}
-      <div className="grid grid-cols-2 gap-2" role="group" aria-label="Lựa chọn">
+      <div className="grid grid-cols-2 gap-2" role="group" aria-label={t('choices')}>
         {drill.options.map((o) => {
           const state = chosen === null ? 'idle' : o === drill.answer ? 'right' : o === chosen ? 'wrong' : 'idle';
           return (
@@ -52,10 +46,10 @@ function ChoiceView({ drill, onDone }: { drill: ChoiceDrill; onDone: Done }) {
       </div>
       {chosen !== null && (
         <div role="status" className={['rounded-xl p-3 text-[15px]', correct ? 'bg-accent-soft text-heading' : 'bg-danger-soft text-danger-ink'].join(' ')}>
-          <strong>{correct ? 'Đúng rồi! ' : `Chưa đúng. Đáp án: “${drill.answer}”. `}</strong>
+          <strong>{correct ? t('right') : t('wrong', { answer: drill.answer })}</strong>
           {drill.explanation}
           <button type="button" onClick={() => onDone(correct ? 5 : 1, correct, drill.answer)} className="mt-2 block min-h-12 w-full rounded-xl bg-accent font-extrabold text-accent-ink">
-            Tiếp →
+            {t('next')}
           </button>
         </div>
       )}
@@ -64,6 +58,7 @@ function ChoiceView({ drill, onDone }: { drill: ChoiceDrill; onDone: Done }) {
 }
 
 function MatchView({ drill, onDone }: { drill: MatchDrill; onDone: Done }) {
+  const t = useT();
   const rights = useMemo(() => [...drill.pairs.map((p) => p.right)].sort((a, b) => a.localeCompare(b, 'vi')), [drill]);
   const [left, setLeft] = useState<string | null>(null);
   const [matched, setMatched] = useState<string[]>([]);
@@ -80,9 +75,9 @@ function MatchView({ drill, onDone }: { drill: MatchDrill; onDone: Done }) {
 
   return (
     <div className="flex flex-col gap-3">
-      <p className="m-0 text-sm text-ink-muted">Chạm một từ miền Bắc, rồi chạm từ miền Nam cùng nghĩa.</p>
+      <p className="m-0 text-sm text-ink-muted">{t('matchHint')}</p>
       <div className="grid grid-cols-2 gap-2">
-        <div className="flex flex-col gap-2" role="group" aria-label="Miền Bắc">
+        <div className="flex flex-col gap-2" role="group" aria-label={t('north')}>
           {drill.pairs.map((p) => (
             <button
               key={p.left}
@@ -96,7 +91,7 @@ function MatchView({ drill, onDone }: { drill: MatchDrill; onDone: Done }) {
             </button>
           ))}
         </div>
-        <div className="flex flex-col gap-2" role="group" aria-label="Miền Nam">
+        <div className="flex flex-col gap-2" role="group" aria-label={t('south')}>
           {rights.map((r) => {
             const done = drill.pairs.some((p) => p.right === r && matched.includes(p.left));
             return (
@@ -113,10 +108,10 @@ function MatchView({ drill, onDone }: { drill: MatchDrill; onDone: Done }) {
           })}
         </div>
       </div>
-      {mistakes > 0 && <p className="m-0 text-sm text-danger">Ghép sai {mistakes} lần</p>}
+      {mistakes > 0 && <p className="m-0 text-sm text-danger">{t('matchMistakes', { n: mistakes })}</p>}
       {finished && (
         <button type="button" onClick={() => onDone(mistakes === 0 ? 5 : mistakes === 1 ? 3 : 1, mistakes === 0, drill.pairs.map((p) => `${p.left} = ${p.right}`).join(', '))} className="min-h-12 rounded-xl bg-accent font-extrabold text-accent-ink">
-          Tiếp →
+          {t('next')}
         </button>
       )}
     </div>
@@ -124,6 +119,7 @@ function MatchView({ drill, onDone }: { drill: MatchDrill; onDone: Done }) {
 }
 
 function RepeatView({ drill, onDone }: { drill: RepeatDrill; onDone: Done }) {
+  const t = useT();
   return (
     <div className="flex flex-col gap-3">
       <p lang="vi" className="m-0 rounded-xl bg-sunken p-3 text-xl font-extrabold text-ink">
@@ -131,18 +127,18 @@ function RepeatView({ drill, onDone }: { drill: RepeatDrill; onDone: Done }) {
       </p>
       <p className="m-0 text-sm text-ink-soft">{drill.translation}</p>
       <button type="button" onClick={() => say(drill.text)} className="min-h-12 self-start rounded-xl border border-line bg-surface-2 px-4 font-bold text-ink">
-        🔈 Nghe mẫu
+        {t('playSample')}
       </button>
-      <p className="m-0 text-sm text-ink-muted">Đọc to theo mẫu rồi tự đánh giá (chấm thanh điệu tự động có ở mục Phát âm).</p>
-      <div className="grid grid-cols-3 gap-2" role="group" aria-label="Tự đánh giá">
+      <p className="m-0 text-sm text-ink-muted">{t('repeatHint')}</p>
+      <div className="grid grid-cols-3 gap-2" role="group" aria-label={t('selfRate')}>
         <button type="button" onClick={() => onDone(2, false, drill.text)} className="min-h-12 rounded-xl border border-line bg-danger-soft font-bold text-danger-ink">
-          Khó
+          {t('hard')}
         </button>
         <button type="button" onClick={() => onDone(4, true, drill.text)} className="min-h-12 rounded-xl border border-line bg-surface-2 font-bold text-ink">
-          Được
+          {t('ok')}
         </button>
         <button type="button" onClick={() => onDone(5, true, drill.text)} className="min-h-12 rounded-xl bg-accent font-bold text-accent-ink">
-          Dễ
+          {t('easy')}
         </button>
       </div>
     </div>
@@ -154,6 +150,7 @@ function RepeatView({ drill, onDone }: { drill: RepeatDrill; onDone: Done }) {
  * sai => thành thẻ ôn SM-2 và quay lại ở phiên sau.
  */
 export function DrillScreen() {
+  const t = useT();
   const level = useLearner((s) => s.profile.level);
   const recordAttempt = useLearner((s) => s.recordAttempt);
   const addCard = useLearner((s) => s.addCard);
@@ -192,12 +189,12 @@ export function DrillScreen() {
       <div className="mx-auto flex max-w-[560px] flex-col gap-4">
         <header className="flex flex-col gap-2 border-b-2 border-line pb-4">
           <div className="flex items-center justify-between gap-2">
-            <h1 className="m-0 text-[26px] font-black leading-tight tracking-tight text-heading">Luyện tập</h1>
+            <h1 className="m-0 text-[26px] font-black leading-tight tracking-tight text-heading">{t('drillTitle')}</h1>
             <Link to="/ghep-cau" className="flex min-h-11 items-center rounded-xl border border-line-strong bg-surface px-3 text-sm font-bold text-ink no-underline">
-              🧱 Ghép câu
+              {t('sentenceLink')}
             </Link>
           </div>
-          <div className="h-2 overflow-hidden rounded-full bg-surface-2" role="progressbar" aria-label="Tiến độ phiên" aria-valuemin={0} aria-valuemax={session.length} aria-valuenow={Math.min(index, session.length)}>
+          <div className="h-2 overflow-hidden rounded-full bg-surface-2" role="progressbar" aria-label={t('sessionProgress')} aria-valuemin={0} aria-valuemax={session.length} aria-valuenow={Math.min(index, session.length)}>
             <div className="h-full bg-accent transition-[width]" style={{ width: `${(Math.min(index, session.length) / session.length) * 100}%` }} />
           </div>
         </header>
@@ -205,7 +202,7 @@ export function DrillScreen() {
         {!finished && drill && (
           <section key={`${seed}-${index}`} aria-labelledby="ct-drill-q" className="flex flex-col gap-3 rounded-2xl border border-line-strong bg-surface p-4 shadow-card">
             <p className="m-0 text-xs font-bold uppercase tracking-wide text-ink-muted">
-              {TYPE_LABEL[drill.type]} · Bài {index + 1}/{session.length}
+              {t('itemOf', { type: t(`type.${drill.type}`), i: index + 1, n: session.length })}
             </p>
             <h2 id="ct-drill-q" className="m-0 text-lg font-extrabold leading-snug text-ink">
               {drill.prompt}
@@ -222,9 +219,9 @@ export function DrillScreen() {
               {score >= session.length - 1 ? '🏮' : '🎋'}
             </span>
             <h2 className="m-0 text-xl font-black text-ink">
-              Xong phiên! {score}/{session.length} bài đúng
+              {t('sessionDone', { score, n: session.length })}
             </h2>
-            <p className="m-0 text-[15px] text-ink-soft">Bài sai đã được lưu để ôn lại theo lịch SM-2.</p>
+            <p className="m-0 text-[15px] text-ink-soft">{t('sessionDoneHint')}</p>
             <button
               type="button"
               onClick={() => {
@@ -234,7 +231,7 @@ export function DrillScreen() {
               }}
               className="min-h-12 w-full rounded-xl bg-accent font-extrabold text-accent-ink"
             >
-              Phiên mới
+              {t('newSession')}
             </button>
           </section>
         )}
