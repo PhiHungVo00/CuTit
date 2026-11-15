@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { getDeviceSpeech } from '@vietlearning/native';
-import { learnerStore, type SrsCard } from '@vietlearning/state';
+import { learnerStore, speechRate, type SrsCard } from '@vietlearning/state';
 import { card, primaryBtn, secondaryBtn } from '../common/ui';
 
 /** 4 mức tự chấm => chất lượng SM-2 (A4). <3 là quên: thẻ quay lại từ đầu. */
@@ -12,7 +12,7 @@ const GRADES = [
 ];
 
 /** Đọc theo tốc độ người học chọn ở M12 */
-const say = (text: string) => getDeviceSpeech().speak(text, { rate: learnerStore.getState().preferences.speed * 0.85 }).catch(() => undefined);
+const say = (text: string) => getDeviceSpeech().speak(text, { rate: speechRate(0.85) }).catch(() => undefined);
 
 /** Phiên ôn thẻ đến hạn: xem mặt trước → lật → tự chấm. Danh sách cố định lúc bắt đầu phiên. */
 export function ReviewSession({ cards, onClose }: { cards: SrsCard[]; onClose: () => void }) {

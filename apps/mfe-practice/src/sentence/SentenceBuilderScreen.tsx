@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { SENTENCE_ITEMS, type SentenceBank } from '@vietlearning/content';
 import { getDeviceSpeech } from '@vietlearning/native';
-import { dueCards, learnerStore, useLearner } from '@vietlearning/state';
+import { dueCards, learnerStore, speechRate, useLearner } from '@vietlearning/state';
 import { useSentenceBuilder } from './useSentenceBuilder';
 
 /** Hàng đợi: câu đến hạn ôn (SM-2) trước, rồi câu mới hợp trình độ (≤ level + 1) */
@@ -115,7 +115,7 @@ function Exercise({ item, seed, onNext }: { item: SentenceBank; seed: number; on
             <button
               type="button"
               aria-label="Nghe câu"
-              onClick={() => getDeviceSpeech().speak(sentence, { rate: 0.9 }).catch(() => undefined)}
+              onClick={() => getDeviceSpeech().speak(sentence, { rate: speechRate(0.9) }).catch(() => undefined)}
               className="min-h-11 min-w-11 rounded-xl bg-surface text-lg"
             >
               🔈

@@ -205,3 +205,6 @@ export function dueCards(srs: Record<string, SrsCard>, now = new Date()): SrsCar
 
 export const CEFR = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'] as const;
 export const cefrLabel = (level: number): string => CEFR[Math.max(1, Math.min(6, Math.round(level))) - 1];
+
+/** Tốc độ đọc theo tùy chỉnh M12, nhân với tốc độ gốc mỗi màn hình chọn (vd. 0.85 cho từ đơn) */
+export const speechRate = (base = 1): number => Math.max(0.3, Math.min(2.5, learnerStore.getState().preferences.speed * base));
