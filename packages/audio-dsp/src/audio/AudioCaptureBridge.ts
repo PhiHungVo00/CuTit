@@ -54,16 +54,21 @@ export class WebAudioDriver implements AudioPlatformDriver {
   private chunks: Float32Array[] = [];
   private startedAt = 0;
 
-  constructor(private readonly targetRate = 16000) {}
+  /**
+   * @param speech true = thu lời nói để chép lời (STT): BẬT khử ồn/khử vọng/tự chỉnh âm lượng của thiết bị.
+   *               false (mặc định) = phân tích cao độ: tắt các bộ lọc vì chúng làm méo F0.
+   */
+  constructor(private readonly targetRate = 16000, private readonly speech = false) {}
 
   async start(onLevel?: (rms: number) => void): Promise<void> {
     if (typeof navigator === 'undefined' || !navigator.mediaDevices?.getUserMedia || typeof AudioWorkletNode === 'undefined') {
       throw new CaptureError('unsupported', 'Thiết bị không hỗ trợ thu âm');
     }
     try {
-      // Tắt xử lý giọng tự động: các bộ lọc này làm méo cao độ, sai kết quả F0
+      // Phân tích cao độ: tắt xử lý giọng tự động (làm méo F0). Chép lời: bật để giọng rõ hơn
+      const dsp = this.speech;
       this.stream = await navigator.mediaDevices.getUserMedia({
-        audio: { channelCount: 1, echoCancellation: false, noiseSuppression: false, autoGainControl: false }
+        audio: { channelCount: 1, echoCancellation: dsp, noiseSuppression: dsp, autoGainControl: dsp }
       });
     } catch (err) {
       const name = (err as DOMException)?.name;
