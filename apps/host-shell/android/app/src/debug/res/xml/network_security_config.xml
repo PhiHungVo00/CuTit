@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  CHỈ bản debug (source set src/debug, không vào bản release): cho phép HTTP thường để app trong
+  emulator (10.0.2.2) hoặc điện thoại thật (IP LAN) gọi Gateway chạy trên máy dev.
+  Bản release dùng mặc định của Android: chặn HTTP, Gateway bắt buộc https (scripts/build-apk.ps1 -Release kiểm tra).
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="true" />
+</network-security-config>
