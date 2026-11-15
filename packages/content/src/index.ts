@@ -14,3 +14,4 @@ export * from './dialects/dialectMap.js';
 export * from './scenarios/ScenarioPrototype.js';
 export * from './pitch/PitchReferenceFlyweight.js';
 export * from './culture/culture.js';
+export * from './sentences/sentences.js';

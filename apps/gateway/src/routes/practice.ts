@@ -7,8 +7,11 @@ import {
   PlacementNextRequestSchema,
   PlacementNextResponseSchema,
   SentenceCheckRequestSchema,
-  SentenceCheckResponseSchema
+  SentenceCheckResponseSchema,
+  checkSentenceOrder,
+  type SentenceItem
 } from '@vietlearning/contracts';
+import { SENTENCE_ITEMS } from '@vietlearning/content';
 import type { RouteDeps } from '../app.js';
 import { parseOr400, respond } from '../lib/validate.js';
 
@@ -47,11 +50,10 @@ export const practiceRoutes: FastifyPluginAsync<RouteDeps> = async (server, { pi
   server.post('/sentence/check', async (req, reply) => {
     const body = parseOr400(SentenceCheckRequestSchema, req.body, reply);
     if (!body) return reply;
-    return respond(SentenceCheckResponseSchema, {
-      valid: true,
-      errors: [],
-      hint: 'Trật tự câu S + V + O chuẩn tiếng Việt.'
-    });
+    const item = SENTENCE_ITEMS.find((s) => s.id === body.itemId);
+    if (!item) return reply.status(404).send({ error: 'unknown_item', message: 'Không có câu với itemId này' });
+    // A8 thật (luật + LCS); TDD: câu phức tạp có thể thêm bước LLM chấm rubric (needs_review) sau
+    return respond(SentenceCheckResponseSchema, checkSentenceOrder(item as SentenceItem, body.tokens));
   });
 
   // POST /v1/placement/next (A5)

@@ -68,7 +68,11 @@ export const SentenceCheckRequestSchema = z.object({
 export const SentenceCheckResponseSchema = z.object({
   valid: z.boolean(),
   errors: z.array(z.string()).default([]),
-  hint: z.string().optional()
+  hint: z.string().optional(),
+  /** chỉ số (trong câu người học gửi) của các từ đặt sai chỗ — A8 */
+  misplaced: z.array(z.number().int().nonnegative()).default([]),
+  /** thứ tự chuẩn để hiển thị sau khi chấm */
+  correctOrder: z.array(z.string()).optional()
 });
 
 // POST /placement/next (A5)
