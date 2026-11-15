@@ -1,30 +1,133 @@
 /**
- * GoF Bridge Pattern (10)
- * Tách trừu tượng thu âm khỏi nền tảng thực thi (Web Audio API vs Capacitor Plugin)
+ * GoF Bridge Pattern (10): tách trừu tượng "thu âm" khỏi nền tảng thực thi.
+ *
+ * WebAudioDriver dùng getUserMedia + AudioWorklet (PCM float, không qua codec => giống nhau
+ * trên mọi trình duyệt, đúng TDD). Trong app Capacitor, WebView Android cũng chạy getUserMedia:
+ * Capacitor tự xin quyền RECORD_AUDIO khi trang yêu cầu micro (cần khai báo trong AndroidManifest),
+ * nên chưa cần plugin thu âm native riêng. Nếu sau này cần (vd. ghi khi tắt màn hình), thêm một
+ * driver mới cài cùng interface này.
  */
-export interface AudioPlatformDriver {
-  startRecording(): Promise<void>;
-  stopRecording(): Promise<Blob | ArrayBuffer>;
+import { concatChunks, downsample } from './resample.js';
+
+export interface RecordingResult {
+  /** PCM mono 16 kHz, -1..1 */
+  pcm: Float32Array;
+  sampleRate: number;
+  durationMs: number;
 }
+
+export interface AudioPlatformDriver {
+  start(onLevel?: (rms: number) => void): Promise<void>;
+  stop(): Promise<RecordingResult>;
+  cancel(): void;
+}
+
+export type CaptureErrorCode = 'permission-denied' | 'no-microphone' | 'unsupported' | 'failed';
+
+export class CaptureError extends Error {
+  constructor(public readonly code: CaptureErrorCode, message?: string) {
+    super(message ?? code);
+    this.name = 'CaptureError';
+  }
+}
+
+/** Mã AudioWorkletProcessor: chép từng khối 128 mẫu ra luồng chính, kèm mức âm lượng. */
+const WORKLET_SOURCE = `
+class CaptureProcessor extends AudioWorkletProcessor {
+  process(inputs) {
+    const ch = inputs[0] && inputs[0][0];
+    if (ch && ch.length) {
+      let s = 0;
+      for (let i = 0; i < ch.length; i++) s += ch[i] * ch[i];
+      this.port.postMessage({ samples: ch.slice(0), rms: Math.sqrt(s / ch.length) });
+    }
+    return true;
+  }
+}
+registerProcessor('vl-capture', CaptureProcessor);
+`;
 
 export class WebAudioDriver implements AudioPlatformDriver {
-  async startRecording() { /* Web AudioWorklet init */ }
-  async stopRecording() { return new Blob([], { type: 'audio/wav' }); }
-}
+  private ctx: AudioContext | null = null;
+  private stream: MediaStream | null = null;
+  private node: AudioWorkletNode | null = null;
+  private chunks: Float32Array[] = [];
+  private startedAt = 0;
 
-export class CapacitorAudioDriver implements AudioPlatformDriver {
-  async startRecording() { /* Native Audio Recording */ }
-  async stopRecording() { return new ArrayBuffer(0); }
-}
+  constructor(private readonly targetRate = 16000) {}
 
-export class AudioCaptureBridge {
-  constructor(private driver: AudioPlatformDriver) {}
+  async start(onLevel?: (rms: number) => void): Promise<void> {
+    if (typeof navigator === 'undefined' || !navigator.mediaDevices?.getUserMedia || typeof AudioWorkletNode === 'undefined') {
+      throw new CaptureError('unsupported', 'Thiết bị không hỗ trợ thu âm');
+    }
+    try {
+      // Tắt xử lý giọng tự động: các bộ lọc này làm méo cao độ, sai kết quả F0
+      this.stream = await navigator.mediaDevices.getUserMedia({
+        audio: { channelCount: 1, echoCancellation: false, noiseSuppression: false, autoGainControl: false }
+      });
+    } catch (err) {
+      const name = (err as DOMException)?.name;
+      if (name === 'NotAllowedError' || name === 'SecurityError') throw new CaptureError('permission-denied');
+      if (name === 'NotFoundError' || name === 'OverconstrainedError') throw new CaptureError('no-microphone');
+      throw new CaptureError('failed', String(err));
+    }
 
-  public async record(): Promise<any> {
-    await this.driver.startRecording();
+    this.ctx = new AudioContext();
+    const url = URL.createObjectURL(new Blob([WORKLET_SOURCE], { type: 'application/javascript' }));
+    try {
+      await this.ctx.audioWorklet.addModule(url);
+    } finally {
+      URL.revokeObjectURL(url);
+    }
+    const source = this.ctx.createMediaStreamSource(this.stream);
+    this.node = new AudioWorkletNode(this.ctx, 'vl-capture');
+    this.chunks = [];
+    this.node.port.onmessage = (e: MessageEvent<{ samples: Float32Array; rms: number }>) => {
+      this.chunks.push(e.data.samples);
+      onLevel?.(e.data.rms);
+    };
+    source.connect(this.node);
+    // Không nối ra loa (tránh hú); một số trình duyệt cần node được "kéo" nên nối qua gain = 0
+    const mute = this.ctx.createGain();
+    mute.gain.value = 0;
+    this.node.connect(mute).connect(this.ctx.destination);
+    if (this.ctx.state === 'suspended') await this.ctx.resume();
+    this.startedAt = performance.now();
   }
 
-  public async finish(): Promise<any> {
-    return await this.driver.stopRecording();
+  async stop(): Promise<RecordingResult> {
+    const rate = this.ctx?.sampleRate ?? this.targetRate;
+    const raw = concatChunks(this.chunks);
+    const durationMs = performance.now() - this.startedAt;
+    this.cancel();
+    return { pcm: downsample(raw, rate, this.targetRate), sampleRate: this.targetRate, durationMs };
+  }
+
+  cancel(): void {
+    this.node?.port.close();
+    this.node?.disconnect();
+    this.stream?.getTracks().forEach((t) => t.stop());
+    void this.ctx?.close().catch(() => undefined);
+    this.node = null;
+    this.stream = null;
+    this.ctx = null;
+    this.chunks = [];
+  }
+}
+
+/** Phần trừu tượng của Bridge: nơi gọi chỉ biết record()/finish(), không biết nền tảng. */
+export class AudioCaptureBridge {
+  constructor(private readonly driver: AudioPlatformDriver = new WebAudioDriver()) {}
+
+  record(onLevel?: (rms: number) => void): Promise<void> {
+    return this.driver.start(onLevel);
+  }
+
+  finish(): Promise<RecordingResult> {
+    return this.driver.stop();
+  }
+
+  cancel(): void {
+    this.driver.cancel();
   }
 }

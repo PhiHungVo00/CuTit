@@ -1,0 +1,56 @@
+[
+  {
+    "id": "ngang",
+    "name": "Thanh ngang",
+    "mark": "không dấu",
+    "syllable": "ma",
+    "meaning": "con ma",
+    "description": "Giữ đều, ngang ở cao độ vừa",
+    "contour": [0.3, 0.3, 0.25, 0.2, 0.15, 0.1, 0.05, 0, -0.05, -0.1]
+  },
+  {
+    "id": "huyen",
+    "name": "Thanh huyền",
+    "mark": "dấu huyền ( ` )",
+    "syllable": "mà",
+    "meaning": "nhưng mà",
+    "description": "Bắt đầu thấp, đi xuống nhẹ và đều",
+    "contour": [0, -0.4, -0.8, -1.2, -1.6, -2.0, -2.4, -2.8, -3.2, -3.6]
+  },
+  {
+    "id": "sac",
+    "name": "Thanh sắc",
+    "mark": "dấu sắc ( ´ )",
+    "syllable": "má",
+    "meaning": "má, mẹ",
+    "description": "Đi lên cao dứt khoát",
+    "contour": [0, 0, 0.4, 1.0, 1.8, 2.7, 3.7, 4.7, 5.7, 6.6]
+  },
+  {
+    "id": "hoi",
+    "name": "Thanh hỏi",
+    "mark": "dấu hỏi ( ̉ )",
+    "syllable": "mả",
+    "meaning": "mồ mả",
+    "description": "Xuống thấp rồi vòng lên lại",
+    "contour": [0, -1.0, -2.0, -2.8, -3.3, -3.3, -2.8, -2.0, -1.0, 0]
+  },
+  {
+    "id": "nga",
+    "name": "Thanh ngã",
+    "mark": "dấu ngã ( ˜ )",
+    "syllable": "mã",
+    "meaning": "mã số, con ngựa",
+    "description": "Đi lên, gãy giữa chừng rồi vút cao",
+    "contour": [0, 0.6, 1.1, 0.6, -0.8, 0.2, 2.0, 3.8, 5.0, 6.0]
+  },
+  {
+    "id": "nang",
+    "name": "Thanh nặng",
+    "mark": "dấu nặng ( . )",
+    "syllable": "mạ",
+    "meaning": "cây mạ",
+    "description": "Xuống thấp, gấp và ngắn, tắc ở cuối",
+    "contour": [0, -1.0, -2.4, -3.9, -5.4, -6.6, -7.5, -8.1, -8.5, -8.7]
+  }
+]

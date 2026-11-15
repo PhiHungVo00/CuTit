@@ -1,22 +1,29 @@
 /**
- * GoF Strategy Pattern (13)
- * Cho phép hoán đổi linh hoạt giải thuật trích xuất cao độ YIN hoặc McLeod tùy theo năng lực CPU
+ * GoF Strategy Pattern (13): hoán đổi giải thuật trích xuất cao độ (YIN / McLeod)
+ * mà nơi gọi không cần biết chi tiết.
  */
+import { extractContourWith, yinPitch, type ContourOptions, type PitchFrame } from './yin.js';
+import { mcleodPitch } from './mcleod.js';
+
 export interface PitchStrategy {
-  name: string;
-  extractPitch(pcm: Float32Array): number[];
+  readonly name: 'yin' | 'mcleod';
+  extractContour(pcm: Float32Array, sampleRate: number, opts?: ContourOptions): PitchFrame[];
 }
 
 export class YINPitchStrategy implements PitchStrategy {
-  name = 'YIN_PRECISION';
-  extractPitch(pcm: Float32Array): number[] {
-    return [150.5, 155.0, 160.2]; // Mô phỏng trích xuất YIN chính xác
+  readonly name = 'yin' as const;
+  extractContour(pcm: Float32Array, sampleRate: number, opts?: ContourOptions) {
+    return extractContourWith(yinPitch, pcm, sampleRate, opts);
   }
 }
 
 export class McLeodPitchStrategy implements PitchStrategy {
-  name = 'MCLEOD_FAST';
-  extractPitch(pcm: Float32Array): number[] {
-    return [150.0, 154.5, 160.0]; // Mô phỏng trích xuất nhẹ cho thiết bị yếu
+  readonly name = 'mcleod' as const;
+  extractContour(pcm: Float32Array, sampleRate: number, opts?: ContourOptions) {
+    return extractContourWith(mcleodPitch, pcm, sampleRate, opts);
   }
+}
+
+export function createPitchStrategy(name: PitchStrategy['name'] = 'yin'): PitchStrategy {
+  return name === 'mcleod' ? new McLeodPitchStrategy() : new YINPitchStrategy();
 }
