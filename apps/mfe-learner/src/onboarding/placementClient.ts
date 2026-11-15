@@ -5,6 +5,8 @@
 export interface PlacementQuestion {
   id: string;
   prompt: string;
+  /** bản tiếng Anh của câu hỏi (đáp án vẫn là tiếng Việt) */
+  promptEn?: string;
   options: string[];
   index: number;
   maxQuestions: number;
@@ -25,13 +27,13 @@ export async function placementNext(sessionId: string, answer?: { questionId: st
   return { finished: false, question: r.question };
 }
 
-export async function describePlacementError(err: unknown): Promise<PlacementFailure> {
-  const { GatewayRequestError, describeGatewayError } = await import('@vietlearning/api-client');
+export async function describePlacementError(err: unknown, expiredMessage: string): Promise<PlacementFailure> {
+  const [{ GatewayRequestError, describeGatewayError }, { learnerStore }] = await Promise.all([import('@vietlearning/api-client'), import('@vietlearning/state')]);
   const offline = err instanceof GatewayRequestError && (err.kind === 'offline' || err.kind === 'timeout');
   if (err instanceof GatewayRequestError && err.status === 409) {
-    return { message: 'Phiên làm bài đã hết hạn. Hãy làm lại từ đầu.', offline: false };
+    return { message: expiredMessage, offline: false };
   }
-  return { message: describeGatewayError(err), offline };
+  return { message: describeGatewayError(err, learnerStore.getState().preferences.uiLanguage), offline };
 }
 
 export function newSessionId(): string {

@@ -1,32 +1,29 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { CEFR, cefrLabel, learnerStore, useLearner, type Dialect } from '@vietlearning/state';
+import { CEFR, cefrLabel, learnerStore, useLearner, type Dialect, type UiLanguage } from '@vietlearning/state';
 import { ChoiceGroup, ScreenFrame, card, primaryBtn, secondaryBtn } from '../common/ui';
+import { useT } from '../i18n';
 import { describePlacementError, newSessionId, placementNext, type PlacementFailure, type PlacementQuestion } from './placementClient';
 
-const GOALS = [
-  { value: 'daily', label: 'Giao tiếp hằng ngày', hint: 'Chào hỏi, mua sắm, hỏi đường' },
-  { value: 'travel', label: 'Du lịch Việt Nam' },
-  { value: 'work', label: 'Công việc', hint: 'Họp, email, đồng nghiệp người Việt' },
-  { value: 'family', label: 'Gia đình, cội nguồn', hint: 'Nói chuyện với ông bà, họ hàng' }
-];
+const GOALS = ['daily', 'travel', 'work', 'family'] as const;
+const GOALS_WITH_HINT = new Set<string>(['daily', 'work', 'family']);
 
+/** Tên ngôn ngữ viết bằng chính ngôn ngữ đó: không dịch */
 const LANGS = [
   { value: 'en', label: 'English' },
   { value: 'ko', label: '한국어' },
   { value: 'ja', label: '日本語' },
   { value: 'zh', label: '中文' },
-  { value: 'fr', label: 'Français' },
-  { value: 'other', label: 'Ngôn ngữ khác' }
+  { value: 'fr', label: 'Français' }
 ];
 
-const DIALECTS: { value: Dialect; label: string; hint: string }[] = [
-  { value: 'north', label: 'Miền Bắc', hint: 'Hà Nội — giọng chuẩn trong sách giáo khoa' },
-  { value: 'central', label: 'Miền Trung', hint: 'Huế, Đà Nẵng' },
-  { value: 'south', label: 'Miền Nam', hint: 'TP. Hồ Chí Minh' }
+const UI_LANGS: { value: UiLanguage; label: string }[] = [
+  { value: 'en', label: 'English' },
+  { value: 'vi', label: 'Tiếng Việt' }
 ];
 
-const LEVEL_HINT = ['Mới bắt đầu', 'Biết câu cơ bản', 'Giao tiếp được việc quen', 'Nói khá trôi chảy', 'Thành thạo', 'Gần như người bản ngữ'];
+const DIALECTS: Dialect[] = ['north', 'central', 'south'];
+const levelKey = (n: number) => `level.${Math.min(6, Math.max(1, n))}` as 'level.1';
 
 type Step =
   | { kind: 'goal' }
@@ -39,10 +36,12 @@ type Step =
 
 const STEP_NO: Record<Step['kind'], number> = { goal: 1, lang: 2, dialect: 3, level: 4, quiz: 4, manual: 4, result: 4 };
 
-/** Màn hình M11: chọn mục tiêu, ngôn ngữ mẹ đẻ, phương ngữ, rồi xếp lớp (A5 ở Gateway) hoặc tự chọn trình độ. */
+/** Màn hình M11: ngôn ngữ ứng dụng + mục tiêu, ngôn ngữ mẹ đẻ, phương ngữ, rồi xếp lớp (A5 ở Gateway) hoặc tự chọn trình độ. */
 export function OnboardingScreen() {
   const navigate = useNavigate();
+  const t = useT();
   const profile = useLearner((s) => s.profile);
+  const uiLanguage = useLearner((s) => s.preferences.uiLanguage);
   const [goal, setGoal] = useState<string | null>(profile.goal);
   const [lang, setLang] = useState<string | null>(profile.onboarded ? profile.nativeLang : null);
   const [dialect, setDialect] = useState<Dialect | null>(profile.onboarded ? profile.dialect : null);
@@ -67,7 +66,7 @@ export function OnboardingScreen() {
       else setStep({ kind: 'quiz', sessionId, question: next.question, busy: false, error: null });
     } catch (err) {
       if (token !== quizToken.current) return;
-      setStep({ kind: 'quiz', sessionId, question: current, busy: false, error: await describePlacementError(err) });
+      setStep({ kind: 'quiz', sessionId, question: current, busy: false, error: await describePlacementError(err, t('sessionExpired')) });
     }
   };
 
@@ -87,66 +86,81 @@ export function OnboardingScreen() {
     if (k) leaveQuiz({ kind: k } as Step);
   };
 
-  const heading = (text: string) => (
-    <h2 ref={headingRef} tabIndex={-1} className="m-0 text-xl font-black leading-snug text-ink outline-none">
+  const heading = (text: string, lang?: string) => (
+    <h2 ref={headingRef} tabIndex={-1} lang={lang} className="m-0 text-xl font-black leading-snug text-ink outline-none">
       {text}
     </h2>
   );
 
+  const questionText = (q: PlacementQuestion) => (uiLanguage === 'en' && q.promptEn ? q.promptEn : q.prompt);
+
   return (
-    <ScreenFrame title="Bắt đầu">
+    <ScreenFrame title={t('startTitle')}>
       <div className="flex items-center gap-3">
-        <div className="h-2 flex-1 overflow-hidden rounded-full bg-surface-2" role="progressbar" aria-label="Các bước làm quen" aria-valuemin={1} aria-valuemax={4} aria-valuenow={STEP_NO[step.kind]}>
+        <div className="h-2 flex-1 overflow-hidden rounded-full bg-surface-2" role="progressbar" aria-label={t('stepsLabel')} aria-valuemin={1} aria-valuemax={4} aria-valuenow={STEP_NO[step.kind]}>
           <div className="h-full bg-accent transition-[width]" style={{ width: `${(STEP_NO[step.kind] / 4) * 100}%` }} />
         </div>
-        <span className="text-sm font-bold text-ink-muted">Bước {STEP_NO[step.kind]}/4</span>
+        <span className="text-sm font-bold text-ink-muted">{t('stepOf', { n: STEP_NO[step.kind] })}</span>
       </div>
 
       <section className={card} aria-live="polite">
         {step.kind === 'goal' && (
           <>
-            {heading('Chào bạn! Bạn học tiếng Việt để làm gì?')}
-            <ChoiceGroup name="goal" legend="Mục tiêu chính" value={goal} options={GOALS} onChange={setGoal} />
+            <ChoiceGroup name="uilang" legend={t('uiLangLegend')} value={uiLanguage} options={UI_LANGS} onChange={(v) => learnerStore.getState().setPreferences({ uiLanguage: v })} />
+            {heading(t('goalQ'))}
+            <ChoiceGroup
+              name="goal"
+              legend={t('goalLegend')}
+              value={goal}
+              options={GOALS.map((g) => ({ value: g, label: t(`goal.${g}`), hint: GOALS_WITH_HINT.has(g) ? t(`goal.${g}.hint` as 'goal.daily.hint') : undefined }))}
+              onChange={setGoal}
+            />
             <button type="button" className={primaryBtn} disabled={!goal} onClick={() => setStep({ kind: 'lang' })}>
-              Tiếp →
+              {t('next')}
             </button>
           </>
         )}
 
         {step.kind === 'lang' && (
           <>
-            {heading('Ngôn ngữ mẹ đẻ của bạn?')}
-            <p className="m-0 text-[15px] text-ink-soft">Bé Cu Tít dùng để giải thích lỗi dễ hiểu hơn.</p>
-            <ChoiceGroup name="lang" legend="Ngôn ngữ" value={lang} options={LANGS} onChange={setLang} />
+            {heading(t('langQ'))}
+            <p className="m-0 text-[15px] text-ink-soft">{t('langWhy')}</p>
+            <ChoiceGroup name="lang" legend={t('langLegend')} value={lang} options={[...LANGS, { value: 'other', label: t('langOther') }]} onChange={setLang} />
             <button type="button" className={primaryBtn} disabled={!lang} onClick={() => setStep({ kind: 'dialect' })}>
-              Tiếp →
+              {t('next')}
             </button>
           </>
         )}
 
         {step.kind === 'dialect' && (
           <>
-            {heading('Bạn muốn nghe giọng miền nào?')}
-            <p className="m-0 text-[15px] text-ink-soft">Có thể đổi lại bất cứ lúc nào trong Tùy chỉnh.</p>
-            <ChoiceGroup name="dialect" legend="Phương ngữ" value={dialect} options={DIALECTS} onChange={setDialect} />
+            {heading(t('dialectQ'))}
+            <p className="m-0 text-[15px] text-ink-soft">{t('dialectLater')}</p>
+            <ChoiceGroup
+              name="dialect"
+              legend={t('dialectLegend')}
+              value={dialect}
+              options={DIALECTS.map((d) => ({ value: d, label: t(`dialect.${d}`), hint: t(`dialect.${d}.hint`) }))}
+              onChange={setDialect}
+            />
             <button type="button" className={primaryBtn} disabled={!dialect} onClick={() => setStep({ kind: 'level' })}>
-              Tiếp →
+              {t('next')}
             </button>
           </>
         )}
 
         {step.kind === 'level' && (
           <>
-            {heading('Trình độ hiện tại của bạn')}
+            {heading(t('levelQ'))}
             <button type="button" className={primaryBtn} onClick={() => void runQuiz(newSessionId())}>
-              Làm bài xếp lớp (8–12 câu)
+              {t('takeTest')}
             </button>
-            <p className="m-0 text-sm text-ink-muted">Câu hỏi khó dần hoặc dễ dần theo câu trả lời của bạn. Cần kết nối mạng.</p>
+            <p className="m-0 text-sm text-ink-muted">{t('testHint')}</p>
             <button type="button" className={secondaryBtn} onClick={() => setStep({ kind: 'manual' })}>
-              Tôi tự chọn trình độ
+              {t('pickLevel')}
             </button>
             <button type="button" className={secondaryBtn} onClick={() => setStep({ kind: 'result', level: 1, fromTest: false })}>
-              Tôi mới bắt đầu
+              {t('beginner')}
             </button>
           </>
         )}
@@ -154,11 +168,12 @@ export function OnboardingScreen() {
         {step.kind === 'quiz' && (
           <>
             <p className="m-0 text-xs font-bold uppercase tracking-wide text-ink-muted">
-              Bài xếp lớp{step.question ? ` · Câu ${step.question.index}/${step.question.maxQuestions} (tối đa)` : ''}
+              {t('quizLabel')}
+              {step.question ? t('quizProgress', { i: step.question.index, max: step.question.maxQuestions }) : ''}
             </p>
-            {step.question ? heading(step.question.prompt) : !step.error && heading('Đang chuẩn bị câu hỏi…')}
+            {step.question ? heading(questionText(step.question), uiLanguage === 'en' && step.question.promptEn ? 'en' : 'vi') : !step.error && heading(t('preparing'))}
             {step.question && (
-              <div className="grid gap-2" role="group" aria-label="Lựa chọn">
+              <div className="grid gap-2" role="group" aria-label={t('choices')}>
                 {step.question.options.map((o, i) => (
                   <button
                     key={o}
@@ -175,24 +190,24 @@ export function OnboardingScreen() {
             )}
             {step.busy && (
               <p role="status" className="m-0 text-sm text-ink-muted">
-                Đang xử lý…
+                {t('processing')}
               </p>
             )}
             {step.error && (
               <div role="alert" className="flex flex-col gap-2 rounded-xl bg-danger-soft p-3 text-danger-ink">
-                {heading(step.error.offline ? 'Không làm được bài xếp lớp lúc này' : 'Có lỗi xảy ra')}
+                {heading(step.error.offline ? t('quizOffline') : t('errorTitle'))}
                 <p className="m-0 text-[15px]">{step.error.message}</p>
                 {step.question && (
                   // Gọi lại không kèm trả lời => Gateway gửi lại câu đang chờ (không mất tiến độ nếu câu trả lời chưa tới máy chủ)
                   <button type="button" className={primaryBtn} onClick={() => void runQuiz(step.sessionId, undefined, step.question)}>
-                    Thử lại
+                    {t('retry')}
                   </button>
                 )}
                 <button type="button" className={secondaryBtn} onClick={() => void runQuiz(newSessionId())}>
-                  Làm lại từ đầu
+                  {t('restart')}
                 </button>
                 <button type="button" className={secondaryBtn} onClick={() => leaveQuiz({ kind: 'manual' })}>
-                  Tự chọn trình độ
+                  {t('pickLevelShort')}
                 </button>
               </div>
             )}
@@ -201,16 +216,16 @@ export function OnboardingScreen() {
 
         {step.kind === 'manual' && (
           <>
-            {heading('Chọn trình độ gần đúng nhất')}
+            {heading(t('manualQ'))}
             <ChoiceGroup
               name="level"
-              legend="Khung CEFR"
+              legend={t('cefrLegend')}
               value={manualLevel}
-              options={CEFR.map((c, i) => ({ value: String(i + 1), label: c, hint: LEVEL_HINT[i] }))}
+              options={CEFR.map((c, i) => ({ value: String(i + 1), label: c, hint: t(levelKey(i + 1)) }))}
               onChange={setManualLevel}
             />
             <button type="button" className={primaryBtn} disabled={!manualLevel} onClick={() => setStep({ kind: 'result', level: Number(manualLevel), fromTest: false })}>
-              Tiếp →
+              {t('next')}
             </button>
           </>
         )}
@@ -220,12 +235,13 @@ export function OnboardingScreen() {
             <span aria-hidden="true" className="text-5xl">
               🏮
             </span>
-            {heading(`Trình độ của bạn: ${cefrLabel(step.level)}`)}
+            {heading(t('yourLevel', { level: cefrLabel(step.level) }))}
             <p className="m-0 text-[15px] text-ink-soft">
-              {LEVEL_HINT[step.level - 1]}. {step.fromTest ? 'Kết quả từ bài xếp lớp; ' : ''}Bài luyện sẽ tự điều chỉnh theo tiến bộ của bạn.
+              {t(levelKey(step.level))}. {step.fromTest ? t('fromTest') : ''}
+              {t('adapts')}
             </p>
             <button type="button" className={primaryBtn} onClick={() => finish(step.level)}>
-              Bắt đầu học
+              {t('startLearning')}
             </button>
           </div>
         )}
@@ -233,7 +249,7 @@ export function OnboardingScreen() {
 
       {step.kind !== 'goal' && (
         <button type="button" className={secondaryBtn} onClick={back}>
-          ← Quay lại
+          {t('back')}
         </button>
       )}
     </ScreenFrame>

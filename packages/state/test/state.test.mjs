@@ -70,3 +70,22 @@ test('cefrLabel', () => {
   assert.equal(cefrLabel(6), 'C2');
   assert.equal(cefrLabel(9), 'C2');
 });
+
+test('i18n: tra theo ngôn ngữ hiện tại, thay biến, thiếu bản dịch => tiếng Việt', async () => {
+  const { defineMessages, learnerStore } = await import('../dist/index.js');
+  const m = defineMessages({ hi: 'Chào {name}', only: 'Chỉ có tiếng Việt' }, { hi: 'Hello {name}', only: '' });
+  learnerStore.getState().setPreferences({ uiLanguage: 'en' });
+  assert.equal(m.t('hi', { name: 'Nam' }), 'Hello Nam');
+  learnerStore.getState().setPreferences({ uiLanguage: 'vi' });
+  assert.equal(m.t('hi', { name: 'Nam' }), 'Chào Nam');
+  assert.equal(m.t('hi'), 'Chào {name}', 'thiếu biến => giữ nguyên chỗ trống');
+});
+
+test('bản lưu cũ thiếu uiLanguage vẫn nhận mặc định (gộp sâu)', async () => {
+  const { learnerStore } = await import('../dist/index.js');
+  const merge = learnerStore.persist.getOptions().merge;
+  const cur = learnerStore.getState();
+  const merged = merge({ preferences: { voiceId: 'x', speed: 1.2, dialect: 'south', correctionLevel: 'off', persona: 'co_giao' } }, cur);
+  assert.equal(merged.preferences.speed, 1.2);
+  assert.ok(['vi', 'en'].includes(merged.preferences.uiLanguage));
+});

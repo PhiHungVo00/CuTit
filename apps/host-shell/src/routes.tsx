@@ -10,12 +10,14 @@ import { lazy, type ComponentType, type LazyExoticComponent } from 'react';
  */
 type Loader = () => Promise<{ default: ComponentType }>;
 
+/** Nhãn/mô tả lấy từ từ điển Shell theo khóa `<đường dẫn>.label|short|desc` (src/i18n.ts) */
+export type ScreenId = 'xung-ho' | 'van-hoa' | 'hoi-thoai' | 'nhap-vai' | 'phat-am' | 'phuong-ngu' | 'luyen-tap' | 'ghep-cau' | 'camera' | 'ho-so' | 'tuy-chinh' | 'bat-dau';
+
+export const screenId = (r: ScreenRoute) => r.path.slice(1) as ScreenId;
+
 export interface ScreenRoute {
   path: string;
-  label: string;
-  shortLabel: string;
   icon: string;
-  description: string;
   owner: string;
   ready: boolean;
   inTabBar: boolean;
@@ -23,17 +25,14 @@ export interface ScreenRoute {
   Component: LazyExoticComponent<ComponentType>;
 }
 
-function screen(def: Omit<ScreenRoute, 'Component'>): ScreenRoute {
+function screen(def: Omit<ScreenRoute, 'Component'> & { path: `/${ScreenId}` }): ScreenRoute {
   return { ...def, Component: lazy(def.load) };
 }
 
 export const SCREENS: ScreenRoute[] = [
   screen({
     path: '/xung-ho',
-    label: 'Ma trận xưng hô',
-    shortLabel: 'Xưng hô',
     icon: '🏮',
-    description: 'M3 · Đại từ xưng hô theo tuổi, quan hệ và bối cảnh (A6)',
     owner: 'mfe-knowledge',
     ready: true,
     inTabBar: true,
@@ -41,10 +40,7 @@ export const SCREENS: ScreenRoute[] = [
   }),
   screen({
     path: '/van-hoa',
-    label: 'Cẩm nang văn hóa',
-    shortLabel: 'Văn hóa',
     icon: '📜',
-    description: 'M10 · 20 thẻ phong tục, kiêng kỵ; hỏi đáp cùng Bé Cu Tít',
     owner: 'mfe-knowledge',
     ready: true,
     inTabBar: false,
@@ -52,10 +48,7 @@ export const SCREENS: ScreenRoute[] = [
   }),
   screen({
     path: '/hoi-thoai',
-    label: 'Trò chuyện cùng Cu Tít',
-    shortLabel: 'Hội thoại',
     icon: '💬',
-    description: 'M1 · Trò chuyện, sửa lỗi theo mức bạn chọn (trả lời mẫu, chưa nối AI)',
     owner: 'mfe-conversation',
     ready: true,
     inTabBar: true,
@@ -63,10 +56,7 @@ export const SCREENS: ScreenRoute[] = [
   }),
   screen({
     path: '/nhap-vai',
-    label: 'Nhập vai tình huống',
-    shortLabel: 'Nhập vai',
     icon: '🎭',
-    description: 'M7 · Chợ, hỏi đường, quán phở, làm quen: nhiệm vụ + tổng kết lỗi',
     owner: 'mfe-conversation',
     ready: true,
     inTabBar: false,
@@ -74,10 +64,7 @@ export const SCREENS: ScreenRoute[] = [
   }),
   screen({
     path: '/phat-am',
-    label: 'Phòng luyện phát âm',
-    shortLabel: 'Phát âm',
     icon: '🎙️',
-    description: 'M2 · Luyện 6 thanh điệu với biểu đồ cao độ (A1, A2)',
     owner: 'mfe-speech-lab',
     ready: true,
     inTabBar: true,
@@ -85,10 +72,7 @@ export const SCREENS: ScreenRoute[] = [
   }),
   screen({
     path: '/phuong-ngu',
-    label: 'Phương ngữ 3 miền',
-    shortLabel: 'Phương ngữ',
     icon: '🗺️',
-    description: 'M6 · Đối chiếu từ Bắc / Trung / Nam, nghe và lưu để ôn (A7)',
     owner: 'mfe-speech-lab',
     ready: true,
     inTabBar: false,
@@ -96,10 +80,7 @@ export const SCREENS: ScreenRoute[] = [
   }),
   screen({
     path: '/luyen-tap',
-    label: 'Luyện tập',
-    shortLabel: 'Luyện tập',
     icon: '🧩',
-    description: 'M5 · 8 bài/phiên, 5 dạng, ôn lại bài sai theo SM-2 (A4)',
     owner: 'mfe-practice',
     ready: true,
     inTabBar: true,
@@ -107,10 +88,7 @@ export const SCREENS: ScreenRoute[] = [
   }),
   screen({
     path: '/ghep-cau',
-    label: 'Ghép câu',
-    shortLabel: 'Ghép câu',
     icon: '🧱',
-    description: 'M8 · Xếp từ thành câu đúng trật tự, giải thích lỗi (A8)',
     owner: 'mfe-practice',
     ready: true,
     inTabBar: false,
@@ -118,10 +96,7 @@ export const SCREENS: ScreenRoute[] = [
   }),
   screen({
     path: '/camera',
-    label: 'Camera từ vựng',
-    shortLabel: 'Camera',
     icon: '📷',
-    description: 'M4 · Chụp đồ vật, học tên tiếng Việt, lưu để ôn (nhãn mẫu, chưa nối AI)',
     owner: 'mfe-vision',
     ready: true,
     inTabBar: false,
@@ -129,10 +104,7 @@ export const SCREENS: ScreenRoute[] = [
   }),
   screen({
     path: '/ho-so',
-    label: 'Tiến độ học',
-    shortLabel: 'Hồ sơ',
     icon: '📈',
-    description: 'M9 · Chuỗi ngày, thời gian học, độ chính xác, ôn thẻ đến hạn (A4)',
     owner: 'mfe-learner',
     ready: true,
     inTabBar: false,
@@ -140,10 +112,7 @@ export const SCREENS: ScreenRoute[] = [
   }),
   screen({
     path: '/tuy-chinh',
-    label: 'Tùy chỉnh',
-    shortLabel: 'Tùy chỉnh',
     icon: '⚙️',
-    description: 'M12 · Giọng đọc, tốc độ, phương ngữ, mức sửa lỗi, nhân vật',
     owner: 'mfe-learner',
     ready: true,
     inTabBar: false,
@@ -151,10 +120,7 @@ export const SCREENS: ScreenRoute[] = [
   }),
   screen({
     path: '/bat-dau',
-    label: 'Làm quen & xếp lớp',
-    shortLabel: 'Bắt đầu',
     icon: '🌱',
-    description: 'M11 · Mục tiêu, phương ngữ, bài xếp lớp thích ứng 8–12 câu (A5)',
     owner: 'mfe-learner',
     ready: true,
     inTabBar: false,

@@ -10,6 +10,8 @@ export interface PlacementQuestion {
   /** độ khó 1–6 (A1..C2) */
   level: number;
   prompt: string;
+  /** câu hỏi bằng tiếng Anh cho giao diện tiếng Anh (lựa chọn vẫn là tiếng Việt) */
+  promptEn: string;
   options: string[];
   answer: number;
   reviewed: boolean;

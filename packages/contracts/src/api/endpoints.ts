@@ -100,6 +100,7 @@ export const PlacementNextRequestSchema = z.object({
 export const PlacementQuestionSchema = z.object({
   id: z.string(),
   prompt: z.string(),
+  promptEn: z.string().optional(),
   /** lựa chọn đã được Gateway xáo thứ tự */
   options: z.array(z.string()).min(2),
   /** số thứ tự câu hiện tại (1-based) */
@@ -200,7 +201,9 @@ export const PreferencesSchema = z.object({
   speed: z.number().min(0.5).max(2.0),
   dialect: z.enum(['north', 'central', 'south']),
   correctionLevel: z.enum(['gentle', 'strict', 'off']),
-  persona: z.string()
+  persona: z.string(),
+  /** Ngôn ngữ giao diện (nội dung học vẫn là tiếng Việt) */
+  uiLanguage: z.enum(['vi', 'en']).default('en')
 });
 
 // Lỗi chuẩn hóa của Gateway

@@ -33,7 +33,7 @@ export interface PlacementSession {
 }
 
 export type PlacementStep =
-  | { finished: false; question: { id: string; prompt: string; options: string[]; index: number; maxQuestions: number }; lastCorrect?: boolean }
+  | { finished: false; question: { id: string; prompt: string; promptEn?: string; options: string[]; index: number; maxQuestions: number }; lastCorrect?: boolean }
   | { finished: true; assignedLevel: number; lastCorrect?: boolean };
 
 export class PlacementError extends Error {
@@ -113,7 +113,7 @@ export class AdaptivePlacement {
     return {
       finished: false,
       lastCorrect,
-      question: { id: question.id, prompt: question.prompt, options: shown.map((i) => question.options[i]), index: n + 1, maxQuestions: MAX_QUESTIONS }
+      question: { id: question.id, prompt: question.prompt, promptEn: question.promptEn, options: shown.map((i) => question.options[i]), index: n + 1, maxQuestions: MAX_QUESTIONS }
     };
   }
 
@@ -132,7 +132,7 @@ export class AdaptivePlacement {
       const { question, shown } = s.pending;
       return {
         finished: false,
-        question: { id: question.id, prompt: question.prompt, options: shown.map((i) => question.options[i]), index: s.history.length + 1, maxQuestions: MAX_QUESTIONS }
+        question: { id: question.id, prompt: question.prompt, promptEn: question.promptEn, options: shown.map((i) => question.options[i]), index: s.history.length + 1, maxQuestions: MAX_QUESTIONS }
       };
     }
     if (!s.pending) throw new PlacementError('session_finished');

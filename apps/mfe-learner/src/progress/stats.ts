@@ -1,14 +1,18 @@
-import { dayKey } from '@vietlearning/state';
+import { dayKey, type UiLanguage } from '@vietlearning/state';
 
-const WEEKDAY = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
+const WEEKDAY: Record<UiLanguage, string[]> = {
+  vi: ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'],
+  en: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+};
+const TODAY: Record<UiLanguage, string> = { vi: 'Nay', en: 'Today' };
 
 /** 7 ngày gần nhất (cũ → mới, ngày cuối là hôm nay): phút học mỗi ngày */
-export function lastSevenDays(activity: Record<string, number>, today = new Date()): { key: string; label: string; minutes: number; isToday: boolean }[] {
+export function lastSevenDays(activity: Record<string, number>, today = new Date(), lang: UiLanguage = 'vi'): { key: string; label: string; minutes: number; isToday: boolean }[] {
   const out = [];
   for (let i = 6; i >= 0; i--) {
     const d = new Date(today.getFullYear(), today.getMonth(), today.getDate() - i);
     const key = dayKey(d);
-    out.push({ key, label: i === 0 ? 'Nay' : WEEKDAY[d.getDay()], minutes: Math.round((activity[key] ?? 0) / 60), isToday: i === 0 });
+    out.push({ key, label: i === 0 ? TODAY[lang] : WEEKDAY[lang][d.getDay()], minutes: Math.round((activity[key] ?? 0) / 60), isToday: i === 0 });
   }
   return out;
 }
@@ -23,8 +27,9 @@ export function nextDue(srs: Record<string, { dueAt: string }>, now = new Date()
   return best === null ? null : new Date(best);
 }
 
-export function formatDue(d: Date, now = new Date()): string {
+export function formatDue(d: Date, now = new Date(), lang: UiLanguage = 'vi'): string {
   const days = Math.round((new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime() - new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime()) / 86_400_000);
+  if (lang === 'en') return days <= 0 ? 'today' : days === 1 ? 'tomorrow' : `in ${days} days`;
   if (days <= 0) return 'hôm nay';
   if (days === 1) return 'ngày mai';
   return `${days} ngày nữa`;

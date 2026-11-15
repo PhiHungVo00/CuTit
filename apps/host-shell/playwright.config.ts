@@ -18,17 +18,20 @@ export default defineConfig({
   use: {
     baseURL: `http://localhost:${PORT}`,
     channel: 'chrome',
-    trace: 'retain-on-failure'
+    trace: 'retain-on-failure',
+    // Kiểm thử cũ khẳng định chữ tiếng Việt: ghim locale; test tiếng Anh tự đặt ngôn ngữ riêng
+    locale: 'vi-VN'
   },
   projects: [
-    { name: 'pixel-7', use: { ...devices['Pixel 7'], channel: 'chrome' } },
+    { name: 'pixel-7', use: { ...devices['Pixel 7'], channel: 'chrome', locale: 'vi-VN' } },
     {
       name: 'android-nho-320',
       use: {
         ...devices['Pixel 7'],
         channel: 'chrome',
         viewport: { width: 320, height: 640 },
-        deviceScaleFactor: 2
+        deviceScaleFactor: 2,
+        locale: 'vi-VN'
       }
     }
   ],

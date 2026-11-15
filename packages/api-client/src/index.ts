@@ -32,24 +32,31 @@ export class GatewayRequestError extends Error {
 }
 
 /** Câu thông báo tiếng Việt thống nhất cho người học */
-export function describeGatewayError(err: unknown): string {
-  const kind = err instanceof GatewayRequestError ? err.kind : 'server';
-  switch (kind) {
-    case 'offline':
-      return 'Không có kết nối mạng. Phần này cần mạng, hãy thử lại khi có mạng.';
-    case 'timeout':
-      return 'Máy chủ phản hồi chậm. Vui lòng thử lại.';
-    case 'unauthorized':
-      return 'Phiên đăng nhập đã hết hạn. Hãy đăng nhập lại.';
-    case 'quota':
-      return 'Bạn đã dùng hết lượt hôm nay. Hãy quay lại vào ngày mai nhé.';
-    case 'unavailable':
-      return 'Tính năng AI đang tạm ngưng. Vui lòng thử lại sau.';
-    case 'invalid-request':
-      return 'Dữ liệu gửi lên chưa hợp lệ.';
-    default:
-      return 'Có lỗi ở máy chủ. Vui lòng thử lại.';
+const ERROR_TEXT: Record<'vi' | 'en', Partial<Record<GatewayErrorKind, string>> & { server: string }> = {
+  vi: {
+    offline: 'Không có kết nối mạng. Phần này cần mạng, hãy thử lại khi có mạng.',
+    timeout: 'Máy chủ phản hồi chậm. Vui lòng thử lại.',
+    unauthorized: 'Phiên đăng nhập đã hết hạn. Hãy đăng nhập lại.',
+    quota: 'Bạn đã dùng hết lượt hôm nay. Hãy quay lại vào ngày mai nhé.',
+    unavailable: 'Tính năng AI đang tạm ngưng. Vui lòng thử lại sau.',
+    'invalid-request': 'Dữ liệu gửi lên chưa hợp lệ.',
+    server: 'Có lỗi ở máy chủ. Vui lòng thử lại.'
+  },
+  en: {
+    offline: 'No internet connection. This part needs the network; please try again when you are online.',
+    timeout: 'The server is responding slowly. Please try again.',
+    unauthorized: 'Your session has expired. Please sign in again.',
+    quota: 'You have used up today’s allowance. Come back tomorrow!',
+    unavailable: 'The AI feature is temporarily unavailable. Please try again later.',
+    'invalid-request': 'The request was not valid.',
+    server: 'Something went wrong on the server. Please try again.'
   }
+};
+
+/** Câu báo lỗi thân thiện theo ngôn ngữ giao diện (mặc định tiếng Việt) */
+export function describeGatewayError(err: unknown, lang: 'vi' | 'en' = 'vi'): string {
+  const kind = err instanceof GatewayRequestError ? err.kind : 'server';
+  return ERROR_TEXT[lang][kind] ?? ERROR_TEXT[lang].server;
 }
 
 interface GatewayConfig {
