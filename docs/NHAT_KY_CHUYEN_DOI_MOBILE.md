@@ -4,7 +4,7 @@
 > Mục đích: ghi lại **mọi quyết định, việc đã làm, cài đặt môi trường và việc còn lại** để không ai (kể cả AI agent) phải đoán lại.
 > Quy ước: mỗi bước xong thì thêm một dòng vào mục 3 và cập nhật mục 5.
 > **Quy tắc làm việc (người dùng đặt 2026-11-15):** xong một giai đoạn thì đọc lại nhật ký; nếu còn việc làm được thì làm tiếp luôn (giai đoạn kế → hàng chờ P1/P2 → P3). Chỉ dừng hỏi khi việc cần người quyết (nội dung ngôn ngữ, bí mật như keystore, máy thật, máy Mac, đồng ý điều khoản…), và gom các câu hỏi đó lại hỏi một lần ở cuối.
-> Báo cáo kiểm tra ban đầu (34 phát hiện): `BAO_CAO_AUDIT_MOBILE.md` ở gốc repo.
+> Báo cáo kiểm tra ban đầu (34 phát hiện): `docs/BAO_CAO_AUDIT_MOBILE.md`.
 
 ---
 
@@ -80,7 +80,7 @@ Lưu ý: ban đầu tôi hiểu nhầm thành "web chạy trên trình duyệt �
 | Q1, Q11, Q14 (nội dung ngôn ngữ) | Cần người phụ trách nội dung (M2) / người bản ngữ |
 | Q4b (các stub GoF chưa có hành vi) | Cần quyết: giữ để minh họa đủ 23 mẫu GoF cho báo cáo môn học, hay xóa |
 | ~~Các màn hình còn lại (M1, M4, M5/M8, M9–M12)~~ ✅ đã làm ở bước 20–25 | Còn mock: gia sư LLM, nhãn ảnh, STT (cần API key, xem Q18) |
-| Commit `BAO_CAO_AUDIT_MOBILE.md`; khối `agentGuidance` turbo tự chèn vào `AGENTS.md` | Quyết định của nhóm |
+| ~~Commit báo cáo audit; khối turbo trong `AGENTS.md`~~ ✅ báo cáo ở `docs/`, giữ khối turbo (bước 26) | — |
 
 ### Hướng dẫn chạy thử trên điện thoại Android thật
 
