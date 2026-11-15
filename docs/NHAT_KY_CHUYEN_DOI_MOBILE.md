@@ -79,7 +79,7 @@ Lưu ý: ban đầu tôi hiểu nhầm thành "web chạy trên trình duyệt �
 | iOS (build + kiểm thử Safari/WebKit) | Cần máy Mac hoặc dịch vụ build cloud; WebKit cho Playwright cần tải thêm ~70 MB |
 | Q1, Q11, Q14 (nội dung ngôn ngữ) | Cần người phụ trách nội dung (M2) / người bản ngữ |
 | Q4b (các stub GoF chưa có hành vi) | Cần quyết: giữ để minh họa đủ 23 mẫu GoF cho báo cáo môn học, hay xóa |
-| Các màn hình còn lại (M1, M4, M5/M8, M9–M12) | Thuộc phần việc của các thành viên khác theo TDD; cần quyết có làm hay không |
+| ~~Các màn hình còn lại (M1, M4, M5/M8, M9–M12)~~ ✅ đã làm ở bước 20–25 | Còn mock: gia sư LLM, nhãn ảnh, STT (cần API key, xem Q18) |
 | Commit `BAO_CAO_AUDIT_MOBILE.md`; khối `agentGuidance` turbo tự chèn vào `AGENTS.md` | Quyết định của nhóm |
 
 ### Hướng dẫn chạy thử trên điện thoại Android thật
