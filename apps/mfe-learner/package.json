@@ -2,6 +2,7 @@
   "name": "@vietlearning/mfe-learner",
   "version": "1.0.0",
   "private": true,
+  "main": "./src/index.ts",
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build"

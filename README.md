@@ -10,7 +10,7 @@ Hệ thống được tổ chức theo mô hình **Turborepo + PNPM Workspaces**
 
 ```text
 ├── apps/
-│   ├── host-shell/          # Host Shell điều phối (Module Federation, React, Tailwind)
+│   ├── host-shell/          # Host Shell: ghép MFE lúc build, lazy theo route, PWA offline
 │   ├── gateway/             # SaaS Gateway Backend (Fastify, Zod, Redis, Drizzle)
 │   ├── mfe-conversation/    # Remote MFE: Chat canvas, Voice turn state machine, Roleplay
 │   ├── mfe-speech-lab/      # Remote MFE: Biểu đồ cao độ F0, DTW 6 thanh điệu, Phương ngữ
@@ -59,6 +59,19 @@ cp .env.example apps/gateway/.env
 # 3. Khởi chạy toàn bộ hệ thống (Dev Mode)
 pnpm dev
 ```
+
+### Kiến trúc ghép MFE cho mobile (quyết định 2026-11-15)
+- Bản mobile/PWA/Capacitor **không dùng Module Federation runtime**: Host import điểm vào công khai
+  (`src/index.ts`) của từng remote bằng `import()` động, Vite tách mỗi màn hình thành một chunk riêng.
+  Lý do: tránh waterfall `remoteEntry.js` trên 4G, chỉ một bản React, chạy offline và đóng gói store được.
+- Nguyên tắc 7 (không import chéo remote) được ép bằng công cụ: `pnpm lint:boundaries`.
+- Thử PWA/offline: `pnpm build` rồi `pnpm --filter @vietlearning/host-shell preview`
+  (Service Worker chỉ đăng ký ở bản build, không chạy ở `pnpm dev`).
+
+### Gateway
+- Cấu hình nằm ở `apps/gateway/.env` (được nạp qua dotenv và kiểm tra bằng Zod khi khởi động).
+- `CORS_ORIGIN` là danh sách origin được phép; không chấp nhận `*`.
+- Production bắt buộc `JWT_SECRET`; môi trường dev mặc định cho phép khách ẩn danh (`AUTH_REQUIRED=false`).
 
 ---
 
