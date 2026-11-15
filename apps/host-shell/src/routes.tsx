@@ -73,6 +73,17 @@ export const SCREENS: ScreenRoute[] = [
     load: () => import('./screens/ToneLabRoute')
   }),
   screen({
+    path: '/phuong-ngu',
+    label: 'Phương ngữ 3 miền',
+    shortLabel: 'Phương ngữ',
+    icon: '🗺️',
+    description: 'M6 · Đối chiếu từ Bắc / Trung / Nam, nghe và lưu để ôn (A7)',
+    owner: 'mfe-speech-lab',
+    ready: true,
+    inTabBar: false,
+    load: () => import('./screens/DialectRoute')
+  }),
+  screen({
     path: '/luyen-tap',
     label: 'Luyện tập',
     shortLabel: 'Luyện tập',

@@ -7,7 +7,9 @@ async function assertMobileLayout(page: Page) {
     clientW: document.documentElement.clientWidth,
     small: [...document.querySelectorAll('main button, main a, main input')]
       .filter((el) => {
-        const r = el.getBoundingClientRect();
+        // Checkbox/radio nằm trong <label>: vùng chạm là cả nhãn (chạm nhãn cũng bật/tắt)
+        const target = el instanceof HTMLInputElement && /checkbox|radio/.test(el.type) ? (el.closest('label') ?? el) : el;
+        const r = target.getBoundingClientRect();
         return r.width > 0 && r.height > 0 && r.height < 44;
       })
       .map((el) => (el.textContent || (el as HTMLInputElement).placeholder || el.tagName).trim().slice(0, 30))
@@ -20,7 +22,7 @@ test.describe('Khung app', () => {
   test('trang chủ: liệt kê 6 màn hình, thanh tab, bố cục mobile chuẩn', async ({ page }) => {
     await page.goto('/');
     await expect(page.getByRole('heading', { name: 'Học Tiếng Việt Cùng Bé Cu Tít' })).toBeVisible();
-    await expect(page.locator('.screen-card')).toHaveCount(7);
+    await expect(page.locator('.screen-card')).toHaveCount(8);
     await expect(page.getByRole('navigation', { name: 'Điều hướng chính' })).toBeVisible();
     await assertMobileLayout(page);
   });
@@ -100,6 +102,28 @@ test.describe('M10 Cẩm nang văn hóa', () => {
     await expect(answer).toContainText('Lì xì đầu năm');
     await answer.getByRole('button', { name: 'Lì xì đầu năm' }).click();
     await expect(page.getByRole('listitem').filter({ hasText: 'Lì xì đầu năm' })).toHaveClass(/ring-accent/);
+  });
+});
+
+test.describe('M6 Phương ngữ', () => {
+  test('tìm từ, lọc từ khác cả 3 miền, lưu để ôn và còn sau khi tải lại', async ({ page }) => {
+    await page.goto('/phuong-ngu');
+    await expect(page.getByRole('heading', { name: 'Phương ngữ 3 miền' })).toBeVisible();
+    await assertMobileLayout(page);
+    await page.getByRole('searchbox').fill('heo');
+    const card = page.getByRole('listitem').filter({ hasText: 'Con lợn' });
+    await expect(card).toBeVisible();
+    await expect(card.getByRole('button', { name: /"heo" \(miền Nam\)/ })).toBeVisible();
+    await card.getByRole('button', { name: /Lưu để ôn tập/ }).click();
+    await expect(card.getByRole('button', { name: /Đã lưu để ôn/ })).toBeDisabled();
+    await page.reload();
+    await page.getByRole('searchbox').fill('heo');
+    await expect(page.getByRole('button', { name: /Đã lưu để ôn/ })).toBeVisible();
+
+    await page.getByRole('searchbox').fill('');
+    await page.getByLabel('Chỉ hiện từ khác nhau ở cả 3 miền').check();
+    await expect(page.getByRole('listitem').filter({ hasText: 'Thế nào' })).toBeVisible();
+    await expect(page.getByRole('listitem').filter({ hasText: 'Con lợn' })).toHaveCount(0);
   });
 });
 

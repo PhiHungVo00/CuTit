@@ -12,6 +12,8 @@ export interface DialectEntry {
   central: string;
   south: string;
   meaning: string;
+  /** false = bản nháp, cần người bản ngữ duyệt (hàng chờ Q1) */
+  reviewed: boolean;
 }
 
 export const DIALECT_DICTIONARY: DialectEntry[] = dialectData;

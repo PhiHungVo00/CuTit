@@ -26,6 +26,7 @@
     "@capacitor/splash-screen": "^7.0.5",
     "@fontsource/be-vietnam-pro": "^5.3.0",
     "@vietlearning/api-client": "workspace:*",
+    "@vietlearning/content": "workspace:*",
     "@vietlearning/contracts": "workspace:*",
     "@vietlearning/mfe-conversation": "workspace:*",
     "@vietlearning/mfe-knowledge": "workspace:*",
