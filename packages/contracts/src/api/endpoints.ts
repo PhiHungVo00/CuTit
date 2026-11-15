@@ -75,16 +75,35 @@ export const SentenceCheckResponseSchema = z.object({
   correctOrder: z.array(z.string()).optional()
 });
 
-// POST /placement/next (A5)
+// POST /placement/next (A5) — kiểm tra xếp lớp thích ứng, hội tụ sau 8–12 câu
 export const PlacementNextRequestSchema = z.object({
   sessionId: z.string().uuid(),
-  answer: z.string().optional()
+  /** câu trả lời cho câu hỏi vừa nhận (bỏ trống ở lần gọi đầu) */
+  answer: z
+    .object({
+      questionId: z.string().min(1).max(32),
+      choice: z.number().int().min(0).max(9)
+    })
+    .optional()
+});
+
+export const PlacementQuestionSchema = z.object({
+  id: z.string(),
+  prompt: z.string(),
+  /** lựa chọn đã được Gateway xáo thứ tự */
+  options: z.array(z.string()).min(2),
+  /** số thứ tự câu hiện tại (1-based) */
+  index: z.number().int().positive(),
+  maxQuestions: z.number().int().positive()
 });
 
 export const PlacementNextResponseSchema = z.object({
   finished: z.boolean(),
-  nextQuestion: z.string().optional(),
-  assignedLevel: z.number().int().min(1).max(6).optional()
+  question: PlacementQuestionSchema.optional(),
+  /** CEFR 1–6, có khi finished = true */
+  assignedLevel: z.number().int().min(1).max(6).optional(),
+  /** câu trả lời trước có đúng không (để phản hồi ngay) */
+  lastCorrect: z.boolean().optional()
 });
 
 // POST /culture/ask
