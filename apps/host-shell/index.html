@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="theme-color" content="#16100B" />
-    <meta name="color-scheme" content="dark light" />
+    <meta name="color-scheme" content="dark light" /><!-- màu theo token; không đổi lúc chạy để tránh tính lại style toàn trang -->
     <meta name="description" content="Học tiếng Việt cùng Bé Cu Tít: xưng hô, phát âm 6 thanh, hội thoại" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="mobile-web-app-capable" content="yes" />
@@ -16,10 +16,14 @@
     <title>Học Tiếng Việt Cùng Bé Cu Tít</title>
     <script>
       // Gắn giao diện đã lưu TRƯỚC lần vẽ đầu tiên (tránh chớp tối rồi mới sáng). Đồng bộ với ThemeContext.tsx
+      // Luôn gắn (mặc định 'dark') để ThemeProvider không phải đổi thuộc tính trên <html> sau khi vẽ:
+      // đổi thuộc tính ở gốc tài liệu buộc trình duyệt tính lại style TOÀN trang (đo được bằng Lighthouse).
+      var t = 'dark';
       try {
-        var t = localStorage.getItem('becutit.theme');
-        if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t;
+        var s = localStorage.getItem('becutit.theme');
+        if (s === 'light' || s === 'dark') t = s;
       } catch (e) {}
+      document.documentElement.dataset.theme = t;
     </script>
   </head>
   <body>

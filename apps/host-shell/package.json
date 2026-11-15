@@ -12,7 +12,10 @@
     "android:apk": "vite build && cap sync android && cd android && ./gradlew assembleDebug",
     "android:run": "vite build && cap run android",
     "android:apk:win": "pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/build-apk.ps1",
-    "test": "vitest run"
+    "test": "vitest run",
+    "size": "size-limit",
+    "e2e": "playwright test",
+    "perf": "node scripts/lighthouse.mjs"
   },
   "dependencies": {
     "@capacitor-community/text-to-speech": "^6.1.0",
@@ -39,9 +42,13 @@
   },
   "devDependencies": {
     "@capacitor/cli": "^7.6.10",
+    "@playwright/test": "^1.65.1",
+    "@size-limit/file": "^11.2.0",
     "@tailwindcss/vite": "^4.3.5",
     "@vitejs/plugin-react": "^4.3.4",
     "jsdom": "^25.0.1",
+    "lighthouse": "^13.6.0",
+    "size-limit": "^11.2.0",
     "tailwindcss": "^4.3.5",
     "typescript": "^5.7.3",
     "vite": "^5.4.11",

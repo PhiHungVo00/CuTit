@@ -59,7 +59,7 @@ export const SCREENS: ScreenRoute[] = [
     owner: 'mfe-speech-lab',
     ready: true,
     inTabBar: true,
-    load: () => import('@vietlearning/mfe-speech-lab')
+    load: () => import('./screens/ToneLabRoute')
   }),
   screen({
     path: '/luyen-tap',

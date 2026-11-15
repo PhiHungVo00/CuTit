@@ -56,6 +56,8 @@ export default defineConfig({
     cssCodeSplit: true,
     rollupOptions: {
       output: {
+        // Tên file ổn định theo vai trò để đặt ngân sách kích thước (.size-limit.cjs)
+        entryFileNames: 'assets/app-[hash].js',
         manualChunks: {
           react: ['react', 'react-dom', 'react-router-dom']
         }

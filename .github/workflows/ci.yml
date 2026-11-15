@@ -1,0 +1,61 @@
+# CI: chặn hồi quy về đúng chức năng, ranh giới module, kích thước bundle, trải nghiệm mobile, hiệu năng.
+# Chưa chạy thử trên GitHub (repo chưa có remote lúc viết) — xem docs/NHAT_KY_CHUYEN_DOI_MOBILE.md.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 12.9.1
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Build (typecheck + bundle)
+        run: pnpm build
+
+      - name: Unit tests (content, gateway, audio-dsp, host, M2, M3)
+        run: pnpm test
+
+      - name: Ranh giới module (Nguyên tắc 7)
+        run: pnpm lint:boundaries
+
+      - name: Ngân sách kích thước bundle
+        run: pnpm --filter @vietlearning/host-shell size
+
+      # Runner ubuntu-latest có sẵn Google Chrome => Playwright dùng channel 'chrome', không cần tải trình duyệt
+      - name: E2E trên cấu hình điện thoại (Pixel 7, Android 320px)
+        run: pnpm --filter @vietlearning/host-shell e2e
+        env:
+          CI: 'true'
+
+      - name: Lighthouse mobile (trung vị 3 lần, ngân sách LCP ≤ 2.5 s)
+        run: pnpm --filter @vietlearning/host-shell perf
+        env:
+          CHROME_PATH: /usr/bin/google-chrome
+
+      - name: Lưu trace Playwright khi lỗi
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-traces
+          path: apps/host-shell/test-results
+          if-no-files-found: ignore
