@@ -15,7 +15,8 @@
     "test": "vitest run",
     "size": "size-limit",
     "e2e": "playwright test",
-    "perf": "node scripts/lighthouse.mjs"
+    "perf": "node scripts/lighthouse.mjs",
+    "android:release:win": "pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/build-apk.ps1 -Release"
   },
   "dependencies": {
     "@capacitor-community/text-to-speech": "^6.1.0",

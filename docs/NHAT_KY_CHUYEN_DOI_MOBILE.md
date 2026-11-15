@@ -72,6 +72,20 @@ Lưu ý: ban đầu tôi hiểu nhầm thành "web chạy trên trình duyệt �
 | Các màn hình còn lại (M1, M4, M5/M8, M9–M12) | Thuộc phần việc của các thành viên khác theo TDD; cần quyết có làm hay không |
 | Commit `BAO_CAO_AUDIT_MOBILE.md`; khối `agentGuidance` turbo tự chèn vào `AGENTS.md` | Quyết định của nhóm |
 
+### Hướng dẫn chạy thử trên điện thoại Android thật
+
+1. Lấy IP LAN của máy tính (`ipconfig`, ví dụ `192.168.1.20`). Điện thoại và máy tính cùng mạng Wi-Fi.
+2. Đặt `apps/host-shell/.env.local` thành `VITE_GATEWAY_URL=http://192.168.1.20:4000`. **APK debug hiện có đang trỏ `10.0.2.2`, chỉ dùng được trong emulator.**
+3. Chạy gateway: `pnpm --filter @vietlearning/gateway build` rồi `node apps/gateway/dist/index.js` (đã nghe ở `0.0.0.0:4000`; `CORS_ORIGIN` trong `apps/gateway/.env` đã có `https://localhost`).
+4. Mở cổng 4000 trên Windows Firewall cho mạng riêng (Private).
+5. Build lại: `pnpm --filter @vietlearning/host-shell android:apk:win`, rồi cài bằng `adb install -r apps/host-shell/android/app/build/outputs/apk/debug/app-debug.apk` (bật USB debugging) hoặc chép file APK sang điện thoại và mở.
+6. Thử: M3 nghe phát âm; M2 ghi âm 6 thanh bằng giọng thật; ghi lại điểm từng thanh vào nhật ký để hiệu chỉnh A2.
+
+### Bản release
+
+- `pnpm --filter @vietlearning/host-shell android:release:win`: đặt `NODE_ENV=production` (tắt debug WebView và mixed content, script **kiểm tra lại** trong `capacitor.config.json`), bắt buộc `VITE_GATEWAY_URL` dạng **https** (đặt trong `.env.production.local`). Ra `app-release-unsigned.apk`. Đã thử: cờ debug/mixed đều `false`, APK 3.1 MB.
+- Ký app: tạo keystore (giữ **ngoài repo**, không commit), rồi ký bằng `apksigner` hoặc khai báo `signingConfigs` đọc mật khẩu từ biến môi trường. Lên Google Play nên dùng `bundleRelease` (AAB).
+
 ## 5b. Hàng chờ
 
 > Quy ước: thấy vấn đề ngoài phạm vi việc đang làm thì ghi vào đây thay vì sửa ngay. P1 = ảnh hưởng người dùng/bảo mật · P2 = chất lượng/hiệu năng · P3 = dọn dẹp
