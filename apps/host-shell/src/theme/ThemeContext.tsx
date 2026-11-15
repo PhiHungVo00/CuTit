@@ -29,9 +29,11 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setThemeState] = useState<AppTheme>(readStoredTheme);
 
   useEffect(() => {
-    document.documentElement.dataset.theme = theme;
-    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', META_COLOR[theme]);
-    document.querySelector('meta[name="color-scheme"]')?.setAttribute('content', theme);
+    // Chỉ ghi khi khác: ghi lại cùng giá trị ở <html>/color-scheme vẫn có thể buộc tính lại style toàn trang
+    const root = document.documentElement;
+    if (root.dataset.theme !== theme) root.dataset.theme = theme;
+    const themeMeta = document.querySelector('meta[name="theme-color"]');
+    if (themeMeta && themeMeta.getAttribute('content') !== META_COLOR[theme]) themeMeta.setAttribute('content', META_COLOR[theme]);
   }, [theme]);
 
   const setTheme = useCallback((t: AppTheme) => {
