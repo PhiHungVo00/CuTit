@@ -55,9 +55,9 @@ export const SCREENS: ScreenRoute[] = [
     label: 'Phòng luyện phát âm',
     shortLabel: 'Phát âm',
     icon: '🎙️',
-    description: 'M2 · Biểu đồ cao độ 6 thanh, M6 · Phương ngữ 3 miền',
+    description: 'M2 · Luyện 6 thanh điệu với biểu đồ cao độ (A1, A2)',
     owner: 'mfe-speech-lab',
-    ready: false,
+    ready: true,
     inTabBar: true,
     load: () => import('@vietlearning/mfe-speech-lab')
   }),

@@ -6,17 +6,30 @@
   "main": "./src/index.ts",
   "scripts": {
     "dev": "vite",
-    "build": "tsc --noEmit && vite build"
+    "build": "tsc --noEmit && vite build",
+    "test": "vitest run"
   },
   "dependencies": {
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
+    "@fontsource/be-vietnam-pro": "^5.3.0",
+    "@vietlearning/audio-dsp": "workspace:*",
+    "@vietlearning/content": "workspace:*",
     "@vietlearning/contracts": "workspace:*",
-    "@vietlearning/shared": "workspace:*"
+    "@vietlearning/native": "workspace:*",
+    "@vietlearning/shared": "workspace:*",
+    "@vietlearning/ui": "workspace:*",
+    "comlink": "^4.4.2",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
   },
   "devDependencies": {
+    "@tailwindcss/vite": "^4.3.5",
+    "@testing-library/dom": "^10.4.2",
+    "@testing-library/react": "^16.3.3",
     "@vitejs/plugin-react": "^4.3.4",
+    "jsdom": "^25.0.1",
+    "tailwindcss": "^4.3.5",
+    "typescript": "^5.7.3",
     "vite": "^5.4.11",
-    "typescript": "^5.7.3"
+    "vitest": "^3.2.7"
   }
 }

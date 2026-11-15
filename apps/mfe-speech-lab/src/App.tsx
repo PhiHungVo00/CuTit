@@ -1,10 +1,4 @@
-import React from 'react';
+import { ToneLabScreen } from './components/ToneLabScreen';
 
-export const App: React.FC = () => {
-  return (
-    <div style={{ padding: '1rem', border: '1px dashed #6366F1', borderRadius: '6px' }}>
-      <h4>Remote MFE: mfe-speech-lab</h4>
-      <p>Pitch Visualizer F0, Tone DTW & Dialects</p>
-    </div>
-  );
-};
+/** Trang demo độc lập của remote (pnpm --filter @vietlearning/mfe-speech-lab dev). */
+export const App = () => <ToneLabScreen />;
