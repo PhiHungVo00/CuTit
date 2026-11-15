@@ -13,13 +13,14 @@ import {
 import { searchCulture } from '@vietlearning/content';
 import type { RouteDeps } from '../app.js';
 import { parseOr400, respond } from '../lib/validate.js';
+import { answerCulture, labelImage } from '../services/ai/tasks.js';
 
 const MB = 1024 * 1024;
 const ItemIdParams = z.object({ id: z.string().regex(/^[\w-]{1,64}$/) });
 
 /** Các route nội dung / học viên. Hiện vẫn trả dữ liệu MOCK nhưng đã xác thực đầu vào/đầu ra. */
-export const contentRoutes: FastifyPluginAsync<RouteDeps> = async (server, { pipeline, config }) => {
-  // POST /v1/vision/label (ảnh base64 nên cần giới hạn body lớn hơn). Nhận diện còn MOCK: trả nhãn mẫu, mock: true
+export const contentRoutes: FastifyPluginAsync<RouteDeps> = async (server, { pipeline, config, llm }) => {
+  // POST /v1/vision/label (ảnh base64 nên cần giới hạn body lớn hơn). Có AI => nhận diện thật; không => nhãn mẫu, mock: true
   server.post('/vision/label', { bodyLimit: config.AUDIO_BODY_LIMIT_MB * MB }, async (req, reply) => {
     const body = parseOr400(VisionLabelRequestSchema, req.body, reply);
     if (!body) return reply;
@@ -29,6 +30,10 @@ export const contentRoutes: FastifyPluginAsync<RouteDeps> = async (server, { pip
     const isPng = head.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]));
     if (!isJpeg && !isPng) return reply.status(415).send({ error: 'unsupported_image', message: 'Chỉ nhận ảnh JPEG hoặc PNG' });
     await pipeline.consume(req, 'vision', 1);
+    if (llm) {
+      const { items } = await labelImage(llm, { mimeType: isJpeg ? 'image/jpeg' : 'image/png', base64: body.imageBase64 });
+      return respond(VisionLabelResponseSchema, { items, mock: false });
+    }
     return respond(VisionLabelResponseSchema, {
       items: [
         { vi: 'cái cốc', en: 'cup', box: [0.1, 0.2, 0.3, 0.4] },
@@ -55,13 +60,20 @@ export const contentRoutes: FastifyPluginAsync<RouteDeps> = async (server, { pip
     const body = parseOr400(CultureAskRequestSchema, req.body, reply);
     if (!body) return reply;
     await pipeline.consume(req, 'llm', Math.ceil(body.question.length / 3) + 300);
-    // Truy hồi thẻ liên quan là THẬT (packages/content); bước LLM diễn giải từ các thẻ còn MOCK
-    // (ghép câu trả lời theo mẫu) cho tới khi có Provider LLM.
-    const cards = searchCulture(body.question, 2);
+    // Truy hồi thẻ (packages/content) rồi để LLM diễn giải CHỈ từ các thẻ đó (RAG). Không có thẻ khớp
+    // => không gọi AI (tránh bịa). Không có AI => ghép thẻ theo mẫu, mock: true.
+    const cards = searchCulture(body.question, 3);
+    if (llm && cards.length) {
+      const { answer, sources } = await answerCulture(llm, body.question, cards, body.language);
+      return respond(CultureAskResponseSchema, { answer, sources, mock: false });
+    }
     return respond(CultureAskResponseSchema, {
+      mock: cards.length > 0,
       answer: cards.length
         ? cards.map((c) => `${c.title}: ${c.content}`).join('\n\n')
-        : 'Bé Cu Tít chưa có thẻ văn hóa nào khớp với câu hỏi này. Bạn thử hỏi về chào hỏi, bữa cơm, ngày Tết hoặc kiêng kỵ nhé!',
+        : body.language === 'en'
+          ? 'Cu Tít has no culture card matching this question yet. Try asking about greetings, family meals, Tết or taboos!'
+          : 'Bé Cu Tít chưa có thẻ văn hóa nào khớp với câu hỏi này. Bạn thử hỏi về chào hỏi, bữa cơm, ngày Tết hoặc kiêng kỵ nhé!',
       sources: cards.map((c) => c.id)
     });
   });

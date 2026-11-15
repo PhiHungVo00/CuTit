@@ -118,12 +118,16 @@ export const PlacementNextResponseSchema = z.object({
 
 // POST /culture/ask
 export const CultureAskRequestSchema = z.object({
-  question: z.string().min(3).max(300)
+  question: z.string().min(3).max(300),
+  /** Ngôn ngữ của câu trả lời */
+  language: z.enum(['vi', 'en']).default('vi')
 });
 
 export const CultureAskResponseSchema = z.object({
   answer: z.string(),
-  sources: z.array(z.string())
+  sources: z.array(z.string()),
+  /** true = câu trả lời ghép từ thẻ theo mẫu, chưa qua LLM */
+  mock: z.boolean().default(false)
 });
 
 /**
@@ -147,7 +151,10 @@ export type AudioUploadFields = z.infer<typeof AudioUploadFieldsSchema>;
 export const TranscribeResponseSchema = z.object({
   text: z.string(),
   confidence: z.number().min(0).max(1),
-  words: z.array(z.object({ w: z.string(), start: z.number(), end: z.number() }))
+  /** mốc thời gian từng từ: có thể rỗng nếu nhà cung cấp không trả */
+  words: z.array(z.object({ w: z.string(), start: z.number(), end: z.number() })),
+  /** true = câu mẫu, chưa nối dịch vụ nhận dạng giọng nói */
+  mock: z.boolean().default(false)
 });
 
 // GET /speech/voices

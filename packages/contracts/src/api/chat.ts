@@ -34,7 +34,9 @@ export const VoiceTurnRequestSchema = z
     /** M12: mức sửa lỗi và nhân vật gia sư */
     correctionLevel: z.enum(['gentle', 'strict', 'off']).default('gentle'),
     persona: z.string().max(32).default('be_cu_tit'),
-    history: z.array(ChatHistoryItemSchema).max(6).default([])
+    history: z.array(ChatHistoryItemSchema).max(6).default([]),
+    /** Ngôn ngữ giao diện của người học: lời giải thích lỗi viết bằng ngôn ngữ này (câu mẫu vẫn là tiếng Việt) */
+    explanationLanguage: z.enum(['vi', 'en']).default('vi')
   })
   .refine((b) => b.userText || b.userAudioBase64, { message: 'Cần userText hoặc userAudioBase64' });
 

@@ -9,17 +9,24 @@ import {
 import type { RouteDeps } from '../app.js';
 import { parseOr400, respond } from '../lib/validate.js';
 import { readAudioUpload } from '../lib/audioUpload.js';
+import { transcribe } from '../services/ai/tasks.js';
 
 const MB = 1024 * 1024;
 
-export const speechRoutes: FastifyPluginAsync<RouteDeps> = async (server, { pipeline, ttsCache, config }) => {
+export const speechRoutes: FastifyPluginAsync<RouteDeps> = async (server, { pipeline, ttsCache, config, llm }) => {
   const audioLimit = { bodyLimit: config.AUDIO_BODY_LIMIT_MB * MB };
 
-  // POST /v1/speech/transcribe (multipart: file "audio") — STT còn MOCK, nhưng đầu vào/quota là thật
+  // POST /v1/speech/transcribe (multipart: file "audio"). Có AI => chép lời thật (không có mốc thời gian từng từ);
+  // không có AI => câu mẫu, mock: true
   server.post('/speech/transcribe', audioLimit, async (request) => {
     const upload = await readAudioUpload(request);
     await pipeline.consume(request, 'stt', Math.max(1, Math.ceil(upload.durationSec)));
+    if (llm) {
+      const { text, confidence } = await transcribe(llm, upload);
+      return respond(TranscribeResponseSchema, { text, confidence, words: [], mock: false });
+    }
     return respond(TranscribeResponseSchema, {
+      mock: true,
       text: 'Xin chào bạn',
       confidence: 0.96,
       words: [

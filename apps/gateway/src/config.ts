@@ -25,7 +25,11 @@ const EnvSchema = z
     MAX_TTS_CHARS_PER_DAY: z.coerce.number().int().positive().default(15000),
     MAX_STT_SECONDS_PER_DAY: z.coerce.number().int().positive().default(600),
     MAX_LLM_TOKENS_PER_DAY: z.coerce.number().int().positive().default(100000),
-    AUDIO_BODY_LIMIT_MB: z.coerce.number().positive().default(8)
+    AUDIO_BODY_LIMIT_MB: z.coerce.number().positive().default(8),
+    // LLM + Vision (Nguyên tắc 1, 2, 4): khóa chỉ nằm ở server. Không đặt => Gateway dùng bộ giả lập (mock: true)
+    GEMINI_API_KEY: z.string().min(20).optional(),
+    GEMINI_MODEL: z.string().regex(/^[a-z0-9.-]+$/).default('gemini-3.5-flash-lite'),
+    LLM_TIMEOUT_MS: z.coerce.number().int().positive().default(20000)
   })
   .transform((env) => ({
     ...env,
