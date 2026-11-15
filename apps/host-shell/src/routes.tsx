@@ -117,6 +117,28 @@ export const SCREENS: ScreenRoute[] = [
     load: () => import('@vietlearning/mfe-vision')
   }),
   screen({
+    path: '/ho-so',
+    label: 'Tiến độ học',
+    shortLabel: 'Hồ sơ',
+    icon: '📈',
+    description: 'M9 · Chuỗi ngày, thời gian học, độ chính xác, ôn thẻ đến hạn (A4)',
+    owner: 'mfe-learner',
+    ready: true,
+    inTabBar: false,
+    load: () => import('./screens/ProgressRoute')
+  }),
+  screen({
+    path: '/tuy-chinh',
+    label: 'Tùy chỉnh',
+    shortLabel: 'Tùy chỉnh',
+    icon: '⚙️',
+    description: 'M12 · Giọng đọc, tốc độ, phương ngữ, mức sửa lỗi, nhân vật',
+    owner: 'mfe-learner',
+    ready: true,
+    inTabBar: false,
+    load: () => import('./screens/PreferencesRoute')
+  }),
+  screen({
     path: '/bat-dau',
     label: 'Làm quen & xếp lớp',
     shortLabel: 'Bắt đầu',
