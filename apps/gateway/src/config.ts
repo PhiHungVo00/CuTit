@@ -9,6 +9,10 @@ const boolFromEnv = z
   .enum(['true', 'false', '1', '0'])
   .transform((v) => v === 'true' || v === '1');
 
+/** Dòng `KEY=` để trống trong .env nghĩa là "chưa đặt", không phải chuỗi rỗng. */
+const blankToUndefined = (source: NodeJS.ProcessEnv): NodeJS.ProcessEnv =>
+  Object.fromEntries(Object.entries(source).filter(([, v]) => v !== undefined && v.trim() !== ''));
+
 const EnvSchema = z
   .object({
     NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
@@ -51,7 +55,7 @@ const EnvSchema = z
 export type GatewayConfig = z.infer<typeof EnvSchema>;
 
 export function loadConfig(source: NodeJS.ProcessEnv = process.env): GatewayConfig {
-  const parsed = EnvSchema.safeParse(source);
+  const parsed = EnvSchema.safeParse(blankToUndefined(source));
   if (!parsed.success) {
     const detail = parsed.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`).join('\n  ');
     throw new Error(`Cấu hình Gateway không hợp lệ:\n  ${detail}`);

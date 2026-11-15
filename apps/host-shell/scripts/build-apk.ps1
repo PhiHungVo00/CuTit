@@ -35,6 +35,13 @@ if (-not (Test-Path "$env:ANDROID_HOME\platforms")) {
 }
 
 if (-not $SkipWeb) {
+  # Build trước các package dùng chung (native, content, shared...) vì host đọc dist/ của chúng
+  Push-Location $repoRoot
+  try {
+    pnpm turbo run build --filter='@vietlearning/host-shell^...'
+    if ($LASTEXITCODE) { throw 'build package phụ thuộc lỗi' }
+  } finally { Pop-Location }
+
   Push-Location $hostShell
   try {
     npx vite build

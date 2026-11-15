@@ -38,7 +38,9 @@ class SpeechService {
   public stop(): void {
     this.turn++;
     this.speaking = false;
-    void getDeviceSpeech().stop();
+    getDeviceSpeech()
+      .stop()
+      .catch((err) => console.warn('[SpeechService] stop lỗi', err));
     if (this.audio) {
       this.audio.pause();
       this.audio = null;

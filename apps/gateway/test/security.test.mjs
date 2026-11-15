@@ -36,6 +36,13 @@ test('Cấu hình: từ chối CORS wildcard và AUTH_REQUIRED thiếu JWT_SECRE
   assert.throws(() => loadConfig({ NODE_ENV: 'production' }), /JWT_SECRET/);
 });
 
+test('Cấu hình: dòng để trống trong .env (JWT_SECRET=) được coi là chưa đặt', () => {
+  const cfg = loadConfig({ ...baseEnv, JWT_SECRET: '', AUTH_REQUIRED: 'false', RATE_LIMIT_PER_MINUTE: ' ' });
+  assert.equal(cfg.JWT_SECRET, undefined);
+  assert.equal(cfg.AUTH_REQUIRED, false);
+  assert.equal(cfg.RATE_LIMIT_PER_MINUTE, 60);
+});
+
 test('Xác thực: bắt buộc token khi AUTH_REQUIRED, chấp nhận JWT hợp lệ, từ chối token sai', async () => {
   const a = await app({ AUTH_REQUIRED: 'true', JWT_SECRET: SECRET });
   assert.equal((await a.inject({ url: '/v1/speech/voices' })).statusCode, 401);
