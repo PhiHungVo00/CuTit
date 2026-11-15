@@ -45,7 +45,7 @@ const CULTURE_SCHEMA = {
 const CultureOut = z.object({ answer: z.string().trim().min(1).max(1500), sources: z.array(z.string()).catch([]) });
 
 export async function answerCulture(llm: LlmProvider, question: string, cards: CultureCard[], language: 'vi' | 'en') {
-  const context = cards.map((c) => `[${c.id}] ${c.title}: ${c.content}`).join('\n');
+  const context = cards.map((c) => (language === 'en' ? `[${c.id}] ${c.titleEn}: ${c.contentEn}` : `[${c.id}] ${c.title}: ${c.content}`)).join('\n');
   const { json, tokens } = await llm.generateJson({
     system: cultureAnswerPrompt(language),
     turns: [{ role: 'user', parts: [{ text: `Thẻ văn hóa:\n${context}\n\nCâu hỏi: ${question}` }] }],

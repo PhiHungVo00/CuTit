@@ -1,6 +1,7 @@
 import { memo } from 'react';
 import type { RelationCategory } from '@vietlearning/content';
 import { ChoiceGroup } from './ChoiceGroup';
+import { useT } from '../../i18n';
 import {
   AGE_STEPS,
   CONTEXT_STEPS,
@@ -13,17 +14,6 @@ import {
   type PartnerGender
 } from './options';
 
-const relationChoices = RELATIONS.map((r) => ({
-  id: r.id,
-  label: (
-    <>
-      <span aria-hidden="true">{r.icon}</span>
-      <span>{r.label}</span>
-    </>
-  )
-}));
-const ageChoices = AGE_STEPS.map((a) => ({ id: a.step, label: a.title }));
-const contextChoices = CONTEXT_STEPS.map((c) => ({ id: c.step, label: c.title }));
 
 interface ControlPanelProps {
   relation: RelationCategory;
@@ -42,45 +32,59 @@ interface ControlPanelProps {
 
 /** Bàn điều khiển ngữ cảnh xưng hô: quan hệ, tuổi, bối cảnh, giới tính, chiều nói. */
 export const ControlPanel = memo(function ControlPanel(p: ControlPanelProps) {
+  const t = useT();
+  const relationChoices = RELATIONS.map((r) => ({
+    id: r.id,
+    label: (
+      <>
+        <span aria-hidden="true">{r.icon}</span>
+        <span>{t(`relation.${r.id}`)}</span>
+      </>
+    )
+  }));
+  const ageChoices = AGE_STEPS.map((a) => ({ id: a, label: t(`age.${a}`) }));
+  const contextChoices = CONTEXT_STEPS.map((c) => ({ id: c, label: t(`context.${c}`) }));
+  const userGenders = USER_GENDERS.map((g) => ({ id: g, label: t(`gender.${g}`) }));
+  const partnerGenders = PARTNER_GENDERS.map((g) => ({ id: g, label: t(`gender.${g}`) }));
   return (
     <section
       aria-labelledby="ct-controls-title"
       className="flex flex-col gap-5 rounded-2xl border border-line bg-surface p-4 shadow-card"
     >
       <h2 id="ct-controls-title" className="flex items-center gap-2 text-lg font-extrabold text-ink">
-        <span aria-hidden="true">🎛️</span> Chọn ngữ cảnh
+        <span aria-hidden="true">🎛️</span> {t('controls')}
       </h2>
 
-      <ChoiceGroup label="1. Mối quan hệ" value={p.relation} options={relationChoices} onChange={p.setRelation} columns={2} size="sm" align="start" />
+      <ChoiceGroup label={t('relationLabel')} value={p.relation} options={relationChoices} onChange={p.setRelation} columns={2} size="sm" align="start" />
 
       <ChoiceGroup
-        label="2. Chênh lệch tuổi"
+        label={t('ageLabel')}
         value={p.ageStep}
         options={ageChoices}
         onChange={p.setAgeStep}
         columns={2}
-        hint={AGE_STEPS[p.ageStep].desc}
+        hint={t(`age.${p.ageStep}.desc`)}
       />
 
       <ChoiceGroup
-        label="3. Bối cảnh"
+        label={t('contextLabel')}
         value={p.contextStep}
         options={contextChoices}
         onChange={p.setContextStep}
-        hint={CONTEXT_STEPS[p.contextStep].desc}
+        hint={t(`context.${p.contextStep}.desc`)}
       />
 
       <div className="flex flex-col gap-4 border-t border-dashed border-line pt-4">
         <ChoiceGroup
-          label={`Tôi (${p.isReversed ? 'người nghe' : 'người nói'})`}
+          label={t('me', { role: p.isReversed ? t('listener') : t('speaker') })}
           value={p.userGender}
-          options={USER_GENDERS}
+          options={userGenders}
           onChange={p.setUserGender}
         />
         <ChoiceGroup
-          label={`Đối phương (${p.isReversed ? 'người nói' : 'người nghe'})`}
+          label={t('them', { role: p.isReversed ? t('speaker') : t('listener') })}
           value={p.partnerGender}
-          options={PARTNER_GENDERS}
+          options={partnerGenders}
           onChange={p.setPartnerGender}
         />
 
@@ -94,7 +98,7 @@ export const ControlPanel = memo(function ControlPanel(p: ControlPanelProps) {
           ].join(' ')}
         >
           <span aria-hidden="true">🔄</span>
-          {p.isReversed ? 'Đối phương đang nói với tôi' : 'Tôi đang nói với đối phương'}
+          {p.isReversed ? t('theyTalk') : t('iTalk')}
         </button>
       </div>
     </section>

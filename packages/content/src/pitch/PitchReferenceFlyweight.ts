@@ -17,6 +17,10 @@ export interface ToneReference {
   syllable: string;
   meaning: string;
   description: string;
+  nameEn: string;
+  markEn: string;
+  meaningEn: string;
+  descriptionEn: string;
   contour: readonly number[];
 }
 

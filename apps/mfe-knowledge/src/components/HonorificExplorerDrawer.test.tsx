@@ -1,10 +1,13 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { learnerStore } from '@vietlearning/state';
 import { HonorificExplorerDrawer } from './HonorificExplorerDrawer';
 
 vi.mock('../services/speechSynthesis', () => ({ speechService: { speak: vi.fn(), stop: vi.fn() } }));
 
 afterEach(cleanup);
+// Các khẳng định bên dưới dùng nhãn tiếng Việt
+beforeEach(() => learnerStore.getState().setPreferences({ uiLanguage: 'vi' }));
 
 const setup = (isOpen = true) => {
   const onClose = vi.fn();
@@ -51,5 +54,13 @@ describe('HonorificExplorerDrawer', () => {
     fireEvent.click(screen.getAllByRole('button', { name: /Áp dụng/ })[0]);
     expect(onSelectPair).toHaveBeenCalledWith(expect.objectContaining({ id: 'h1' }));
     expect(onClose).toHaveBeenCalled();
+  });
+
+  it('giao diện tiếng Anh: tiêu đề và tên quan hệ tiếng Anh, đại từ vẫn tiếng Việt', () => {
+    learnerStore.getState().setPreferences({ uiLanguage: 'en' });
+    setup();
+    expect(screen.getByRole('dialog', { name: /The 20 standard pronoun pairs/ })).toBeTruthy();
+    expect(screen.getByText('Family – grandparents')).toBeTruthy();
+    expect(screen.getAllByText('I: cháu').length).toBeGreaterThan(0);
   });
 });

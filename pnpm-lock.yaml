@@ -442,6 +442,9 @@ importers:
       '@vietlearning/shared':
         specifier: workspace:*
         version: link:../../packages/shared
+      '@vietlearning/state':
+        specifier: workspace:*
+        version: link:../../packages/state
       '@vietlearning/ui':
         specifier: workspace:*
         version: link:../../packages/ui

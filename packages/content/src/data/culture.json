@@ -4,6 +4,9 @@
     "title": "Khoanh tay chào hỏi",
     "category": "Chào hỏi & Lễ phép",
     "content": "Trẻ em và người nhỏ tuổi thường khoanh hai tay trước ngực và hơi cúi đầu khi chào người lớn để thể hiện sự lễ độ.",
+    "titleEn": "Greeting with folded arms",
+    "categoryEn": "Greetings & manners",
+    "contentEn": "Children and younger people often fold their arms across the chest and bow slightly when greeting elders, as a sign of respect.",
     "reviewed": true
   },
   {
@@ -11,6 +14,9 @@
     "title": "Mời cơm trước khi ăn",
     "category": "Bữa cơm gia đình",
     "content": "Trước khi bắt đầu bữa cơm, người nhỏ tuổi lần lượt mời từ người lớn nhất: 'Con mời ông bà, con mời bố mẹ ăn cơm'.",
+    "titleEn": "Inviting others before eating",
+    "categoryEn": "Family meals",
+    "contentEn": "Before a meal starts, the younger people invite everyone in turn, starting with the eldest: 'Con mời ông bà, con mời bố mẹ ăn cơm' (Grandparents, parents, please eat).",
     "reviewed": true
   },
   {
@@ -18,6 +24,9 @@
     "title": "Kiêng cắm đũa thẳng vào bát cơm",
     "category": "Kiêng kỵ dân gian",
     "content": "Tuyệt đối không cắm thẳng đứng đôi đũa vào giữa bát cơm vì giống hình ảnh bát cơm cúng người đã khuất.",
+    "titleEn": "Never stand chopsticks in a bowl of rice",
+    "categoryEn": "Folk taboos",
+    "contentEn": "Never stick chopsticks upright in the middle of a bowl of rice: it looks like the rice offered to the dead.",
     "reviewed": true
   },
   {
@@ -25,6 +34,9 @@
     "title": "Văn hóa trả giá ở chợ quê",
     "category": "Giao thương chợ truyền thống",
     "content": "Tránh mặc cả trả giá quá gắt vào sáng sớm khi người bán hàng mở hàng (khách mở hàng mang ý nghĩa may mắn cho cả ngày).",
+    "titleEn": "Bargaining at a village market",
+    "categoryEn": "Traditional markets",
+    "contentEn": "Avoid hard bargaining early in the morning when a seller makes their first sale of the day (the first customer is believed to bring luck for the whole day).",
     "reviewed": true
   },
   {
@@ -32,6 +44,9 @@
     "title": "Lì xì đầu năm",
     "category": "Lễ Tết",
     "content": "Dịp Tết Nguyên Đán, người lớn mừng tuổi trẻ em bằng phong bao lì xì màu đỏ kèm lời chúc. Trẻ nhận bằng hai tay và nói lời cảm ơn, chúc lại người lớn.",
+    "titleEn": "Lucky money at New Year",
+    "categoryEn": "Festivals & Tết",
+    "contentEn": "At Lunar New Year (Tết), adults give children red envelopes of lucky money (lì xì) with good wishes. Children take them with both hands, say thank you and wish the adult well in return.",
     "reviewed": false
   },
   {
@@ -39,6 +54,9 @@
     "title": "Xông đất đầu năm",
     "category": "Lễ Tết",
     "content": "Người bước vào nhà đầu tiên sau giao thừa được tin là ảnh hưởng tới may mắn cả năm, nên nhiều gia đình chủ động mời người hợp tuổi, vui vẻ đến xông đất.",
+    "titleEn": "First visitor of the year",
+    "categoryEn": "Festivals & Tết",
+    "contentEn": "The first person to enter a home after midnight on New Year’s Eve is believed to shape the family’s luck for the year, so many families invite a cheerful person with a compatible birth year to come first (xông đất).",
     "reviewed": false
   },
   {
@@ -46,6 +64,9 @@
     "title": "Tiễn ông Công ông Táo",
     "category": "Lễ Tết",
     "content": "Ngày 23 tháng Chạp âm lịch, nhiều gia đình làm lễ tiễn ông Công ông Táo về trời, thường kèm cá chép làm phương tiện, mở đầu không khí Tết.",
+    "titleEn": "Sending off the Kitchen Gods",
+    "categoryEn": "Festivals & Tết",
+    "contentEn": "On the 23rd of the last lunar month, many families hold a ceremony to send the Kitchen Gods (ông Công ông Táo) back to heaven, often releasing carp as their ride. It marks the start of the Tết season.",
     "reviewed": false
   },
   {
@@ -53,6 +74,9 @@
     "title": "Thờ cúng tổ tiên",
     "category": "Tín ngưỡng & thờ cúng",
     "content": "Hầu hết gia đình có bàn thờ gia tiên ở nơi trang trọng nhất trong nhà. Vào ngày giỗ, ngày Tết, con cháu thắp hương và dâng mâm cơm để tưởng nhớ người đã khuất.",
+    "titleEn": "Ancestor worship",
+    "categoryEn": "Beliefs & worship",
+    "contentEn": "Most families keep an ancestral altar in the most respected place in the house. On death anniversaries and at Tết, descendants burn incense and offer a meal in memory of those who have passed.",
     "reviewed": false
   },
   {
@@ -60,6 +84,9 @@
     "title": "Đưa và nhận bằng hai tay",
     "category": "Chào hỏi & Lễ phép",
     "content": "Khi đưa hoặc nhận đồ, nhất là với người lớn tuổi hay người bề trên, người Việt dùng cả hai tay để thể hiện sự kính trọng.",
+    "titleEn": "Giving and receiving with both hands",
+    "categoryEn": "Greetings & manners",
+    "contentEn": "When giving or receiving something, especially with elders or superiors, Vietnamese people use both hands to show respect.",
     "reviewed": false
   },
   {
@@ -67,6 +94,9 @@
     "title": "Tránh xoa đầu người khác",
     "category": "Kiêng kỵ dân gian",
     "content": "Đầu được coi là phần quan trọng của cơ thể. Không nên tùy tiện xoa đầu người lớn; ngay cả với trẻ nhỏ, nhiều gia đình cũng không thích người lạ xoa đầu con mình.",
+    "titleEn": "Don’t pat people on the head",
+    "categoryEn": "Folk taboos",
+    "contentEn": "The head is considered an important part of the body. Don’t casually touch an adult’s head; even with small children, many parents don’t like strangers patting their child’s head.",
     "reviewed": false
   },
   {
@@ -74,6 +104,9 @@
     "title": "Gắp thức ăn mời người khác",
     "category": "Bữa cơm gia đình",
     "content": "Trong bữa cơm, chủ nhà hay người nhỏ tuổi thường gắp miếng ngon mời khách hoặc ông bà, cha mẹ như một cách bày tỏ quan tâm.",
+    "titleEn": "Serving food to others",
+    "categoryEn": "Family meals",
+    "contentEn": "During a meal, the host or younger family members often pick the best pieces with their chopsticks for guests, grandparents or parents as a way of showing care.",
     "reviewed": false
   },
   {
@@ -81,6 +114,9 @@
     "title": "Mời nước khi khách đến nhà",
     "category": "Khách khứa",
     "content": "Khách đến chơi, chủ nhà thường mời chén trà hoặc cốc nước trước khi trò chuyện. Khách nên nhận và uống một chút để đáp lễ.",
+    "titleEn": "Offering tea to guests",
+    "categoryEn": "Being a guest",
+    "contentEn": "When guests arrive, the host usually offers a cup of tea or water before chatting. Guests should accept and drink a little in return.",
     "reviewed": false
   },
   {
@@ -88,6 +124,9 @@
     "title": "Cởi giày dép trước khi vào nhà",
     "category": "Khách khứa",
     "content": "Nhiều gia đình cởi giày dép ở cửa để giữ nhà sạch. Khi đến chơi, hãy để ý nếu thấy dép để ngoài cửa thì cũng cởi giày theo.",
+    "titleEn": "Taking off shoes before entering",
+    "categoryEn": "Being a guest",
+    "contentEn": "Many families take off their shoes at the door to keep the house clean. When visiting, if you see shoes left outside, take yours off too.",
     "reviewed": false
   },
   {
@@ -95,6 +134,9 @@
     "title": "Kiêng quét nhà ngày mùng Một Tết",
     "category": "Lễ Tết",
     "content": "Theo quan niệm dân gian, quét nhà hay đổ rác ngày mùng Một Tết là quét tài lộc ra khỏi nhà, nên nhiều gia đình dọn dẹp xong từ trước giao thừa.",
+    "titleEn": "No sweeping on the first day of Tết",
+    "categoryEn": "Festivals & Tết",
+    "contentEn": "Folk belief says sweeping or taking out rubbish on the first day of Tết sweeps good fortune out of the house, so many families finish cleaning before New Year’s Eve.",
     "reviewed": false
   },
   {
@@ -102,6 +144,9 @@
     "title": "Ăn mặc kín đáo khi vào chùa, đình",
     "category": "Tín ngưỡng & thờ cúng",
     "content": "Khi đến chùa, đình, đền, nên mặc trang phục lịch sự, che vai và đầu gối, nói nhỏ nhẹ và không chỉ trỏ tượng thờ.",
+    "titleEn": "Dress modestly at pagodas and temples",
+    "categoryEn": "Beliefs & worship",
+    "contentEn": "When visiting pagodas, communal houses or temples, wear neat clothes covering shoulders and knees, speak quietly and don’t point at statues.",
     "reviewed": false
   },
   {
@@ -109,6 +154,9 @@
     "title": "Tết Trung thu",
     "category": "Lễ Tết",
     "content": "Rằm tháng Tám âm lịch, trẻ em rước đèn ông sao, đèn lồng, xem múa lân và cùng gia đình phá cỗ với bánh nướng, bánh dẻo dưới trăng.",
+    "titleEn": "Mid-Autumn Festival",
+    "categoryEn": "Festivals & Tết",
+    "contentEn": "On the 15th of the eighth lunar month, children parade with star lanterns, watch lion dances and share mooncakes (bánh nướng, bánh dẻo) with their family under the full moon.",
     "reviewed": false
   },
   {
@@ -116,6 +164,9 @@
     "title": "Lời chào bằng câu hỏi thăm",
     "category": "Chào hỏi & Lễ phép",
     "content": "Những câu như \"Ăn cơm chưa?\" hay \"Đi đâu đấy?\" thường chỉ là lời chào thân mật, không cần trả lời chi tiết; đáp \"Dạ, cháu ăn rồi ạ\" là đủ lịch sự.",
+    "titleEn": "Greetings that sound like questions",
+    "categoryEn": "Greetings & manners",
+    "contentEn": "Questions like \"Ăn cơm chưa?\" (Have you eaten?) or \"Đi đâu đấy?\" (Where are you going?) are usually just friendly greetings and need no detailed answer; \"Dạ, cháu ăn rồi ạ\" (Yes, I have) is polite enough.",
     "reviewed": false
   },
   {
@@ -123,6 +174,9 @@
     "title": "Hỏi tuổi để xưng hô",
     "category": "Chào hỏi & Lễ phép",
     "content": "Người Việt hay hỏi tuổi khi mới quen không phải để tò mò, mà để chọn cách xưng hô đúng (anh, chị, em, cô, chú...). Xem thêm màn hình Ma trận xưng hô.",
+    "titleEn": "Asking age to choose pronouns",
+    "categoryEn": "Greetings & manners",
+    "contentEn": "Vietnamese people often ask your age when you first meet, not out of curiosity but to choose the right pronouns (anh, chị, em, cô, chú…). See the Pronoun matrix screen.",
     "reviewed": false
   },
   {
@@ -130,6 +184,9 @@
     "title": "Mâm ngũ quả ngày Tết",
     "category": "Lễ Tết",
     "content": "Ngày Tết, bàn thờ thường có mâm ngũ quả gồm năm loại quả, tượng trưng cho mong ước đủ đầy. Loại quả cụ thể khác nhau giữa các miền.",
+    "titleEn": "Five-fruit tray at Tết",
+    "categoryEn": "Festivals & Tết",
+    "contentEn": "At Tết, family altars usually hold a tray of five kinds of fruit (mâm ngũ quả), a wish for abundance. The exact fruits differ between regions.",
     "reviewed": false
   },
   {
@@ -137,6 +194,9 @@
     "title": "Mừng cưới bằng phong bì",
     "category": "Khách khứa",
     "content": "Khi được mời dự đám cưới, khách thường mừng cô dâu chú rể bằng phong bì tiền, trao trực tiếp hoặc bỏ vào hòm mừng tại tiệc.",
+    "titleEn": "Wedding gifts in envelopes",
+    "categoryEn": "Being a guest",
+    "contentEn": "When invited to a wedding, guests usually give the couple money in an envelope, handed over in person or dropped into the gift box at the reception.",
     "reviewed": false
   }
 ]
