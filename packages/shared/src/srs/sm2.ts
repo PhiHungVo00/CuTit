@@ -13,7 +13,8 @@ export function calculateSM2(
   currentEase: number,      // ease factor (ví dụ 250 nghĩa là 2.50)
   currentInterval: number,  // số ngày ôn tập hiện tại
   currentRepetitions: number,
-  quality: number           // điểm đánh giá 0-5
+  quality: number,          // điểm đánh giá 0-5
+  now: Date = new Date()    // mốc tính hạn ôn (tham số để test được)
 ): SM2Result {
   let q = Math.max(0, Math.min(5, quality));
   let ease = currentEase + (10 - (5 - q) * (8 + (5 - q) * 2));
@@ -36,7 +37,7 @@ export function calculateSM2(
     intervalDays = 1;
   }
 
-  const dueAt = new Date();
+  const dueAt = new Date(now.getTime());
   dueAt.setDate(dueAt.getDate() + intervalDays);
 
   return { ease, intervalDays, repetitions, dueAt };
