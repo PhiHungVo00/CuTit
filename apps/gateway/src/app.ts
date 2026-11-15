@@ -8,6 +8,8 @@ import type { GatewayConfig } from './config.js';
 import { RequestPipeline } from './pipeline/RequestPipeline.js';
 import { InMemoryQuotaStore, QuotaStore } from './pipeline/QuotaStore.js';
 import { TTSCacheProxy } from './cache/TTSCacheProxy.js';
+import { createLlmProvider, type LlmProvider } from './providers/llm.js';
+import { createTutor, type Tutor } from './services/chat/tutor.js';
 import { chatRoutes } from './routes/chat.js';
 import { speechRoutes } from './routes/speech.js';
 import { practiceRoutes } from './routes/practice.js';
@@ -17,12 +19,17 @@ export interface RouteDeps {
   pipeline: RequestPipeline;
   ttsCache: TTSCacheProxy;
   config: GatewayConfig;
+  /** null = chưa cấu hình nhà cung cấp AI => các route dùng bộ giả lập, gắn mock: true */
+  llm: LlmProvider | null;
+  tutor: Tutor;
 }
 
 export interface BuildOptions {
   logger?: boolean;
   quotaStore?: QuotaStore;
   ttsCache?: TTSCacheProxy;
+  /** Test tiêm nhà cung cấp giả; bỏ trống = theo cấu hình (GEMINI_API_KEY) */
+  llm?: LlmProvider | null;
 }
 
 export async function buildApp(config: GatewayConfig, opts: BuildOptions = {}): Promise<FastifyInstance> {
@@ -52,7 +59,9 @@ export async function buildApp(config: GatewayConfig, opts: BuildOptions = {}): 
   }
 
   const pipeline = new RequestPipeline(config, opts.quotaStore ?? new InMemoryQuotaStore());
-  const deps: RouteDeps = { pipeline, ttsCache: opts.ttsCache ?? new TTSCacheProxy(), config };
+  const llm = opts.llm !== undefined ? opts.llm : createLlmProvider(config);
+  const deps: RouteDeps = { pipeline, ttsCache: opts.ttsCache ?? new TTSCacheProxy(), config, llm, tutor: createTutor(llm, app.log) };
+  app.log.info({ ai: llm ? `${llm.name}:${config.GEMINI_MODEL}` : 'mock' }, 'AI provider');
 
   // Phải đặt trước khi đăng ký các scope con để chúng thừa hưởng
   app.setErrorHandler((error, request, reply) => {
