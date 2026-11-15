@@ -1,0 +1,18 @@
+{
+  "name": "@vietlearning/native",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -b",
+    "dev": "tsc -b -w"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.3"
+  },
+  "dependencies": {
+    "@capacitor-community/text-to-speech": "^6.1.0",
+    "@capacitor/core": "^7.6.10"
+  }
+}

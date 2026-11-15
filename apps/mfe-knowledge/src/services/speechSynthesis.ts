@@ -1,132 +1,108 @@
 /**
  * Dịch vụ Phát Âm Tiếng Việt (TTS) cho Màn hình M3 (Honorific Matrix)
- * Ưu tiên Web Speech API (Client) và dự phòng gọi Gateway /v1/speech/synthesize
+ *
+ * Thứ tự: giọng đọc tiếng Việt của thiết bị (TTS native trong app Capacitor, Web Speech
+ * trên trình duyệt) -> TTS của Gateway (/v1/speech/synthesize) -> báo lỗi thật cho UI.
+ *
+ * Sửa so với bản cũ:
+ * - Mỗi lượt đọc có token: lượt cũ bị hủy không còn kích hoạt dự phòng hay reset trạng thái lượt mới.
+ * - Không đọc câu tiếng Việt bằng giọng tiếng Anh khi thiết bị thiếu giọng Việt.
+ * - Không "giả vờ đọc 1.2 giây" khi mọi đường đều hỏng: gọi onError để UI thông báo.
  */
+import { getDeviceSpeech, SpeechError } from '@vietlearning/native';
+
+export type SpeechFailure = 'no-voice-available' | 'network' | 'playback';
 
 export interface SpeechOptions {
   speed?: number; // 0.8 | 1.0 | 1.2
   onStart?: () => void;
   onEnd?: () => void;
-  onError?: (error: any) => void;
+  onError?: (error: { code: SpeechFailure; message: string }) => void;
+}
+
+function gatewayBaseUrl(): string {
+  const fromWindow = typeof window !== 'undefined' ? (window as { __GATEWAY_URL__?: string }).__GATEWAY_URL__ : undefined;
+  const fromEnv = (import.meta as { env?: Record<string, string | undefined> }).env?.VITE_GATEWAY_URL;
+  return (fromWindow || fromEnv || 'http://localhost:4000').replace(/\/$/, '');
 }
 
 class SpeechService {
-  private currentUtterance: SpeechSynthesisUtterance | null = null;
-  private currentAudio: HTMLAudioElement | null = null;
+  private turn = 0;
+  private audio: HTMLAudioElement | null = null;
   private speaking = false;
-
-  public isSupported(): boolean {
-    return typeof window !== 'undefined' && 'speechSynthesis' in window;
-  }
 
   public isSpeaking(): boolean {
     return this.speaking;
   }
 
   public stop(): void {
-    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
-      window.speechSynthesis.cancel();
-    }
-    if (this.currentAudio) {
-      this.currentAudio.pause();
-      this.currentAudio = null;
-    }
+    this.turn++;
     this.speaking = false;
+    void getDeviceSpeech().stop();
+    if (this.audio) {
+      this.audio.pause();
+      this.audio = null;
+    }
   }
 
   public async speak(text: string, options: SpeechOptions = {}): Promise<void> {
     this.stop();
+    const token = ++this.turn;
+    const isCurrent = () => token === this.turn;
     this.speaking = true;
     options.onStart?.();
 
-    const speed = options.speed ?? 1.0;
-
-    // 1. Thử Web Speech API của trình duyệt trước
-    if (this.isSupported()) {
-      try {
-        const utterance = new SpeechSynthesisUtterance(text);
-        utterance.lang = 'vi-VN';
-        utterance.rate = speed;
-        utterance.pitch = 1.0;
-
-        // Tìm voice tiếng Việt nếu có
-        const voices = window.speechSynthesis.getVoices();
-        const viVoice = voices.find(v => v.lang.toLowerCase().includes('vi'));
-        if (viVoice) {
-          utterance.voice = viVoice;
-        }
-
-        utterance.onend = () => {
-          this.speaking = false;
-          options.onEnd?.();
-        };
-
-        utterance.onerror = async (event) => {
-          console.warn('[SpeechService] Web Speech API lỗi hoặc không hỗ trợ tiếng Việt, chuyển sang dự phòng Gateway:', event);
-          await this.speakViaGateway(text, options);
-        };
-
-        this.currentUtterance = utterance;
-        window.speechSynthesis.speak(utterance);
-        return;
-      } catch (err) {
-        console.warn('[SpeechService] Không thể kích hoạt Web Speech API, chuyển sang dự phòng Gateway:', err);
-      }
-    }
-
-    // 2. Dự phòng Gateway SaaS /v1/speech/synthesize
-    await this.speakViaGateway(text, options);
-  }
-
-  private async speakViaGateway(text: string, options: SpeechOptions): Promise<void> {
-    const gatewayBase =
-      (typeof window !== 'undefined' && (window as any).__GATEWAY_URL__) ||
-      (typeof import.meta !== 'undefined' && (import.meta as any).env?.VITE_GATEWAY_URL) ||
-      'http://localhost:4000';
-
-    const endpoints = [`${gatewayBase}/v1/speech/synthesize`];
-
-    for (const endpoint of endpoints) {
-      try {
-        const response = await fetch(endpoint, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            text,
-            voiceId: 'vi-VN-Standard-A',
-            speed: options.speed ?? 1.0,
-            dialect: 'north'
-          })
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          if (data.audioUrl) {
-            const audio = new Audio(data.audioUrl);
-            this.currentAudio = audio;
-            audio.onended = () => {
-              this.speaking = false;
-              options.onEnd?.();
-            };
-            audio.onerror = () => {
-              this.speaking = false;
-              options.onEnd?.();
-            };
-            await audio.play();
-            return;
-          }
-        }
-      } catch (e) {
-        console.warn(`[SpeechService] Không thể kết nối tới ${endpoint}, thử phương án tiếp theo:`, e);
-      }
-    }
-
-    // Nếu cả Web Speech API lẫn Gateway đều không khả dụng, hoàn tất sau 1.2s mô phỏng đọc
-    console.log('[SpeechService] Hoàn tất mô phỏng đọc câu mẫu tiếng Việt:', text);
-    setTimeout(() => {
+    const finish = () => {
+      if (!isCurrent()) return;
       this.speaking = false;
       options.onEnd?.();
-    }, 1200);
+    };
+    const fail = (code: SpeechFailure, message: string) => {
+      if (!isCurrent()) return;
+      this.speaking = false;
+      console.warn(`[SpeechService] ${code}: ${message}`);
+      options.onError?.({ code, message });
+    };
+
+    // 1. Giọng đọc của thiết bị
+    try {
+      await getDeviceSpeech().speak(text, { rate: options.speed ?? 1.0, lang: 'vi-VN' });
+      finish();
+      return;
+    } catch (err) {
+      if (!isCurrent()) return;
+      const code = err instanceof SpeechError ? err.code : 'failed';
+      if (code === 'interrupted') return;
+      // 'unsupported' | 'no-vietnamese-voice' | 'failed' => thử Gateway
+    }
+
+    // 2. TTS của Gateway
+    try {
+      const res = await fetch(`${gatewayBaseUrl()}/v1/speech/synthesize`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text, voiceId: 'vi-VN-Standard-A', speed: options.speed ?? 1.0, dialect: 'north' })
+      });
+      if (!isCurrent()) return;
+      if (!res.ok) {
+        fail('no-voice-available', `Thiết bị không có giọng tiếng Việt và Gateway trả về ${res.status}`);
+        return;
+      }
+      const data: { audioUrl?: string } = await res.json();
+      if (!data.audioUrl) {
+        fail('no-voice-available', 'Gateway không trả về audioUrl');
+        return;
+      }
+      if (!isCurrent()) return;
+
+      const audio = new Audio(data.audioUrl);
+      this.audio = audio;
+      audio.onended = finish;
+      audio.onerror = () => fail('playback', 'Không phát được file âm thanh');
+      await audio.play();
+    } catch (err) {
+      fail('network', err instanceof Error ? err.message : String(err));
+    }
   }
 }
 
