@@ -1,9 +1,11 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { HonorificMatrixScreen } from './components/HonorificMatrixScreen';
 import { MobileSimulatorFrame } from './components/MobileSimulatorFrame';
+import type { Theme } from './components/honorific/options';
 
-export const App: React.FC = () => {
-  const [theme, setTheme] = useState<'dark' | 'light'>('dark');
+/** Trang demo độc lập của remote (chạy `pnpm --filter @vietlearning/mfe-knowledge dev`). */
+export const App = () => {
+  const [theme, setTheme] = useState<Theme>('dark');
 
   return (
     <MobileSimulatorFrame
@@ -11,10 +13,8 @@ export const App: React.FC = () => {
       currentTheme={theme}
       onThemeToggle={() => setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'))}
     >
-      <HonorificMatrixScreen
-        key={theme}
-        initialTheme={theme}
-      />
+      {/* Theme được điều khiển từ ngoài: không cần key={theme} => không remount, không mất lựa chọn */}
+      <HonorificMatrixScreen theme={theme} onThemeChange={setTheme} />
     </MobileSimulatorFrame>
   );
 };

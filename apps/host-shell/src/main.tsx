@@ -10,7 +10,7 @@ import '@fontsource/be-vietnam-pro/vietnamese-600.css';
 import '@fontsource/be-vietnam-pro/latin-600.css';
 import '@fontsource/be-vietnam-pro/vietnamese-800.css';
 import '@fontsource/be-vietnam-pro/latin-800.css';
-import './styles/global.css';
+import './styles/app.css';
 
 import { App } from './App';
 import { isNativeApp } from './native/bootstrap';

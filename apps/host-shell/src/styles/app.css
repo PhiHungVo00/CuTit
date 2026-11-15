@@ -1,0 +1,16 @@
+/*
+ * Điểm vào CSS của Host Shell.
+ * - Tailwind v4 + design tokens dùng chung từ packages/ui.
+ * - @source: quét class trong mã nguồn các remote MFE (ghép lúc build, nằm ngoài thư mục host).
+ * - global.css (khung shell) đặt trong layer base để utility class của màn hình luôn thắng.
+ */
+@import 'tailwindcss';
+@import '@vietlearning/ui/theme.css';
+@import './global.css' layer(base);
+
+@source '../../../mfe-knowledge/src';
+@source '../../../mfe-conversation/src';
+@source '../../../mfe-practice/src';
+@source '../../../mfe-learner/src';
+@source '../../../mfe-speech-lab/src';
+@source '../../../mfe-vision/src';
