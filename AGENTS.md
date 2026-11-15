@@ -21,7 +21,7 @@ Hệ thống được tổ chức theo **Turborepo + PNPM Workspaces**. Mỗi th
 - `packages/audio-dsp`: Xử lý âm thanh F0 YIN, DTW (Thuật toán A1, A2).
 - `packages/content`: Kho dữ liệu JSON (Xưng hô, Phương ngữ, Văn hóa, Kịch bản).
 - `packages/prompts`: Thư viện Prompt có phiên bản cho Bé Cu Tít (PromptBuilder).
-- `packages/shared`: EventBus (Singleton + Observer), Thuật toán SM-2 (A4), DrillFactory.
+- `packages/shared`: EventBus (Singleton + Observer), Thuật toán SM-2 (A4).
 - `packages/ui`: Design System, Design Tokens, Thành phần giao diện dùng chung (M3).
 
 ---
