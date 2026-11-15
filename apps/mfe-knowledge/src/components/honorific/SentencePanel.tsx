@@ -41,7 +41,7 @@ export const SentencePanel = memo(function SentencePanel({ result, contextLabel,
   return (
     <section
       aria-labelledby="ct-sentence-title"
-      className="flex flex-col gap-4 rounded-2xl border border-line-strong bg-surface p-4 shadow-card"
+      className="[contain-intrinsic-size:auto_520px] [content-visibility:auto] flex flex-col gap-4 rounded-2xl border border-line-strong bg-surface p-4 shadow-card"
     >
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-dashed border-line pb-3">
         <h2 id="ct-sentence-title" className="flex items-center gap-2 text-sm font-extrabold uppercase tracking-wide text-heading">

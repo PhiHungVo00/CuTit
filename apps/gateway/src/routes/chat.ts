@@ -38,26 +38,31 @@ export const chatRoutes: FastifyPluginAsync<RouteDeps> = async (server, { pipeli
     await pipeline.consume(request, 'llm', estimatedTokens);
 
     const userText = body.userText ?? 'Xin chào Cu Tít';
-    const turn = await tutor.turn({
-      userText,
-      history: body.history,
-      scenario,
-      correctionLevel: body.correctionLevel,
-      persona: body.persona,
-      dialect: body.targetDialect,
-      level: body.learnerLevel,
-      explanationLanguage: body.explanationLanguage
-    });
-    if (turn.tokens > estimatedTokens) await pipeline.consume(request, 'llm', turn.tokens - estimatedTokens).catch(() => undefined);
-
-    let audioUrl: string | undefined;
-    if (ttsCache.configured) {
-      await pipeline.consume(request, 'tts', turn.reply.length);
-      ({ audioUrl } = await ttsCache.getAudio({ text: turn.reply, voiceId: 'vi-VN-Standard-A', speed: 1, dialect: body.targetDialect }));
-    }
     const turnId = randomUUID();
 
+    /** Gọi gia sư (AI hoặc bộ giả lập) rồi TTS nếu có; tutor.turn không ném lỗi (lỗi AI => bộ giả lập) */
+    const produce = async () => {
+      const turn = await tutor.turn({
+        userText,
+        history: body.history,
+        scenario,
+        correctionLevel: body.correctionLevel,
+        persona: body.persona,
+        dialect: body.targetDialect,
+        level: body.learnerLevel,
+        explanationLanguage: body.explanationLanguage
+      });
+      if (turn.tokens > estimatedTokens) await pipeline.consume(request, 'llm', turn.tokens - estimatedTokens).catch(() => undefined);
+      let audioUrl: string | undefined;
+      if (ttsCache.configured) {
+        await pipeline.consume(request, 'tts', turn.reply.length);
+        ({ audioUrl } = await ttsCache.getAudio({ text: turn.reply, voiceId: 'vi-VN-Standard-A', speed: 1, dialect: body.targetDialect }));
+      }
+      return { turn, audioUrl };
+    };
+
     if (!String(request.headers.accept ?? '').includes('text/event-stream')) {
+      const { turn, audioUrl } = await produce();
       return respond(VoiceTurnResponseSchema, {
         turnId,
         transcript: userText,
@@ -68,13 +73,20 @@ export const chatRoutes: FastifyPluginAsync<RouteDeps> = async (server, { pipeli
       });
     }
 
-    // AI thật đã sinh xong cả câu (cần JSON hoàn chỉnh để xác thực bằng Zod) => phát chữ nhanh hơn bộ giả lập
-    const tokenDelay = config.NODE_ENV === 'test' ? 0 : turn.mock ? 35 : 12;
     async function* events() {
+      // Gửi header + transcript NGAY: client không phải chờ AI trong timeout kết nối, watchdog luồng bắt đầu đếm
       yield sse({ type: 'transcript', text: userText });
-      // Gửi từng từ để chữ hiện dần trên điện thoại
-      const words = turn.reply.split(/(?<=\s)/);
-      for (const w of words) {
+      let produced: Awaited<ReturnType<typeof produce>>;
+      try {
+        produced = await produce();
+      } catch (err) {
+        yield sse({ type: 'error', code: (err as { code?: string }).code ?? 'internal_error', message: (err as Error).message });
+        return;
+      }
+      const { turn, audioUrl } = produced;
+      // AI thật đã sinh xong cả câu (cần JSON hoàn chỉnh để xác thực bằng Zod) => phát chữ nhanh hơn bộ giả lập
+      const tokenDelay = config.NODE_ENV === 'test' ? 0 : turn.mock ? 35 : 12;
+      for (const w of turn.reply.split(/(?<=\s)/)) {
         if (tokenDelay) await sleep(tokenDelay);
         yield sse({ type: 'token', text: w });
       }
