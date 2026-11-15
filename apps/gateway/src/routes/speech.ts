@@ -8,15 +8,17 @@ import {
 } from '@vietlearning/contracts';
 import type { RouteDeps } from '../app.js';
 import { parseOr400, respond } from '../lib/validate.js';
+import { readAudioUpload } from '../lib/audioUpload.js';
 
 const MB = 1024 * 1024;
 
 export const speechRoutes: FastifyPluginAsync<RouteDeps> = async (server, { pipeline, ttsCache, config }) => {
   const audioLimit = { bodyLimit: config.AUDIO_BODY_LIMIT_MB * MB };
 
-  // POST /v1/speech/transcribe (MOCK)
+  // POST /v1/speech/transcribe (multipart: file "audio") — STT còn MOCK, nhưng đầu vào/quota là thật
   server.post('/speech/transcribe', audioLimit, async (request) => {
-    await pipeline.consume(request, 'stt', 5);
+    const upload = await readAudioUpload(request);
+    await pipeline.consume(request, 'stt', Math.max(1, Math.ceil(upload.durationSec)));
     return respond(TranscribeResponseSchema, {
       text: 'Xin chào bạn',
       confidence: 0.96,
@@ -54,9 +56,10 @@ export const speechRoutes: FastifyPluginAsync<RouteDeps> = async (server, { pipe
     ])
   );
 
-  // POST /v1/speech/assess (A3 + A2) (MOCK)
+  // POST /v1/speech/assess (A3 + A2) (multipart: file "audio" + expectedText/targetTone) — chấm điểm còn MOCK
   server.post('/speech/assess', audioLimit, async (request) => {
-    await pipeline.consume(request, 'stt', 5);
+    const upload = await readAudioUpload(request);
+    await pipeline.consume(request, 'stt', Math.max(1, Math.ceil(upload.durationSec)));
     return respond(AssessResponseSchema, {
       transcript: 'Xin chào',
       diff: [],

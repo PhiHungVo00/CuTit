@@ -9,3 +9,4 @@ export * from './pitch/analyze.js';
 // Thu âm
 export * from './audio/resample.js';
 export * from './audio/AudioCaptureBridge.js';
+export * from './audio/wav.js';

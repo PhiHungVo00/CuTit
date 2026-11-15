@@ -2,6 +2,7 @@ import Fastify, { FastifyInstance } from 'fastify';
 import cors from '@fastify/cors';
 import helmet from '@fastify/helmet';
 import jwt from '@fastify/jwt';
+import multipart from '@fastify/multipart';
 import rateLimit from '@fastify/rate-limit';
 import type { GatewayConfig } from './config.js';
 import { RequestPipeline } from './pipeline/RequestPipeline.js';
@@ -39,6 +40,11 @@ export async function buildApp(config: GatewayConfig, opts: BuildOptions = {}): 
   await app.register(cors, {
     origin: (origin, cb) => cb(null, !origin || allowed.has(origin)),
     credentials: false
+  });
+
+  // Âm thanh tải lên dạng nhị phân (multipart), không base64: giới hạn chặt để chống lạm dụng
+  await app.register(multipart, {
+    limits: { fileSize: config.AUDIO_BODY_LIMIT_MB * 1024 * 1024, files: 1, fields: 10, fieldSize: 1024, parts: 12 }
   });
 
   if (config.JWT_SECRET) {
