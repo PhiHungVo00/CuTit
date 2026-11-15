@@ -6,6 +6,7 @@ import '@fontsource/be-vietnam-pro/vietnamese-600.css';
 import '@fontsource/be-vietnam-pro/latin-600.css';
 import '@fontsource/be-vietnam-pro/vietnamese-800.css';
 import '@fontsource/be-vietnam-pro/latin-800.css';
+import './styles.css';
 import { App } from './App';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(

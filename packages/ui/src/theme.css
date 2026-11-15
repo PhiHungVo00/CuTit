@@ -1,0 +1,106 @@
+/*
+ * Design tokens Bé Cu Tít (packages/ui, M3 sở hữu) cho Tailwind CSS v4.
+ *
+ * Cách dùng trong app:  @import "tailwindcss";  @import "@vietlearning/ui/theme.css";
+ * Rồi dùng class ngữ nghĩa: bg-surface, text-ink, border-line, bg-accent, text-accent-ink...
+ *
+ * Màu là CSS variables đổi theo thuộc tính data-theme trên phần tử gốc của màn hình:
+ *   data-theme="dark"  : "Gỗ Mộc Cổ Truyền" (mặc định)
+ *   data-theme="light" : "Tre Trúc Sáng"
+ * => Đổi giao diện chỉ là đổi một thuộc tính, không remount component, không tính style bằng JS.
+ */
+
+@theme inline {
+  --font-sans: 'Be Vietnam Pro', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+
+  --color-canvas: var(--ct-canvas);
+  --color-surface: var(--ct-surface);
+  --color-surface-2: var(--ct-surface-2);
+  --color-sunken: var(--ct-sunken);
+  --color-line: var(--ct-line);
+  --color-line-strong: var(--ct-line-strong);
+  --color-ink: var(--ct-ink);
+  --color-ink-soft: var(--ct-ink-soft);
+  --color-ink-muted: var(--ct-ink-muted);
+  --color-heading: var(--ct-heading);
+  --color-accent: var(--ct-accent);
+  --color-accent-ink: var(--ct-accent-ink);
+  --color-accent-soft: var(--ct-accent-soft);
+  --color-danger: var(--ct-danger);
+  --color-danger-soft: var(--ct-danger-soft);
+  --color-danger-ink: var(--ct-danger-ink);
+
+  /* 3 thành tố ngữ pháp: Ngôi 1 (đỏ), Ngôi 2 (hổ phách), Kính ngữ (xanh) */
+  --color-chip1-bg: var(--ct-chip1-bg);
+  --color-chip1-line: var(--ct-chip1-line);
+  --color-chip1-ink: var(--ct-chip1-ink);
+  --color-chip2-bg: var(--ct-chip2-bg);
+  --color-chip2-line: var(--ct-chip2-line);
+  --color-chip2-ink: var(--ct-chip2-ink);
+  --color-chip3-bg: var(--ct-chip3-bg);
+  --color-chip3-line: var(--ct-chip3-line);
+  --color-chip3-ink: var(--ct-chip3-ink);
+
+  --shadow-card: var(--ct-shadow-card);
+}
+
+:root,
+[data-theme='dark'] {
+  color-scheme: dark;
+  --ct-canvas: #16100b;
+  --ct-surface: #221812;
+  --ct-surface-2: #2a1f18;
+  --ct-sunken: #19110b;
+  --ct-line: #3d2d23;
+  --ct-line-strong: #b45309;
+  --ct-ink: #fdfbf7;
+  --ct-ink-soft: #d4b895;
+  --ct-ink-muted: #a38c76;
+  --ct-heading: #fbbf24;
+  --ct-accent: #f59e0b;
+  --ct-accent-ink: #000000;
+  --ct-accent-soft: rgb(245 158 11 / 0.18);
+  --ct-danger: #dc2626;
+  --ct-danger-soft: #3b1515;
+  --ct-danger-ink: #fecaca;
+  --ct-chip1-bg: #3b1515;
+  --ct-chip1-line: #991b1b;
+  --ct-chip1-ink: #fca5a5;
+  --ct-chip2-bg: #42240c;
+  --ct-chip2-line: #b45309;
+  --ct-chip2-ink: #fde68a;
+  --ct-chip3-bg: #063b2c;
+  --ct-chip3-line: #059669;
+  --ct-chip3-ink: #a7f3d0;
+  --ct-shadow-card: 0 10px 30px rgb(0 0 0 / 0.5);
+}
+
+[data-theme='light'] {
+  color-scheme: light;
+  --ct-canvas: #f6f3ec;
+  --ct-surface: #ffffff;
+  --ct-surface-2: #faf7f2;
+  --ct-sunken: #fffdf9;
+  --ct-line: #e5d5c0;
+  --ct-line-strong: #059669;
+  --ct-ink: #1c1917;
+  --ct-ink-soft: #44403c;
+  --ct-ink-muted: #6b6560;
+  --ct-heading: #047857;
+  --ct-accent: #059669;
+  --ct-accent-ink: #ffffff;
+  --ct-accent-soft: rgb(5 150 105 / 0.12);
+  --ct-danger: #e11d48;
+  --ct-danger-soft: #fee2e2;
+  --ct-danger-ink: #991b1b;
+  --ct-chip1-bg: #fee2e2;
+  --ct-chip1-line: #fca5a5;
+  --ct-chip1-ink: #7f1d1d;
+  --ct-chip2-bg: #fef3c7;
+  --ct-chip2-line: #fcd34d;
+  --ct-chip2-ink: #78350f;
+  --ct-chip3-bg: #d1fae5;
+  --ct-chip3-line: #6ee7b7;
+  --ct-chip3-ink: #065f46;
+  --ct-shadow-card: 0 8px 24px rgb(180 83 9 / 0.06);
+}

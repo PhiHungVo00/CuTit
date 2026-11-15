@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
+import tailwindcss from '@tailwindcss/vite';
 
 /**
  * Host Shell ghép các remote MFE lúc build (không dùng Module Federation runtime).
@@ -11,6 +12,7 @@ import { VitePWA } from 'vite-plugin-pwa';
 export default defineConfig({
   plugins: [
     react(),
+    tailwindcss(),
     VitePWA({
       registerType: 'autoUpdate',
       injectRegister: false, // tự đăng ký trong main.tsx sau khi trang đã hiển thị

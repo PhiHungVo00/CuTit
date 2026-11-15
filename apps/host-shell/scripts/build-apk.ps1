@@ -38,7 +38,8 @@ if (-not $SkipWeb) {
   # Build trước các package dùng chung (native, content, shared...) vì host đọc dist/ của chúng
   Push-Location $repoRoot
   try {
-    pnpm turbo run build --filter='@vietlearning/host-shell^...'
+    # Chỉ packages/* (có dist/); các MFE được host đọc thẳng từ src/ nên không cần build trang demo của chúng
+    pnpm turbo run build --filter='./packages/*'
     if ($LASTEXITCODE) { throw 'build package phụ thuộc lỗi' }
   } finally { Pop-Location }
 

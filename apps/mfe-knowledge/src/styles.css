@@ -1,0 +1,9 @@
+/* CSS cho trang demo độc lập của mfe-knowledge (trong app, Host Shell nạp CSS chung). */
+@import 'tailwindcss';
+@import '@vietlearning/ui/theme.css';
+
+@layer base {
+  body {
+    margin: 0;
+  }
+}

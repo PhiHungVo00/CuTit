@@ -95,7 +95,7 @@
     "contextLevelText": "Ruột thịt gia đình",
     "example": "Con thưa Bố Mẹ, con xin phép được chuẩn bị mâm cơm chiều gia đình ạ!",
     "explanation": "Con cái đối với cha mẹ xưng 'con', gọi 'bố/mẹ' (hoặc 'ba/má' ở miền Nam, 'thầy/u' ở đồng bằng Bắc Bộ xưa).",
-    "wisdom": "Công cha như núi Thái Sơn, nghĩa mẹ như nước trong nguồn chảy ra. Luôn 'thưa gửi' khi đi đến nơi về đến chốn."
+    "wisdom": "Công cha như núi Thái Sơn, nghĩa mẹ như nước trong nguồn chảy ra. Luôn thưa gửi khi đi đến nơi về đến chốn."
   },
   {
     "id": "h7",
@@ -127,7 +127,7 @@
     "contextLevelText": "Trang trọng giảng đường",
     "example": "Em kính chào Thầy ạ, thưa Thầy bài giảng về phong tục làng xã hôm nay rất sâu sắc ạ!",
     "explanation": "Trong quan hệ sư đồ, người học xưng 'em' (hoặc 'con'), gọi 'thầy/cô' kèm từ 'kính thưa' và kết thúc bằng 'ạ'.",
-    "wisdom": "Tôn sư trọng đạo! Một chữ là thầy, nửa chữ cũng là thầy; cách xưng hô đo lường cái tâm của người quân tử."
+    "wisdom": "Tôn sư trọng đạo! Một chữ là thầy, nửa chữ cũng là thầy; cách xưng hô đo lường cái tâm của người học trò."
   },
   {
     "id": "h9",
@@ -321,7 +321,7 @@
     "listener": "đồng chí",
     "politeParticle": "thưa / báo cáo",
     "ageRelationText": "Đồng sự tổ chức",
-    "contextLevelText": "Trang trọng công việc",
+    "contextLevelText": "Trang trọng đoàn thể",
     "example": "Báo cáo đồng chí, công tác tu bổ vì kèo mái đình và sân gạch cổ đã hoàn tất chu đáo.",
     "explanation": "Trong công tác đoàn thể, hội đồng làng xã hoặc các tổ chức chính quy, danh xưng 'đồng chí' mang tính bình đẳng và tinh thần trách nhiệm chung.",
     "wisdom": "Chung một ngọn cờ, đồng lòng góp sức vì lợi ích chung của quê hương bản quán."

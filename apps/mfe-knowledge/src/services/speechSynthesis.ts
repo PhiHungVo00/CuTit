@@ -35,9 +35,15 @@ class SpeechService {
     return this.speaking;
   }
 
+  /** onEnd của lượt đang đọc: gọi khi lượt bị dừng/thay thế để UI của nơi gọi cũ không kẹt "Đang đọc". */
+  private notifyInterrupted: (() => void) | null = null;
+
   public stop(): void {
     this.turn++;
     this.speaking = false;
+    const notify = this.notifyInterrupted;
+    this.notifyInterrupted = null;
+    notify?.();
     getDeviceSpeech()
       .stop()
       .catch((err) => console.warn('[SpeechService] stop lỗi', err));
@@ -52,16 +58,19 @@ class SpeechService {
     const token = ++this.turn;
     const isCurrent = () => token === this.turn;
     this.speaking = true;
+    this.notifyInterrupted = options.onEnd ?? null;
     options.onStart?.();
 
     const finish = () => {
       if (!isCurrent()) return;
       this.speaking = false;
+      this.notifyInterrupted = null;
       options.onEnd?.();
     };
     const fail = (code: SpeechFailure, message: string) => {
       if (!isCurrent()) return;
       this.speaking = false;
+      this.notifyInterrupted = null;
       console.warn(`[SpeechService] ${code}: ${message}`);
       options.onError?.({ code, message });
     };
