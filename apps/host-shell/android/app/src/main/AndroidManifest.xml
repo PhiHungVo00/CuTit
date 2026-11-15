@@ -38,6 +38,9 @@
     <!-- Permissions -->
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- M2 luyện thanh điệu: thu âm qua getUserMedia trong WebView (Capacitor tự xin quyền khi cần) -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
 
     <!-- Android 11+: khai báo để app thấy được dịch vụ TTS của hệ thống (giọng đọc tiếng Việt) -->
     <queries>

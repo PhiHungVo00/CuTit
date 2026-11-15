@@ -46,6 +46,8 @@ export default defineConfig({
       }
     })
   ],
+  // Worker phân tích thanh điệu (mfe-speech-lab) dùng ES module import
+  worker: { format: 'es' },
   resolve: {
     dedupe: ['react', 'react-dom']
   },
