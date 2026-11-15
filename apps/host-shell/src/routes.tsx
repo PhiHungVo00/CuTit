@@ -117,15 +117,15 @@ export const SCREENS: ScreenRoute[] = [
     load: () => import('@vietlearning/mfe-vision')
   }),
   screen({
-    path: '/ho-so',
-    label: 'Tiến độ học',
-    shortLabel: 'Hồ sơ',
-    icon: '📈',
-    description: 'M9 · Thống kê, M11 · Xếp lớp, M12 · Tùy chỉnh',
+    path: '/bat-dau',
+    label: 'Làm quen & xếp lớp',
+    shortLabel: 'Bắt đầu',
+    icon: '🌱',
+    description: 'M11 · Mục tiêu, phương ngữ, bài xếp lớp thích ứng 8–12 câu (A5)',
     owner: 'mfe-learner',
-    ready: false,
+    ready: true,
     inTabBar: false,
-    load: () => import('@vietlearning/mfe-learner')
+    load: () => import('./screens/OnboardingRoute')
   })
 ];
 

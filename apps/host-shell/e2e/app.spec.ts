@@ -184,6 +184,75 @@ test.describe('M5 Luyện tập', () => {
   });
 });
 
+test.describe('M11 Làm quen & xếp lớp', () => {
+  const pickIntro = async (page: Page) => {
+    await page.getByText('Du lịch Việt Nam').click();
+    await page.getByRole('button', { name: 'Tiếp →' }).click();
+    await page.getByText('English').click();
+    await page.getByRole('button', { name: 'Tiếp →' }).click();
+    await page.getByText('Miền Nam', { exact: true }).click();
+    await page.getByRole('button', { name: 'Tiếp →' }).click();
+  };
+
+  test('trang chủ mời làm quen; làm bài xếp lớp (Gateway giả lập) => lưu trình độ, hết lời mời', async ({ page }) => {
+    let calls = 0;
+    const bodies: unknown[] = [];
+    await page.route('**/v1/placement/next', async (route) => {
+      bodies.push(route.request().postDataJSON());
+      calls++;
+      const json =
+        calls <= 8
+          ? { finished: false, question: { id: `p${calls}`, prompt: `Câu hỏi số ${calls}`, options: ['A', 'B', 'C', 'D'], index: calls, maxQuestions: 12 }, ...(calls > 1 ? { lastCorrect: true } : {}) }
+          : { finished: true, assignedLevel: 3, lastCorrect: true };
+      await route.fulfill({ json });
+    });
+    await page.goto('/');
+    await page.getByRole('link', { name: /Lần đầu học cùng Cu Tít/ }).click();
+    await expect(page.getByRole('heading', { name: 'Bắt đầu' })).toBeVisible();
+    await assertMobileLayout(page);
+    await pickIntro(page);
+    await page.getByRole('button', { name: /Làm bài xếp lớp/ }).click();
+    for (let i = 1; i <= 8; i++) {
+      await expect(page.getByRole('heading', { name: `Câu hỏi số ${i}` })).toBeVisible();
+      await page.getByRole('group', { name: 'Lựa chọn' }).getByRole('button', { name: 'B' }).click();
+    }
+    await expect(page.getByRole('heading', { name: 'Trình độ của bạn: B1' })).toBeVisible();
+    // lần đầu không kèm answer; các lần sau gửi đúng questionId + vị trí đã chọn
+    expect(bodies[0]).not.toHaveProperty('answer');
+    expect(bodies[1]).toMatchObject({ answer: { questionId: 'p1', choice: 1 } });
+    await page.getByRole('button', { name: 'Bắt đầu học' }).click();
+    await expect(page.getByText(/Trình độ B1 ·/)).toBeVisible();
+    await expect(page.getByRole('link', { name: /Lần đầu học cùng Cu Tít/ })).toHaveCount(0);
+    const profile = await page.evaluate(() => JSON.parse(localStorage.getItem('becutit.learner') || '{}').state?.profile);
+    expect(profile).toMatchObject({ onboarded: true, level: 3, goal: 'travel', nativeLang: 'en', dialect: 'south' });
+  });
+
+  test('mất mạng giữa chừng => Thử lại gửi lại câu đang chờ; hoặc tự chọn trình độ', async ({ page }) => {
+    let fail = false;
+    await page.route('**/v1/placement/next', async (route) => {
+      if (fail) return route.abort('internetdisconnected');
+      await route.fulfill({ json: { finished: false, question: { id: 'p1', prompt: 'Câu đầu tiên', options: ['A', 'B'], index: 1, maxQuestions: 12 } } });
+    });
+    await page.goto('/bat-dau');
+    await pickIntro(page);
+    await page.getByRole('button', { name: /Làm bài xếp lớp/ }).click();
+    await expect(page.getByRole('heading', { name: 'Câu đầu tiên' })).toBeVisible();
+    fail = true;
+    await page.getByRole('button', { name: 'A', exact: true }).click();
+    await expect(page.getByRole('alert')).toContainText('Không có kết nối mạng');
+    await assertMobileLayout(page);
+    fail = false;
+    await page.getByRole('button', { name: 'Thử lại' }).click();
+    await expect(page.getByRole('heading', { name: 'Câu đầu tiên' })).toBeVisible();
+    fail = true;
+    await page.getByRole('button', { name: 'A', exact: true }).click();
+    await page.getByRole('button', { name: 'Tự chọn trình độ' }).click();
+    await page.getByText('Biết câu cơ bản').click();
+    await page.getByRole('button', { name: 'Tiếp →' }).click();
+    await expect(page.getByRole('heading', { name: 'Trình độ của bạn: A2' })).toBeVisible();
+  });
+});
+
 test.describe('M2 Luyện thanh điệu', () => {
   test('micro giả lập giọng đi lên => chấm đúng thanh sắc (AudioWorklet → resample → Worker)', async ({ page }) => {
     await page.addInitScript(() => {

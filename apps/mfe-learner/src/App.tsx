@@ -1,10 +1,11 @@
-import React from 'react';
+import { MemoryRouter } from 'react-router-dom';
+import { OnboardingScreen } from './onboarding/OnboardingScreen';
 
-export const App: React.FC = () => {
+/** Chạy độc lập (pnpm dev trong package này) để phát triển màn hình mà không cần Host. */
+export function App() {
   return (
-    <div style={{ padding: '1rem', border: '1px dashed #6366F1', borderRadius: '6px' }}>
-      <h4>Remote MFE: mfe-learner</h4>
-      <p>Analytics Dashboard & Adaptive Onboarding</p>
-    </div>
+    <MemoryRouter>
+      <OnboardingScreen />
+    </MemoryRouter>
   );
-};
+}
