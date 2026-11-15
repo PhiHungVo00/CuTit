@@ -1,5 +1,8 @@
 import { Suspense, lazy, useCallback, useEffect, useRef, useState } from 'react';
+import { HONORIFIC_PAIRS_20 } from '@vietlearning/content';
+import { useLearner } from '@vietlearning/state';
 import { CuTitWisdomCard } from './CuTitWisdomCard';
+import { useT } from '../i18n';
 
 // Drawer (kèm Radix Dialog ~13KB gzip) chỉ tải khi người dùng cần: tải trước lúc chạm nút, mở khi nhả tay
 const loadDrawer = () => import('./HonorificExplorerDrawer');
@@ -7,7 +10,7 @@ const HonorificExplorerDrawer = lazy(() => loadDrawer().then((m) => ({ default: 
 import { ControlPanel } from './honorific/ControlPanel';
 import { SentencePanel } from './honorific/SentencePanel';
 import { useHonorificPlayground } from './honorific/useHonorificPlayground';
-import { AGE_STEPS, CONTEXT_STEPS, RELATIONS, type Theme } from './honorific/options';
+import { type Theme } from './honorific/options';
 
 export interface HonorificMatrixScreenProps {
   /** Giao diện ban đầu khi màn hình tự quản lý theme */
@@ -24,11 +27,13 @@ export interface HonorificMatrixScreenProps {
  * nên đổi giao diện không remount và giữ nguyên lựa chọn của người học.
  */
 export function HonorificMatrixScreen({ initialTheme = 'dark', theme: themeProp, onThemeChange, onPairChange }: HonorificMatrixScreenProps) {
+  const t = useT();
+  const en = useLearner((s) => s.preferences.uiLanguage) === 'en';
   const [themeState, setThemeState] = useState<Theme>(initialTheme);
   const theme = themeProp ?? themeState;
-  const setTheme = (t: Theme) => {
-    if (themeProp === undefined) setThemeState(t);
-    onThemeChange?.(t);
+  const setTheme = (next: Theme) => {
+    if (themeProp === undefined) setThemeState(next);
+    onThemeChange?.(next);
   };
 
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -47,22 +52,26 @@ export function HonorificMatrixScreen({ initialTheme = 'dark', theme: themeProp,
     onPairChange?.({ speaker: result.speaker, listener: result.listener, pairId: result.pairId });
   }, [result.speaker, result.listener, result.pairId, onPairChange]);
 
-  const relationName = RELATIONS.find((r) => r.id === state.relation)?.label ?? state.relation;
-  const contextLabel = `${CONTEXT_STEPS[state.contextStep].title} • ${AGE_STEPS[state.ageStep].title}`;
+  const relationName = t(`relation.${state.relation}`);
+  const contextLabel = `${t(`context.${state.contextStep}`)} • ${t(`age.${state.ageStep}`)}`;
+  // Giao diện tiếng Anh: lời giải thích/lời dặn lấy từ bản dịch của cặp tương ứng (A6 trả pairId)
+  const pairEn = en ? HONORIFIC_PAIRS_20.find((p) => p.id === result.pairId) : undefined;
+  const wisdom = pairEn?.wisdomEn ?? result.wisdomTip;
+  const explanation = pairEn?.explanationEn ?? result.explanation;
 
   return (
     <div data-theme={theme} className="min-h-dvh bg-canvas px-4 pb-8 pt-[calc(16px+env(safe-area-inset-top))] font-sans text-ink">
       <div className="mx-auto flex max-w-[560px] flex-col gap-5">
         <header className="flex flex-col gap-3 border-b-2 border-line pb-4">
-          <h1 className="m-0 text-[26px] font-black leading-tight tracking-tight text-heading">Ma trận đại từ xưng hô</h1>
-          <p className="m-0 text-[15px] text-ink-soft">Chọn quan hệ, tuổi và bối cảnh để xem cách xưng hô đúng mực.</p>
+          <h1 className="m-0 text-[26px] font-black leading-tight tracking-tight text-heading">{t('matrixTitle')}</h1>
+          <p className="m-0 text-[15px] text-ink-soft">{t('matrixIntro')}</p>
 
           <div className="flex flex-wrap items-center gap-2">
-            <div role="radiogroup" aria-label="Giao diện" className="inline-flex rounded-xl border border-line bg-surface-2 p-1">
+            <div role="radiogroup" aria-label={t('themeLabel')} className="inline-flex rounded-xl border border-line bg-surface-2 p-1">
               {(
                 [
-                  ['dark', '🏮 Gỗ mộc'],
-                  ['light', '🎋 Tre trúc']
+                  ['dark', t('themeDark')],
+                  ['light', t('themeLight')]
                 ] as const
               ).map(([id, label]) => (
                 <button
@@ -90,7 +99,7 @@ export function HonorificMatrixScreen({ initialTheme = 'dark', theme: themeProp,
               aria-haspopup="dialog"
               className="flex min-h-12 items-center gap-2 rounded-xl border border-line-strong bg-surface px-4 text-[15px] font-bold text-ink"
             >
-              <span aria-hidden="true">📜</span> Bảng 20 cặp chuẩn
+              <span aria-hidden="true">📜</span> {t('pairsButton')}
             </button>
           </div>
         </header>
@@ -112,7 +121,7 @@ export function HonorificMatrixScreen({ initialTheme = 'dark', theme: themeProp,
 
         <SentencePanel result={result} contextLabel={contextLabel} fromTable={state.explicitPair !== null} />
 
-        <CuTitWisdomCard wisdom={result.wisdomTip} explanation={result.explanation} relationName={relationName} />
+        <CuTitWisdomCard wisdom={wisdom} explanation={explanation} relationName={relationName} />
       </div>
 
       {drawerMounted && (

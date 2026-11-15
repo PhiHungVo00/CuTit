@@ -23,9 +23,12 @@ export default defineConfig({
     locale: 'vi-VN'
   },
   projects: [
-    { name: 'pixel-7', use: { ...devices['Pixel 7'], channel: 'chrome', locale: 'vi-VN' } },
+    { name: 'pixel-7', grepInvert: /@perf/, use: { ...devices['Pixel 7'], channel: 'chrome', locale: 'vi-VN' } },
+    // Đo thời gian chỉ chạy SAU khi các project khác xong: chạy song song thì CPU bị tranh, số đo nhiễu
+    { name: 'perf', grep: /@perf/, dependencies: ['pixel-7', 'android-nho-320'], use: { ...devices['Pixel 7'], channel: 'chrome', locale: 'vi-VN' } },
     {
       name: 'android-nho-320',
+      grepInvert: /@perf/,
       use: {
         ...devices['Pixel 7'],
         channel: 'chrome',

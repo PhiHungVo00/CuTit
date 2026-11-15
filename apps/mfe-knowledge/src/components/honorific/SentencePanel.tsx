@@ -1,14 +1,8 @@
 import { memo, useEffect, useState } from 'react';
 import type { HonorificInterpretationResult } from '@vietlearning/content';
 import { speechService, type SpeechFailure } from '../../services/speechSynthesis';
+import { useT } from '../../i18n';
 import { SPEEDS } from './options';
-
-const ERROR_TEXT: Record<SpeechFailure, string> = {
-  'no-voice-available':
-    'Máy chưa có giọng đọc tiếng Việt. Vào Cài đặt › Chuyển văn bản thành giọng nói để tải giọng "Tiếng Việt".',
-  network: 'Không kết nối được máy chủ phát âm. Kiểm tra mạng rồi thử lại.',
-  playback: 'Không phát được âm thanh. Vui lòng thử lại.'
-};
 
 interface SentencePanelProps {
   result: HonorificInterpretationResult;
@@ -18,6 +12,7 @@ interface SentencePanelProps {
 
 /** Câu mẫu trực quan + 3 thành tố ngữ pháp + nghe phát âm. */
 export const SentencePanel = memo(function SentencePanel({ result, contextLabel, fromTable }: SentencePanelProps) {
+  const t = useT();
   const [speaking, setSpeaking] = useState(false);
   const [speed, setSpeed] = useState<number>(1.0);
   const [error, setError] = useState<SpeechFailure | null>(null);
@@ -50,7 +45,7 @@ export const SentencePanel = memo(function SentencePanel({ result, contextLabel,
     >
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-dashed border-line pb-3">
         <h2 id="ct-sentence-title" className="flex items-center gap-2 text-sm font-extrabold uppercase tracking-wide text-heading">
-          <span aria-hidden="true">💬</span> Câu mẫu
+          <span aria-hidden="true">💬</span> {t('sample')}
         </h2>
         <span className="rounded-lg bg-surface-2 px-2 py-1 text-sm font-bold text-ink-soft">
           {result.speaker} → {result.listener}
@@ -62,27 +57,27 @@ export const SentencePanel = memo(function SentencePanel({ result, contextLabel,
           “{result.sampleSentence}”
         </blockquote>
         <figcaption className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-ink-soft">
-          <span>📍 Phù hợp:</span>
+          <span>{t('fits')}</span>
           <strong className="text-heading">{contextLabel}</strong>
           {fromTable && (
-            <span className="ml-auto rounded bg-accent-soft px-1.5 py-0.5 text-xs font-bold text-heading">✓ Từ Bảng 20 cặp</span>
+            <span className="ml-auto rounded bg-accent-soft px-1.5 py-0.5 text-xs font-bold text-heading">{t('fromTable')}</span>
           )}
         </figcaption>
       </figure>
 
       <div>
-        <h3 className="mb-2 text-sm font-extrabold uppercase tracking-wide text-ink-soft">3 thành tố ngữ pháp</h3>
+        <h3 className="mb-2 text-sm font-extrabold uppercase tracking-wide text-ink-soft">{t('grammar')}</h3>
         <dl className="m-0 grid grid-cols-2 gap-2">
           <div className="rounded-xl border border-chip1-line bg-chip1-bg p-3">
-            <dt className="text-xs font-bold uppercase text-chip1-ink">Ngôi 1 · xưng</dt>
+            <dt className="text-xs font-bold uppercase text-chip1-ink">{t('firstPerson')}</dt>
             <dd className="m-0 text-lg font-black text-ink">{result.speaker}</dd>
           </div>
           <div className="rounded-xl border border-chip2-line bg-chip2-bg p-3">
-            <dt className="text-xs font-bold uppercase text-chip2-ink">Ngôi 2 · gọi</dt>
+            <dt className="text-xs font-bold uppercase text-chip2-ink">{t('secondPerson')}</dt>
             <dd className="m-0 text-lg font-black text-ink">{result.listener}</dd>
           </div>
           <div className="col-span-2 rounded-xl border border-chip3-line bg-chip3-bg p-3">
-            <dt className="text-xs font-bold uppercase text-chip3-ink">Kính ngữ · trợ từ</dt>
+            <dt className="text-xs font-bold uppercase text-chip3-ink">{t('particle')}</dt>
             <dd className="m-0 text-lg font-black text-ink">{result.politeParticle}</dd>
           </div>
         </dl>
@@ -99,11 +94,11 @@ export const SentencePanel = memo(function SentencePanel({ result, contextLabel,
           ].join(' ')}
         >
           <span aria-hidden="true">{speaking ? '⏹️' : '🔊'}</span>
-          {speaking ? 'Đang đọc… (bấm để dừng)' : 'Nghe phát âm mẫu'}
+          {speaking ? t('speaking') : t('listenSample')}
         </button>
 
-        <div className="flex items-center gap-2" role="group" aria-label="Tốc độ đọc">
-          <span className="text-sm font-semibold text-ink-muted">Tốc độ:</span>
+        <div className="flex items-center gap-2" role="group" aria-label={t('speedGroup')}>
+          <span className="text-sm font-semibold text-ink-muted">{t('speedLabel')}</span>
           {SPEEDS.map((s) => (
             <button
               key={s}
@@ -122,7 +117,7 @@ export const SentencePanel = memo(function SentencePanel({ result, contextLabel,
 
         {error && (
           <p role="alert" className="m-0 rounded-xl bg-danger-soft p-3 text-sm leading-relaxed text-danger-ink">
-            {ERROR_TEXT[error]}
+            {t(`speech.${error}`)}
           </p>
         )}
       </div>

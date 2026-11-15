@@ -6,6 +6,10 @@
     "syllable": "ma",
     "meaning": "con ma",
     "description": "Giữ đều, ngang ở cao độ vừa",
+    "nameEn": "Level tone",
+    "markEn": "no mark",
+    "meaningEn": "ghost",
+    "descriptionEn": "Hold it steady and flat at mid pitch",
     "contour": [0.3, 0.3, 0.25, 0.2, 0.15, 0.1, 0.05, 0, -0.05, -0.1]
   },
   {
@@ -15,6 +19,10 @@
     "syllable": "mà",
     "meaning": "nhưng mà",
     "description": "Bắt đầu thấp, đi xuống nhẹ và đều",
+    "nameEn": "Falling tone",
+    "markEn": "grave accent ( ` )",
+    "meaningEn": "but",
+    "descriptionEn": "Start low and fall gently and evenly",
     "contour": [0, -0.4, -0.8, -1.2, -1.6, -2.0, -2.4, -2.8, -3.2, -3.6]
   },
   {
@@ -24,6 +32,10 @@
     "syllable": "má",
     "meaning": "má, mẹ",
     "description": "Đi lên cao dứt khoát",
+    "nameEn": "Rising tone",
+    "markEn": "acute accent ( ´ )",
+    "meaningEn": "cheek; mum",
+    "descriptionEn": "Rise sharply and decisively",
     "contour": [0, 0, 0.4, 1.0, 1.8, 2.7, 3.7, 4.7, 5.7, 6.6]
   },
   {
@@ -33,6 +45,10 @@
     "syllable": "mả",
     "meaning": "mồ mả",
     "description": "Xuống thấp rồi vòng lên lại",
+    "nameEn": "Dipping tone",
+    "markEn": "hook above ( ̉ )",
+    "meaningEn": "grave, tomb",
+    "descriptionEn": "Dip low, then curve back up",
     "contour": [0, -1.0, -2.0, -2.8, -3.3, -3.3, -2.8, -2.0, -1.0, 0]
   },
   {
@@ -42,6 +58,10 @@
     "syllable": "mã",
     "meaning": "mã số, con ngựa",
     "description": "Đi lên, gãy giữa chừng rồi vút cao",
+    "nameEn": "Broken tone",
+    "markEn": "tilde ( ˜ )",
+    "meaningEn": "code; horse",
+    "descriptionEn": "Rise, break in the middle, then shoot up",
     "contour": [0, 0.6, 1.1, 0.6, -0.8, 0.2, 2.0, 3.8, 5.0, 6.0]
   },
   {
@@ -51,6 +71,10 @@
     "syllable": "mạ",
     "meaning": "cây mạ",
     "description": "Xuống thấp, gấp và ngắn, tắc ở cuối",
+    "nameEn": "Heavy tone",
+    "markEn": "dot below ( . )",
+    "meaningEn": "rice seedling",
+    "descriptionEn": "Drop low quickly and cut off short",
     "contour": [0, -1.0, -2.4, -3.9, -5.4, -6.6, -7.5, -8.1, -8.5, -8.7]
   }
 ]

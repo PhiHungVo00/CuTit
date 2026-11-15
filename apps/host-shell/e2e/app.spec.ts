@@ -113,7 +113,7 @@ test.describe('M6 Phương ngữ', () => {
     await page.getByRole('searchbox').fill('heo');
     const card = page.getByRole('listitem').filter({ hasText: 'Con lợn' });
     await expect(card).toBeVisible();
-    await expect(card.getByRole('button', { name: /"heo" \(miền Nam\)/ })).toBeVisible();
+    await expect(card.getByRole('button', { name: /“heo” \(miền Nam\)/ })).toBeVisible();
     await card.getByRole('button', { name: /Lưu để ôn tập/ }).click();
     await expect(card.getByRole('button', { name: /Đã lưu để ôn/ })).toBeDisabled();
     await page.reload();
@@ -527,9 +527,9 @@ test.describe('Offline (PWA)', () => {
   });
 });
 
-test.describe('Hiệu năng trên máy yếu (CPU chậm 4×)', () => {
+test.describe('Hiệu năng trên máy yếu (CPU chậm 4×) @perf', () => {
   test('mở M3 từ trang chủ: màn hình sẵn sàng < 1.5 s', async ({ page, browserName }, info) => {
-    test.skip(browserName !== 'chromium' || info.project.name !== 'pixel-7', 'chỉ đo trên Chromium, một cấu hình');
+    test.skip(browserName !== 'chromium' || info.project.name !== 'perf', 'chỉ đo trên Chromium, một cấu hình');
     const cdp = await page.context().newCDPSession(page);
     await page.goto('/');
     await cdp.send('Emulation.setCPUThrottlingRate', { rate: 4 });
@@ -546,5 +546,102 @@ test.describe('Hiệu năng trên máy yếu (CPU chậm 4×)', () => {
     const tapMs = Date.now() - t1;
     console.log(`  Phản hồi một lần chạm với CPU chậm 4×: ${tapMs} ms`);
     expect(tapMs).toBeLessThan(300);
+  });
+});
+
+test.describe('Giao diện tiếng Anh (người nước ngoài)', () => {
+  // Máy tiếng Anh => app mặc định tiếng Anh; nội dung cần học vẫn là tiếng Việt
+  test.use({ locale: 'en-US' });
+  const sseEn = (events: object[]) => events.map((e) => `data: ${JSON.stringify(e)}\n\n`).join('');
+
+  test('mặc định theo ngôn ngữ máy, đổi ngôn ngữ ở trang chủ và được lưu lại', async ({ page }) => {
+    await page.goto('/');
+    await expect(page.getByRole('heading', { name: 'Learn Vietnamese with Cu Tít' })).toBeVisible();
+    await expect(page.locator('html')).toHaveAttribute('lang', 'en');
+    await expect(page.getByRole('navigation', { name: 'Main navigation' })).toBeVisible();
+    await assertMobileLayout(page);
+    await page.getByRole('button', { name: 'Chuyển giao diện sang tiếng Việt' }).click();
+    await expect(page.getByRole('heading', { name: 'Học Tiếng Việt Cùng Bé Cu Tít' })).toBeVisible();
+    await page.reload();
+    await expect(page.getByRole('heading', { name: 'Học Tiếng Việt Cùng Bé Cu Tít' })).toBeVisible();
+    await expect(page.locator('html')).toHaveAttribute('lang', 'vi');
+  });
+
+  test('các màn hình hiển thị tiếng Anh, bố cục mobile vẫn chuẩn', async ({ page }) => {
+    const screens: [string, string][] = [
+      ['/xung-ho', 'Pronoun matrix'],
+      ['/van-hoa', 'Culture guide'],
+      ['/phat-am', 'Practise the 6 tones'],
+      ['/phuong-ngu', 'Regional dialects'],
+      ['/luyen-tap', 'Practice'],
+      ['/ghep-cau', 'Sentence builder'],
+      ['/nhap-vai', 'Role-play'],
+      ['/camera', 'Camera vocabulary'],
+      ['/ho-so', 'My progress'],
+      ['/tuy-chinh', 'Settings'],
+      ['/bat-dau', 'Get started']
+    ];
+    for (const [path, title] of screens) {
+      await page.goto(path);
+      await expect(page.getByRole('heading', { level: 1, name: title })).toBeVisible();
+      await assertMobileLayout(page);
+    }
+    await page.goto('/van-hoa');
+    await expect(page.getByText('Never stand chopsticks in a bowl of rice')).toBeVisible();
+    await page.goto('/nhap-vai');
+    await expect(page.getByRole('button', { name: /Ordering at a phở shop/ })).toBeVisible();
+  });
+
+  test('trò chuyện: gửi explanationLanguage=en, lời gia sư vẫn tiếng Việt', async ({ page }) => {
+    const bodies: Record<string, unknown>[] = [];
+    await page.route('**/v1/chat/turn', async (route) => {
+      bodies.push(route.request().postDataJSON());
+      await route.fulfill({
+        headers: { 'content-type': 'text/event-stream' },
+        body: sseEn([
+          { type: 'transcript', text: 'xin chao' },
+          { type: 'token', text: 'Chào bạn!' },
+          { type: 'correction', correction: { original: 'xin chao', corrected: 'Xin chào', explanation: 'Vietnamese needs its tone marks.' } },
+          { type: 'done', turnId: '7d444840-9dc0-11d1-b245-5ffdce74fad2', reply: 'Chào bạn!', completedTasks: [], mock: false }
+        ])
+      });
+    });
+    await page.goto('/hoi-thoai');
+    await page.getByLabel('Message').fill('xin chao');
+    await page.getByRole('button', { name: 'Send' }).click();
+    const log = page.getByRole('log', { name: 'Conversation' });
+    await expect(log.getByText('Chào bạn!')).toBeVisible();
+    await expect(log.getByText('Vietnamese needs its tone marks.')).toBeVisible();
+    await expect(log.getByText('sample reply')).toHaveCount(0);
+    expect(bodies[0]).toMatchObject({ userText: 'xin chao', explanationLanguage: 'en' });
+  });
+
+  test('nhập giọng nói: thu âm → gửi WAV → chữ vào ô nhập để sửa trước khi gửi', async ({ page }) => {
+    await page.addInitScript(() => {
+      navigator.mediaDevices.getUserMedia = async () => {
+        const ctx = new AudioContext();
+        const osc = ctx.createOscillator();
+        const dest = ctx.createMediaStreamDestination();
+        osc.connect(dest);
+        osc.start();
+        return dest.stream;
+      };
+    });
+    let upload: { type: string | null; size: number } | null = null;
+    await page.route('**/v1/speech/transcribe', async (route) => {
+      const req = route.request();
+      upload = { type: req.headers()['content-type'] ?? null, size: req.postDataBuffer()?.length ?? 0 };
+      await route.fulfill({ json: { text: 'Cho tôi một bát phở', confidence: 0.9, words: [], mock: false } });
+    });
+    await page.goto('/hoi-thoai');
+    await page.getByRole('button', { name: 'Speak' }).click();
+    await expect(page.getByRole('button', { name: 'Stop recording' })).toBeVisible();
+    await page.waitForTimeout(900);
+    await page.getByRole('button', { name: 'Stop recording' }).click();
+    await expect(page.getByLabel('Message')).toHaveValue('Cho tôi một bát phở');
+    await expect(page.getByText('Check the recognised text, then tap Send.')).toBeVisible();
+    expect(upload!.type).toMatch(/multipart\/form-data/);
+    expect(upload!.size).toBeGreaterThan(10_000);
+    await assertMobileLayout(page);
   });
 });

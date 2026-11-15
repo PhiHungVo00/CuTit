@@ -1,4 +1,5 @@
 import { memo } from 'react';
+import { useT } from '../i18n';
 
 export interface CuTitWisdomCardProps {
   wisdom: string;
@@ -8,6 +9,7 @@ export interface CuTitWisdomCardProps {
 
 /** Thẻ "Bé Cu Tít mách nước": ca dao/tục ngữ + giải thích văn hóa. Màu lấy từ design tokens. */
 export const CuTitWisdomCard = memo(function CuTitWisdomCard({ wisdom, explanation, relationName }: CuTitWisdomCardProps) {
+  const t = useT();
   return (
     <section
       aria-labelledby="ct-wisdom-title"
@@ -22,26 +24,26 @@ export const CuTitWisdomCard = memo(function CuTitWisdomCard({ wisdom, explanati
         </div>
         <div>
           <h2 id="ct-wisdom-title" className="m-0 text-base font-extrabold text-ink">
-            Bé Cu Tít mách nước
+            {t('wisdomTitle')}
           </h2>
           <p className="m-0 text-sm text-ink-soft">
-            Quy tắc: <strong className="text-heading">{relationName}</strong>
+            {t('rule')} <strong className="text-heading">{relationName}</strong>
           </p>
         </div>
       </div>
 
-      <blockquote lang="vi" className="m-0 flex gap-3 rounded-xl border border-line bg-sunken p-3">
+      <blockquote className="m-0 flex gap-3 rounded-xl border border-line bg-sunken p-3">
         <span aria-hidden="true" className="text-xl leading-tight">
           🎋
         </span>
         <div>
-          <div className="text-xs font-extrabold uppercase tracking-wide text-heading">Lời dặn xưa</div>
+          <div className="text-xs font-extrabold uppercase tracking-wide text-heading">{t('oldSaying')}</div>
           <p className="m-0 text-[15px] font-semibold italic leading-relaxed text-ink">“{wisdom}”</p>
         </div>
       </blockquote>
 
       <p className="m-0 rounded-xl bg-surface p-3 text-[15px] leading-relaxed text-ink-soft">
-        <strong className="text-ink">Ý nghĩa văn hóa: </strong>
+        <strong className="text-ink">{t('meaning')}</strong>
         {explanation}
       </p>
     </section>

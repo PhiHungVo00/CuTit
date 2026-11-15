@@ -1,4 +1,5 @@
 import { memo, useEffect, useRef } from 'react';
+import { useT } from '../i18n';
 
 interface ContourChartProps {
   /** contour mẫu (semitone tương đối) */
@@ -20,6 +21,7 @@ function token(el: Element, name: string, fallback: string): string {
  * Vẽ lại khi dữ liệu đổi hoặc khi giao diện sáng/tối đổi; nét vẽ sắc nét theo devicePixelRatio.
  */
 export const ContourChart = memo(function ContourChart({ reference, learner, label }: ContourChartProps) {
+  const t = useT();
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -111,12 +113,12 @@ export const ContourChart = memo(function ContourChart({ reference, learner, lab
       <canvas ref={canvasRef} role="img" aria-label={label} className="block h-44 w-full rounded-xl bg-sunken" />
       <figcaption className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm text-ink-soft">
         <span className="flex items-center gap-2">
-          <span aria-hidden="true" className="inline-block h-0 w-6 border-t-[3px] border-dashed border-ink-soft" /> Mẫu
+          <span aria-hidden="true" className="inline-block h-0 w-6 border-t-[3px] border-dashed border-ink-soft" /> {t('legendSample')}
         </span>
         <span className="flex items-center gap-2">
-          <span aria-hidden="true" className="inline-block h-0 w-6 border-t-[3px] border-accent" /> Giọng của bạn
+          <span aria-hidden="true" className="inline-block h-0 w-6 border-t-[3px] border-accent" /> {t('legendYou')}
         </span>
-        <span className="text-ink-muted">Trục dọc: nửa cung (semitone) so với giọng thường của bạn</span>
+        <span className="text-ink-muted">{t('yAxis')}</span>
       </figcaption>
     </figure>
   );

@@ -9,6 +9,10 @@ export interface CultureCard {
   title: string;
   category: string;
   content: string;
+  /** Bản tiếng Anh cho giao diện tiếng Anh */
+  titleEn: string;
+  categoryEn: string;
+  contentEn: string;
   reviewed: boolean;
 }
 
@@ -19,7 +23,11 @@ export function foldVietnamese(s: string): string {
   return s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/g, 'd');
 }
 
-const STOP = new Set(['la', 'co', 'khong', 'the', 'nao', 'gi', 'cua', 'va', 'cho', 'khi', 'o', 'nhu', 'nguoi', 'viet', 'nam', 'minh', 'toi', 'ban', 'a', 'e', 'nhe', 'sao', 'vay']);
+// Từ dừng tiếng Việt (đã bỏ dấu) và tiếng Anh: câu hỏi có thể bằng cả hai ngôn ngữ
+const STOP = new Set([
+  'la', 'co', 'khong', 'the', 'nao', 'gi', 'cua', 'va', 'cho', 'khi', 'o', 'nhu', 'nguoi', 'viet', 'nam', 'minh', 'toi', 'ban', 'a', 'e', 'nhe', 'sao', 'vay',
+  'what', 'how', 'why', 'when', 'can', 'should', 'do', 'does', 'is', 'are', 'you', 'your', 'to', 'in', 'of', 'on', 'for', 'and', 'it', 'at', 'with', 'my', 'be', 'there', 'any', 'about', 'vietnamese', 'vietnam', 'people', 'okay', 'ok'
+]);
 
 function tokens(s: string): string[] {
   return foldVietnamese(s)
@@ -36,8 +44,8 @@ export function searchCulture(query: string, limit = 3): CultureCard[] {
   if (q.length === 0) return [];
   const bigrams = q.slice(1).map((t, i) => `${q[i]} ${t}`);
   const scored = CULTURE_CARDS.map((card) => {
-    const title = foldVietnamese(card.title);
-    const body = foldVietnamese(`${card.category} ${card.content}`);
+    const title = foldVietnamese(`${card.title} ${card.titleEn}`);
+    const body = foldVietnamese(`${card.category} ${card.content} ${card.categoryEn} ${card.contentEn}`);
     let score = 0;
     for (const t of q) {
       if (title.includes(t)) score += 2;

@@ -70,7 +70,7 @@ export const contentRoutes: FastifyPluginAsync<RouteDeps> = async (server, { pip
     return respond(CultureAskResponseSchema, {
       mock: cards.length > 0,
       answer: cards.length
-        ? cards.map((c) => `${c.title}: ${c.content}`).join('\n\n')
+        ? cards.map((c) => (body.language === 'en' ? `${c.titleEn}: ${c.contentEn}` : `${c.title}: ${c.content}`)).join('\n\n')
         : body.language === 'en'
           ? 'Cu Tít has no culture card matching this question yet. Try asking about greetings, family meals, Tết or taboos!'
           : 'Bé Cu Tít chưa có thẻ văn hóa nào khớp với câu hỏi này. Bạn thử hỏi về chào hỏi, bữa cơm, ngày Tết hoặc kiêng kỵ nhé!',

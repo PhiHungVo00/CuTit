@@ -13,7 +13,10 @@
     "contextLevelText": "Trang trọng đình làng",
     "example": "Dạ thưa Cụ, cháu xin phép dâng chén trà sen kính mời Cụ xơi nước ạ!",
     "explanation": "Theo tục trọng lão chốn đình làng Bắc Bộ, với các cụ bô lão từ 70 tuổi trở lên, người trẻ luôn xưng 'cháu' (hoặc 'con') và gọi 'Cụ', mở đầu bằng 'Dạ thưa' và kết thúc bằng 'ạ'.",
-    "wisdom": "Kính lão đắc thọ! Chốn đình làng tôn ti trật tự, tiếng chào cung kính trước bậc cao niên thể hiện nếp nhà gia phong."
+    "wisdom": "Kính lão đắc thọ! Chốn đình làng tôn ti trật tự, tiếng chào cung kính trước bậc cao niên thể hiện nếp nhà gia phong.",
+    "relationNameEn": "Village communal house – the very old",
+    "explanationEn": "By the northern village custom of honouring the elderly, young people address elders aged 70+ as 'Cụ' and call themselves 'cháu' (or 'con'), starting with 'Dạ thưa' and ending with 'ạ'.",
+    "wisdomEn": "Respect the old and you will live long! In the village hall, a respectful greeting to the elders shows a well-raised family."
   },
   {
     "id": "h2",
@@ -29,7 +32,10 @@
     "contextLevelText": "Thân mật gia đình",
     "example": "Dạ thưa Ông Bà, cháu mới đi học về, cháu kính chúc Ông Bà dồi dào sức khỏe ạ!",
     "explanation": "Trong gia tộc họ hàng, con cháu xưng 'cháu' gọi 'ông/bà', luôn giữ thái độ cung kính, lễ phép.",
-    "wisdom": "Uống nước nhớ nguồn! Lời chào ông bà mỗi sớm mai là nét đẹp hiếu đễ ngàn đời của người Việt."
+    "wisdom": "Uống nước nhớ nguồn! Lời chào ông bà mỗi sớm mai là nét đẹp hiếu đễ ngàn đời của người Việt.",
+    "relationNameEn": "Family – grandparents",
+    "explanationEn": "Within the family, grandchildren call themselves 'cháu' and address 'ông/bà' (grandfather/grandmother), always respectfully.",
+    "wisdomEn": "When you drink water, remember its source! Greeting your grandparents each morning is a timeless Vietnamese act of filial respect."
   },
   {
     "id": "h3",
@@ -45,7 +51,10 @@
     "contextLevelText": "Lịch sự trang trọng",
     "example": "Cháu chào Bác ạ! Bác sang chơi xơi nước với bố cháu nhé ạ!",
     "explanation": "Trong văn hóa Bắc Bộ, anh/chị của cha mẹ (cả nam lẫn nữ) đều gọi là 'Bác'. Ngoài xã hội, người trạc tuổi hoặc lớn hơn bố mẹ mình cũng được tôn xưng là 'Bác'.",
-    "wisdom": "Gọi 'Bác' xưng 'Cháu' vừa bày tỏ lòng kính trọng bề trên, vừa tạo sự ấm áp, gần gũi như người một nhà."
+    "wisdom": "Gọi 'Bác' xưng 'Cháu' vừa bày tỏ lòng kính trọng bề trên, vừa tạo sự ấm áp, gần gũi như người một nhà.",
+    "relationNameEn": "Family & society – Bác",
+    "explanationEn": "In the North, the older siblings of your parents (male or female) are 'Bác'. In society, anyone around or above your parents' age is also respectfully called 'Bác'.",
+    "wisdomEn": "Calling someone 'Bác' and yourself 'cháu' shows respect while feeling warm and familial."
   },
   {
     "id": "h4",
@@ -62,7 +71,10 @@
     "contextLevelText": "Thân mật ngõ xóm",
     "example": "Cháu chào Chú ạ, hôm nay Chú ra đình làng xem hội rước kiệu có vui không ạ?",
     "explanation": "Em trai của cha gọi là 'Chú'. Ngoài xã hội, nam giới trung niên nhỏ hơn cha mình cũng được gọi thân mật là 'Chú'.",
-    "wisdom": "Sẩy cha còn chú! Chú bác trong họ luôn là điểm tựa chỉ bảo đường ăn nết ở cho con cháu."
+    "wisdom": "Sẩy cha còn chú! Chú bác trong họ luôn là điểm tựa chỉ bảo đường ăn nết ở cho con cháu.",
+    "relationNameEn": "Family – Chú",
+    "explanationEn": "Your father's younger brother is 'Chú'. In society, middle-aged men younger than your father are also called 'Chú' in a friendly way.",
+    "wisdomEn": "Lose your father and you still have your uncle! Uncles are the family's guides on how to live and behave."
   },
   {
     "id": "h5",
@@ -79,7 +91,10 @@
     "contextLevelText": "Thân mật gia đình",
     "example": "Dạ cháu chào Cô ạ, Cô mới đi chợ làng về có mua bánh đúc lạc không Cô?",
     "explanation": "'Cô' là em gái của cha, 'Dì' là em gái của mẹ. Khi xưng hô xưng 'cháu', gọi 'cô' hoặc 'dì' đi kèm ngữ điệu ngọt ngào, hiền hậu.",
-    "wisdom": "Máu chảy ruột mềm! Xưng hô ngọt ngào với cô dì làm thắm đượm tình thân gia quyến."
+    "wisdom": "Máu chảy ruột mềm! Xưng hô ngọt ngào với cô dì làm thắm đượm tình thân gia quyến.",
+    "relationNameEn": "Family – Cô / Dì",
+    "explanationEn": "'Cô' is your father's younger sister, 'Dì' your mother's younger sister. Call yourself 'cháu' and address them as 'cô' or 'dì' in a gentle, warm tone.",
+    "wisdomEn": "Blood is thicker than water! Sweet words to your aunts deepen family bonds."
   },
   {
     "id": "h6",
@@ -95,7 +110,10 @@
     "contextLevelText": "Ruột thịt gia đình",
     "example": "Con thưa Bố Mẹ, con xin phép được chuẩn bị mâm cơm chiều gia đình ạ!",
     "explanation": "Con cái đối với cha mẹ xưng 'con', gọi 'bố/mẹ' (hoặc 'ba/má' ở miền Nam, 'thầy/u' ở đồng bằng Bắc Bộ xưa).",
-    "wisdom": "Công cha như núi Thái Sơn, nghĩa mẹ như nước trong nguồn chảy ra. Luôn thưa gửi khi đi đến nơi về đến chốn."
+    "wisdom": "Công cha như núi Thái Sơn, nghĩa mẹ như nước trong nguồn chảy ra. Luôn thưa gửi khi đi đến nơi về đến chốn.",
+    "relationNameEn": "Family – parents",
+    "explanationEn": "Children call themselves 'con' and address their parents as 'bố/mẹ' (or 'ba/má' in the South, 'thầy/u' in the old northern countryside).",
+    "wisdomEn": "A father's merit is like Mount Thái Sơn, a mother's love like water from the source. Always tell them when you leave and when you come home."
   },
   {
     "id": "h7",
@@ -111,7 +129,10 @@
     "contextLevelText": "Thân mật ngõ xóm",
     "example": "Bác chào cháu nhé, cháu ngoan lắm, lại đây bác cho quả thị thơm của vườn đình!",
     "explanation": "Người lớn tuổi khi trò chuyện với trẻ nhỏ xưng danh xưng thế hệ của mình ('bác', 'ông', 'chú') và gọi 'cháu' ân cần.",
-    "wisdom": "Yêu trẻ, trẻ đến nhà! Lời xưng hô hiền hậu của bậc cao niên gieo mầm lễ giáo cho con trẻ."
+    "wisdom": "Yêu trẻ, trẻ đến nhà! Lời xưng hô hiền hậu của bậc cao niên gieo mầm lễ giáo cho con trẻ.",
+    "relationNameEn": "Elders to the young",
+    "explanationEn": "When older people talk to children, they use their generational title ('bác', 'ông', 'chú') for themselves and call the child 'cháu' kindly.",
+    "wisdomEn": "Love children and they will come to you! An elder's kind words plant good manners in the young."
   },
   {
     "id": "h8",
@@ -127,7 +148,10 @@
     "contextLevelText": "Trang trọng giảng đường",
     "example": "Em kính chào Thầy ạ, thưa Thầy bài giảng về phong tục làng xã hôm nay rất sâu sắc ạ!",
     "explanation": "Trong quan hệ sư đồ, người học xưng 'em' (hoặc 'con'), gọi 'thầy/cô' kèm từ 'kính thưa' và kết thúc bằng 'ạ'.",
-    "wisdom": "Tôn sư trọng đạo! Một chữ là thầy, nửa chữ cũng là thầy; cách xưng hô đo lường cái tâm của người học trò."
+    "wisdom": "Tôn sư trọng đạo! Một chữ là thầy, nửa chữ cũng là thầy; cách xưng hô đo lường cái tâm của người học trò.",
+    "relationNameEn": "Students honouring teachers",
+    "explanationEn": "Students call themselves 'em' (or 'con') and address teachers as 'thầy' (male) or 'cô' (female), often with 'kính thưa' and ending with 'ạ'.",
+    "wisdomEn": "Honour your teacher! Even someone who taught you half a letter is your teacher; how you address them shows your heart."
   },
   {
     "id": "h9",
@@ -143,7 +167,10 @@
     "contextLevelText": "Sư phạm mực thước",
     "example": "Thầy khen em hôm nay đã có tinh thần tìm hiểu sâu về di sản văn hóa dân tộc nhé!",
     "explanation": "Thầy cô giáo xưng 'thầy/cô' và gọi 'em' hoặc 'các em', giọng điệu vừa chuẩn mực vừa bao dung, khích lệ.",
-    "wisdom": "Lời thầy như gió mùa xuân, nhẹ nhàng mà thấm sâu vào từng nét nhân cách người học."
+    "wisdom": "Lời thầy như gió mùa xuân, nhẹ nhàng mà thấm sâu vào từng nét nhân cách người học.",
+    "relationNameEn": "Teachers to students",
+    "explanationEn": "Teachers call themselves 'thầy/cô' and address students as 'em' or 'các em', in a tone that is proper yet kind and encouraging.",
+    "wisdomEn": "A teacher's words are like a spring breeze: gentle, yet they shape a student's character deeply."
   },
   {
     "id": "h10",
@@ -160,7 +187,10 @@
     "contextLevelText": "Lịch sự xã giao",
     "example": "Em chào anh, anh cho em hỏi thăm đường vào sân đình làng mình với ạ!",
     "explanation": "Giao tiếp với nam giới lớn hơn từ 3-8 tuổi, người nói xưng 'em' và gọi 'anh' để thể hiện sự lễ độ, khiêm nhường.",
-    "wisdom": "Lời nói chẳng mất tiền mua, lựa lời mà nói cho vừa lòng nhau. Xưng 'em' gọi 'anh' luôn mở ra thiện cảm."
+    "wisdom": "Lời nói chẳng mất tiền mua, lựa lời mà nói cho vừa lòng nhau. Xưng 'em' gọi 'anh' luôn mở ra thiện cảm.",
+    "relationNameEn": "Society – to an older man",
+    "explanationEn": "With a man 3–8 years older, call yourself 'em' and address him as 'anh' to show politeness and modesty.",
+    "wisdomEn": "Kind words cost nothing, so choose words that please. Saying 'em' and 'anh' always builds goodwill."
   },
   {
     "id": "h11",
@@ -177,7 +207,10 @@
     "contextLevelText": "Lịch sự thân thiện",
     "example": "Chị ơi, em chào chị! Chị cho em gửi lời hỏi thăm sức khỏe gia đình mình nhé ạ!",
     "explanation": "Với nữ giới lớn tuổi hơn mình trong phạm vi thế hệ anh chị em, người Việt xưng 'em' gọi 'chị'.",
-    "wisdom": "Kính trên nhường dưới, xưng 'chị' ngọt ngào giúp xua tan mọi khoảng cách xa lạ ban đầu."
+    "wisdom": "Kính trên nhường dưới, xưng 'chị' ngọt ngào giúp xua tan mọi khoảng cách xa lạ ban đầu.",
+    "relationNameEn": "Society – to an older woman",
+    "explanationEn": "With a woman older than you but of your generation, Vietnamese say 'em' for themselves and 'chị' for her.",
+    "wisdomEn": "Respect those above and yield to those below; a warm 'chị' melts the distance of a first meeting."
   },
   {
     "id": "h12",
@@ -194,7 +227,10 @@
     "contextLevelText": "Lịch sự thân thiện",
     "example": "Anh chào em, em cứ ngồi nghỉ chân uống bát nước chè xanh rồi ta cùng làm việc nhé!",
     "explanation": "Người nam lớn tuổi hơn xưng 'anh', gọi 'em', thể hiện phong thái đĩnh đạc, chở che và tôn trọng đối phương.",
-    "wisdom": "Làm anh khó đấy, phải đâu chuyện đùa. Lời ăn tiếng nói của người anh cần đĩnh đạc và chân tình."
+    "wisdom": "Làm anh khó đấy, phải đâu chuyện đùa. Lời ăn tiếng nói của người anh cần đĩnh đạc và chân tình.",
+    "relationNameEn": "Society – older man to younger",
+    "explanationEn": "An older man calls himself 'anh' and the younger person 'em', showing a composed, protective and respectful manner.",
+    "wisdomEn": "Being the older brother is no joke: his words should be steady and sincere."
   },
   {
     "id": "h13",
@@ -211,7 +247,10 @@
     "contextLevelText": "Ấm áp thân tình",
     "example": "Chị chào em nhé! Chiều nay chị em mình cùng ra đình làng xem múa lân nghen!",
     "explanation": "Người nữ lớn tuổi hơn xưng 'chị', gọi 'em', mang lại cảm giác thân thiện, sẻ chia như chị em một nhà.",
-    "wisdom": "Chị ngã em nâng! Lời nhắn nhủ nhẹ nhàng của người chị luôn tạo niềm tin cậy ấm áp."
+    "wisdom": "Chị ngã em nâng! Lời nhắn nhủ nhẹ nhàng của người chị luôn tạo niềm tin cậy ấm áp.",
+    "relationNameEn": "Society – older woman to younger",
+    "explanationEn": "An older woman calls herself 'chị' and the younger person 'em', which feels friendly, like sisters in one family.",
+    "wisdomEn": "When the older sister falls, the younger one helps her up! An older sister's gentle words build warm trust."
   },
   {
     "id": "h14",
@@ -227,7 +266,10 @@
     "contextLevelText": "Lịch sự xã giao",
     "example": "Chào bạn, mình rất vui được làm quen với bạn tại ngày hội làng hôm nay nhé!",
     "explanation": "Cặp xưng hô 'mình - bạn' là chuẩn mực trung tính, lịch sự khi hai người trạc tuổi nhau mới gặp lần đầu.",
-    "wisdom": "Tứ hải giai huynh đệ! Xưng 'mình - bạn' thanh lịch, giữ đúng mực thước văn minh hiện đại."
+    "wisdom": "Tứ hải giai huynh đệ! Xưng 'mình - bạn' thanh lịch, giữ đúng mực thước văn minh hiện đại.",
+    "relationNameEn": "Peers – polite",
+    "explanationEn": "'Mình – bạn' is the neutral, polite pair when two people of similar age meet for the first time.",
+    "wisdomEn": "All within the four seas are siblings! 'Mình – bạn' is courteous and modern."
   },
   {
     "id": "h15",
@@ -243,7 +285,10 @@
     "contextLevelText": "Thân mật ngõ xóm",
     "example": "Cậu ơi, chiều mát ra sân đình đá bóng và thả diều với tớ không nào?",
     "explanation": "'Tớ - cậu' là cặp đại từ đặc trưng của bạn bè đồng trang lứa thân thiết ở miền Bắc, mang âm hưởng hồn nhiên tuổi học trò.",
-    "wisdom": "Bạn bè chí cốt cùng làng cùng xóm, gọi 'tớ - cậu' vừa vô tư vừa gắn bó keo sơn."
+    "wisdom": "Bạn bè chí cốt cùng làng cùng xóm, gọi 'tớ - cậu' vừa vô tư vừa gắn bó keo sơn.",
+    "relationNameEn": "Close friends",
+    "explanationEn": "'Tớ – cậu' is typical among close friends of the same age in the North, with a carefree school-days feel.",
+    "wisdomEn": "Old friends from the same village say 'tớ – cậu': relaxed, yet inseparable."
   },
   {
     "id": "h16",
@@ -259,7 +304,10 @@
     "contextLevelText": "Lịch sự công sở",
     "example": "Tôi xin phép được gửi biên bản họp đình làng đến anh để anh rà soát giúp ạ.",
     "explanation": "Trong môi trường công việc hoặc hành chính, xưng 'tôi' kết hợp gọi đối phương là 'anh/chị/bác' tạo phong thái chuyên nghiệp, giữ khoảng cách tôn trọng.",
-    "wisdom": "Việc công minh bạch, xưng hô rõ ràng. 'Tôi' tự chủ mà vẫn cung kính đối phương."
+    "wisdom": "Việc công minh bạch, xưng hô rõ ràng. 'Tôi' tự chủ mà vẫn cung kính đối phương.",
+    "relationNameEn": "Workplace – courteous",
+    "explanationEn": "At work or in offices, use 'tôi' for yourself and 'anh/chị/bác' for the other person: professional, with respectful distance.",
+    "wisdomEn": "Clear work, clear address: 'tôi' is self-assured yet still respectful to the other person."
   },
   {
     "id": "h17",
@@ -275,7 +323,10 @@
     "contextLevelText": "Trang trọng đình làng",
     "example": "Kính thưa quý vị quan viên hai họ và bà con chòm xóm, tôi xin phép được khai mạc hội làng!",
     "explanation": "Khi phát biểu trước đình làng hoặc cộng đồng, người nói xưng 'tôi' và kính gọi 'quý vị', 'các cụ bô lão', 'bà con chòm xóm'.",
-    "wisdom": "Lời nói chốn ba quân, câu chào nơi sân đình! Nghi thức phát biểu cần đĩnh đạc, trang nghiêm và tề chỉnh."
+    "wisdom": "Lời nói chốn ba quân, câu chào nơi sân đình! Nghi thức phát biểu cần đĩnh đạc, trang nghiêm và tề chỉnh.",
+    "relationNameEn": "Village hall – public speech",
+    "explanationEn": "When speaking before the village or a community, the speaker uses 'tôi' and respectfully addresses 'quý vị', 'các cụ bô lão' (the elders) and 'bà con chòm xóm' (neighbours).",
+    "wisdomEn": "Speaking before the community calls for a composed, dignified and proper manner."
   },
   {
     "id": "h18",
@@ -291,7 +342,10 @@
     "contextLevelText": "Trang nghiêm cổ tự",
     "example": "A di đà Phật, bạch Thầy cho con xin phép được cúng dường hoa quả thanh tịnh lên Tam Bảo ạ!",
     "explanation": "Chốn cửa Phật hoặc tín ngưỡng dân gian, phật tử xưng 'con', kính gọi quý thầy là 'Thầy' hoặc 'Sư thầy' cùng câu niệm Phật.",
-    "wisdom": "Tâm tĩnh thì trí sáng. Đến chốn tôn nghiêm, từng lời thưa gửi phải khiêm cung lắng đọng tâm từ."
+    "wisdom": "Tâm tĩnh thì trí sáng. Đến chốn tôn nghiêm, từng lời thưa gửi phải khiêm cung lắng đọng tâm từ.",
+    "relationNameEn": "Pagoda – honouring a monk",
+    "explanationEn": "At a pagoda or place of worship, Buddhists call themselves 'con' and address monks as 'Thầy' or 'Sư thầy', often with a Buddhist salutation.",
+    "wisdomEn": "A calm mind brings clear wisdom. In a sacred place, every word should be humble and serene."
   },
   {
     "id": "h19",
@@ -308,7 +362,10 @@
     "contextLevelText": "Thân mật họ hàng",
     "example": "Dạ cháu chào Thím ạ, Thím đã chuẩn bị nếp hương gói bánh chưng ăn Tết chưa ạ?",
     "explanation": "'Thím' là vợ của chú (em trai bố); 'Mợ' là vợ của cậu (em trai mẹ). Con cháu luôn xưng 'cháu' lễ độ.",
-    "wisdom": "Dâu là con, rể là khách. Tôn kính người dâu người thím là giữ trọn nền nếp gia môn sum vầy."
+    "wisdom": "Dâu là con, rể là khách. Tôn kính người dâu người thím là giữ trọn nền nếp gia môn sum vầy.",
+    "relationNameEn": "Family – Thím / Mợ",
+    "explanationEn": "'Thím' is the wife of your father's younger brother; 'Mợ' is the wife of your mother's younger brother. Always call yourself 'cháu' politely.",
+    "wisdomEn": "Respecting the women who married into the family keeps the household united."
   },
   {
     "id": "h20",
@@ -324,6 +381,9 @@
     "contextLevelText": "Trang trọng đoàn thể",
     "example": "Báo cáo đồng chí, công tác tu bổ vì kèo mái đình và sân gạch cổ đã hoàn tất chu đáo.",
     "explanation": "Trong công tác đoàn thể, hội đồng làng xã hoặc các tổ chức chính quy, danh xưng 'đồng chí' mang tính bình đẳng và tinh thần trách nhiệm chung.",
-    "wisdom": "Chung một ngọn cờ, đồng lòng góp sức vì lợi ích chung của quê hương bản quán."
+    "wisdom": "Chung một ngọn cờ, đồng lòng góp sức vì lợi ích chung của quê hương bản quán.",
+    "relationNameEn": "Organisations – village committee",
+    "explanationEn": "In organisations, village councils or formal bodies, 'đồng chí' (comrade) expresses equality and shared responsibility.",
+    "wisdomEn": "Under one banner, everyone works together for the good of their homeland."
   }
 ]
