@@ -164,6 +164,8 @@ export function CameraScreen() {
           </div>
         )}
 
+        <p className="m-0 text-xs text-ink-muted">{t('privacy')}</p>
+
         {phase.kind === 'analyzing' && (
           <p role="status" className="m-0 text-[15px] text-ink-muted">
             {t('analyzing')}

@@ -635,6 +635,10 @@ test.describe('Giao diện tiếng Anh (người nước ngoài)', () => {
     });
     await page.goto('/hoi-thoai');
     await page.getByRole('button', { name: 'Speak' }).click();
+    // Lần đầu: thông báo quyền riêng tư, chưa ghi âm cho tới khi đồng ý
+    await expect(page.getByRole('dialog', { name: /Where does your voice go/ })).toBeVisible();
+    expect(upload).toBeNull();
+    await page.getByRole('button', { name: 'OK, record' }).click();
     await expect(page.getByRole('button', { name: 'Stop recording' })).toBeVisible();
     await page.waitForTimeout(900);
     await page.getByRole('button', { name: 'Stop recording' }).click();
