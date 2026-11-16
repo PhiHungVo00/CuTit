@@ -1,5 +1,18 @@
-import 'dotenv/config';
+import { config as loadDotenv } from 'dotenv';
+import { homedir } from 'node:os';
+import { join } from 'node:path';
 import { z } from 'zod';
+
+/**
+ * Thứ tự nạp biến môi trường (biến đã có thì KHÔNG bị ghi đè):
+ * 1. Biến môi trường của tiến trình (CI, server thật)
+ * 2. apps/gateway/.env của checkout hiện tại (gitignored)
+ * 3. Tệp dùng chung cho mọi checkout/worktree trên máy dev, NGOÀI repo:
+ *    %USERPROFILE%\.becutit\gateway.env (Windows) hoặc ~/.becutit/gateway.env — đặt API key ở đây
+ *    để không phải chép lại sau mỗi lần merge/tạo worktree. Đổi vị trí bằng BECUTIT_ENV_FILE.
+ */
+loadDotenv();
+loadDotenv({ path: process.env.BECUTIT_ENV_FILE ?? join(homedir(), '.becutit', 'gateway.env') });
 
 /**
  * Cấu hình Gateway đọc từ biến môi trường và được xác thực bằng Zod ngay khi khởi động.

@@ -68,6 +68,8 @@ export interface LearnerState {
   attempts: Attempt[];
   /** giây học theo ngày 'YYYY-MM-DD' (giờ địa phương) */
   activity: Record<string, number>;
+  /** Người học đã đọc thông báo quyền riêng tư của tính năng nào (vd. 'voice') */
+  consents: Record<string, boolean>;
 
   completeOnboarding(p: Omit<Profile, 'onboarded'>): void;
   setPreferences(p: Partial<Preferences>): void;
@@ -77,6 +79,7 @@ export interface LearnerState {
   reviewCard(itemRef: string, quality: number, now?: Date): void;
   recordAttempt(skill: Skill, correct: boolean, score?: number, now?: Date): void;
   addStudyTime(seconds: number, now?: Date): void;
+  giveConsent(key: string): void;
   reset(): void;
 }
 
@@ -90,7 +93,8 @@ const initialData = () => ({
   preferences: { voiceId: 'vi-VN-Standard-A', speed: 1, dialect: 'north' as Dialect, correctionLevel: 'gentle' as CorrectionLevel, persona: 'be_cu_tit', uiLanguage: deviceLanguage() },
   srs: {} as Record<string, SrsCard>,
   attempts: [] as Attempt[],
-  activity: {} as Record<string, number>
+  activity: {} as Record<string, number>,
+  consents: {} as Record<string, boolean>
 });
 
 /** localStorage có thể bị chặn (chế độ riêng tư): khi đó lưu trong RAM, app vẫn chạy */
@@ -167,6 +171,8 @@ export const learnerStore = createStore<LearnerState>()(
           return { activity: { ...s.activity, [k]: (s.activity[k] ?? 0) + Math.round(seconds) } };
         }),
 
+      giveConsent: (key) => set((s) => ({ consents: { ...s.consents, [key]: true } })),
+
       reset: () => set(initialData())
     }),
     {
@@ -178,7 +184,7 @@ export const learnerStore = createStore<LearnerState>()(
         const p = (persisted ?? {}) as Partial<LearnerState>;
         return { ...current, ...p, profile: { ...current.profile, ...p.profile }, preferences: { ...current.preferences, ...p.preferences } };
       },
-      partialize: (s) => ({ profile: s.profile, preferences: s.preferences, srs: s.srs, attempts: s.attempts, activity: s.activity })
+      partialize: (s) => ({ profile: s.profile, preferences: s.preferences, srs: s.srs, attempts: s.attempts, activity: s.activity, consents: s.consents })
     }
   )
 );

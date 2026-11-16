@@ -26,7 +26,8 @@ export const { useT, t } = defineMessages(
     mock: 'Nhãn mẫu: dịch vụ nhận diện ảnh chưa được nối, kết quả chưa phản ánh ảnh của bạn.',
     listenTo: 'Nghe “{word}”',
     saved: '✓ Đã lưu',
-    save: '+ Lưu ôn'
+    save: '+ Lưu ôn',
+    privacy: '🔒 Ảnh được thu nhỏ rồi gửi qua máy chủ Bé Cu Tít tới Google Gemini để nhận diện đồ vật; máy chủ không lưu ảnh. Tránh chụp mặt người hoặc giấy tờ cá nhân.'
   },
   {
     title: 'Camera vocabulary',
@@ -52,6 +53,7 @@ export const { useT, t } = defineMessages(
     mock: 'Sample labels: image recognition is not connected, so these don’t reflect your photo.',
     listenTo: 'Listen to “{word}”',
     saved: '✓ Saved',
-    save: '+ Save'
+    save: '+ Save',
+    privacy: '🔒 Photos are shrunk, then sent through the Bé Cu Tít server to Google Gemini to recognise objects; the server does not keep them. Avoid photographing faces or personal documents.'
   }
 );

@@ -47,7 +47,7 @@
     "titleEn": "Lucky money at New Year",
     "categoryEn": "Festivals & Tết",
     "contentEn": "At Lunar New Year (Tết), adults give children red envelopes of lucky money (lì xì) with good wishes. Children take them with both hands, say thank you and wish the adult well in return.",
-    "reviewed": false
+    "reviewed": true
   },
   {
     "id": "c6",
@@ -57,7 +57,7 @@
     "titleEn": "First visitor of the year",
     "categoryEn": "Festivals & Tết",
     "contentEn": "The first person to enter a home after midnight on New Year’s Eve is believed to shape the family’s luck for the year, so many families invite a cheerful person with a compatible birth year to come first (xông đất).",
-    "reviewed": false
+    "reviewed": true
   },
   {
     "id": "c7",
@@ -67,7 +67,7 @@
     "titleEn": "Sending off the Kitchen Gods",
     "categoryEn": "Festivals & Tết",
     "contentEn": "On the 23rd of the last lunar month, many families hold a ceremony to send the Kitchen Gods (ông Công ông Táo) back to heaven, often releasing carp as their ride. It marks the start of the Tết season.",
-    "reviewed": false
+    "reviewed": true
   },
   {
     "id": "c8",
@@ -77,7 +77,7 @@
     "titleEn": "Ancestor worship",
     "categoryEn": "Beliefs & worship",
     "contentEn": "Most families keep an ancestral altar in the most respected place in the house. On death anniversaries and at Tết, descendants burn incense and offer a meal in memory of those who have passed.",
-    "reviewed": false
+    "reviewed": true
   },
   {
     "id": "c9",
@@ -87,7 +87,7 @@
     "titleEn": "Giving and receiving with both hands",
     "categoryEn": "Greetings & manners",
     "contentEn": "When giving or receiving something, especially with elders or superiors, Vietnamese people use both hands to show respect.",
-    "reviewed": false
+    "reviewed": true
   },
   {
     "id": "c10",
@@ -97,7 +97,7 @@
     "titleEn": "Don’t pat people on the head",
     "categoryEn": "Folk taboos",
     "contentEn": "The head is considered an important part of the body. Don’t casually touch an adult’s head; even with small children, many parents don’t like strangers patting their child’s head.",
-    "reviewed": false
+    "reviewed": true
   },
   {
     "id": "c11",
@@ -107,7 +107,7 @@
     "titleEn": "Serving food to others",
     "categoryEn": "Family meals",
     "contentEn": "During a meal, the host or younger family members often pick the best pieces with their chopsticks for guests, grandparents or parents as a way of showing care.",
-    "reviewed": false
+    "reviewed": true
   },
   {
     "id": "c12",
@@ -117,7 +117,7 @@
     "titleEn": "Offering tea to guests",
     "categoryEn": "Being a guest",
     "contentEn": "When guests arrive, the host usually offers a cup of tea or water before chatting. Guests should accept and drink a little in return.",
-    "reviewed": false
+    "reviewed": true
   },
   {
     "id": "c13",
@@ -127,7 +127,7 @@
     "titleEn": "Taking off shoes before entering",
     "categoryEn": "Being a guest",
     "contentEn": "Many families take off their shoes at the door to keep the house clean. When visiting, if you see shoes left outside, take yours off too.",
-    "reviewed": false
+    "reviewed": true
   },
   {
     "id": "c14",
@@ -137,7 +137,7 @@
     "titleEn": "No sweeping on the first day of Tết",
     "categoryEn": "Festivals & Tết",
     "contentEn": "Folk belief says sweeping or taking out rubbish on the first day of Tết sweeps good fortune out of the house, so many families finish cleaning before New Year’s Eve.",
-    "reviewed": false
+    "reviewed": true
   },
   {
     "id": "c15",
@@ -147,7 +147,7 @@
     "titleEn": "Dress modestly at pagodas and temples",
     "categoryEn": "Beliefs & worship",
     "contentEn": "When visiting pagodas, communal houses or temples, wear neat clothes covering shoulders and knees, speak quietly and don’t point at statues.",
-    "reviewed": false
+    "reviewed": true
   },
   {
     "id": "c16",
@@ -157,7 +157,7 @@
     "titleEn": "Mid-Autumn Festival",
     "categoryEn": "Festivals & Tết",
     "contentEn": "On the 15th of the eighth lunar month, children parade with star lanterns, watch lion dances and share mooncakes (bánh nướng, bánh dẻo) with their family under the full moon.",
-    "reviewed": false
+    "reviewed": true
   },
   {
     "id": "c17",
@@ -167,7 +167,7 @@
     "titleEn": "Greetings that sound like questions",
     "categoryEn": "Greetings & manners",
     "contentEn": "Questions like \"Ăn cơm chưa?\" (Have you eaten?) or \"Đi đâu đấy?\" (Where are you going?) are usually just friendly greetings and need no detailed answer; \"Dạ, cháu ăn rồi ạ\" (Yes, I have) is polite enough.",
-    "reviewed": false
+    "reviewed": true
   },
   {
     "id": "c18",
@@ -177,7 +177,7 @@
     "titleEn": "Asking age to choose pronouns",
     "categoryEn": "Greetings & manners",
     "contentEn": "Vietnamese people often ask your age when you first meet, not out of curiosity but to choose the right pronouns (anh, chị, em, cô, chú…). See the Pronoun matrix screen.",
-    "reviewed": false
+    "reviewed": true
   },
   {
     "id": "c19",
@@ -187,7 +187,7 @@
     "titleEn": "Five-fruit tray at Tết",
     "categoryEn": "Festivals & Tết",
     "contentEn": "At Tết, family altars usually hold a tray of five kinds of fruit (mâm ngũ quả), a wish for abundance. The exact fruits differ between regions.",
-    "reviewed": false
+    "reviewed": true
   },
   {
     "id": "c20",
@@ -197,6 +197,6 @@
     "titleEn": "Wedding gifts in envelopes",
     "categoryEn": "Being a guest",
     "contentEn": "When invited to a wedding, guests usually give the couple money in an envelope, handed over in person or dropped into the gift box at the reception.",
-    "reviewed": false
+    "reviewed": true
   }
 ]

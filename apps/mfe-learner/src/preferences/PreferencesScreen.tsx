@@ -181,6 +181,14 @@ export function PreferencesScreen() {
         />
       </section>
 
+      <section className={card} aria-labelledby="ct-privacy">
+        <h2 id="ct-privacy" className="m-0 text-lg font-extrabold text-ink">
+          {t('privacySection')}
+        </h2>
+        <p className="m-0 text-[15px] text-ink-soft">{t('privacyAi')}</p>
+        <p className="m-0 text-[15px] text-ink-soft">{t('privacyLocal')}</p>
+      </section>
+
       <section className={card} aria-labelledby="ct-data">
         <h2 id="ct-data" className="m-0 text-lg font-extrabold text-ink">
           {t('dataSection')}
