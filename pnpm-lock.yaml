@@ -793,6 +793,9 @@ importers:
 
   packages/state:
     dependencies:
+      '@vietlearning/contracts':
+        specifier: workspace:*
+        version: link:../contracts
       '@vietlearning/shared':
         specifier: workspace:*
         version: link:../shared
