@@ -1,6 +1,8 @@
 import { config as loadDotenv } from 'dotenv';
 import { homedir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
+import { randomBytes } from 'node:crypto';
+import { fileURLToPath } from 'node:url';
 import { z } from 'zod';
 
 /**
@@ -18,6 +20,9 @@ loadDotenv({ path: process.env.BECUTIT_ENV_FILE ?? join(homedir(), '.becutit', '
  * Cấu hình Gateway đọc từ biến môi trường và được xác thực bằng Zod ngay khi khởi động.
  * Thiếu hoặc sai cấu hình => dừng tiến trình sớm thay vì chạy với giá trị nguy hiểm.
  */
+/** apps/gateway/.data/pglite (tính từ dist/ hoặc src/, không phụ thuộc thư mục chạy lệnh) */
+const DEFAULT_PGLITE_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', '.data', 'pglite');
+
 const boolFromEnv = z
   .enum(['true', 'false', '1', '0'])
   .transform((v) => v === 'true' || v === '1');
@@ -35,6 +40,12 @@ const EnvSchema = z
     JWT_SECRET: z.string().min(32, 'JWT_SECRET phải dài tối thiểu 32 ký tự').optional(),
     AUTH_REQUIRED: boolFromEnv.optional(),
     RATE_LIMIT_PER_MINUTE: z.coerce.number().int().positive().default(60),
+    /** Giới hạn theo IP cho /v1/auth/* (tạo khách = một hạn mức AI mới => phải chặt) */
+    AUTH_RATE_LIMIT_PER_MINUTE: z.coerce.number().int().positive().default(10),
+    /** Production: Postgres (Neon/Supabase). Không đặt => PGlite nhúng */
+    DATABASE_URL: z.string().url().optional(),
+    /** Thư mục dữ liệu PGlite, hoặc `memory://` (mặc định khi NODE_ENV=test) */
+    PGLITE_DIR: z.string().optional(),
     MAX_TTS_CHARS_PER_DAY: z.coerce.number().int().positive().default(15000),
     MAX_STT_SECONDS_PER_DAY: z.coerce.number().int().positive().default(600),
     MAX_LLM_TOKENS_PER_DAY: z.coerce.number().int().positive().default(100000),
@@ -51,18 +62,24 @@ const EnvSchema = z
   })
   .transform((env) => ({
     ...env,
-    // Mặc định: production bắt buộc xác thực, môi trường dev cho phép khách ẩn danh
-    AUTH_REQUIRED: env.AUTH_REQUIRED ?? env.NODE_ENV === 'production',
+    // Mặc định BẬT ở mọi môi trường (người học nhận tài khoản khách qua POST /v1/auth/guest).
+    // AUTH_REQUIRED=false chỉ dành cho test cô lập / thử nhanh: principal ẩn danh `anon:<ip>`.
+    AUTH_REQUIRED: env.AUTH_REQUIRED ?? true,
+    // Dev/test thiếu JWT_SECRET => sinh ngẫu nhiên mỗi lần chạy (access token cũ hết hiệu lực khi khởi động lại,
+    // client tự làm mới bằng refresh token lưu trong DB). Production thiếu => lỗi ở superRefine.
+    JWT_SECRET: env.JWT_SECRET ?? (env.NODE_ENV === 'production' ? undefined : randomBytes(32).toString('hex')),
+    jwtSecretGenerated: !env.JWT_SECRET && env.NODE_ENV !== 'production',
+    PGLITE_DIR: env.PGLITE_DIR ?? (env.NODE_ENV === 'test' ? 'memory://' : DEFAULT_PGLITE_DIR),
     corsOrigins: env.CORS_ORIGIN.split(',')
       .map((o) => o.trim())
       .filter(Boolean)
   }))
   .superRefine((env, ctx) => {
-    if (env.AUTH_REQUIRED && !env.JWT_SECRET) {
+    if (!env.JWT_SECRET) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ['JWT_SECRET'],
-        message: 'AUTH_REQUIRED=true nhưng chưa cấu hình JWT_SECRET'
+        message: 'Production bắt buộc cấu hình JWT_SECRET (≥ 32 ký tự)'
       });
     }
     if (env.corsOrigins.includes('*')) {
