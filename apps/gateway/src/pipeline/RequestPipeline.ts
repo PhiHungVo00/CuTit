@@ -31,6 +31,13 @@ export class GatewayError extends Error {
   }
 }
 
+/** Route dữ liệu người học cần tài khoản thật (không chấp nhận principal ẩn danh `anon:<ip>`) */
+export function requireUserId(request: FastifyRequest): string {
+  const p = request.principal;
+  if (!p || p.anonymous) throw new GatewayError(401, 'unauthorized', 'Cần tài khoản (POST /v1/auth/guest)');
+  return p.id;
+}
+
 export class RequestPipeline {
   private readonly limits: Record<Capability, number>;
 

@@ -8,7 +8,7 @@
  * - Câu tiếp theo: câu chưa hỏi có b gần θ nhất.
  * - Dừng khi ≥ 8 câu và θ thay đổi < 0.5 trong 3 câu gần nhất, hoặc đủ 12 câu.
  *
- * Phiên lưu trong RAM có TTL (đủ cho MVP một instance). Nhiều instance cần Redis — xem nhật ký.
+ * Phiên lưu ở DB (bảng placement_sessions, lọc theo user) qua `advance()`; `next()` giữ bản RAM cho test thuật toán.
  */
 import { PLACEMENT_QUESTIONS, type PlacementQuestion } from '@vietlearning/content';
 
@@ -117,22 +117,27 @@ export class AdaptivePlacement {
     };
   }
 
-  next(sessionId: string, answer?: { questionId: string; choice: number }): PlacementStep {
-    this.gc();
-    let s = this.sessions.get(sessionId);
-    if (!s) {
-      s = { theta: 2, history: [], pending: null, seed: [...sessionId].reduce((a, c) => (a * 31 + c.charCodeAt(0)) % 2147483646, 7), updatedAt: this.now() };
-      this.sessions.set(sessionId, s);
-      return this.toStep(s);
+  /**
+   * Bước thuần trên một phiên (không đọc/ghi kho): nhận phiên hiện có (hoặc undefined = phiên mới),
+   * trả phiên đã cập nhật + bước tiếp theo. Route HTTP lưu phiên vào DB (placement_sessions) theo user.
+   */
+  advance(existing: PlacementSession | undefined, sessionId: string, answer?: { questionId: string; choice: number }): { session: PlacementSession; step: PlacementStep } {
+    if (!existing) {
+      const s: PlacementSession = { theta: 2, history: [], pending: null, seed: [...sessionId].reduce((a, c) => (a * 31 + c.charCodeAt(0)) % 2147483646, 7), updatedAt: this.now() };
+      return { session: s, step: this.toStep(s) };
     }
+    const s = existing;
     s.updatedAt = this.now();
     if (!answer) {
-      if (!s.pending) return { finished: true, assignedLevel: levelOf(s.theta) };
+      if (!s.pending) return { session: s, step: { finished: true, assignedLevel: levelOf(s.theta) } };
       // Gọi lại không kèm trả lời (vd. mạng chập chờn): gửi lại đúng câu đang chờ
       const { question, shown } = s.pending;
       return {
-        finished: false,
-        question: { id: question.id, prompt: question.prompt, promptEn: question.promptEn, options: shown.map((i) => question.options[i]), index: s.history.length + 1, maxQuestions: MAX_QUESTIONS }
+        session: s,
+        step: {
+          finished: false,
+          question: { id: question.id, prompt: question.prompt, promptEn: question.promptEn, options: shown.map((i) => question.options[i]), index: s.history.length + 1, maxQuestions: MAX_QUESTIONS }
+        }
       };
     }
     if (!s.pending) throw new PlacementError('session_finished');
@@ -143,7 +148,15 @@ export class AdaptivePlacement {
     s.history.push({ questionId: question.id, level: question.level, correct, theta: s.theta });
     s.theta = mapEstimate(s.history);
     s.history[s.history.length - 1].theta = s.theta;
-    return this.toStep(s, correct);
+    return { session: s, step: this.toStep(s, correct) };
+  }
+
+  /** Bản lưu RAM (test thuật toán, chạy không cần DB) */
+  next(sessionId: string, answer?: { questionId: string; choice: number }): PlacementStep {
+    this.gc();
+    const { session, step } = this.advance(this.sessions.get(sessionId), sessionId, answer);
+    this.sessions.set(sessionId, session);
+    return step;
   }
 
   /** chỉ dùng cho test */
