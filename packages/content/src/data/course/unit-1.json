@@ -1,0 +1,89 @@
+{
+  "id": "u1",
+  "level": "A1",
+  "title": "Chào hỏi & xưng hô",
+  "titleEn": "Greetings & forms of address",
+  "icon": "👋",
+  "reviewed": false,
+  "lessons": [
+    {
+      "id": "u1l1",
+      "title": "Xin chào!",
+      "titleEn": "Hello!",
+      "exercises": [
+        {"type": "meaning", "word": "w1", "dir": "vi-en"},
+        {"type": "meaning", "word": "w2", "dir": "vi-en"},
+        {"type": "meaning", "word": "w3", "dir": "vi-en"},
+        {"type": "meaning", "word": "w4", "dir": "vi-en"},
+        {"type": "meaning", "word": "w1", "dir": "en-vi"},
+        {"type": "meaning", "word": "w2", "dir": "en-vi"},
+        {"type": "build", "sentence": "cs1"},
+        {"type": "meaning", "word": "w3", "dir": "en-vi"}
+      ]
+    },
+    {
+      "id": "u1l2",
+      "title": "Anh, chị, em",
+      "titleEn": "Older and younger",
+      "exercises": [
+        {"type": "meaning", "word": "w7", "dir": "vi-en"},
+        {"type": "meaning", "word": "w8", "dir": "vi-en"},
+        {"type": "meaning", "word": "w9", "dir": "vi-en"},
+        {"type": "pronoun", "pair": "h10"},
+        {"type": "pronoun", "pair": "h11"},
+        {"type": "pronoun", "pair": "h12"},
+        {"type": "fill", "sentence": "s30", "blank": 2},
+        {"type": "listen", "word": "w7"},
+        {"type": "tone", "tone": "huyen", "word": "chào"},
+        {"type": "build", "sentence": "s30"}
+      ]
+    },
+    {
+      "id": "u1l3",
+      "title": "Bạn tên là gì?",
+      "titleEn": "What's your name?",
+      "exercises": [
+        {"type": "meaning", "word": "w10", "dir": "vi-en"},
+        {"type": "meaning", "word": "w5", "dir": "en-vi"},
+        {"type": "meaning", "word": "w6", "dir": "vi-en"},
+        {"type": "build", "sentence": "s9"},
+        {"type": "fill", "sentence": "s9", "blank": 3},
+        {"type": "build", "sentence": "cs2"},
+        {"type": "fill", "sentence": "s10", "blank": 2},
+        {"type": "listen", "word": "w10"},
+        {"type": "tone", "tone": "ngang", "word": "tên"},
+        {"type": "meaning", "word": "w11", "dir": "vi-en"}
+      ]
+    },
+    {
+      "id": "u1l4",
+      "title": "Bạn có khỏe không?",
+      "titleEn": "How are you?",
+      "exercises": [
+        {"type": "meaning", "word": "w12", "dir": "vi-en"},
+        {"type": "build", "sentence": "s5"},
+        {"type": "fill", "sentence": "s5", "blank": 2},
+        {"type": "pronoun", "pair": "h2"},
+        {"type": "pronoun", "pair": "h14"},
+        {"type": "build", "sentence": "cs3"},
+        {"type": "meaning", "word": "w13", "dir": "vi-en"},
+        {"type": "meaning", "word": "w14", "dir": "en-vi"},
+        {"type": "tone", "tone": "hoi", "word": "khỏe"},
+        {"type": "build", "sentence": "s53"},
+        {"type": "listen", "word": "w12"}
+      ]
+    }
+  ],
+  "testOut": [
+    {"type": "meaning", "word": "w1", "dir": "en-vi"},
+    {"type": "meaning", "word": "w4", "dir": "vi-en"},
+    {"type": "pronoun", "pair": "h11"},
+    {"type": "pronoun", "pair": "h13"},
+    {"type": "build", "sentence": "s9"},
+    {"type": "fill", "sentence": "s5", "blank": 2},
+    {"type": "meaning", "word": "w9", "dir": "vi-en"},
+    {"type": "build", "sentence": "cs3"},
+    {"type": "meaning", "word": "w12", "dir": "en-vi"},
+    {"type": "fill", "sentence": "s30", "blank": 1}
+  ]
+}
