@@ -16,3 +16,4 @@ export * from './culture/culture.js';
 export * from './sentences/sentences.js';
 export * from './placement/placement.js';
 export * from './scenarios/scenarios.js';
+export * from './course/course.js';
