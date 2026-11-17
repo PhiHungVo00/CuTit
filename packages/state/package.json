@@ -15,6 +15,17 @@
   },
   "dependencies": {
     "@vietlearning/shared": "workspace:*",
-    "zustand": "^5.1.0"
+    "zustand": "^5.1.0",
+    "@vietlearning/contracts": "workspace:*"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./sync": {
+      "types": "./dist/sync.d.ts",
+      "default": "./dist/sync.js"
+    }
   }
 }
