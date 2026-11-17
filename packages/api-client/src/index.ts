@@ -59,9 +59,20 @@ export function describeGatewayError(err: unknown, lang: 'vi' | 'en' = 'vi'): st
   return ERROR_TEXT[lang][kind] ?? ERROR_TEXT[lang].server;
 }
 
+/** Kho khóa–giá trị bất đồng bộ (Capacitor Preferences trên app, localStorage trên web) */
+export interface KeyValue {
+  get(key: string): Promise<string | null>;
+  set(key: string, value: string): Promise<void>;
+  remove(key: string): Promise<void>;
+}
+
 interface GatewayConfig {
   baseUrl: string;
   getToken?: () => string | null | Promise<string | null>;
+  /** Gọi khi Gateway trả 401: làm mới phiên; true => gửi lại request đúng MỘT lần */
+  onUnauthorized?: () => Promise<boolean>;
+  /** Nơi lưu phiên đăng nhập (refresh token, mã khôi phục). Bỏ trống => localStorage */
+  storage?: KeyValue;
   timeoutMs: number;
 }
 
@@ -73,6 +84,34 @@ export function configureGateway(next: Partial<GatewayConfig>): void {
 
 export function gatewayBaseUrl(): string {
   return config.baseUrl;
+}
+
+const localStorageKV: KeyValue = {
+  get: async (k) => {
+    try {
+      return globalThis.localStorage?.getItem(k) ?? null;
+    } catch {
+      return null;
+    }
+  },
+  set: async (k, v) => {
+    try {
+      globalThis.localStorage?.setItem(k, v);
+    } catch {
+      /* chế độ riêng tư: chỉ giữ trong phiên */
+    }
+  },
+  remove: async (k) => {
+    try {
+      globalThis.localStorage?.removeItem(k);
+    } catch {
+      /* bỏ qua */
+    }
+  }
+};
+
+export function gatewayStorage(): KeyValue {
+  return config.storage ?? localStorageKV;
 }
 
 export interface RequestOptions<S extends ZodTypeAny> {
@@ -91,7 +130,7 @@ function kindForStatus(status: number): GatewayErrorKind {
   return 'server';
 }
 
-async function send(path: string, method: string, body: unknown, signal?: AbortSignal, accept = 'application/json'): Promise<Response> {
+async function send(path: string, method: string, body: unknown, signal?: AbortSignal, accept = 'application/json', retried = false): Promise<Response> {
   const headers: Record<string, string> = { Accept: accept };
   const token = await config.getToken?.();
   if (token) headers.Authorization = `Bearer ${token}`;
@@ -107,6 +146,10 @@ async function send(path: string, method: string, body: unknown, signal?: AbortS
   signal?.addEventListener('abort', () => timeout.abort(), { once: true });
   try {
     const res = await fetch(`${config.baseUrl}${path}`, { method, headers, body: payload, signal: timeout.signal });
+    if (res.status === 401 && !retried && config.onUnauthorized) {
+      clearTimeout(timer);
+      if (await config.onUnauthorized()) return send(path, method, body, signal, accept, true);
+    }
     if (!res.ok) {
       let code: string | undefined;
       try {
