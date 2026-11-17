@@ -14,4 +14,6 @@
 @source '../../../mfe-learner/src';
 @source '../../../mfe-speech-lab/src';
 @source '../../../mfe-vision/src';
+@source '../../../mfe-path/src';
+@source '../../../../packages/exercises/src';
 @source '../../../../packages/ui/src';
