@@ -98,7 +98,7 @@ const initialData = () => ({
 });
 
 /** localStorage có thể bị chặn (chế độ riêng tư): khi đó lưu trong RAM, app vẫn chạy */
-function safeStorage(): StateStorage {
+export function safeStorage(): StateStorage {
   const mem = new Map<string, string>();
   const ls = (() => {
     try {
