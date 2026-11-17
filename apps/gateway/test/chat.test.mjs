@@ -6,7 +6,7 @@ import { buildApp } from '../dist/app.js';
 import { mockTutorTurn } from '../dist/services/chat/mockTutor.js';
 
 const ORIGIN = 'http://localhost:3000';
-const app = () => buildApp(loadConfig({ NODE_ENV: 'test', CORS_ORIGIN: ORIGIN }), { logger: false });
+const app = () => buildApp(loadConfig({ NODE_ENV: 'test', AUTH_REQUIRED: 'false', CORS_ORIGIN: ORIGIN }), { logger: false });
 const SID = '7d444840-9dc0-11d1-b245-5ffdce74fad2';
 
 function parseSse(body) {

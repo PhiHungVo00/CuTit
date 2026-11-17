@@ -6,7 +6,8 @@ import { buildApp } from '../dist/app.js';
 import { TTSCacheProxy, ttsCacheKey } from '../dist/cache/TTSCacheProxy.js';
 
 const SECRET = 'test-secret-that-is-at-least-32-characters-long';
-const baseEnv = { NODE_ENV: 'test', CORS_ORIGIN: 'http://localhost:3000' };
+// Các test route AI ở đây không nói về xác thực: chạy ẩn danh (AUTH_REQUIRED=false); test xác thực bật lại
+const baseEnv = { NODE_ENV: 'test', AUTH_REQUIRED: 'false', CORS_ORIGIN: 'http://localhost:3000' };
 
 async function app(env = {}, opts = {}) {
   return buildApp(loadConfig({ ...baseEnv, ...env }), { logger: false, ...opts });
@@ -30,15 +31,14 @@ test('CORS: không phản chiếu origin lạ, cho phép origin trong danh sách
   await a.close();
 });
 
-test('Cấu hình: từ chối CORS wildcard và AUTH_REQUIRED thiếu JWT_SECRET', () => {
+test('Cấu hình: từ chối CORS wildcard; production thiếu JWT_SECRET', () => {
   assert.throws(() => loadConfig({ ...baseEnv, CORS_ORIGIN: '*' }), /wildcard/);
-  assert.throws(() => loadConfig({ ...baseEnv, AUTH_REQUIRED: 'true' }), /JWT_SECRET/);
   assert.throws(() => loadConfig({ NODE_ENV: 'production' }), /JWT_SECRET/);
 });
 
 test('Cấu hình: dòng để trống trong .env (JWT_SECRET=) được coi là chưa đặt', () => {
   const cfg = loadConfig({ ...baseEnv, JWT_SECRET: '', AUTH_REQUIRED: 'false', RATE_LIMIT_PER_MINUTE: ' ' });
-  assert.equal(cfg.JWT_SECRET, undefined);
+  assert.equal(cfg.jwtSecretGenerated, true, 'dòng trống => chưa đặt => dev/test tự sinh');
   assert.equal(cfg.AUTH_REQUIRED, false);
   assert.equal(cfg.RATE_LIMIT_PER_MINUTE, 60);
 });
@@ -47,10 +47,10 @@ test('Xác thực: bắt buộc token khi AUTH_REQUIRED, chấp nhận JWT hợp
   const a = await app({ AUTH_REQUIRED: 'true', JWT_SECRET: SECRET });
   assert.equal((await a.inject({ url: '/v1/speech/voices' })).statusCode, 401);
 
-  const sign = createSigner({ key: SECRET });
+  const g = (await a.inject({ method: 'POST', url: '/v1/auth/guest' })).json();
   const good = await a.inject({
     url: '/v1/speech/voices',
-    headers: { authorization: `Bearer ${sign({ sub: 'user-1' })}` }
+    headers: { authorization: `Bearer ${g.accessToken}` }
   });
   assert.equal(good.statusCode, 200);
 

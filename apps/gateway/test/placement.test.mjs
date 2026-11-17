@@ -69,7 +69,7 @@ test('A5: lựa chọn được xáo (đáp án không luôn ở vị trí đầ
 });
 
 test('/placement/next: luồng HTTP thật, trả lời sai câu => 409, contract hợp lệ', async () => {
-  const a = await buildApp(loadConfig({ NODE_ENV: 'test', CORS_ORIGIN: 'http://localhost:3000' }), { logger: false });
+  const a = await buildApp(loadConfig({ NODE_ENV: 'test', AUTH_REQUIRED: 'false', CORS_ORIGIN: 'http://localhost:3000' }), { logger: false });
   const sessionId = randomUUID();
   const r1 = await a.inject({ method: 'POST', url: '/v1/placement/next', payload: { sessionId } });
   assert.equal(r1.statusCode, 200);
