@@ -42,3 +42,6 @@ tmp/
 apps/host-shell/test-results/
 apps/host-shell/playwright-report/
 *.timestamp-*.mjs
+
+# Gateway: DB PGlite cục bộ khi dev
+apps/gateway/.data/
