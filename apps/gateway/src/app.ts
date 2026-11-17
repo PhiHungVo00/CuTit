@@ -15,6 +15,7 @@ import { speechRoutes } from './routes/speech.js';
 import { practiceRoutes } from './routes/practice.js';
 import { contentRoutes } from './routes/content.js';
 import { authRoutes } from './routes/auth.js';
+import { meRoutes } from './routes/me.js';
 import { createDbProvider, type DbProvider } from './db/client.js';
 
 export interface RouteDeps {
@@ -109,6 +110,7 @@ export async function buildApp(config: GatewayConfig, opts: BuildOptions = {}): 
       await v1.register(speechRoutes, deps);
       await v1.register(practiceRoutes, deps);
       await v1.register(contentRoutes, deps);
+      await v1.register(meRoutes, deps);
     },
     { prefix: '/v1' }
   );
