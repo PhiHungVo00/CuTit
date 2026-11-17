@@ -26,7 +26,7 @@ function fakeLlm(respond) {
   };
 }
 
-const app = (llm) => buildApp(loadConfig({ NODE_ENV: 'test', CORS_ORIGIN: ORIGIN }), { logger: false, llm });
+const app = (llm) => buildApp(loadConfig({ NODE_ENV: 'test', AUTH_REQUIRED: 'false', CORS_ORIGIN: ORIGIN }), { logger: false, llm });
 
 function events(body) {
   return body

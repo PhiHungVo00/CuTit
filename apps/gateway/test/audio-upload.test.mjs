@@ -5,7 +5,7 @@ import { buildApp } from '../dist/app.js';
 import { encodeWav } from '@vietlearning/audio-dsp';
 
 const app = (env = {}) =>
-  buildApp(loadConfig({ NODE_ENV: 'test', CORS_ORIGIN: 'http://localhost:3000', ...env }), { logger: false });
+  buildApp(loadConfig({ NODE_ENV: 'test', AUTH_REQUIRED: 'false', CORS_ORIGIN: 'http://localhost:3000', ...env }), { logger: false });
 
 /** Dựng body multipart/form-data thủ công (không cần thư viện form-data). */
 function multipart(parts) {

@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { loadConfig } from '../dist/config.js';
 import { buildApp } from '../dist/app.js';
 
-const app = () => buildApp(loadConfig({ NODE_ENV: 'test', CORS_ORIGIN: 'http://localhost:3000' }), { logger: false });
+const app = () => buildApp(loadConfig({ NODE_ENV: 'test', AUTH_REQUIRED: 'false', CORS_ORIGIN: 'http://localhost:3000' }), { logger: false });
 const jpeg = Buffer.concat([Buffer.from([0xff, 0xd8, 0xff, 0xe0]), Buffer.alloc(200, 7)]).toString('base64');
 const html = Buffer.from('<html><script>alert(1)</script>' + 'x'.repeat(200)).toString('base64');
 
