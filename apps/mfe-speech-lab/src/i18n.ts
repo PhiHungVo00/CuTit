@@ -31,9 +31,6 @@ export const { useT, t } = defineMessages(
     matchesTarget: 'Cao độ của bạn khớp nhất với {tone}.',
     soundsLike: 'Nghe giống {tone} (“{syllable}”) hơn. Mẹo: {tip}.',
     voiceStats: 'Giọng của bạn ~{hz} Hz · phân tích {ms} ms',
-    legendSample: 'Mẫu',
-    legendYou: 'Giọng của bạn',
-    yAxis: 'Trục dọc: nửa cung (semitone) so với giọng thường của bạn',
 
     // M6
     dialectTitle: 'Phương ngữ 3 miền',
@@ -79,9 +76,6 @@ export const { useT, t } = defineMessages(
     matchesTarget: 'Your pitch matches the {tone} best.',
     soundsLike: 'It sounds more like the {tone} (“{syllable}”). Tip: {tip}.',
     voiceStats: 'Your voice ~{hz} Hz · analysed in {ms} ms',
-    legendSample: 'Sample',
-    legendYou: 'Your voice',
-    yAxis: 'Vertical axis: semitones relative to your normal voice',
 
     dialectTitle: 'Regional dialects',
     dialectIntro: 'The same thing has different names in each region. Tap a word to hear it; the bold column is the dialect you are learning (change it in Settings).',

@@ -3,7 +3,7 @@ import { act, renderHook } from '@testing-library/react';
 import { CaptureError, type AudioCaptureBridge } from '@vietlearning/audio-dsp';
 
 const analyzer = vi.hoisted(() => ({ result: null as unknown }));
-vi.mock('../services/toneAnalyzer', () => ({
+vi.mock('./toneAnalyzer', () => ({
   analyzeInWorker: vi.fn(async () => analyzer.result),
   disposeAnalyzer: vi.fn()
 }));
