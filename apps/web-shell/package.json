@@ -1,0 +1,29 @@
+{
+  "name": "@vietlearning/web-shell",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Bé Cu Tít — Bản Web (Desktop): cùng design system Material-3 Stitch với bản mobile, navigation sidebar cho màn hình 12 MFE",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "@vietlearning/contracts": "workspace:*",
+    "@vietlearning/shared": "workspace:*",
+    "@vietlearning/ui": "workspace:*",
+    "@vietlearning/mfe-knowledge": "workspace:*",
+    "@vietlearning/mfe-speech-lab": "workspace:*",
+    "@vietlearning/mfe-conversation": "workspace:*",
+    "@vietlearning/mfe-practice": "workspace:*",
+    "@vietlearning/mfe-learner": "workspace:*",
+    "@vietlearning/mfe-vision": "workspace:*"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.3.4",
+    "vite": "^5.4.11",
+    "typescript": "^5.7.3"
+  }
+}

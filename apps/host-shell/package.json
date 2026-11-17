@@ -13,7 +13,12 @@
     "@vietlearning/contracts": "workspace:*",
     "@vietlearning/shared": "workspace:*",
     "@vietlearning/ui": "workspace:*",
-    "@vietlearning/mfe-knowledge": "workspace:*"
+    "@vietlearning/mfe-knowledge": "workspace:*",
+    "@vietlearning/mfe-speech-lab": "workspace:*",
+    "@vietlearning/mfe-conversation": "workspace:*",
+    "@vietlearning/mfe-practice": "workspace:*",
+    "@vietlearning/mfe-learner": "workspace:*",
+    "@vietlearning/mfe-vision": "workspace:*"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.3.4",

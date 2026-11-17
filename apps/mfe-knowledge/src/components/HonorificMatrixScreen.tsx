@@ -3,42 +3,34 @@ import {
   HonorificInterpreter,
   HonorificPairItem,
   HONORIFIC_PAIRS_20,
-  RelationCategory,
-  FormalityLevel
+  RelationCategory
 } from '@vietlearning/content';
-import { CuTitWisdomCard } from './CuTitWisdomCard';
 import { HonorificExplorerDrawer } from './HonorificExplorerDrawer';
 import { speechService } from '../services/speechSynthesis';
 
 export interface HonorificMatrixScreenProps {
   initialTheme?: 'dark' | 'light';
+  onBack?: () => void;
   onPairChange?: (pair: { speaker: string; listener: string; pairId: string }) => void;
+  onNavigateTab?: (tab: string) => void;
 }
 
 export const HonorificMatrixScreen: React.FC<HonorificMatrixScreenProps> = ({
   initialTheme = 'dark',
-  onPairChange
+  onBack,
+  onPairChange,
+  onNavigateTab
 }) => {
   const [theme, setTheme] = useState<'dark' | 'light'>(initialTheme);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
-  // Playground state
-  // Age Slider: 0: Bề trên, 1: Lớn hơn, 2: Ngang hàng, 3: Nhỏ hơn
+  // Sliders: Age (0..3) & Context (0..2) exactly matching Stitch
   const [ageStep, setAgeStep] = useState<number>(0);
-
-  // Context Slider: 0: Trang trọng đình làng, 1: Lịch sự xã giao, 2: Thân mật ngõ xóm
   const [contextStep, setContextStep] = useState<number>(0);
 
-  // Relation
-  const [relation, setRelation] = useState<RelationCategory>('kin');
-
-  // User Gender (Tôi là Nam / Nữ)
+  // Gender & Perspective
   const [userGender, setUserGender] = useState<'male' | 'female'>('male');
-
-  // Partner Gender (Đối phương là Nam / Nữ / Chung)
-  const [partnerGender, setPartnerGender] = useState<'male' | 'female' | 'neutral'>('male');
-
-  // Speaker perspective (false: Tôi là người nói, true: Đối phương nói)
+  const [partnerGender, setPartnerGender] = useState<'male' | 'female'>('male');
   const [isReversed, setIsReversed] = useState<boolean>(false);
 
   // Explicit selected pair from Drawer
@@ -46,19 +38,33 @@ export const HonorificMatrixScreen: React.FC<HonorificMatrixScreenProps> = ({
 
   // Audio state
   const [isSpeaking, setIsSpeaking] = useState<boolean>(false);
-  const [speechSpeed, setSpeechSpeed] = useState<number>(1.0);
+  const [applyToast, setApplyToast] = useState<string | null>(null);
 
   const interpreter = useMemo(() => new HonorificInterpreter(), []);
+  const isDark = theme === 'dark';
 
-  // Compute ages based on ageStep
+  // Toggle dark/light theme on <html> element for Tailwind
+  useEffect(() => {
+    const root = document.documentElement;
+    if (isDark) {
+      root.classList.add('dark');
+    } else {
+      root.classList.remove('dark');
+    }
+    return () => {
+      root.classList.remove('dark');
+    };
+  }, [isDark]);
+
+  // Compute speaker & listener age from ageStep
   const { speakerAge, listenerAge, speakerGender, listenerGender } = useMemo(() => {
-    let uAge = 20; // Tuổi mặc định của người học
-    let pAge = 20; // Tuổi đối phương
+    let uAge = 20;
+    let pAge = 55;
 
     switch (ageStep) {
       case 0: // Bề trên
         uAge = 20;
-        pAge = relation === 'traditional' ? 75 : 55;
+        pAge = 60;
         break;
       case 1: // Lớn hơn
         uAge = 20;
@@ -74,47 +80,40 @@ export const HonorificMatrixScreen: React.FC<HonorificMatrixScreenProps> = ({
         break;
       default:
         uAge = 20;
-        pAge = 50;
+        pAge = 55;
     }
 
     if (isReversed) {
-      // Khi đối phương là người nói:
-      const effectiveSpeakerGender: 'male' | 'female' =
-        partnerGender === 'female' ? 'female' : 'male';
-      const effectiveListenerGender: 'male' | 'female' = userGender;
-
       return {
         speakerAge: pAge,
         listenerAge: uAge,
-        speakerGender: effectiveSpeakerGender,
-        listenerGender: effectiveListenerGender
+        speakerGender: partnerGender,
+        listenerGender: userGender
       };
     }
 
-    // Khi người học (tôi) là người nói:
     return {
       speakerAge: uAge,
       listenerAge: pAge,
       speakerGender: userGender,
       listenerGender: partnerGender
     };
-  }, [ageStep, relation, isReversed, userGender, partnerGender]);
+  }, [ageStep, isReversed, userGender, partnerGender]);
 
-  // Formality based on contextStep
-  const formality: FormalityLevel = useMemo(() => {
+  // Map contextStep (0: Trang trọng đình làng, 1: Lịch sự xã giao, 2: Thân mật ngõ xóm)
+  const formality = useMemo(() => {
     switch (contextStep) {
       case 0:
-        return 'formal';
+        return 'formal' as const;
       case 1:
-        return 'polite';
+        return 'polite' as const;
       case 2:
-        return 'intimate';
       default:
-        return 'polite';
+        return 'intimate' as const;
     }
   }, [contextStep]);
 
-  // Run Algorithm A6
+  // Execute Algorithm A6
   const evaluatedResult = useMemo(() => {
     if (explicitPair) {
       return interpreter.interpret({
@@ -131,14 +130,14 @@ export const HonorificMatrixScreen: React.FC<HonorificMatrixScreenProps> = ({
     return interpreter.interpret({
       speakerAge,
       listenerAge,
-      relation,
+      relation: ageStep === 0 && contextStep === 0 ? 'traditional' : 'kin',
       listenerGender,
       speakerGender,
       formality
     });
-  }, [interpreter, speakerAge, listenerAge, relation, listenerGender, speakerGender, formality, explicitPair]);
+  }, [interpreter, speakerAge, listenerAge, listenerGender, speakerGender, formality, explicitPair, ageStep, contextStep]);
 
-  // Notify parent if needed
+  // Notify parent
   useEffect(() => {
     if (onPairChange) {
       onPairChange({
@@ -149,7 +148,7 @@ export const HonorificMatrixScreen: React.FC<HonorificMatrixScreenProps> = ({
     }
   }, [evaluatedResult, onPairChange]);
 
-  // Handle TTS play
+  // Audio playback handler
   const handlePlayAudio = () => {
     if (isSpeaking) {
       speechService.stop();
@@ -159,569 +158,395 @@ export const HonorificMatrixScreen: React.FC<HonorificMatrixScreenProps> = ({
 
     setIsSpeaking(true);
     speechService.speak(evaluatedResult.sampleSentence, {
-      speed: speechSpeed,
+      speed: 1.0,
       onEnd: () => setIsSpeaking(false),
       onError: () => setIsSpeaking(false)
     });
   };
 
-  // Set state from Drawer pair selection
   const handleSelectPairFromDrawer = (pair: HonorificPairItem) => {
     setExplicitPair(pair);
-    if (pair.relation) setRelation(pair.relation);
-
-    // Determine ageStep
-    const diff = pair.listenerAge - pair.speakerAge;
-    if (diff > 10) setAgeStep(0);
-    else if (diff > 2) setAgeStep(1);
-    else if (diff >= -2) setAgeStep(2);
-    else setAgeStep(3);
-
-    // Determine contextStep
-    if (pair.contextLevelText.includes('đình') || pair.contextLevelText.includes('Trang trọng')) {
-      setContextStep(0);
-    } else if (pair.contextLevelText.includes('Thân mật') || pair.contextLevelText.includes('Ruột thịt')) {
-      setContextStep(2);
-    } else {
-      setContextStep(1);
-    }
-
-    if (pair.listenerGender) {
-      setPartnerGender(pair.listenerGender);
-    }
-    if (pair.speakerGender) {
-      setUserGender(pair.speakerGender);
-    }
-    setIsReversed(false);
+    setIsDrawerOpen(false);
   };
 
-  const isDark = theme === 'dark';
+  const handleApplyClick = () => {
+    setApplyToast('Đã áp dụng quy tắc xưng hô vào cuộc trò chuyện!');
+    setTimeout(() => setApplyToast(null), 2500);
+  };
 
+  // Step Labels matching Stitch
   const ageLabels = [
-    { step: 0, title: 'Bề Trên', desc: 'Bậc cha chú, cao niên (+15 ~ 60 tuổi)' },
-    { step: 1, title: 'Lớn Hơn', desc: 'Anh/Chị tiền bối (+3 ~ 8 tuổi)' },
-    { step: 2, title: 'Ngang Hàng', desc: 'Đồng niên, bạn bè (±2 tuổi)' },
-    { step: 3, title: 'Nhỏ Hơn', desc: 'Em út, hậu bối (-3 ~ 20 tuổi)' }
+    { title: 'Bề trên', badge: 'Bậc Bề Trên' },
+    { title: 'Lớn hơn', badge: 'Người Lớn Hơn' },
+    { title: 'Ngang hàng', badge: 'Ngang Hàng Bạn Bè' },
+    { title: 'Nhỏ hơn', badge: 'Người Nhỏ Hơn' }
   ];
 
   const contextLabels = [
-    { step: 0, title: 'Trang Trọng Đình Làng', desc: 'Việc họ, lễ hội, ban tế tự, nghi lễ' },
-    { step: 1, title: 'Lịch Sự Xã Giao', desc: 'Phố phường, công sở, trường lớp' },
-    { step: 2, title: 'Thân Mật Ngõ Xóm', desc: 'Láng giềng, gia đình sum họp, tri kỷ' }
-  ];
-
-  const relationOptions: { id: RelationCategory; label: string; icon: string }[] = [
-    { id: 'kin', label: 'Gia Tộc & Họ Hàng', icon: '🏡' },
-    { id: 'social', label: 'Xã Hội & Đời Sống', icon: '🤝' },
-    { id: 'traditional', label: 'Sân Đình & Tín Ngưỡng', icon: '🏛️' },
-    { id: 'teacher_student', label: 'Thầy Trò & Sư Đồ', icon: '📚' },
-    { id: 'work', label: 'Công Việc & Đoàn Thể', icon: '💼' }
+    { title: 'Trang trọng', badge: 'Trang Trọng Đình Làng' },
+    { title: 'Lịch sự xã giao', badge: 'Lịch Sự Xã Giao' },
+    { title: 'Thân mật ngõ xóm', badge: 'Thân Mật Ngõ Xóm' }
   ];
 
   return (
     <div
-      style={{
-        fontFamily: '"Be Vietnam Pro", system-ui, -apple-system, sans-serif',
-        backgroundColor: isDark ? '#16100B' : '#F6F3EC',
-        color: isDark ? '#FDFBF7' : '#1C1917',
-        minHeight: '100vh',
-        padding: '0.85rem 0.75rem 2.5rem 0.75rem',
-        boxSizing: 'border-box',
-        transition: 'background-color 0.3s ease, color 0.3s ease'
-      }}
+      className={`w-full min-h-screen font-sans ${
+        isDark ? 'bg-[#220e07] text-[#ffdbcf]' : 'bg-[#FFFBF5] text-[#271900]'
+      }`}
     >
-      <div style={{ maxWidth: '430px', margin: '0 auto' }}>
-        {/* TOP BAR / HEADER */}
+      {/* MOBILE CONTAINER (Full width on mobile, max-w-md on desktop) */}
+      <div className="w-full max-w-md mx-auto min-h-screen flex flex-col relative pb-28">
+        {/* FIXED APP HEADER (STITCH HEADER) */}
         <header
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            flexWrap: 'wrap',
-            gap: '1rem',
-            paddingBottom: '1.25rem',
-            borderBottom: isDark ? '2px solid #38281E' : '2px solid #E4D8C6',
-            marginBottom: '1.5rem'
-          }}
+          className={`fixed top-0 left-1/2 -translate-x-1/2 max-w-md w-full z-50 pt-safe backdrop-blur-xl transition-colors duration-200 ${
+            isDark
+              ? 'bg-[#220e07]/90 shadow-[0_4px_16px_rgba(28,9,4,0.4)]'
+              : 'bg-[#FFFBF5]/90 shadow-[0_4px_16px_rgba(180,83,9,0.08)]'
+          }`}
         >
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
-              <span
-                style={{
-                  fontSize: '0.72rem',
-                  fontWeight: 800,
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.08em',
-                  padding: '0.2rem 0.6rem',
-                  borderRadius: '9999px',
-                  backgroundColor: isDark ? '#78350F' : '#FDE68A',
-                  color: isDark ? '#FEF3C7' : '#92400E'
-                }}
+          <div className="h-16 px-4 flex items-center justify-between gap-2">
+            {/* Left: Back button + Logo + Title */}
+            <div className="flex items-center gap-2.5 min-w-0">
+              <button
+                aria-label="Quay lại"
+                onClick={() => (onBack ? onBack() : window.history.back())}
+                className={`w-10 h-10 rounded-lg flex items-center justify-center transition-transform active:translate-y-0.5 ${
+                  isDark
+                    ? 'bg-[#3c241b] text-[#ffb4aa] shadow-[0_3px_0_#1c0904]'
+                    : 'bg-[#EFE2D3] text-[#B45309] shadow-[0_3px_0_#D6C7B2]'
+                }`}
               >
-                Màn Hình M3 • Kiến Trúc Micro Frontend
-              </span>
-              <span
-                style={{
-                  fontSize: '0.72rem',
-                  fontWeight: 700,
-                  padding: '0.2rem 0.5rem',
-                  borderRadius: '6px',
-                  backgroundColor: isDark ? '#3D2D23' : '#E8DEC8',
-                  color: isDark ? '#D4B895' : '#78716C'
-                }}
-              >
-                Thuật toán A6
-              </span>
+                <span className="material-symbols-outlined text-xl">arrow_back_ios_new</span>
+              </button>
+
+              <img
+                alt="Cu Tít Logo"
+                className="h-7 w-auto object-contain shrink-0"
+                src="https://lh3.googleusercontent.com/aida-public/AB6AXuCK_OKRdGrKRg7ii4PAhJdPCiFAR-Jp99rQQ5x47sE-l2kgtYFFOeemlwpKJMuijUjq1ZIxI7fAI3rGrmEdJhz3sO7bnUfEJHMXIn4WokRx_GCYYFrl4NV9BW5x7P5Mmd0o1rPRmg-9yBE7zSaqKjR7yVPaST8Vcqenq_Rs8yWwIX6Qm_c0SoWT5QxI8ZNeezVWVj1Iq-CZk5mLmzUYqRCUNY48ssJ4MSR56vacn7AZ9_2pP_qyU1GR"
+              />
+
+              <h1 className="font-bold text-base truncate">Ma Trận Xưng Hô</h1>
             </div>
 
-            <h1
-              style={{
-                margin: '0.35rem 0 0 0',
-                fontSize: '1.65rem',
-                fontWeight: 900,
-                color: isDark ? '#FBBF24' : '#047857',
-                letterSpacing: '-0.02em',
-                lineHeight: 1.2
-              }}
-            >
-              Ma Trận Đại Từ Xưng Hô Sân Đình Cổ Truyền
-            </h1>
-            <p
-              style={{
-                margin: '0.25rem 0 0 0',
-                fontSize: '0.86rem',
-                color: isDark ? '#C4AA90' : '#64748B'
-              }}
-            >
-              Mô phỏng bộ luật xưng hô tôn ti làng xã & chuẩn mực giao tiếp tiếng Việt
-            </p>
-          </div>
-
-          {/* Theme & Drawer Controls */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
-            {/* Theme Toggle (Stitch Screen 187903fa170042c6b7228d092d6c13ab / d27ed78d3bda42e6810f60e828a2fa84) */}
-            <div
-              style={{
-                display: 'inline-flex',
-                borderRadius: '10px',
-                padding: '3px',
-                backgroundColor: isDark ? '#261C15' : '#EAE2D3',
-                border: isDark ? '1px solid #4A3728' : '1px solid #D6C7B2'
-              }}
-            >
+            {/* Right: Theme Switcher & 20-Pair Drawer & Volume Button */}
+            <div className="flex items-center gap-2 shrink-0">
               <button
-                onClick={() => setTheme('dark')}
-                style={{
-                  padding: '0.4rem 0.75rem',
-                  borderRadius: '8px',
-                  border: 'none',
-                  fontSize: '0.8rem',
-                  fontWeight: theme === 'dark' ? 800 : 500,
-                  backgroundColor: theme === 'dark' ? '#F59E0B' : 'transparent',
-                  color: theme === 'dark' ? '#000000' : isDark ? '#D4B895' : '#57534E',
-                  cursor: 'pointer',
-                  transition: 'all 0.15s ease'
-                }}
+                onClick={() => setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'))}
+                title="Đổi giao diện Dark/Light"
+                className={`w-10 h-10 rounded-lg flex items-center justify-center transition-transform active:translate-y-0.5 ${
+                  isDark
+                    ? 'bg-[#3c241b] text-[#f8bc4b] shadow-[0_3px_0_#1c0904]'
+                    : 'bg-[#EFE2D3] text-[#B45309] shadow-[0_3px_0_#D6C7B2]'
+                }`}
               >
-                🏮 Gỗ Mộc Cổ Truyền
+                <span className="material-symbols-outlined text-lg">
+                  {isDark ? 'light_mode' : 'dark_mode'}
+                </span>
               </button>
+
               <button
-                onClick={() => setTheme('light')}
-                style={{
-                  padding: '0.4rem 0.75rem',
-                  borderRadius: '8px',
-                  border: 'none',
-                  fontSize: '0.8rem',
-                  fontWeight: theme === 'light' ? 800 : 500,
-                  backgroundColor: theme === 'light' ? '#059669' : 'transparent',
-                  color: theme === 'light' ? '#FFFFFF' : isDark ? '#D4B895' : '#57534E',
-                  cursor: 'pointer',
-                  transition: 'all 0.15s ease'
-                }}
+                onClick={() => setIsDrawerOpen(true)}
+                title="Mở Bảng 20 Cặp A6"
+                className={`h-10 px-2.5 rounded-lg flex items-center gap-1 font-bold text-xs transition-transform active:translate-y-0.5 ${
+                  isDark
+                    ? 'bg-[#e56c5e] text-[#5a0304] shadow-[0_3px_0_#5a0304]'
+                    : 'bg-[#B45309] text-white shadow-[0_3px_0_#78350F]'
+                }`}
               >
-                🎋 Tre Trúc Sáng
+                <span className="material-symbols-outlined text-base">format_list_bulleted</span>
+                <span>20 Cặp</span>
               </button>
             </div>
-
-            {/* Open Drawer Button */}
-            <button
-              onClick={() => setIsDrawerOpen(true)}
-              style={{
-                padding: '0.5rem 0.95rem',
-                borderRadius: '10px',
-                border: isDark ? '1px solid #B45309' : '1px solid #059669',
-                backgroundColor: isDark ? '#2E2017' : '#FFFFFF',
-                color: isDark ? '#FEF3C7' : '#047857',
-                fontWeight: 700,
-                fontSize: '0.84rem',
-                cursor: 'pointer',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '0.45rem',
-                boxShadow: isDark
-                  ? '0 2px 8px rgba(0, 0, 0, 0.4)'
-                  : '0 2px 8px rgba(5, 150, 105, 0.12)'
-              }}
-            >
-              <span>📜</span>
-              <span>Bảng 20 Cặp Chuẩn</span>
-            </button>
           </div>
         </header>
 
-        {/* MAIN INTERACTIVE WORKSPACE (2 COLUMNS OR GRID) */}
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
-            gap: '1.5rem',
-            alignItems: 'start'
-          }}
-        >
-          {/* LEFT: INTERACTIVE CONTROLLER (BÀN ĐIỀU KHIỂN NHÂN XƯNG) */}
+        {/* MAIN BODY CONTENT (STITCH MOBILE LAYOUT) */}
+        <main className="flex-1 flex flex-col w-full pt-20 px-4 gap-y-4">
+          {/* 1. HERO FOLK BANNER: CU TÍT & TRE TRÚC SCROLL */}
           <div
-            style={{
-              backgroundColor: isDark ? '#221812' : '#FFFFFF',
-              borderRadius: '18px',
-              padding: '1.5rem',
-              border: isDark ? '1px solid #3D2D23' : '1px solid #E5D5C0',
-              boxShadow: isDark
-                ? '0 10px 30px rgba(0,0,0,0.5)'
-                : '0 8px 24px rgba(180, 83, 9, 0.06)',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '1.35rem'
-            }}
+            className={`relative w-full rounded-2xl overflow-hidden p-4 shadow-[0_6px_0_#1c0904] ${
+              isDark ? 'bg-[#301a12]' : 'bg-[#F6EDE3]'
+            }`}
           >
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <span style={{ fontSize: '1.25rem' }}>🎛️</span>
-                <h2
-                  style={{
-                    margin: 0,
-                    fontSize: '1.1rem',
-                    fontWeight: 800,
-                    color: isDark ? '#FEF3C7' : '#1C1917'
-                  }}
+            {/* Subtle folk glow */}
+            <div className="absolute -right-8 -bottom-8 w-36 h-36 rounded-full bg-[#ffb4aa]/10 blur-xl pointer-events-none" />
+            <div className="absolute -left-6 -top-6 w-28 h-28 rounded-full bg-[#f8bc4b]/10 blur-lg pointer-events-none" />
+
+            <div className="flex items-center gap-3 relative z-10">
+              {/* Mascot Token */}
+              <div className="relative shrink-0">
+                <div
+                  className={`w-16 h-16 rounded-full p-1 shadow-[0_4px_0_#1c0904] flex items-center justify-center ${
+                    isDark ? 'bg-[#3c241b]' : 'bg-[#EFE2D3]'
+                  }`}
                 >
-                  Bàn Điều Khiển Ngữ Cảnh Xưng Hô
-                </h2>
+                  <img
+                    alt="Cu Tít đội mũ cối sao ngũ sắc"
+                    className="w-full h-full rounded-full object-cover"
+                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuCjlHqM4ja6b3yJPmFXr5H4ic99XcWJ3djNNT05x-xxGQFdd8feLD5EHbGmx8EfkKTI90ajUnresuuw8iyqcuRrBjWXgVA96T8xMEet7L4xiHBmyg_lUJKoX1BZ1diBsz10_Nfu1oex8IAgCCY0NTnVfdU9B7WO9ufX0M-q6v0gCh4kkjlb84r0RVwCJrlgZQ41D9c4I0GaXnrt3l_3L5ZNNNfcLDSjBj8YM2Ho0asyYFJySoAtgIHt"
+                  />
+                </div>
+                <div className="absolute -bottom-1 -right-1 bg-[#f8bc4b] text-[#271900] px-1.5 py-0.5 rounded-full font-bold text-[10px] shadow-[0_2px_0_#1c0904] flex items-center gap-0.5">
+                  <span className="material-symbols-outlined text-[11px]">psychology</span>
+                  <span>Bí Kíp</span>
+                </div>
               </div>
-              <span
-                style={{
-                  fontSize: '0.72rem',
-                  padding: '0.15rem 0.5rem',
-                  borderRadius: '6px',
-                  backgroundColor: isDark ? '#38281E' : '#F5EFEB',
-                  color: isDark ? '#F59E0B' : '#059669',
-                  fontWeight: 700
-                }}
-              >
-                Tương Tác Realtime
+
+              {/* Scroll Title Frame */}
+              <div className="flex flex-col min-w-0 flex-1">
+                <div
+                  className={`inline-flex items-center gap-1 self-start px-2 py-0.5 rounded-full font-semibold text-[11px] mb-1 ${
+                    isDark
+                      ? 'bg-[#e56c5e]/25 text-[#ffb4aa]'
+                      : 'bg-[#B45309]/15 text-[#B45309]'
+                  }`}
+                >
+                  <span className="material-symbols-outlined text-[13px]">nature_people</span>
+                  <span>Nếp Sống Sân Đình</span>
+                </div>
+
+                <h2 className="font-bold text-lg leading-tight truncate">Cây Xưng Hô Làng Xóm</h2>
+                <p
+                  className={`text-xs mt-0.5 line-clamp-1 ${
+                    isDark ? 'text-[#dec0bc]' : 'text-[#78716C]'
+                  }`}
+                >
+                  Kéo thanh gỗ mộc để đổi ngôi xưng chuẩn tình làng nghĩa xóm
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* 2. DYNAMIC LIVE DIALOG PREVIEW CARD (PARCHMENT TEXTURE STYLE) */}
+          <div
+            className={`relative w-full rounded-2xl p-4 shadow-[0_6px_0_#1c0904] transition-all duration-200 ${
+              isDark
+                ? 'bg-[#ffdeaa] text-[#271900]'
+                : 'bg-[#FEF3C7] text-[#1C1917] border border-[#FCD34D]'
+            }`}
+          >
+            {/* Ribbon Tag Top Right */}
+            <div className="absolute top-0 right-4 -translate-y-1/2 bg-[#e56c5e] text-[#5a0304] font-bold px-3 py-0.5 rounded-full shadow-[0_3px_0_#1c0904] flex items-center gap-1 text-[11px]">
+              <span className="material-symbols-outlined text-[13px]">auto_awesome</span>
+              <span>
+                {ageLabels[ageStep].title} • {contextLabels[contextStep].title}
               </span>
             </div>
 
-            {/* 1. MỐI QUAN HỆ GIAO TIẾP (RELATION) */}
-            <div>
-              <label
-                style={{
-                  display: 'block',
-                  fontSize: '0.82rem',
-                  fontWeight: 700,
-                  marginBottom: '0.5rem',
-                  color: isDark ? '#D4B895' : '#44403C'
-                }}
-              >
-                1. Mối quan hệ giao tiếp:
-              </label>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.5rem' }}>
-                {relationOptions.map((r) => {
-                  const active = relation === r.id;
-                  return (
-                    <button
-                      key={r.id}
-                      onClick={() => {
-                        setExplicitPair(null);
-                        setRelation(r.id);
-                      }}
-                      style={{
-                        padding: '0.55rem 0.75rem',
-                        borderRadius: '10px',
-                        border: active
-                          ? isDark
-                            ? '1.5px solid #F59E0B'
-                            : '1.5px solid #059669'
-                          : isDark
-                          ? '1px solid #3D2D23'
-                          : '1px solid #E5D5C0',
-                        backgroundColor: active
-                          ? isDark
-                            ? 'rgba(245, 158, 11, 0.18)'
-                            : 'rgba(5, 150, 105, 0.12)'
-                          : isDark
-                          ? '#2A1F18'
-                          : '#FAF7F2',
-                        color: active
-                          ? isDark
-                            ? '#FBBF24'
-                            : '#047857'
-                          : isDark
-                          ? '#C4AA90'
-                          : '#57534E',
-                        fontWeight: active ? 700 : 500,
-                        fontSize: '0.78rem',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '0.4rem',
-                        textAlign: 'left',
-                        transition: 'all 0.15s ease'
-                      }}
-                    >
-                      <span style={{ fontSize: '1rem' }}>{r.icon}</span>
-                      <span>{r.label}</span>
-                    </button>
-                  );
-                })}
+            {/* Speech Header */}
+            <div className="flex items-center justify-between mb-2 pt-1">
+              <div className="flex items-center gap-1.5 font-semibold text-xs text-[#5f4100]">
+                <span className="material-symbols-outlined text-base">record_voice_over</span>
+                <span>Lời Chào Trong Ngữ Cảnh:</span>
               </div>
+
+              {/* Nghe đọc Button */}
+              <button
+                onClick={handlePlayAudio}
+                className={`h-8 px-2.5 rounded-lg flex items-center gap-1 font-bold text-xs transition-all active:translate-y-0.5 ${
+                  isSpeaking
+                    ? 'bg-[#DC2626] text-white shadow-[0_2px_0_#991B1B]'
+                    : 'bg-[#220e07] text-[#f8bc4b] shadow-[0_2px_0_#1c0904]'
+                }`}
+              >
+                <span className="material-symbols-outlined text-sm">
+                  {isSpeaking ? 'stop' : 'volume_up'}
+                </span>
+                <span>{isSpeaking ? 'Đang đọc...' : 'Nghe đọc'}</span>
+              </button>
             </div>
 
-            {/* 2. THANH TRƯỢT 1: ĐỘ CHÊNH LỆCH TUỔI TÁC (AGE RELATION SLIDER) */}
-            <div>
-              <div
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  marginBottom: '0.4rem'
-                }}
-              >
-                <label
-                  style={{
-                    fontSize: '0.82rem',
-                    fontWeight: 700,
-                    color: isDark ? '#D4B895' : '#44403C'
-                  }}
-                >
-                  2. Chênh lệch tuổi tác:
-                </label>
+            {/* The Sentence Output Box */}
+            <div className="min-h-[72px] flex flex-col justify-center rounded-xl bg-white/80 backdrop-blur-sm p-3 shadow-inner mb-3">
+              <div className="text-[11px] text-[#392600]/70 mb-1 flex items-center gap-1 font-medium">
+                <span className="material-symbols-outlined text-[13px]">translate</span>
+                <span>Câu gốc: "How are you today?"</span>
+              </div>
+              <p className="font-bold text-base text-[#271900] leading-snug tracking-tight">
+                {evaluatedResult.sampleSentence}
+              </p>
+            </div>
+
+            {/* Chunky Wooden Folk Grammatical Chips */}
+            <div className="flex flex-wrap gap-1.5 pt-1">
+              {/* Tag Ngôi 1 (Sage/Teal tint) */}
+              <div className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#9acde9] text-[#003548] font-bold text-xs shadow-[0_2px_0_#0f4c64]">
+                <span className="material-symbols-outlined text-[13px]">face</span>
+                <span>Ngôi 1: {evaluatedResult.speaker}</span>
+              </div>
+
+              {/* Tag Ngôi 2 (Terracotta tint) */}
+              <div className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#e56c5e] text-[#5a0304] font-bold text-xs shadow-[0_2px_0_#5a0304]">
+                <span className="material-symbols-outlined text-[13px]">elderly</span>
+                <span>Ngôi 2: {evaluatedResult.listener}</span>
+              </div>
+
+              {/* Tag Trợ từ / Kính ngữ (Mustard ochre tint) */}
+              <div className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#bc8714] text-[#392600] font-bold text-xs shadow-[0_2px_0_#5f4100]">
+                <span className="material-symbols-outlined text-[13px]">verified</span>
+                <span>Kính ngữ: {evaluatedResult.politeParticle}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* 3. HANDCRAFTED FOLK CONTROLS (WOODEN CONSOLE CARD) */}
+          <div
+            className={`w-full rounded-2xl p-4 shadow-[0_6px_0_#1c0904] flex flex-col gap-y-4 ${
+              isDark ? 'bg-[#301a12]' : 'bg-[#F6EDE3]'
+            }`}
+          >
+            {/* Section Title */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-4 rounded-full bg-[#f8bc4b]" />
+                <h3 className="font-bold text-sm tracking-tight">Bàn Quay Chuyển Ngôi Xưng</h3>
+              </div>
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#3c241b] text-[#f8bc4b]">
+                {evaluatedResult.pairId.toUpperCase()}
+              </span>
+            </div>
+
+            {/* Slider 1: Độ Tuổi Tương Quan */}
+            <div className="flex flex-col gap-y-1.5">
+              <div className="flex items-center justify-between">
+                <span className="font-semibold text-xs flex items-center gap-1.5">
+                  <span className="material-symbols-outlined text-[#f8bc4b] text-sm">
+                    diversity_3
+                  </span>
+                  1. Quan Hệ & Độ Tuổi
+                </span>
                 <span
-                  style={{
-                    fontSize: '0.8rem',
-                    fontWeight: 800,
-                    color: isDark ? '#F59E0B' : '#059669'
-                  }}
+                  className={`px-2 py-0.5 rounded-full font-bold text-[11px] shadow-[0_2px_0_#1c0904] ${
+                    isDark ? 'bg-[#3c241b] text-[#f8bc4b]' : 'bg-[#EFE2D3] text-[#B45309]'
+                  }`}
                 >
-                  {ageLabels[ageStep].title}
+                  {ageLabels[ageStep].badge}
                 </span>
               </div>
 
-              {/* Slider Input */}
-              <input
-                type="range"
-                min={0}
-                max={3}
-                step={1}
-                value={ageStep}
-                onChange={(e) => {
-                  setExplicitPair(null);
-                  setAgeStep(parseInt(e.target.value, 10));
-                }}
-                style={{
-                  width: '100%',
-                  accentColor: isDark ? '#F59E0B' : '#059669',
-                  cursor: 'pointer',
-                  marginBottom: '0.5rem'
-                }}
-              />
+              {/* Wooden Track with notches */}
+              <div className="relative py-2 select-none">
+                <div
+                  className={`w-full h-3 rounded-full shadow-inner flex items-center justify-between px-2 ${
+                    isDark ? 'bg-[#1c0904]' : 'bg-[#E5D5C0]'
+                  }`}
+                >
+                  <span className="w-2 h-2 rounded-full bg-[#482f25]" />
+                  <span className="w-2 h-2 rounded-full bg-[#482f25]" />
+                  <span className="w-2 h-2 rounded-full bg-[#482f25]" />
+                  <span className="w-2 h-2 rounded-full bg-[#482f25]" />
+                </div>
 
-              {/* Discrete Step Indicators */}
-              <div
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(4, 1fr)',
-                  gap: '0.35rem'
-                }}
-              >
-                {ageLabels.map((lbl) => {
-                  const active = ageStep === lbl.step;
-                  return (
-                    <button
-                      key={lbl.step}
-                      onClick={() => {
-                        setExplicitPair(null);
-                        setAgeStep(lbl.step);
-                      }}
-                      style={{
-                        padding: '0.4rem 0.25rem',
-                        borderRadius: '6px',
-                        border: 'none',
-                        cursor: 'pointer',
-                        fontSize: '0.72rem',
-                        fontWeight: active ? 700 : 500,
-                        backgroundColor: active
-                          ? isDark
-                            ? '#F59E0B'
-                            : '#059669'
+                <input
+                  type="range"
+                  min="0"
+                  max="3"
+                  step="1"
+                  value={ageStep}
+                  onChange={(e) => {
+                    setExplicitPair(null);
+                    setAgeStep(parseInt(e.target.value, 10));
+                  }}
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20"
+                />
+
+                <div className="flex justify-between items-center px-0.5 mt-2 text-xs">
+                  {ageLabels.map((lbl, idx) => (
+                    <span
+                      key={lbl.title}
+                      className={
+                        ageStep === idx
+                          ? 'text-[#f8bc4b] font-bold'
                           : isDark
-                          ? '#2C2018'
-                          : '#F0E9DF',
-                        color: active ? (isDark ? '#000000' : '#FFFFFF') : isDark ? '#A38C76' : '#78716C',
-                        transition: 'all 0.15s ease',
-                        textAlign: 'center'
-                      }}
+                          ? 'text-[#dec0bc] opacity-60'
+                          : 'text-[#78716C]'
+                      }
                     >
                       {lbl.title}
-                    </button>
-                  );
-                })}
-              </div>
-              <div
-                style={{
-                  fontSize: '0.72rem',
-                  fontStyle: 'italic',
-                  color: isDark ? '#9E8672' : '#78716C',
-                  marginTop: '0.35rem'
-                }}
-              >
-                Chi tiết: {ageLabels[ageStep].desc}
+                    </span>
+                  ))}
+                </div>
               </div>
             </div>
 
-            {/* 3. THANH TRƯỢT 2: BỐI CẢNH GIAO TIẾP & MỨC ĐỘ TRANG TRỌNG (CONTEXT SLIDER) */}
-            <div>
-              <div
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  marginBottom: '0.4rem'
-                }}
-              >
-                <label
-                  style={{
-                    fontSize: '0.82rem',
-                    fontWeight: 700,
-                    color: isDark ? '#D4B895' : '#44403C'
-                  }}
-                >
-                  3. Bối cảnh không gian & Nghi thức:
-                </label>
-                <span
-                  style={{
-                    fontSize: '0.8rem',
-                    fontWeight: 800,
-                    color: isDark ? '#F59E0B' : '#059669'
-                  }}
-                >
-                  {contextLabels[contextStep].title}
-                </span>
-              </div>
-
-              {/* Slider Input */}
-              <input
-                type="range"
-                min={0}
-                max={2}
-                step={1}
-                value={contextStep}
-                onChange={(e) => {
-                  setExplicitPair(null);
-                  setContextStep(parseInt(e.target.value, 10));
-                }}
-                style={{
-                  width: '100%',
-                  accentColor: isDark ? '#F59E0B' : '#059669',
-                  cursor: 'pointer',
-                  marginBottom: '0.5rem'
-                }}
-              />
-
-              {/* Discrete Step Indicators */}
-              <div
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(3, 1fr)',
-                  gap: '0.35rem'
-                }}
-              >
-                {contextLabels.map((lbl) => {
-                  const active = contextStep === lbl.step;
-                  return (
-                    <button
-                      key={lbl.step}
-                      onClick={() => {
-                        setExplicitPair(null);
-                        setContextStep(lbl.step);
-                      }}
-                      style={{
-                        padding: '0.4rem 0.25rem',
-                        borderRadius: '6px',
-                        border: 'none',
-                        cursor: 'pointer',
-                        fontSize: '0.72rem',
-                        fontWeight: active ? 700 : 500,
-                        backgroundColor: active
-                          ? isDark
-                            ? '#F59E0B'
-                            : '#059669'
-                          : isDark
-                          ? '#2C2018'
-                          : '#F0E9DF',
-                        color: active ? (isDark ? '#000000' : '#FFFFFF') : isDark ? '#A38C76' : '#78716C',
-                        transition: 'all 0.15s ease',
-                        textAlign: 'center'
-                      }}
-                    >
-                      {lbl.title}
-                    </button>
-                  );
-                })}
-              </div>
-              <div
-                style={{
-                  fontSize: '0.72rem',
-                  fontStyle: 'italic',
-                  color: isDark ? '#9E8672' : '#78716C',
-                  marginTop: '0.35rem'
-                }}
-              >
-                Không gian: {contextLabels[contextStep].desc}
-              </div>
-            </div>
-
-            {/* 4. ĐỊNH DANH GIỚI TÍNH 2 PHÍA & ĐỔI CHIỀU NÓI */}
+            {/* Divider Bar */}
             <div
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '0.75rem',
-                paddingTop: '0.35rem',
-                borderTop: isDark ? '1px dashed #3D2D23' : '1px dashed #E5D5C0'
-              }}
-            >
-              {/* Hàng chọn giới tính: Tôi vs Đối phương */}
-              <div
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: '1fr 1fr',
-                  gap: '0.75rem'
-                }}
-              >
-                {/* Giới tính của TÔI */}
+              className={`w-full h-0.5 rounded-full ${isDark ? 'bg-[#3c241b]' : 'bg-[#E4D8C6]'}`}
+            />
+
+            {/* Slider 2: Bối Cảnh Làng Xóm */}
+            <div className="flex flex-col gap-y-1.5">
+              <div className="flex items-center justify-between">
+                <span className="font-semibold text-xs flex items-center gap-1.5">
+                  <span className="material-symbols-outlined text-[#9acde9] text-sm">
+                    temple_buddhist
+                  </span>
+                  2. Bối Cảnh Giao Tiếp
+                </span>
+                <span
+                  className={`px-2 py-0.5 rounded-full font-bold text-[11px] shadow-[0_2px_0_#1c0904] ${
+                    isDark ? 'bg-[#3c241b] text-[#9acde9]' : 'bg-[#EFE2D3] text-[#0369A1]'
+                  }`}
+                >
+                  {contextLabels[contextStep].badge}
+                </span>
+              </div>
+
+              <div className="relative py-2 select-none">
+                <div
+                  className={`w-full h-3 rounded-full shadow-inner flex items-center justify-between px-3 ${
+                    isDark ? 'bg-[#1c0904]' : 'bg-[#E5D5C0]'
+                  }`}
+                >
+                  <span className="w-2 h-2 rounded-full bg-[#482f25]" />
+                  <span className="w-2 h-2 rounded-full bg-[#482f25]" />
+                  <span className="w-2 h-2 rounded-full bg-[#482f25]" />
+                </div>
+
+                <input
+                  type="range"
+                  min="0"
+                  max="2"
+                  step="1"
+                  value={contextStep}
+                  onChange={(e) => {
+                    setExplicitPair(null);
+                    setContextStep(parseInt(e.target.value, 10));
+                  }}
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20"
+                />
+
+                <div className="flex justify-between items-center px-0.5 mt-2 text-xs">
+                  {contextLabels.map((lbl, idx) => (
+                    <span
+                      key={lbl.title}
+                      className={
+                        contextStep === idx
+                          ? 'text-[#9acde9] font-bold'
+                          : isDark
+                          ? 'text-[#dec0bc] opacity-60'
+                          : 'text-[#78716C]'
+                      }
+                    >
+                      {lbl.title}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Divider Bar */}
+            <div
+              className={`w-full h-0.5 rounded-full ${isDark ? 'bg-[#3c241b]' : 'bg-[#E4D8C6]'}`}
+            />
+
+            {/* Giới tính & Góc nhìn đảo ngôi */}
+            <div className="flex flex-col gap-2">
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                {/* Giới tính người nói */}
                 <div>
-                  <label
-                    style={{
-                      display: 'block',
-                      fontSize: '0.76rem',
-                      fontWeight: 700,
-                      marginBottom: '0.35rem',
-                      color: isDark ? '#D4B895' : '#44403C'
-                    }}
-                  >
-                    Tôi là ({isReversed ? 'Người nghe' : 'Người nói'}):
-                  </label>
-                  <div style={{ display: 'flex', gap: '0.35rem' }}>
+                  <span className="block font-medium mb-1 opacity-80 text-[11px]">Tôi là:</span>
+                  <div className="flex gap-1.5">
                     {[
                       { id: 'male', label: '👨 Nam' },
                       { id: 'female', label: '👩 Nữ' }
@@ -734,35 +559,15 @@ export const HonorificMatrixScreen: React.FC<HonorificMatrixScreenProps> = ({
                             setExplicitPair(null);
                             setUserGender(g.id as any);
                           }}
-                          style={{
-                            flex: 1,
-                            padding: '0.4rem 0.2rem',
-                            borderRadius: '6px',
-                            border: active
+                          className={`flex-1 py-1.5 rounded-lg font-bold text-xs transition-colors ${
+                            active
                               ? isDark
-                                ? '1.5px solid #F59E0B'
-                                : '1.5px solid #059669'
+                                ? 'bg-[#e56c5e] text-[#5a0304]'
+                                : 'bg-[#B45309] text-white'
                               : isDark
-                              ? '1px solid #3D2D23'
-                              : '1px solid #D6C7B2',
-                            backgroundColor: active
-                              ? isDark
-                                ? '#3D2817'
-                                : '#E8F5E9'
-                              : isDark
-                              ? '#261C15'
-                              : '#FFFFFF',
-                            color: active
-                              ? isDark
-                                ? '#FDE68A'
-                                : '#059669'
-                              : isDark
-                              ? '#C4AA90'
-                              : '#57534E',
-                            fontSize: '0.72rem',
-                            fontWeight: active ? 700 : 500,
-                            cursor: 'pointer'
-                          }}
+                              ? 'bg-[#3c241b] text-[#dec0bc]'
+                              : 'bg-[#EFE2D3] text-[#78716C]'
+                          }`}
                         >
                           {g.label}
                         </button>
@@ -771,24 +576,13 @@ export const HonorificMatrixScreen: React.FC<HonorificMatrixScreenProps> = ({
                   </div>
                 </div>
 
-                {/* Giới tính ĐỐI PHƯƠNG */}
+                {/* Giới tính đối phương */}
                 <div>
-                  <label
-                    style={{
-                      display: 'block',
-                      fontSize: '0.76rem',
-                      fontWeight: 700,
-                      marginBottom: '0.35rem',
-                      color: isDark ? '#D4B895' : '#44403C'
-                    }}
-                  >
-                    Đối phương ({isReversed ? 'Người nói' : 'Người nghe'}):
-                  </label>
-                  <div style={{ display: 'flex', gap: '0.35rem' }}>
+                  <span className="block font-medium mb-1 opacity-80 text-[11px]">Đối phương:</span>
+                  <div className="flex gap-1.5">
                     {[
                       { id: 'male', label: '👨 Nam' },
-                      { id: 'female', label: '👩 Nữ' },
-                      { id: 'neutral', label: '👥 Chung' }
+                      { id: 'female', label: '👩 Nữ' }
                     ].map((g) => {
                       const active = partnerGender === g.id;
                       return (
@@ -798,35 +592,15 @@ export const HonorificMatrixScreen: React.FC<HonorificMatrixScreenProps> = ({
                             setExplicitPair(null);
                             setPartnerGender(g.id as any);
                           }}
-                          style={{
-                            flex: 1,
-                            padding: '0.4rem 0.2rem',
-                            borderRadius: '6px',
-                            border: active
+                          className={`flex-1 py-1.5 rounded-lg font-bold text-xs transition-colors ${
+                            active
                               ? isDark
-                                ? '1.5px solid #F59E0B'
-                                : '1.5px solid #059669'
+                                ? 'bg-[#9acde9] text-[#003548]'
+                                : 'bg-[#0369A1] text-white'
                               : isDark
-                              ? '1px solid #3D2D23'
-                              : '1px solid #D6C7B2',
-                            backgroundColor: active
-                              ? isDark
-                                ? '#3D2817'
-                                : '#E8F5E9'
-                              : isDark
-                              ? '#261C15'
-                              : '#FFFFFF',
-                            color: active
-                              ? isDark
-                                ? '#FDE68A'
-                                : '#059669'
-                              : isDark
-                              ? '#C4AA90'
-                              : '#57534E',
-                            fontSize: '0.72rem',
-                            fontWeight: active ? 700 : 500,
-                            cursor: 'pointer'
-                          }}
+                              ? 'bg-[#3c241b] text-[#dec0bc]'
+                              : 'bg-[#EFE2D3] text-[#78716C]'
+                          }`}
                         >
                           {g.label}
                         </button>
@@ -836,389 +610,101 @@ export const HonorificMatrixScreen: React.FC<HonorificMatrixScreenProps> = ({
                 </div>
               </div>
 
-              {/* Nút Đổi chiều góc nhìn hội thoại */}
-              <div>
-                <button
-                  onClick={() => {
-                    setExplicitPair(null);
-                    setIsReversed(!isReversed);
-                  }}
-                  style={{
-                    width: '100%',
-                    padding: '0.5rem 0.75rem',
-                    borderRadius: '8px',
-                    border: isDark ? '1px solid #B45309' : '1px solid #059669',
-                    backgroundColor: isReversed
-                      ? isDark
-                        ? '#78350F'
-                        : '#047857'
-                      : isDark
-                      ? '#2A1F18'
-                      : '#F8FAFC',
-                    color: isReversed ? '#FFFFFF' : isDark ? '#FEF3C7' : '#334155',
-                    fontSize: '0.78rem',
-                    fontWeight: 800,
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '0.4rem',
-                    transition: 'all 0.15s ease'
-                  }}
-                >
-                  <span style={{ fontSize: '1rem' }}>🔄</span>
-                  <span>
-                    Góc nhìn: {isReversed ? 'Đối phương đang nói với Tôi' : 'Tôi đang nói với Đối phương'}
-                  </span>
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* RIGHT: LIVE SENTENCE & 3 GRAMMATICAL CHIPS (KHUNG CÂU SỐNG & PHÂN TÍCH NGỮ PHÁP) */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-            {/* Banner Khung câu trực tiếp */}
-            <div
-              style={{
-                backgroundColor: isDark ? '#231812' : '#FFFFFF',
-                borderRadius: '18px',
-                padding: '1.5rem',
-                border: isDark ? '1px solid #78350F' : '1px solid #E5D5C0',
-                boxShadow: isDark
-                  ? '0 12px 32px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(245, 158, 11, 0.2)'
-                  : '0 10px 28px rgba(180, 83, 9, 0.08), inset 0 1px 0 #FFFFFF',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '1rem',
-                position: 'relative'
-              }}
-            >
-              {/* Header result */}
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  borderBottom: isDark ? '1px dashed #3D2D23' : '1px dashed #E5D5C0',
-                  paddingBottom: '0.75rem'
+              {/* Nút Đảo góc nhìn */}
+              <button
+                onClick={() => {
+                  setExplicitPair(null);
+                  setIsReversed((prev) => !prev);
                 }}
+                className={`w-full py-2 px-3 rounded-lg font-bold text-xs flex items-center justify-center gap-1.5 transition-transform active:translate-y-0.5 ${
+                  isReversed
+                    ? 'bg-[#f8bc4b] text-[#271900] shadow-[0_2px_0_#1c0904]'
+                    : isDark
+                    ? 'bg-[#3c241b] text-[#ffb4aa]'
+                    : 'bg-[#EFE2D3] text-[#B45309]'
+                }`}
               >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
-                  <span style={{ fontSize: '1.2rem' }}>💬</span>
-                  <span
-                    style={{
-                      fontSize: '0.78rem',
-                      fontWeight: 800,
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.06em',
-                      color: isDark ? '#F59E0B' : '#059669'
-                    }}
-                  >
-                    Mẫu Câu Xưng Hô Trực Quan
-                  </span>
-                </div>
-
-                <span
-                  style={{
-                    fontSize: '0.72rem',
-                    fontWeight: 700,
-                    padding: '0.2rem 0.5rem',
-                    borderRadius: '6px',
-                    backgroundColor: isDark ? '#38281E' : '#FEF3C7',
-                    color: isDark ? '#FDE68A' : '#92400E'
-                  }}
-                >
-                  Cặp: {evaluatedResult.speaker} ➔ {evaluatedResult.listener} ({evaluatedResult.pairId.toUpperCase()})
+                <span className="material-symbols-outlined text-sm">sync_alt</span>
+                <span>
+                  {isReversed ? 'Đối phương đang nói với Tôi' : 'Tôi đang nói với Đối phương'}
                 </span>
-              </div>
+              </button>
+            </div>
+          </div>
 
-              {/* The Live Sentence */}
-              <div
-                style={{
-                  padding: '1.15rem 1.25rem',
-                  borderRadius: '14px',
-                  backgroundColor: isDark ? '#19110B' : '#FFFDF9',
-                  border: isDark ? '1.5px solid #B45309' : '1.5px solid #059669',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '0.5rem',
-                  boxShadow: isDark
-                    ? 'inset 0 2px 6px rgba(0, 0, 0, 0.4)'
-                    : 'inset 0 2px 6px rgba(180, 83, 9, 0.05)'
-                }}
+          {/* 4. CU TÍT FOLK WISDOM CARD */}
+          <div
+            className={`rounded-2xl p-4 shadow-[0_4px_0_#1c0904] flex items-start gap-3 ${
+              isDark ? 'bg-[#3c241b]' : 'bg-[#EFE2D3]'
+            }`}
+          >
+            <div className="w-9 h-9 rounded-xl bg-[#f8bc4b] text-[#271900] flex items-center justify-center shrink-0 shadow-[0_2px_0_#1c0904]">
+              <span className="material-symbols-outlined text-xl">lightbulb</span>
+            </div>
+            <div className="flex flex-col min-w-0">
+              <span className="font-bold text-xs text-[#f8bc4b] mb-0.5">Lời Nhắn Của Cu Tít:</span>
+              <p className="text-xs leading-relaxed opacity-90">{evaluatedResult.wisdomTip}</p>
+            </div>
+          </div>
+
+          {/* 5. CHUNKY ACTION BUTTON: STAMPED TOY STYLE */}
+          <button
+            onClick={handleApplyClick}
+            className="w-full h-14 rounded-2xl bg-[#e56c5e] text-[#5a0304] font-bold text-sm shadow-[0_5px_0_#5a0304] active:translate-y-1 active:shadow-[0_1px_0_#5a0304] transition-all flex items-center justify-center gap-2"
+          >
+            <span className="material-symbols-outlined text-xl">check_circle</span>
+            <span>Áp Dụng Vào Cuộc Trò Chuyện</span>
+          </button>
+
+          {/* Toast feedback */}
+          {applyToast && (
+            <div className="w-full p-2.5 rounded-xl bg-[#10B981] text-white font-bold text-xs text-center shadow-lg animate-bounce">
+              ✓ {applyToast}
+            </div>
+          )}
+        </main>
+
+        {/* 6. FIXED BOTTOM NAVIGATION BAR (STITCH MOBILE TAB) */}
+        <nav
+          className={`fixed bottom-0 left-1/2 -translate-x-1/2 max-w-md w-full z-40 pb-safe backdrop-blur-xl border-t transition-colors duration-200 ${
+            isDark
+              ? 'bg-[#220e07]/95 border-[#3c241b] shadow-[0_-4px_20px_rgba(28,9,4,0.6)]'
+              : 'bg-[#FFFBF5]/95 border-[#E5D5C0] shadow-[0_-4px_20px_rgba(180,83,9,0.06)]'
+          }`}
+        >
+          <div className="flex items-center justify-between h-16 px-4 relative">
+            <button className="flex-1 flex flex-col items-center justify-center gap-0.5 opacity-60 hover:opacity-100 transition-opacity">
+              <span className="material-symbols-outlined text-xl">forum</span>
+              <span className="text-[10px] font-semibold">Hội thoại</span>
+            </button>
+
+            <button className="flex-1 flex flex-col items-center justify-center gap-0.5 opacity-60 hover:opacity-100 transition-opacity">
+              <span className="material-symbols-outlined text-xl">graphic_eq</span>
+              <span className="text-[10px] font-semibold">Luyện thanh</span>
+            </button>
+
+            {/* Center Floating Mic */}
+            <div className="flex-shrink-0 px-1 -mt-6">
+              <button
+                onClick={handlePlayAudio}
+                className="w-13 h-13 p-3.5 rounded-full bg-[#e56c5e] text-[#5a0304] shadow-lg shadow-[#5a0304]/40 flex items-center justify-center active:scale-95 transition-transform"
               >
-                <div
-                  style={{
-                    fontSize: '1.2rem',
-                    fontWeight: 800,
-                    lineHeight: 1.5,
-                    color: isDark ? '#FFFBEB' : '#0F172A',
-                    fontStyle: 'normal'
-                  }}
-                >
-                  "{evaluatedResult.sampleSentence}"
-                </div>
-
-                <div
-                  style={{
-                    fontSize: '0.78rem',
-                    color: isDark ? '#D4B895' : '#64748B',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.4rem',
-                    flexWrap: 'wrap'
-                  }}
-                >
-                  <span>📍 Bối cảnh phù hợp:</span>
-                  <strong style={{ color: isDark ? '#FBBF24' : '#047857' }}>
-                    {contextLabels[contextStep].title} • {ageLabels[ageStep].title}
-                  </strong>
-                  {explicitPair && (
-                    <span
-                      style={{
-                        marginLeft: 'auto',
-                        fontSize: '0.7rem',
-                        color: isDark ? '#FBBF24' : '#047857',
-                        background: isDark ? '#2E2017' : '#E8F5E9',
-                        padding: '0.1rem 0.4rem',
-                        borderRadius: '4px'
-                      }}
-                    >
-                      ✓ Áp dụng từ Bảng 20 Cặp
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              {/* 3 GRAMMATICAL CHIPS (NGÔI 1, NGÔI 2, KÍNH NGỮ/TRỢ TỪ) */}
-              <div>
-                <div
-                  style={{
-                    fontSize: '0.76rem',
-                    fontWeight: 800,
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.04em',
-                    color: isDark ? '#D4B895' : '#57534E',
-                    marginBottom: '0.5rem'
-                  }}
-                >
-                  Cấu Trúc 3 Thành Tố Ngữ Pháp:
-                </div>
-
-                <div
-                  style={{
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))',
-                    gap: '0.5rem'
-                  }}
-                >
-                  {/* CHIP 1: NGÔI 1 (SPEAKER) */}
-                  <div
-                    style={{
-                      padding: '0.6rem 0.75rem',
-                      borderRadius: '10px',
-                      backgroundColor: isDark ? '#3B1515' : '#FEE2E2',
-                      border: isDark ? '1px solid #991B1B' : '1px solid #FCA5A5',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: '0.2rem'
-                    }}
-                  >
-                    <span
-                      style={{
-                        fontSize: '0.68rem',
-                        fontWeight: 700,
-                        textTransform: 'uppercase',
-                        color: isDark ? '#FCA5A5' : '#991B1B'
-                      }}
-                    >
-                      Thành tố 1: Ngôi 1 (Mình)
-                    </span>
-                    <span
-                      style={{
-                        fontSize: '1.05rem',
-                        fontWeight: 900,
-                        color: isDark ? '#FFFFFF' : '#7F1D1D'
-                      }}
-                    >
-                      {evaluatedResult.speaker}
-                    </span>
-                    <span style={{ fontSize: '0.68rem', color: isDark ? '#FECACA' : '#B91C1C' }}>
-                      Đại từ nhân xưng xưng mình
-                    </span>
-                  </div>
-
-                  {/* CHIP 2: NGÔI 2 (LISTENER) */}
-                  <div
-                    style={{
-                      padding: '0.6rem 0.75rem',
-                      borderRadius: '10px',
-                      backgroundColor: isDark ? '#42240C' : '#FEF3C7',
-                      border: isDark ? '1px solid #B45309' : '1px solid #FCD34D',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: '0.2rem'
-                    }}
-                  >
-                    <span
-                      style={{
-                        fontSize: '0.68rem',
-                        fontWeight: 700,
-                        textTransform: 'uppercase',
-                        color: isDark ? '#FDE68A' : '#92400E'
-                      }}
-                    >
-                      Thành tố 2: Ngôi 2 (Gọi)
-                    </span>
-                    <span
-                      style={{
-                        fontSize: '1.05rem',
-                        fontWeight: 900,
-                        color: isDark ? '#FFFFFF' : '#78350F'
-                      }}
-                    >
-                      {evaluatedResult.listener}
-                    </span>
-                    <span style={{ fontSize: '0.68rem', color: isDark ? '#FEF3C7' : '#B45309' }}>
-                      Tôn xưng đối phương
-                    </span>
-                  </div>
-
-                  {/* CHIP 3: KÍNH NGỮ & TRỢ TỪ (HONORIFIC MARKER) */}
-                  <div
-                    style={{
-                      padding: '0.6rem 0.75rem',
-                      borderRadius: '10px',
-                      backgroundColor: isDark ? '#063B2C' : '#D1FAE5',
-                      border: isDark ? '1px solid #059669' : '1px solid #6EE7B7',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: '0.2rem'
-                    }}
-                  >
-                    <span
-                      style={{
-                        fontSize: '0.68rem',
-                        fontWeight: 700,
-                        textTransform: 'uppercase',
-                        color: isDark ? '#A7F3D0' : '#065F46'
-                      }}
-                    >
-                      Thành tố 3: Kính ngữ
-                    </span>
-                    <span
-                      style={{
-                        fontSize: '1.05rem',
-                        fontWeight: 900,
-                        color: isDark ? '#FFFFFF' : '#047857'
-                      }}
-                    >
-                      {evaluatedResult.politeParticle}
-                    </span>
-                    <span style={{ fontSize: '0.68rem', color: isDark ? '#D1FAE5' : '#059669' }}>
-                      Trợ từ lễ tiết & phong tục
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* AUDIO SYNTHESIS & PLAYBACK CONTROLS */}
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  flexWrap: 'wrap',
-                  gap: '0.75rem',
-                  paddingTop: '0.5rem',
-                  borderTop: isDark ? '1px solid #38281E' : '1px solid #E5D5C0'
-                }}
-              >
-                {/* Play Button */}
-                <button
-                  onClick={handlePlayAudio}
-                  style={{
-                    padding: '0.65rem 1.25rem',
-                    borderRadius: '12px',
-                    border: 'none',
-                    backgroundColor: isSpeaking
-                      ? isDark
-                        ? '#DC2626'
-                        : '#E11D48'
-                      : isDark
-                      ? '#F59E0B'
-                      : '#059669',
-                    color: isSpeaking ? '#FFFFFF' : isDark ? '#000000' : '#FFFFFF',
-                    fontWeight: 800,
-                    fontSize: '0.88rem',
-                    cursor: 'pointer',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '0.5rem',
-                    boxShadow: isDark
-                      ? '0 4px 14px rgba(245, 158, 11, 0.3)'
-                      : '0 4px 14px rgba(5, 150, 105, 0.25)',
-                    transition: 'all 0.15s ease'
-                  }}
-                >
-                  <span style={{ fontSize: '1.1rem' }}>{isSpeaking ? '⏹️' : '🔊'}</span>
-                  <span>{isSpeaking ? 'Đang phát âm... (Bấm dừng)' : 'Nghe Phát Âm Mẫu'}</span>
-                </button>
-
-                {/* Speed Controls */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                  <span
-                    style={{
-                      fontSize: '0.72rem',
-                      fontWeight: 600,
-                      color: isDark ? '#A38C76' : '#78716C'
-                    }}
-                  >
-                    Tốc độ:
-                  </span>
-                  {[0.8, 1.0, 1.2].map((spd) => (
-                    <button
-                      key={spd}
-                      onClick={() => setSpeechSpeed(spd)}
-                      style={{
-                        padding: '0.25rem 0.5rem',
-                        borderRadius: '6px',
-                        border: 'none',
-                        fontSize: '0.72rem',
-                        fontWeight: speechSpeed === spd ? 800 : 500,
-                        backgroundColor:
-                          speechSpeed === spd
-                            ? isDark
-                              ? '#F59E0B'
-                              : '#059669'
-                            : isDark
-                            ? '#2E221A'
-                            : '#EDE4D6',
-                        color:
-                          speechSpeed === spd
-                            ? '#000000'
-                            : isDark
-                            ? '#D4B895'
-                            : '#57534E',
-                        cursor: 'pointer'
-                      }}
-                    >
-                      {spd}x
-                    </button>
-                  ))}
-                </div>
-              </div>
+                <span className="material-symbols-outlined text-2xl">mic</span>
+              </button>
             </div>
 
-            {/* BÉ CU TÍT FOLK WISDOM CARD */}
-            <CuTitWisdomCard
-              wisdom={evaluatedResult.wisdomTip}
-              explanation={evaluatedResult.explanation}
-              relationName={relationOptions.find((r) => r.id === relation)?.label || relation}
-              theme={theme}
-            />
+            {/* Active Tab: Đại từ */}
+            <button className="flex-1 flex flex-col items-center justify-center gap-0.5 text-[#f8bc4b]">
+              <span className="material-symbols-outlined text-xl">diversity_3</span>
+              <span className="text-[10px] font-bold">Đại từ</span>
+            </button>
+
+            <button className="flex-1 flex flex-col items-center justify-center gap-0.5 opacity-60 hover:opacity-100 transition-opacity">
+              <span className="material-symbols-outlined text-xl">photo_camera</span>
+              <span className="text-[10px] font-semibold">Camera AR</span>
+            </button>
           </div>
-        </div>
+        </nav>
 
         {/* 20-PAIR EXPLORER DRAWER MODAL */}
         <HonorificExplorerDrawer

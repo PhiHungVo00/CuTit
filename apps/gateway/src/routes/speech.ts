@@ -11,12 +11,47 @@ export const speechRoutes: FastifyPluginAsync = async (server) => {
     };
   });
 
+  // GET /v1/speech/stream & /api/speech/stream (Direct MP3 audio stream)
+  server.get('/speech/stream', async (req: any, reply) => {
+    const text = req.query.text || 'Xin chào';
+    const dialect = req.query.dialect || 'north';
+    const encoded = encodeURIComponent(text);
+    const googleTTSUrl = `https://translate.google.com/translate_tts?ie=UTF-8&tl=vi&client=tw-ob&q=${encoded}`;
+
+    try {
+      const response = await fetch(googleTTSUrl, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+        }
+      });
+
+      if (!response.ok) {
+        reply.status(response.status).send({ error: 'Upstream TTS service error' });
+        return;
+      }
+
+      const buffer = await response.arrayBuffer();
+      reply
+        .header('Content-Type', 'audio/mpeg')
+        .header('Cache-Control', 'public, max-age=86400')
+        .header('Accept-Ranges', 'bytes')
+        .header('X-Dialect', dialect)
+        .send(Buffer.from(buffer));
+    } catch (err: any) {
+      server.log.error(err);
+      reply.status(500).send({ error: 'Failed to synthesize speech audio' });
+    }
+  });
+
   // POST /v1/speech/synthesize & POST /speech/tts (Task requirement alias)
   const handleSynthesize = async (req: any, reply: any) => {
-    const parse = SynthesizeRequestSchema.safeParse(req.body);
+    const text = req.body?.text || 'Xin chào';
+    const dialect = req.body?.dialect || 'north';
+    const host = req.headers.host ? `http://${req.headers.host}` : '';
+    const streamUrl = `${host}/api/speech/stream?text=${encodeURIComponent(text)}&dialect=${dialect}`;
     return {
-      audioUrl: 'https://audio.vietlearning.app/sample.mp3',
-      durationMs: 1450,
+      audioUrl: streamUrl,
+      durationMs: 1500,
       cached: true
     };
   };

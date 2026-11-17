@@ -10,6 +10,7 @@
 Hệ thống được tổ chức theo **Turborepo + PNPM Workspaces**. Mỗi thành viên sở hữu các module độc lập:
 
 - `apps/host-shell` (M3 - FE Lead): Điều phối Module Federation, Agent UI Registry, Event Bus.
+- `apps/web-shell` (Bản Web Desktop): Reuse nguyên bộ 12 màn hình MFE, cùng Design Tokens bản mobile, điều hướng sidebar + hash routing, port 3010.
 - `apps/gateway` (M1 - BE Lead, M2): Backend Fastify, Adapter STT/TTS/LLM/Vision, Rate Limit & Quota.
 - `apps/mfe-conversation` (M3 FE, M1 BE): Màn hình M1 (Chat Canvas), M7 (Roleplay Simulator).
 - `apps/mfe-practice` (M4 FE, M2 BE): Màn hình M5 (Adaptive Drills), M8 (Sentence Builder).
@@ -70,3 +71,14 @@ pnpm dev
 # Chạy kiểm thử tự động
 pnpm test
 ```
+
+<!-- BEGIN:turborepo-agent-rules -->
+
+# This is NOT the Turborepo you know
+
+Turborepo configuration, task behavior, and CLI commands can vary between installed versions and may differ from your training data. Resolve the `turbo` package from this file's directory or relevant workspace; in monorepos, it may not be visible from the repository root. For example, run `node -p "require.resolve('turbo/package.json')"` from a workspace that depends on `turbo`.
+
+Read `docs/README.md` inside that installed package first, then read the relevant pages from its `docs/` directory before changing Turborepo configuration or commands. Heed deprecation notices. These bundled docs match the installed package version and are available without network access.
+
+This block is written and re-added by `turbo` before repository-scoped commands when an AI agent is detected. In the Turborepo source repository, its template is defined in `crates/turborepo-cli/src/cli/agent_guidance.rs`. Removing the managed block while updates are enabled means a later qualifying invocation will add it again. Set `"agentGuidance": false` in the root `turbo.json` or `turbo.jsonc` to opt out; this does not remove an existing block. Keep the block committed with your work to avoid an uncommitted change on the next agent invocation.
+<!-- END:turborepo-agent-rules -->

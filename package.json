@@ -4,7 +4,7 @@
   "private": true,
   "description": "Agentic Vietnamese Learning Platform - SE405.R11 Capstone Project (UIT)",
   "scripts": {
-    "dev": "turbo run dev",
+    "dev": "turbo run dev --concurrency 20",
     "build": "turbo run build",
     "test": "turbo run test",
     "lint": "turbo run lint",

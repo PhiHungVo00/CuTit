@@ -5,6 +5,8 @@ import { chatRoutes } from './routes/chat.js';
 import { speechRoutes } from './routes/speech.js';
 import { practiceRoutes } from './routes/practice.js';
 import { contentRoutes } from './routes/content.js';
+import { visionRoutes } from './routes/vision.js';
+import { roleplayRoutes } from './routes/roleplay.js';
 
 const fastify = Fastify({ logger: true });
 
@@ -18,6 +20,8 @@ async function start() {
   await fastify.register(speechRoutes, { prefix: '/api' });
   await fastify.register(practiceRoutes, { prefix: '/v1' });
   await fastify.register(contentRoutes, { prefix: '/v1' });
+  await fastify.register(visionRoutes, { prefix: '/v1' });
+  await fastify.register(roleplayRoutes, { prefix: '/v1' });
 
   fastify.get('/healthz', async () => ({ status: 'healthy', timestamp: new Date().toISOString() }));
 

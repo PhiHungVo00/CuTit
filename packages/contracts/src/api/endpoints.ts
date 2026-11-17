@@ -9,7 +9,7 @@ export const SynthesizeRequestSchema = z.object({
 });
 
 export const SynthesizeResponseSchema = z.object({
-  audioUrl: z.string().url(),
+  audioUrl: z.string().min(1),
   durationMs: z.number().int().positive(),
   cached: z.boolean()
 });
@@ -67,8 +67,11 @@ export const SentenceCheckRequestSchema = z.object({
 
 export const SentenceCheckResponseSchema = z.object({
   valid: z.boolean(),
+  reconstructedSentence: z.string().optional(),
   errors: z.array(z.string()).default([]),
-  hint: z.string().optional()
+  hint: z.string().optional(),
+  misplacedIndices: z.array(z.number()).optional(),
+  explanation: z.string().optional()
 });
 
 // POST /placement/next (A5)
@@ -100,4 +103,23 @@ export const AnalyticsSummaryResponseSchema = z.object({
   accuracyRate: z.number().min(0).max(100),
   dueCardsCount: z.number().int(),
   cefrEstimate: z.string()
+});
+
+// POST /roleplay/step
+export const RoleplayStepRequestSchema = z.object({
+  scenarioId: z.string(),
+  stepId: z.string(),
+  choiceId: z.string().optional(),
+  userAudioText: z.string().optional()
+});
+
+export const RoleplayStepResponseSchema = z.object({
+  npcResponse: z.string(),
+  npcAudioPrompt: z.string().optional(),
+  feedback: z.string(),
+  honorificScore: z.number().min(0).max(100),
+  naturalScore: z.number().min(0).max(100),
+  syntaxScore: z.number().min(0).max(100),
+  nextStepId: z.string().optional(),
+  isCompleted: z.boolean().default(false)
 });

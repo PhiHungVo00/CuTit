@@ -1,6 +1,16 @@
 import { z } from 'zod';
 
 export const AgentUIBlockType = z.enum([
+  // Chuẩn 8 BlockType theo Mục 5.3 TDD
+  'pitch_compare',
+  'drill_card',
+  'honorific_hint',
+  'dialect_compare',
+  'culture_card',
+  'sentence_frame',
+  'audio_clip',
+  'quick_replies',
+  // Các alias tương thích ngược
   'pitch_visualizer',
   'honorific_card',
   'adaptive_drill',

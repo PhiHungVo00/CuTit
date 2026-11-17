@@ -1,23 +1,26 @@
 {
   "name": "@vietlearning/gateway",
   "version": "1.0.0",
+  "type": "module",
   "main": "./dist/index.js",
   "scripts": {
     "build": "tsc -b",
-    "dev": "node --watch --loader ts-node/esm src/index.ts"
+    "dev": "tsx watch src/index.ts"
   },
   "dependencies": {
-    "@vietlearning/contracts": "workspace:*",
-    "@vietlearning/prompts": "workspace:*",
-    "@vietlearning/shared": "workspace:*",
-    "fastify": "^4.28.1",
     "@fastify/cors": "^9.0.1",
     "@fastify/rate-limit": "^9.1.0",
-    "zod": "^3.24.2",
-    "dotenv": "^16.4.7"
+    "@vietlearning/contracts": "workspace:*",
+    "@vietlearning/content": "workspace:*",
+    "@vietlearning/prompts": "workspace:*",
+    "@vietlearning/shared": "workspace:*",
+    "dotenv": "^16.4.7",
+    "fastify": "^4.28.1",
+    "zod": "^3.24.2"
   },
   "devDependencies": {
-    "typescript": "^5.7.3",
-    "@types/node": "^20.17.19"
+    "@types/node": "^20.17.19",
+    "tsx": "^4.23.15",
+    "typescript": "^5.7.3"
   }
 }

@@ -10,17 +10,18 @@ Hệ thống được tổ chức theo mô hình **Turborepo + PNPM Workspaces**
 
 ```text
 ├── apps/
-│   ├── host-shell/          # Host Shell điều phối (Module Federation, React, Tailwind)
-│   ├── gateway/             # SaaS Gateway Backend (Fastify, Zod, Redis, Drizzle)
-│   ├── mfe-conversation/    # Remote MFE: Chat canvas, Voice turn state machine, Roleplay
-│   ├── mfe-speech-lab/      # Remote MFE: Biểu đồ cao độ F0, DTW 6 thanh điệu, Phương ngữ
-│   ├── mfe-knowledge/       # Remote MFE: Ma trận xưng hô, Cẩm nang văn hóa
-│   ├── mfe-vision/          # Remote MFE: Camera AR dán nhãn từ vựng
-│   ├── mfe-practice/        # Remote MFE: Bài tập thích ứng, Ghép câu đốt tre (Memento)
-│   └── mfe-learner/         # Remote MFE: Bảng phân tích SM-2, Khảo sát xếp lớp A5
+│   ├── host-shell/          # Host Shell MOBILE điều phối (Module Federation, React, Tailwind) — port 3000
+│   ├── web-shell/           # 🆕 BẢN WEB (Desktop) cùng Design System — port 3010
+│   ├── gateway/             # SaaS Gateway Backend (Fastify, Zod, Redis, Drizzle) — port 4000
+│   ├── mfe-conversation/    # Remote MFE: Chat canvas, Voice turn state machine, Roleplay — port 3003
+│   ├── mfe-speech-lab/      # Remote MFE: Biểu đồ cao độ F0, DTW 6 thanh điệu, Phương ngữ — port 3002
+│   ├── mfe-knowledge/       # Remote MFE: Ma trận xưng hô, Cẩm nang văn hóa — port 3004
+│   ├── mfe-vision/          # Remote MFE: Camera AR dán nhãn từ vựng — port 3007
+│   ├── mfe-practice/        # Remote MFE: Bài tập thích ứng, Ghép câu đốt tre (Memento) — port 3006
+│   └── mfe-learner/         # Remote MFE: Bảng phân tích SM-2, Khảo sát xếp lớp A5 — port 3005
 ├── packages/
 │   ├── contracts/           # Hợp đồng API (Zod) & Lược đồ cơ sở dữ liệu (Drizzle)
-│   ├── ui/                  # Design System, Design Tokens & Thành phần giao diện dùng chung
+│   ├── ui/                  # Design System, Design Tokens & Thành phần giao diện dùng chung (M3)
 │   ├── audio-dsp/           # Xử lý âm thanh Web Worker: YIN F0, DTW, AudioBridge
 │   ├── content/             # Ma trận xưng hô, Từ điển phương ngữ, Kịch bản mẫu
 │   ├── prompts/             # Lắp ráp Prompt Bé Cu Tít đa tầng (PromptBuilder)
@@ -29,6 +30,32 @@ Hệ thống được tổ chức theo mô hình **Turborepo + PNPM Workspaces**
 ```
 
 ---
+
+### 🧭 1.1 Hợp Đồng Sự Kiện Điều Hướng (Nav Event Contract)
+
+Cả hai shell (mobile lẫn web) giao tiếp chuyển màn qua **một hợp đồng duy nhất** khai báo trong `packages/contracts/src/api/nav.ts` (nguyên tắc Contract-first + Shell cấp Event Bus GoF Observer):
+
+- **Tên sự kiện:** `shell.nav.screen_changed`
+- **Schema (Zod):** `NavScreenChangedEventSchema` — trường `to`, `from?`, `source`, `mainTab?`, `emittedAt`
+- **Cổng phát an toàn:** `emitNavScreenChanged(bus, payload)` — tự gắn `emittedAt`, tự bỏ qua payload lệch schema
+- **Nguồn phát (`NAV_SOURCE_IDS`, 10):** `sidebar`, `bottom_tab`, `drawer`, `card`, `subtab`, `main_tab`, `quick_action`, `rail`, `url`, `programmatic`
+- **Danh mục màn (`NAV_SCREEN_IDS`, 13):** `overview` + `m1-chat`, `m7-roleplay`, `m8-sentence`, `m5-drill`, `m3-honorific`, `m10-culture`, `m4-vision`, `m2-pitch`, `m6-dialect`, `m9-analytics`, `m11-onboarding`, `m12-preferences`
+
+Bộ test của hợp đồng nằm tại `packages/contracts/test/nav.test.mjs` (chạy cùng `pnpm test`).
+
+### 🔌 1.2 Bảng Port Dev Chuẩn
+
+| Port | Ứng dụng |
+| :--- | :--- |
+| 3000 | `host-shell` — bản MOBILE (Module Federation, toggle sáng/tối ở thanh trên) |
+| 3010 | `web-shell` — bản WEB desktop (bố cục Duolingo, toggle sáng/tối ở topbar) |
+| 3002 | `mfe-speech-lab` — Thanh Điệu (M2), Phương Ngữ (M6) |
+| 3003 | `mfe-conversation` — Hội Thoại (M1), Nhập Vai (M7) |
+| 3004 | `mfe-knowledge` — Xưng Hô (M3), Văn Hóa (M10) |
+| 3005 | `mfe-learner` — Tiến Trình (M9), Xếp Lớp (M11), Cài Đặt Trợ Lý (M12) |
+| 3006 | `mfe-practice` — Ghép Câu (M8), Luyện Tập (M5) |
+| 3007 | `mfe-vision` — AR Camera (M4) |
+| 4000 | `gateway` — Fastify SaaS Gateway (STT/TTS/LLM/Vision qua adapter) |
 
 ## 👥 2. Phân Công Thành Viên & Màn Hình Phụ Trách
 
@@ -59,6 +86,17 @@ cp .env.example apps/gateway/.env
 # 3. Khởi chạy toàn bộ hệ thống (Dev Mode)
 pnpm dev
 ```
+
+> ⚠️ **Bảng port cố định (đã thiết lập trong từng `vite.config.ts`):**
+> | App | Port |
+> | --- | --- |
+> | host-shell (bản mobile UI) | `3000` *(nếu 3000 bị chiếm, Vite tự lui sang 3001 — kiểm tra log dev)* |
+> | **web-shell (bản web desktop)** | **`3010`** |
+> | mfe-speech-lab / conversation / knowledge / learner / practice / vision | `3002 / 3003 / 3004 / 3005 / 3006 / 3007` |
+> | gateway (backend Fastify) | `4000` |
+>
+> Mở bản Web desktop tại **http://localhost:3010** — cùng design system Material-3 Stitch với bản mobile,
+> điều hướng sidebar cho màn hình lớn, giữ nguyên bottom nav (mobile) khi co hẹp về dưới `lg`.
 
 ---
 
