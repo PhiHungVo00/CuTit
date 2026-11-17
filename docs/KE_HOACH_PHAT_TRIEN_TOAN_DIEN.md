@@ -214,7 +214,13 @@ CI chạy thật, staging/prod tách DB, host Gateway (Render/Fly), keystore ngo
 **Đã chốt (2026-11-17):**
 - **D1 ✅** Merge vào `main`, tạo repo GitHub `CuTit` (private).
 - **D4 ✅** Người học chính là **người trưởng thành**, nhưng **có chế độ trẻ em**: hồ sơ trẻ do phụ huynh tạo, không bảng xếp hạng/so sánh xã hội, không chat AI tự do (chỉ nhập vai có kịch bản), không camera/ghi âm gửi lên server khi chưa có đồng ý của phụ huynh, nhắc học do phụ huynh đặt. Làm ở GĐ4; GĐ0 chỉ cần trường `account_type` (`adult` | `child`) và `parent_user_id` trong schema để không phải migrate lớn sau này.
-- **D9** Đang thử: Gemini TTS (dùng khóa sẵn có) với chỉ dẫn giọng miền; phương án dự phòng là nhà cung cấp Việt có giọng 3 miền (FPT.AI / Zalo AI / Viettel AI) — xem nhật ký.
+- **D9 — đã thử (2026-11-17), kết luận tạm:** Gemini TTS có làm được giọng theo miền, nhưng **không gọi trực tiếp lúc học**. Thay vào đó **dựng sẵn âm thanh cho nội dung khóa học** theo từng miền (script lúc build/soạn nội dung → cache bằng `TTSCacheProxy`/object storage → app tải theo unit và lưu offline). Câu động (chat AI) vẫn đọc bằng TTS của máy. Bằng chứng:
+  - `gemini-3.8-flash-tts`, prompt dạng *director's notes* (chỉ dẫn giọng tách khỏi phần lời): đọc **đúng nguyên văn**. Một model nghe khác đoán mù ra **giọng Nam** (nhận ra “gi” đọc thành “d”).
+  - Nếu ghép chỉ dẫn vào cùng câu thì model **đọc luôn cả lời chỉ dẫn** và **tự thêm hoặc đổi từ** (“muốn” → “mua”, thêm “à”, “hôn”). Không chấp nhận được cho nội dung học, nên bắt buộc dùng dạng director's notes và kiểm lại bản chép lời của mỗi tệp trước khi dùng.
+  - `systemInstruction` không được model TTS hỗ trợ (lỗi 400).
+  - `gemini-3.8-flash-lite-tts`: mẫu “giọng Bắc” bị đoán là giọng Nam ⇒ kiểm soát giọng yếu.
+  - **Gói miễn phí chỉ cho 10 lần gọi/ngày mỗi model TTS** ⇒ dựng sẵn cần bật trả phí cho khóa Gemini, hoặc chạy rải nhiều ngày.
+  - **Còn mở:** người bản ngữ (bạn) phải nghe các mẫu trong `docs/d9-tts-mau/` để xác nhận. Model đánh giá là AI, không đủ tin cậy. Mẫu Bắc/Trung sạch chưa tạo được vì đã hết lượt trong ngày. Nếu chất lượng không đạt thì phương án dự phòng là nhà cung cấp Việt có giọng 3 miền (FPT.AI, Zalo AI, Viettel AI); phương án này cần bạn tạo tài khoản.
 - **D2, D3 (tạm, để không chặn GĐ0):** dev/test dùng **PGlite** (Postgres nhúng, không cần cài) qua Drizzle; production đọc `DATABASE_URL` (Neon hoặc Supabase chọn lúc deploy ở GĐ5). Đăng nhập: tài khoản khách + **mã khôi phục** (không cần dịch vụ ngoài); Google/email nối sau khi có OAuth client.
 
 | # | Câu hỏi | Đề xuất của tôi |
