@@ -21,7 +21,7 @@ test('Khóa A1: 3 unit theo thứ tự, mỗi unit ≥ 4 bài 8–12 câu, kiể
   assert.deepEqual(COURSE.units.map((u) => u.id), ['u1', 'u2', 'u3']);
   for (const u of COURSE.units) {
     assert.ok(u.lessons.length >= 4, `${u.id} cần ≥ 4 bài`);
-    for (const l of u.lessons) assert.ok(l.exercises.length >= 8 && l.exercises.length <= 12, `${l.id}: ${l.exercises.length} câu`);
+    for (const l of u.lessons.filter((x) => !x.roleplay)) assert.ok(l.exercises.length >= 8 && l.exercises.length <= 12, `${l.id}: ${l.exercises.length} câu`);
     assert.ok(u.testOut.length >= 8 && u.testOut.length <= 12, `${u.id} testOut`);
     assert.equal(u.level, 'A1');
     for (const k of ['title', 'titleEn', 'icon']) assert.ok(u[k], `${u.id}.${k}`);

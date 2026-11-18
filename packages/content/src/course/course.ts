@@ -46,6 +46,8 @@ export interface Lesson {
   id: string;
   title: string;
   titleEn: string;
+  /** GĐ3: bài nhập vai cuối unit — id kịch bản (scenarios.json); khi có thì `exercises` rỗng */
+  roleplay?: string;
   exercises: ExerciseRef[];
 }
 

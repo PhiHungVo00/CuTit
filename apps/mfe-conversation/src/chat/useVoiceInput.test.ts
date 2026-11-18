@@ -70,6 +70,55 @@ describe('nhập bằng giọng nói', () => {
     await vi.waitFor(() => expect(onText).toHaveBeenCalledWith({ text: 'xin chào', mock: true }));
   });
 
+  it('autoStop (gọi thoại): nói rồi ngừng ~1.2 s => tự dừng và gửi; lượt 2 vẫn mở micro được', async () => {
+    vi.useFakeTimers({ toFake: ['performance', 'setTimeout', 'clearTimeout'] });
+    request.mockResolvedValue({ text: 'Xin chào', confidence: 1, words: [], mock: true });
+    let level: ((rms: number) => void) | undefined;
+    const make = () => {
+      const b = fakeBridge();
+      b.record.mockImplementation(async (cb?: (rms: number) => void) => {
+        level = cb;
+      });
+      return b;
+    };
+    const onText = vi.fn();
+    const { result } = renderHook(() => useVoiceInput(onText, async () => make(), { autoStop: true }));
+    const speak = async (ms: number, rms: number) => {
+      for (let t = 0; t < ms; t += 50) {
+        vi.advanceTimersByTime(50);
+        await act(async () => level?.(rms));
+      }
+    };
+    for (let turn = 1; turn <= 2; turn++) {
+      await act(() => result.current.start());
+      expect(result.current.status).toBe('recording');
+      await speak(400, 0.002);
+      await speak(1000, 0.3);
+      await speak(1500, 0.002);
+      await vi.waitFor(() => expect(onText).toHaveBeenCalledTimes(turn));
+      await vi.waitFor(() => expect(result.current.status).toBe('idle'));
+    }
+  });
+
+  it('autoStop: không nói gì 8 giây => tắt micro, lỗi no-speech, không gửi', async () => {
+    vi.useFakeTimers({ toFake: ['performance', 'setTimeout', 'clearTimeout'] });
+    let level: ((rms: number) => void) | undefined;
+    const b = fakeBridge();
+    b.record.mockImplementation(async (cb?: (rms: number) => void) => {
+      level = cb;
+    });
+    const { result } = renderHook(() => useVoiceInput(vi.fn(), async () => b, { autoStop: true }));
+    await act(() => result.current.start());
+    for (let t = 0; t < 8200; t += 50) {
+      vi.advanceTimersByTime(50);
+      await act(async () => level?.(0.001));
+    }
+    expect(result.current.error).toBe('no-speech');
+    expect(result.current.status).toBe('idle');
+    expect(b.cancel).toHaveBeenCalled();
+    expect(request).not.toHaveBeenCalled();
+  });
+
   it('từ chối quyền micro / không nghe được lời / mất mạng => lỗi tương ứng', async () => {
     const denied = renderHook(() => useVoiceInput(vi.fn(), async () => fakeBridge({ fail: 'permission-denied' })));
     await act(() => denied.result.current.start());
@@ -90,5 +139,13 @@ describe('nhập bằng giọng nói', () => {
     vi.advanceTimersByTime(1000);
     await act(() => off.result.current.stop());
     expect(off.result.current.error).toBe('network');
+
+    // hết thời lượng nhận giọng nói hôm nay: báo đúng là hết lượt, không đổ cho micro/nhận dạng
+    request.mockRejectedValueOnce(Object.assign(new Error('x'), { kind: 'quota', code: 'quota_exceeded' }));
+    const quota = renderHook(() => useVoiceInput(vi.fn(), async () => fakeBridge()));
+    await act(() => quota.result.current.start());
+    vi.advanceTimersByTime(1000);
+    await act(() => quota.result.current.stop());
+    expect(quota.result.current.error).toBe('quota');
   });
 });

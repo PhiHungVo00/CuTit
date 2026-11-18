@@ -47,13 +47,15 @@ test.describe('GĐ1 Lộ trình', () => {
       await solveLesson(page, VI, memory);
       if (id !== 'u1l4') await page.getByRole('link', { name: /^Học tiếp:/ }).click();
     }
-    // sau bài cuối unit 1, “Học tiếp” trỏ sang unit 2
-    await expect(page.getByRole('link', { name: /^Học tiếp: Số từ 1 đến 5/ })).toBeVisible();
+    // sau bài cuối unit 1, “Học tiếp” trỏ sang bài nhập vai khép lại unit (GĐ3)
+    await expect(page.getByRole('link', { name: /^Học tiếp: Nhập vai: Gặp hàng xóm mới/ })).toBeVisible();
     await page.getByRole('link', { name: 'Về lộ trình' }).click();
 
     const unit1 = page.getByRole('region', { name: /Chào hỏi & xưng hô/ });
-    await expect(unit1.getByText('4/4 bài')).toBeVisible();
-    await expect(page.getByRole('link', { name: /Học tiếp/ }).first()).toContainText('Số từ 1 đến 5');
+    await expect(unit1.getByText('4/5 bài')).toBeVisible();
+    await expect(page.getByRole('link', { name: /Học tiếp/ }).first()).toContainText('Nhập vai: Gặp hàng xóm mới');
+    // nhập vai cần mạng + lượt AI: luôn có lối sang bài sau
+    await expect(page.getByRole('link', { name: 'Chưa nói được lúc này? Sang bài sau: Số từ 1 đến 5' })).toBeVisible();
     const xp = await readStat(page, 'xp');
     expect(xp).toBeGreaterThanOrEqual(40); // 4 bài × tối thiểu 10 XP
     await expect(page.getByTestId('streak')).toHaveText(/🔥 1/);
@@ -62,7 +64,7 @@ test.describe('GĐ1 Lộ trình', () => {
     await page.reload();
     await expect(page.getByTestId('xp')).toHaveText(`⭐ ${xp}`);
     await expect(page.getByTestId('streak')).toHaveText(/🔥 1/);
-    await expect(unit1.getByText('4/4 bài')).toBeVisible();
+    await expect(unit1.getByText('4/5 bài')).toBeVisible();
 
     // Lần đầu chọn đại nên chắc chắn có câu sai => “Lỗi gần đây” có ngay; thẻ SM-2 (A4) đến hạn từ ngày mai
     await page.getByRole('navigation').getByRole('link', { name: /Ôn tập/ }).click();
@@ -103,7 +105,7 @@ test.describe('GĐ1 Lộ trình', () => {
     await expect(page.getByRole('status').filter({ hasText: 'Bạn đã vượt unit này' })).toBeVisible();
     await page.getByRole('link', { name: 'Về lộ trình' }).click();
     await expect(page.getByText('Đã vượt unit ✓')).toBeVisible();
-    await expect(page.getByRole('region', { name: /Chào hỏi & xưng hô/ }).getByText('4/4 bài')).toBeVisible();
+    await expect(page.getByRole('region', { name: /Chào hỏi & xưng hô/ }).getByText('5/5 bài')).toBeVisible();
     expect(await page.locator('text=/tim|năng lượng|hearts|energy/i').count()).toBe(0);
   });
 

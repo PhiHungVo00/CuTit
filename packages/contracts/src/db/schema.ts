@@ -289,3 +289,20 @@ export const deletedAccounts = pgTable('deleted_accounts', {
   credentialHash: text('credential_hash').primaryKey(),
   deletedAt: ts('deleted_at').notNull().defaultNow()
 });
+
+/**
+ * 19. Hạn mức AI theo ngày (GĐ3): bộ đếm theo người dùng × năng lực × ngày UTC CỦA SERVER.
+ * Khác quy ước `day` (ngày địa phương do client gửi) ở các bảng khác: hạn mức không được để client tự chọn ngày.
+ * capability: 'turn' (lượt hội thoại) | 'llm' (token) | 'stt' (giây) | 'tts' (ký tự) | 'vision' (ảnh)
+ */
+export const aiUsage = pgTable(
+  'ai_usage',
+  {
+    userId: userRef(),
+    usageDayUtc: text('usage_day_utc').notNull(),
+    capability: text('capability').notNull(),
+    units: integer('units').notNull().default(0),
+    updatedAt: ts('updated_at').notNull().defaultNow()
+  },
+  (t) => [primaryKey({ columns: [t.userId, t.usageDayUtc, t.capability] })]
+);

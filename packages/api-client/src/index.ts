@@ -24,7 +24,9 @@ export class GatewayRequestError extends Error {
     public readonly kind: GatewayErrorKind,
     message: string,
     public readonly status?: number,
-    public readonly code?: string
+    public readonly code?: string,
+    /** Thân lỗi JSON của Gateway (vd. quota_exceeded => capability, resetAt) */
+    public readonly details?: Record<string, unknown>
   ) {
     super(message);
     this.name = 'GatewayRequestError';
@@ -32,12 +34,13 @@ export class GatewayRequestError extends Error {
 }
 
 /** Câu thông báo tiếng Việt thống nhất cho người học */
-const ERROR_TEXT: Record<'vi' | 'en', Partial<Record<GatewayErrorKind, string>> & { server: string }> = {
+const ERROR_TEXT: Record<'vi' | 'en', Partial<Record<GatewayErrorKind | 'rate', string>> & { server: string }> = {
   vi: {
     offline: 'Không có kết nối mạng. Phần này cần mạng, hãy thử lại khi có mạng.',
     timeout: 'Máy chủ phản hồi chậm. Vui lòng thử lại.',
     unauthorized: 'Phiên đăng nhập đã hết hạn. Hãy đăng nhập lại.',
     quota: 'Bạn đã dùng hết lượt hôm nay. Hãy quay lại vào ngày mai nhé.',
+    rate: 'Bạn gửi hơi nhanh. Đợi một chút rồi thử lại nhé.',
     unavailable: 'Tính năng AI đang tạm ngưng. Vui lòng thử lại sau.',
     'invalid-request': 'Dữ liệu gửi lên chưa hợp lệ.',
     server: 'Có lỗi ở máy chủ. Vui lòng thử lại.'
@@ -47,6 +50,7 @@ const ERROR_TEXT: Record<'vi' | 'en', Partial<Record<GatewayErrorKind, string>> 
     timeout: 'The server is responding slowly. Please try again.',
     unauthorized: 'Your session has expired. Please sign in again.',
     quota: 'You have used up today’s allowance. Come back tomorrow!',
+    rate: 'You’re sending too fast. Wait a moment and try again.',
     unavailable: 'The AI feature is temporarily unavailable. Please try again later.',
     'invalid-request': 'The request was not valid.',
     server: 'Something went wrong on the server. Please try again.'
@@ -56,6 +60,9 @@ const ERROR_TEXT: Record<'vi' | 'en', Partial<Record<GatewayErrorKind, string>> 
 /** Câu báo lỗi thân thiện theo ngôn ngữ giao diện (mặc định tiếng Việt) */
 export function describeGatewayError(err: unknown, lang: 'vi' | 'en' = 'vi'): string {
   const kind = err instanceof GatewayRequestError ? err.kind : 'server';
+  // 429 có mã khác quota_exceeded = giới hạn tốc độ theo phút, KHÔNG phải "hết lượt hôm nay"
+  const code = err instanceof GatewayRequestError ? err.code : undefined;
+  if (kind === 'quota' && code && code !== 'quota_exceeded') return ERROR_TEXT[lang].rate!;
   return ERROR_TEXT[lang][kind] ?? ERROR_TEXT[lang].server;
 }
 
@@ -128,13 +135,15 @@ async function send(path: string, method: string, body: unknown, signal?: AbortS
       if (await config.onUnauthorized()) return send(path, method, body, signal, accept, true);
     }
     if (!res.ok) {
-      let code: string | undefined;
+      let details: Record<string, unknown> | undefined;
       try {
-        code = ((await res.json()) as { error?: string }).error;
+        const json = (await res.json()) as unknown;
+        if (json && typeof json === 'object' && !Array.isArray(json)) details = json as Record<string, unknown>;
       } catch {
         /* thân lỗi không phải JSON */
       }
-      throw new GatewayRequestError(kindForStatus(res.status), `Gateway trả ${res.status}`, res.status, code);
+      const code = typeof details?.error === 'string' ? details.error : undefined;
+      throw new GatewayRequestError(kindForStatus(res.status), `Gateway trả ${res.status}`, res.status, code, details);
     }
     return res;
   } catch (err) {

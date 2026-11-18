@@ -36,6 +36,10 @@ module.exports = [
   { name: 'GĐ1 Trình chạy bài + dạng bài dùng chung (lazy)', path: 'dist/assets/SessionRunner-*.js', limit: '6.5 kB', gzip: true },
   { name: 'GĐ1 Dữ liệu khóa A1 (lazy)', path: 'dist/assets/course-*.js', limit: '8.5 kB', gzip: true },
   { name: 'GĐ1 Bài luyện thanh trong phiên học (lazy khi gặp)', path: 'dist/assets/ToneExercise-*.js', limit: '2.5 kB', gzip: true },
+  // GĐ3 Hội thoại AI, đo 2026-11-18 (lazy). Phần chat dùng chung M1/M7/gọi thoại tách thành chunk riêng nên M1 còn ~0.7 kB
+  { name: 'GĐ3 Gọi thoại với Cu Tít (lazy)', path: 'dist/assets/CallRoute-*.js', limit: '5 kB', gzip: true },
+  { name: 'GĐ3 Hội thoại dùng chung: phiên chat + nhập giọng (lazy)', path: 'dist/assets/useChatSession-*.js', limit: '10 kB', gzip: true },
+  { name: 'GĐ3 Tổng kết + thêm ôn tập (lazy)', path: 'dist/assets/SessionSummary-*.js', limit: '1.5 kB', gzip: true },
   { name: 'Worker phân tích cao độ A1/A2', path: 'dist/assets/pitch.worker-*.js', limit: '5 kB', gzip: true },
   // GĐ2 (đo 2026-11-18), mọi chunk đều lazy
   { name: 'GĐ2 Nói lại câu A3 (lazy khi gặp)', path: 'dist/assets/SpeakExercise-*.js', limit: '3.9 kB', gzip: true },
