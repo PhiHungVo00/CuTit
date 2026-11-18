@@ -13,3 +13,5 @@ export { useSentenceBuilder, shuffledIndices } from './sentence/useSentenceBuild
 export { useToneRecorder, MAX_RECORD_MS, type RecorderStatus, type RecorderError } from './tone/useToneRecorder';
 export { ContourChart } from './tone/ContourChart';
 export { verdict } from './tone/verdict';
+export { gradeAssess, SPEAK_PASS } from './speak/grade';
+export { prefetchPack, playText, findAudioKey } from './audio/coursePlayer';

@@ -22,6 +22,8 @@ loadDotenv({ path: process.env.BECUTIT_ENV_FILE ?? join(homedir(), '.becutit', '
  */
 /** apps/gateway/.data/pglite (tính từ dist/ hoặc src/, không phụ thuộc thư mục chạy lệnh) */
 const DEFAULT_PGLITE_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', '.data', 'pglite');
+/** apps/gateway/.data/tts: âm thanh dựng sẵn (GĐ2), không commit */
+const DEFAULT_TTS_AUDIO_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', '.data', 'tts');
 
 const boolFromEnv = z
   .enum(['true', 'false', '1', '0'])
@@ -58,7 +60,15 @@ const EnvSchema = z
       .optional()
       .transform((v) => (v && v.length >= 20 && !v.includes('...') ? v : undefined)),
     GEMINI_MODEL: z.string().regex(/^[a-z0-9.-]+$/).default('gemini-3.5-flash-lite'),
-    LLM_TIMEOUT_MS: z.coerce.number().int().positive().max(9000, "LLM_TIMEOUT_MS phải nhỏ hơn timeout 10 giây của client (ảnh, giọng nói)").default(8000)
+    LLM_TIMEOUT_MS: z.coerce.number().int().positive().max(9000, "LLM_TIMEOUT_MS phải nhỏ hơn timeout 10 giây của client (ảnh, giọng nói)").default(8000),
+    // GĐ2 — TTS theo miền (D9). Mặc định TẮT kể cả khi có khóa: chỉ bật rõ ràng (vd. lúc chạy script dựng sẵn)
+    TTS_PROVIDER: z.enum(['none', 'gemini']).default('none'),
+    GEMINI_TTS_MODEL: z.string().regex(/^[a-z0-9.-]+$/).default('gemini-3.8-flash-tts'),
+    GEMINI_TTS_VOICE: z.string().regex(/^[A-Za-z]{2,30}$/).default('Kore'),
+    /** Thư mục âm thanh dựng sẵn (<hash>.wav, packs/, state/) — gitignored */
+    TTS_AUDIO_DIR: z.string().optional(),
+    /** Gốc URL công khai của Gateway để trả audioUrl tuyệt đối (sau proxy). Không đặt => lấy từ Host của request */
+    PUBLIC_BASE_URL: z.string().url().optional()
   })
   .transform((env) => ({
     ...env,
@@ -70,6 +80,7 @@ const EnvSchema = z
     JWT_SECRET: env.JWT_SECRET ?? (env.NODE_ENV === 'production' ? undefined : randomBytes(32).toString('hex')),
     jwtSecretGenerated: !env.JWT_SECRET && env.NODE_ENV !== 'production',
     PGLITE_DIR: env.PGLITE_DIR ?? (env.NODE_ENV === 'test' ? 'memory://' : DEFAULT_PGLITE_DIR),
+    TTS_AUDIO_DIR: env.TTS_AUDIO_DIR ?? DEFAULT_TTS_AUDIO_DIR,
     corsOrigins: env.CORS_ORIGIN.split(',')
       .map((o) => o.trim())
       .filter(Boolean)

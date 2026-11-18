@@ -12,6 +12,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@vietlearning/api-client": "workspace:*",
     "@vietlearning/audio-dsp": "workspace:*",
     "@vietlearning/content": "workspace:*",
     "@vietlearning/contracts": "workspace:*",
