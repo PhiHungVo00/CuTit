@@ -73,6 +73,13 @@
         {"type": "tone", "tone": "sac", "word": "trái"},
         {"type": "fill", "sentence": "cs11", "blank": 1}
       ]
+    },
+    {
+      "id": "u3l5",
+      "title": "Nhập vai: Ăn trưa, hỏi đường",
+      "titleEn": "Role-play: Lunch and directions",
+      "roleplay": "sc7",
+      "exercises": []
     }
   ],
   "testOut": [
