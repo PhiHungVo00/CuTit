@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import type { RoleplayScenario } from '@vietlearning/content';
+import { foldVietnamese, type RoleplayScenario } from '@vietlearning/content';
 import { AgentUIBlockType, type AgentUIBlock, type ChatHistoryItem } from '@vietlearning/contracts';
 import { SystemPromptBuilder } from '@vietlearning/prompts';
 import type { LlmProvider } from '../../providers/llm.js';
@@ -77,13 +77,24 @@ function toTurns(history: ChatHistoryItem[], userText: string) {
   return turns;
 }
 
+const skeleton = (s: string) => foldVietnamese(s).replace(/[^\p{L}\p{N}]+/gu, ' ').trim();
+
+/**
+ * Gọi thoại: câu người học là bản chép lời tự động, nên lời sửa CHỈ khác dấu thanh / viết hoa / dấu câu là lỗi
+ * của bộ chép lời chứ không phải của người học => bỏ (chốt chặn tất định, không chỉ dựa vào prompt — Nguyên tắc 6).
+ */
+export function dropTranscriptionNoise(turn: TutorTurn, input: Pick<LiveTutorInput, 'mode' | 'userText'>): TutorTurn {
+  if (input.mode !== 'call' || !turn.correction) return turn;
+  return skeleton(turn.correction.corrected) === skeleton(input.userText) ? { ...turn, correction: undefined } : turn;
+}
+
 export interface Tutor {
   readonly live: boolean;
   turn(input: LiveTutorInput): Promise<TutorTurn>;
 }
 
 export function createTutor(llm: LlmProvider | null, log?: { warn: (o: object, msg: string) => void }): Tutor {
-  const mock = (input: LiveTutorInput): TutorTurn => ({ ...mockTutorTurn(input), mock: true, tokens: 0 });
+  const mock = (input: LiveTutorInput): TutorTurn => dropTranscriptionNoise({ ...mockTutorTurn(input), mock: true, tokens: 0 }, input);
   if (!llm) return { live: false, turn: async (input) => mock(input) };
 
   return {
@@ -108,7 +119,7 @@ export function createTutor(llm: LlmProvider | null, log?: { warn: (o: object, m
           input.correctionLevel !== 'off' && out.correction && out.correction.corrected !== input.userText.trim()
             ? { original: input.userText, corrected: out.correction.corrected, explanation: out.correction.explanation }
             : undefined;
-        return {
+        return dropTranscriptionNoise({
           reply: out.reply,
           correction,
           blocks: scenario
@@ -118,7 +129,7 @@ export function createTutor(llm: LlmProvider | null, log?: { warn: (o: object, m
           newWords: filterNewWords(out.reply, out.newWords),
           mock: false,
           tokens
-        };
+        }, input);
       } catch (err) {
         // AI lỗi/quá hạn/đầu ra sai: vẫn trả lời bằng bộ giả lập, gắn mock: true để giao diện báo trung thực
         log?.warn({ err: (err as Error).message }, 'tutor LLM failed, falling back to mock');

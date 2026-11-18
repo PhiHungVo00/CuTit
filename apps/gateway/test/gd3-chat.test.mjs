@@ -73,6 +73,22 @@ test('mode=call: prompt văn nói ngắn, không sửa dấu/viết hoa của b�
   await a.close();
 });
 
+test('mode=call: lời sửa chỉ khác dấu thanh/viết hoa/dấu câu bị bỏ (lỗi của bộ chép lời, không phải người học)', async () => {
+  const only = fakeLlm({ reply: 'Thế à?', correction: { original: 'x', corrected: 'Hôm nay tôi đi chợ mua dứa.', explanation: 'Added tone marks.' }, blocks: [], completedTasks: [], newWords: [] });
+  const a = await app({ llm: only.provider });
+  const call = events((await turn(a, { userText: 'hom nay toi di cho mua dua', mode: 'call' })).body);
+  assert.ok(!call.some((e) => e.type === 'correction'), 'chế độ gọi: không báo lỗi dấu');
+  const chat = events((await turn(a, { userText: 'hom nay toi di cho mua dua' })).body);
+  assert.ok(chat.some((e) => e.type === 'correction'), 'chat gõ chữ: vẫn sửa dấu như cũ');
+  await a.close();
+
+  const real = fakeLlm({ reply: 'Thế à?', correction: { original: 'x', corrected: 'Hôm nay tôi đi chợ để mua dứa', explanation: 'Add “để”.' }, blocks: [], completedTasks: [], newWords: [] });
+  const b = await app({ llm: real.provider });
+  const kept = events((await turn(b, { userText: 'Hôm nay tôi đi chợ mua dứa', mode: 'call' })).body);
+  assert.ok(kept.some((e) => e.type === 'correction'), 'sửa từ thật sự vẫn giữ');
+  await b.close();
+});
+
 test('lượt chat KHÔNG gọi TTS ở Gateway (client tự gọi /speech/synthesize khi cần)', async () => {
   let calls = 0;
   const tts = new TTSCacheProxy(async () => (calls++, 'https://cdn.example/a.mp3'));
