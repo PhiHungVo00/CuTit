@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { COURSE, findLesson, findWord, PitchReferenceFlyweight, type ToneId } from '@vietlearning/content';
-import { useUiLanguage } from '@vietlearning/state';
+import { useLearner, useUiLanguage } from '@vietlearning/state';
+import { prefetchPack } from '@vietlearning/exercises';
 import { progressStore, useProgress } from '@vietlearning/state/progress';
 import { useT } from './i18n';
 import { nextLesson } from './path/pathModel';
@@ -31,6 +32,12 @@ function LessonBody({ lessonId }: { lessonId: string }) {
   const [result, setResult] = useState<Finished | null>(null);
   const done = useProgress((s) => s.lessons);
   const testedOut = useProgress((s) => s.testedOut);
+  const dialect = useLearner((s) => s.preferences.dialect);
+  const unitId = found?.unit.id;
+  // GĐ2: tải gói âm thanh dựng sẵn của unit theo miền đang chọn (lưu offline; lỗi thì đọc bằng TTS của máy)
+  useEffect(() => {
+    if (unitId) void prefetchPack(unitId, dialect);
+  }, [unitId, dialect]);
 
   if (!found) {
     return (

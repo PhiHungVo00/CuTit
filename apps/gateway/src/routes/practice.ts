@@ -9,8 +9,11 @@ import {
   SentenceCheckRequestSchema,
   SentenceCheckResponseSchema,
   checkSentenceOrder,
+  ExplainRequestSchema,
+  ExplainResponseSchema,
   type SentenceItem
 } from '@vietlearning/contracts';
+import { ExplainCache, explainAnswer, explainKey, mockExplain } from '../services/explain/explain.js';
 import { SENTENCE_ITEMS } from '@vietlearning/content';
 import type { RouteDeps } from '../app.js';
 import { eq } from 'drizzle-orm';
@@ -20,8 +23,23 @@ import { requireUserId } from '../pipeline/RequestPipeline.js';
 import { parseOr400, respond } from '../lib/validate.js';
 
 /** Các route luyện tập. Hiện vẫn trả dữ liệu MOCK nhưng đã xác thực đầu vào/đầu ra. */
-export const practiceRoutes: FastifyPluginAsync<RouteDeps> = async (server, { pipeline, db }) => {
+export const practiceRoutes: FastifyPluginAsync<RouteDeps> = async (server, { pipeline, db, llm }) => {
   const placement = new AdaptivePlacement();
+  const explainCache = new ExplainCache();
+
+  // POST /v1/practice/explain (GĐ2): giải thích câu trả lời bằng LLM, cache theo câu; không có AI => mẫu, mock: true
+  server.post('/practice/explain', async (req, reply) => {
+    const body = parseOr400(ExplainRequestSchema, req.body, reply);
+    if (!body) return reply;
+    if (!llm) return respond(ExplainResponseSchema, { ...mockExplain(body), mock: true, cached: false });
+    const key = explainKey(body);
+    const hit = explainCache.get(key);
+    if (hit) return respond(ExplainResponseSchema, { ...hit, mock: false, cached: true });
+    await pipeline.consume(req, 'llm', Math.ceil((body.question.length + body.answer.length + body.userAnswer.length) / 3) + 400);
+    const { tokens: _tokens, ...out } = await explainAnswer(llm, body);
+    explainCache.set(key, out);
+    return respond(ExplainResponseSchema, { ...out, mock: false, cached: false });
+  });
   // POST /v1/practice/generate (LLM sinh bài tập)
   server.post('/practice/generate', async (req, reply) => {
     const body = parseOr400(DrillGenerateRequestSchema, req.body, reply);

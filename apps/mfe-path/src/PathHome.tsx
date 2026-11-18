@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { COURSE } from '@vietlearning/content';
 import { dayKey, dueCards, learnerStore, useLearner, useUiLanguage } from '@vietlearning/state';
@@ -8,6 +8,9 @@ import { lessonStatuses, nextLesson, unitProgress } from './path/pathModel';
 import { GoalPanel } from './GoalPanel';
 import { startGoalWatch, syncReminders } from './reminders';
 import { card, primaryBtn } from './ui';
+
+// Thẻ miền (GĐ2) chỉ tải khi người học mở
+const DialectCard = lazy(() => import('./DialectCard'));
 
 /**
  * Phần lộ trình của trang chủ (Host đặt dưới tiêu đề app, tải lazy):
@@ -154,6 +157,7 @@ export function PathHome() {
                   </Link>
                 )
               )}
+              {u.dialectNotes && u.dialectNotes.length > 0 && <DialectDetails ids={u.dialectNotes} />}
             </section>
           );
         })}
@@ -162,5 +166,20 @@ export function PathHome() {
 
       <GoalPanel />
     </div>
+  );
+}
+
+function DialectDetails({ ids }: { ids: readonly string[] }) {
+  const t = useT();
+  const [open, setOpen] = useState(false);
+  return (
+    <details onToggle={(e) => setOpen((e.currentTarget as HTMLDetailsElement).open)} className="rounded-xl border border-line px-3">
+      <summary className="flex min-h-11 cursor-pointer items-center text-sm font-bold text-ink">🗺️ {t('dialectCard')}</summary>
+      {open && (
+        <Suspense fallback={<div aria-busy="true" className="h-24" />}>
+          <DialectCard ids={ids} />
+        </Suspense>
+      )}
+    </details>
   );
 }

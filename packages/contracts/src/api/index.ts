@@ -6,3 +6,4 @@ export * from './chat.js';
 export * from './assessment.js';
 export * from './endpoints.js';
 export * from './account.js';
+export * from './speech.js';

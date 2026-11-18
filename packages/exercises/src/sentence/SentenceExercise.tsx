@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { ExplainButton } from '../explain/ExplainButton';
 import { useT } from '../i18n';
 import { say } from '../choice/ChoiceExercise';
 import type { ExerciseItem, ExerciseResult } from '../types';
@@ -94,6 +95,7 @@ export function SentenceExercise({ item, seed, onDone }: { item: BuildItem; seed
               ))}
             </ul>
             <p className="m-0 font-bold">{t('correctOrder', { sentence: correctSentence })}</p>
+            <ExplainButton request={{ kind: 'build', question: item.prompt, answer: correctSentence, userAnswer: sentence }} />
             <button type="button" onClick={() => done(false)} className="min-h-12 w-full rounded-xl bg-accent font-extrabold text-accent-ink">
               {t('next')}
             </button>

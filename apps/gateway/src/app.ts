@@ -7,8 +7,12 @@ import rateLimit from '@fastify/rate-limit';
 import type { GatewayConfig } from './config.js';
 import { RequestPipeline } from './pipeline/RequestPipeline.js';
 import { InMemoryQuotaStore, QuotaStore } from './pipeline/QuotaStore.js';
-import { TTSCacheProxy } from './cache/TTSCacheProxy.js';
+import { TTSCacheProxy, fileSynthesizer } from './cache/TTSCacheProxy.js';
+import { createTtsProvider, type TtsProvider } from './providers/tts.js';
+import { FileAudioStore } from './services/tts/audioStore.js';
+import { audioRoutes } from './routes/audio.js';
 import { createLlmProvider, type LlmProvider } from './providers/llm.js';
+import { createSttProvider, type SttProvider } from './providers/stt.js';
 import { createTutor, type Tutor } from './services/chat/tutor.js';
 import { chatRoutes } from './routes/chat.js';
 import { speechRoutes } from './routes/speech.js';
@@ -24,6 +28,10 @@ export interface RouteDeps {
   config: GatewayConfig;
   /** null = chưa cấu hình nhà cung cấp AI => các route dùng bộ giả lập, gắn mock: true */
   llm: LlmProvider | null;
+  /** null = chưa có nhà cung cấp STT => route giọng nói trả mock: true (GĐ2) */
+  stt: SttProvider | null;
+  /** null = TTS tắt (mặc định; bật bằng TTS_PROVIDER=gemini) — tệp dựng sẵn vẫn phục vụ được */
+  tts: TtsProvider | null;
   tutor: Tutor;
   /** DB mở lười: chỉ route cần dữ liệu người học mới mở */
   db: DbProvider;
@@ -35,6 +43,10 @@ export interface BuildOptions {
   ttsCache?: TTSCacheProxy;
   /** Test tiêm nhà cung cấp giả; bỏ trống = theo cấu hình (GEMINI_API_KEY) */
   llm?: LlmProvider | null;
+  /** Test tiêm STT giả; bỏ trống = STT qua LLM (nếu có) */
+  stt?: SttProvider | null;
+  /** Test tiêm TTS giả; bỏ trống = theo cấu hình TTS_PROVIDER */
+  tts?: TtsProvider | null;
   /** Test tiêm DB dùng chung; bỏ trống = theo cấu hình (DATABASE_URL hoặc PGlite) và tự đóng khi app đóng */
   db?: DbProvider;
 }
@@ -71,7 +83,11 @@ export async function buildApp(config: GatewayConfig, opts: BuildOptions = {}): 
 
   const pipeline = new RequestPipeline(config, opts.quotaStore ?? new InMemoryQuotaStore(), db);
   const llm = opts.llm !== undefined ? opts.llm : createLlmProvider(config);
-  const deps: RouteDeps = { pipeline, ttsCache: opts.ttsCache ?? new TTSCacheProxy(), config, llm, tutor: createTutor(llm, app.log), db };
+  const stt = opts.stt !== undefined ? opts.stt : createSttProvider(llm);
+  const tts = opts.tts !== undefined ? opts.tts : createTtsProvider(config);
+  const audioStore = new FileAudioStore(config.TTS_AUDIO_DIR);
+  const ttsCache = opts.ttsCache ?? new TTSCacheProxy(fileSynthesizer(audioStore, tts), Boolean(tts));
+  const deps: RouteDeps = { pipeline, ttsCache, config, llm, stt, tts, tutor: createTutor(llm, app.log), db };
   app.log.info({ ai: llm ? `${llm.name}:${config.GEMINI_MODEL}` : 'mock' }, 'AI provider');
 
   // Phải đặt trước khi đăng ký các scope con để chúng thừa hưởng
@@ -84,6 +100,9 @@ export async function buildApp(config: GatewayConfig, opts: BuildOptions = {}): 
       message: status >= 500 && config.NODE_ENV === 'production' ? undefined : error.message
     });
   });
+
+  // Âm thanh dựng sẵn: công khai, ngoài /v1 (xem routes/audio.ts)
+  await app.register(audioRoutes, { store: audioStore });
 
   app.get('/healthz', async () => ({ status: 'healthy', timestamp: new Date().toISOString() }));
 

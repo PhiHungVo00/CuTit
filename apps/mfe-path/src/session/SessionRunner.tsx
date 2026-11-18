@@ -18,7 +18,8 @@ const SKILL: Record<ExerciseRef['type'], Skill> = {
   build: 'sentence',
   tone: 'pronunciation',
   pronoun: 'honorific',
-  dialect: 'dialect'
+  dialect: 'dialect',
+  speak: 'pronunciation'
 };
 
 /** seed xác định theo chuỗi (id bài) để dựng lại được cùng một bài */

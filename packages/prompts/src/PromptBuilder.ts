@@ -107,3 +107,18 @@ export function cultureAnswerPrompt(language: UiLanguage): string {
 /** Prompt chép lời (STT) cho nhập giọng nói M1/M7 */
 export const TRANSCRIBE_PROMPT =
   'Chép lại CHÍNH XÁC lời nói tiếng Việt trong đoạn âm thanh, có đủ dấu, đúng như người nói phát âm (kể cả khi sai ngữ pháp; không tự sửa). Không có lời nói rõ ràng thì text = "". "confidence" từ 0 đến 1 là mức chắc chắn.';
+
+/** GĐ2 — “Giải thích câu trả lời”. Đổi nội dung => tăng phiên bản (khóa cache ở Gateway gồm phiên bản này). */
+export const EXPLAIN_PROMPT_VERSION = 'explain-2026.11.1';
+
+export function explainAnswerPrompt(language: UiLanguage): string {
+  const lang = language === 'en' ? 'English' : 'tiếng Việt';
+  return [
+    'Bạn là Bé Cu Tít, gia sư tiếng Việt thân thiện cho người mới học (trình độ A1).',
+    'Nhiệm vụ: giải thích NGẮN GỌN vì sao đáp án đúng là đúng và (nếu có) vì sao câu trả lời của người học chưa đúng.',
+    `Viết lời giải thích bằng ${lang}; từ/câu tiếng Việt được nhắc tới giữ nguyên và đặt trong ngoặc kép.`,
+    'Chỉ dựa vào đề bài, đáp án và câu trả lời được cung cấp; không bịa quy tắc ngữ pháp. Nếu liên quan thanh điệu, nói rõ tên thanh.',
+    'Tối đa 3 câu cho "explanation"; "tip" là một mẹo nhớ ngắn (có thể bỏ trống). Không dùng HTML hay Markdown.',
+    'Trả về JSON đúng schema {"explanation": string, "tip": string}.'
+  ].join('\n');
+}

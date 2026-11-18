@@ -5,6 +5,7 @@
   "titleEn": "Numbers & shopping",
   "icon": "🛒",
   "reviewed": false,
+  "dialectNotes": ["d15", "d3", "d1", "d2", "d28"],
   "lessons": [
     {
       "id": "u2l1",
@@ -20,6 +21,7 @@
         {"type": "meaning", "word": "w17", "dir": "en-vi"},
         {"type": "fill", "sentence": "s11", "blank": 2},
         {"type": "tone", "tone": "sac", "word": "bốn"},
+        {"type": "speak", "sentence": "s11"},
         {"type": "meaning", "word": "w20", "dir": "en-vi"}
       ]
     },
@@ -53,6 +55,7 @@
         {"type": "fill", "sentence": "s15", "blank": 3},
         {"type": "meaning", "word": "w30", "dir": "vi-en"},
         {"type": "meaning", "word": "w31", "dir": "en-vi"},
+        {"type": "speak", "sentence": "cs4"},
         {"type": "listen", "word": "w30"}
       ]
     },
@@ -70,6 +73,7 @@
         {"type": "meaning", "word": "w33", "dir": "vi-en"},
         {"type": "fill", "sentence": "s49", "blank": 1},
         {"type": "build", "sentence": "cs7"},
+        {"type": "speak", "sentence": "cs6"},
         {"type": "tone", "tone": "nang", "word": "chợ"}
       ]
     }

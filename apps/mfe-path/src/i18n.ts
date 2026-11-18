@@ -111,7 +111,12 @@ export const { useT, t } = defineMessages(
     testOutStart: 'Bắt đầu kiểm tra',
     testOutPassed: 'Đạt {pct}%! Bạn đã vượt unit này (+{xp} XP).',
     testOutFailed: 'Lần này đúng {pct}%. Các bài trong unit vẫn mở để bạn học dần, thử lại lúc nào cũng được.',
-    testOutAgain: 'Thử lại'
+    testOutAgain: 'Thử lại',
+    dialectCard: 'Miền khác nói thế nào?',
+    dialectPlay: 'Nghe “{word}” giọng {region}',
+    'region.north': 'Bắc',
+    'region.central': 'Trung',
+    'region.south': 'Nam'
   },
   {
     streak: '{n}-day streak',
@@ -213,6 +218,11 @@ export const { useT, t } = defineMessages(
     testOutStart: 'Start the test',
     testOutPassed: '{pct}%! You passed this unit (+{xp} XP).',
     testOutFailed: 'You scored {pct}% this time. The unit’s lessons stay open, and you can retry any time.',
-    testOutAgain: 'Try again'
+    testOutAgain: 'Try again',
+    dialectCard: 'How do other regions say it?',
+    dialectPlay: 'Hear “{word}” in the {region} accent',
+    'region.north': 'North',
+    'region.central': 'Central',
+    'region.south': 'South'
   }
 );
