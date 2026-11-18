@@ -17,6 +17,11 @@ Kế hoạch: `docs/superpowers/plans/2026-11-18-gd3-hoi-thoai.md`. Mọi bướ
 - Nút “🐢 Nói chậm lại”: đọc lại câu cuối chậm (audio 0.75×, TTS máy rate 0.7) và giữ chậm cho các câu sau. Phụ đề bật/tắt. “⌨️ Gõ thay nói” (tự chuyển khi micro bị từ chối). Gác máy.
 - Hộp đồng ý micro `voice` tách thành `VoiceConsent` dùng chung. Bản cho gọi thoại nói rõ “gửi đi ngay khi bạn ngừng nói” (chat vẫn cho sửa chữ trước khi gửi).
 - `useVoiceInput` thêm `autoStop` và `cancel`. Guard dùng ref, để lượt 2 không bị giá trị `status` cũ chặn.
+- Sửa sau review:
+  - Luôn xin giọng máy chủ tốc độ chuẩn và chỉ chậm lúc phát. Trước đó bị chậm hai lần (~0.56×) và tách khóa cache.
+  - Âm thanh máy chủ dừng khi watchdog chạy, khi gác máy và khi rời màn.
+  - “Thử lại” sau lỗi mạng dùng `session.retry`, nên không lặp câu của người học (có e2e).
+  - Hết thời lượng nhận giọng nói (STT 600 s/ngày) báo riêng và chuyển sang gõ chữ.
 
 ## 3. Tổng kết sau buổi nói/nhập vai
 - `buildSummary`: lỗi đã sửa (itemRef `roleplay:<câu đúng>` như cũ) + từ mới (`conv:word:<từ>`), bỏ trùng theo NFC.
@@ -34,13 +39,20 @@ Kế hoạch: `docs/superpowers/plans/2026-11-18-gd3-hoi-thoai.md`. Mọi bướ
 - `setMode('call')`: văn nói 1–2 câu, không emoji/markdown, KHÔNG sửa dấu/viết hoa/dấu câu của bản chép lời. Yêu cầu `newWords`.
 - **Thử Gemini thật (1 lượt, `gemini-3.5-flash-lite`)**: `mock:false`, schema đầu ra mới được chấp nhận, `newWords` = dứa/ngọt, `turnsLeft: 59`. Nhưng model **vẫn “sửa” dấu + viết hoa** dù prompt cấm ⇒ thêm chốt chặn tất định `dropTranscriptionNoise` ở Gateway (chế độ gọi bỏ lời sửa nếu khớp bản chép lời sau khi bỏ dấu/hoa/dấu câu). Có test.
 
-## Kiểm tra
-- `pnpm build` ✅ · `pnpm test` ✅ 35/35 task, 271 test (gateway 59, state 27, content 24, api-client 12, audio-dsp 12, contracts 10, mfe-conversation 34, exercises 23, mfe-path 22, mfe-knowledge 18, mfe-learner 9, ui 8, mfe-practice 7, host 3, mfe-vision 2, speech-lab 1).
-- `pnpm lint:boundaries` ✅ (309 module, 0 vi phạm).
-- size-limit ✅: tải ban đầu 68.09/68.5 kB (không đổi). Chunk mới: `CallRoute` 4.29 kB (ngân sách 5), `useChatSession` 8.75 kB (10; phần chat dùng chung M1/M7/gọi tách ra nên `ChatRoute` còn 0.73 kB), `SessionSummary` 1.03 kB (1.5).
-- e2e ✅ **68 qua, 3 bỏ qua** (`@perf` chỉ chạy ở project perf), cổng 4213/4040, Gateway thật PGlite, provider giả. Gồm `e2e/conversation.spec.ts` (nhập vai cuối unit 1 ⇒ 5/5 bài + XP + thêm từ vào ôn tập; gọi thoại 2 lượt bằng micro giả tự nhận ngừng nói; hết lượt; giao diện tiếng Anh). Đã sửa `path.spec.ts` (4/4 ⇒ 4/5, 5/5; link bỏ qua) và `app.spec.ts` (nhập vai: một chạm lưu thẻ).
-
+## Kiểm tra (lần chạy cuối trên HEAD, đúng thứ tự build → test → lint → build host → size → e2e)
+- `pnpm build` ✅ 19/19 task.
+- `pnpm test` ✅ 35/35 task, **273 test**: gateway 59, state 27, content 24, api-client 12, audio-dsp 12, contracts 10, mfe-conversation 36, exercises 23, mfe-path 22, mfe-knowledge 18, mfe-learner 9, ui 8, mfe-practice 7, host 3, mfe-vision 2, speech-lab 1.
+- `pnpm lint:boundaries` ✅ 310 module, 0 vi phạm.
+- size-limit ✅: tải ban đầu **68.1/68.5 kB**. Chunk mới: `CallRoute` 4.39 kB (ngân sách 5), `useChatSession` 8.83 kB (10; phần chat dùng chung M1/M7/gọi thoại tách ra, nên `ChatRoute` còn ~0.7 kB), `SessionSummary` 1.03 kB (1.5).
+- e2e ✅ **70 qua, 3 bỏ qua** (`@perf` chỉ chạy ở project perf). Cổng 4213/4040, Gateway thật PGlite, provider giả. `e2e/conversation.spec.ts` gồm: nhập vai cuối unit 1 ⇒ 5/5 bài + XP + thêm từ vào ôn tập; gọi thoại 2 lượt bằng micro giả tự nhận ngừng nói; thử lại sau mất mạng không lặp câu; hết lượt ≠ gửi quá nhanh; giao diện tiếng Anh. Đã sửa `path.spec.ts` (4/5, 5/5, link bỏ qua) và `app.spec.ts` (nhập vai: một chạm lưu thẻ).
 - Bẫy đã gặp: `pnpm test` (turbo) build lại `apps/host-shell/dist` **không có** `VITE_GATEWAY_URL` ⇒ bản build trỏ cổng 4000 và mọi test e2e cần Gateway báo “mất mạng”. Luôn chạy `VITE_GATEWAY_URL=http://localhost:4040 pnpm --filter @vietlearning/host-shell build` NGAY TRƯỚC e2e.
+
+## Lệch có chủ đích — cần Lead Dev xác nhận
+- `SilenceDetector` (`apps/mfe-conversation/src/call/silenceDetector.ts`) là luật ngưỡng năng lượng tự viết. Nó chỉ so mức RMS sẵn có với nền ồn, không xử lý tín hiệu mới, nhưng vẫn nằm ngoài danh mục A1–A8. Phương án thay: thư viện VAD (tốn bundle) hoặc bắt người học bấm dừng.
+- Màn `/goi-thoai` nằm ngoài M1–M12 của TDD (thuộc M1 mở rộng, quyết định GĐ3 trong kế hoạch tổng). Không thêm vào 12 công cụ ở Khám phá.
+
+## Đồng bộ sau khi merge
+- Đã kiểm tra (chỉ đọc) nhánh “nối tiến độ”: `sync.ts` so khác trạng thái `progressStore` ⇒ `completeLesson` của bài nhập vai sinh `xp.add` + `lesson.progress` như bài thường, không cần sửa thêm.
 
 ## Còn lại / lưu ý merge
 - **Migration trùng số `0001`** với phiên “nối tiến độ” (`progress_tombstone`). Bên merge sau xóa `0001` + snapshot của mình rồi chạy lại `db:generate`.
