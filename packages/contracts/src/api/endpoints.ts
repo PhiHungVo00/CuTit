@@ -191,7 +191,11 @@ export const SrsDueResponseSchema = z.array(
     itemRef: z.string(),
     ease: z.number().int(),
     intervalDays: z.number().int(),
-    dueAt: z.string().datetime()
+    dueAt: z.string().datetime(),
+    repetitions: z.number().int().optional(),
+    front: z.string().optional(),
+    back: z.string().optional(),
+    source: z.string().optional()
   })
 );
 

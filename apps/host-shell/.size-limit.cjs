@@ -7,7 +7,9 @@ module.exports = [
   {
     name: 'Tải ban đầu: JS khung app + React (mọi người dùng đều tải)',
     path: ['dist/assets/app-*.js', 'dist/assets/react-*.js'],
-    limit: '68 kB', gzip: true
+    // 68 → 68.5 kB (GĐ0, 2026-11-18): getToken/onUnauthorized + gửi lại khi 401 + map chunk tài khoản lười
+    // (~0.1–0.3 kB). Phiên khách, Zod, hàng đợi đồng bộ đều nằm ở chunk lười `bootstrap`/`sync`.
+    limit: '68.5 kB', gzip: true
   },
   { name: 'CSS toàn app (Tailwind + tokens)', path: 'dist/assets/*.css', limit: '7.5 kB', gzip: true },
   { name: 'M3 Ma trận xưng hô (lazy)', path: 'dist/assets/HonorificScreen-*.js', limit: '15 kB', gzip: true },

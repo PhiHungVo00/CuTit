@@ -4,6 +4,7 @@ import { getDeviceSpeech } from '@vietlearning/native';
 import { learnerStore, useLearner, type CorrectionLevel, type Dialect, type Preferences, type UiLanguage } from '@vietlearning/state';
 import { ChoiceGroup, ScreenFrame, card, linkBtn, secondaryBtn } from '../common/ui';
 import { useT } from '../i18n';
+import { AccountSection } from './AccountSection';
 
 interface Voice {
   id: string;
@@ -51,14 +52,13 @@ async function fetchVoices(): Promise<Voice[] | null> {
   }
 }
 
-/** Màn hình M12: giọng đọc, tốc độ, phương ngữ, mức sửa lỗi, nhân vật; nghe thử; xóa dữ liệu trên máy. */
+/** Màn hình M12: giọng đọc, tốc độ, phương ngữ, mức sửa lỗi, nhân vật; nghe thử; tài khoản (mã khôi phục, khôi phục, xóa). */
 export function PreferencesScreen() {
   const t = useT();
   const prefs = useLearner((s) => s.preferences);
   const [voices, setVoices] = useState<Voice[]>(() => OFFLINE_VOICES.map((v) => ({ ...v, name: prefs.uiLanguage === 'en' ? v.en : v.name })));
   const [sync, setSync] = useState<Sync>('idle');
   const [speakError, setSpeakError] = useState<string | null>(null);
-  const [confirmReset, setConfirmReset] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout>>();
   const mounted = useRef(true);
 
@@ -189,35 +189,7 @@ export function PreferencesScreen() {
         <p className="m-0 text-[15px] text-ink-soft">{t('privacyLocal')}</p>
       </section>
 
-      <section className={card} aria-labelledby="ct-data">
-        <h2 id="ct-data" className="m-0 text-lg font-extrabold text-ink">
-          {t('dataSection')}
-        </h2>
-        <p className="m-0 text-[15px] text-ink-soft">{t('dataHint')}</p>
-        {!confirmReset ? (
-          <button type="button" className={secondaryBtn} onClick={() => setConfirmReset(true)}>
-            {t('resetAsk')}
-          </button>
-        ) : (
-          <div role="alert" className="flex flex-col gap-2 rounded-xl bg-danger-soft p-3 text-danger-ink">
-            <p className="m-0 text-[15px] font-bold">{t('resetConfirm')}</p>
-            <button
-              type="button"
-              className="min-h-12 w-full rounded-xl bg-danger px-4 font-extrabold text-white"
-              onClick={() => {
-                learnerStore.getState().reset();
-                setConfirmReset(false);
-                setSync('idle');
-              }}
-            >
-              {t('resetYes')}
-            </button>
-            <button type="button" className={secondaryBtn} onClick={() => setConfirmReset(false)}>
-              {t('cancel')}
-            </button>
-          </div>
-        )}
-      </section>
+      <AccountSection />
     </ScreenFrame>
   );
 }
