@@ -12,10 +12,11 @@ import { readAudioUpload } from '../lib/audioUpload.js';
 import { decodeWavPcm } from '@vietlearning/audio-dsp';
 import { GatewayError } from '../pipeline/RequestPipeline.js';
 import { assessPronunciation } from '../services/assessment/assess.js';
+import { ttsVoiceId } from '../providers/tts.js';
 
 const MB = 1024 * 1024;
 
-export const speechRoutes: FastifyPluginAsync<RouteDeps> = async (server, { pipeline, ttsCache, config, stt }) => {
+export const speechRoutes: FastifyPluginAsync<RouteDeps> = async (server, { pipeline, ttsCache, config, stt, tts }) => {
   const audioLimit = { bodyLimit: config.AUDIO_BODY_LIMIT_MB * MB };
 
   // POST /v1/speech/transcribe (multipart: file "audio"). Có AI => chép lời thật (không có mốc thời gian từng từ);
@@ -47,7 +48,12 @@ export const speechRoutes: FastifyPluginAsync<RouteDeps> = async (server, { pipe
     await pipeline.consume(request, 'tts', body.text.length);
     // Chưa có Provider => TTSCacheProxy ném 503 tts_provider_not_configured, client tự xử lý,
     // thay vì trả về một URL âm thanh giả không tồn tại như trước.
-    const { audioUrl, cached } = await ttsCache.getAudio(body);
+    // Có nhà cung cấp TTS (GĐ2): giọng do nhà cung cấp quyết định => khóa cache theo model/giọng/prompt, để trùng
+    // với tệp script đã dựng sẵn (tệp có sẵn thì không gọi nhà cung cấp, không tốn hạn mức).
+    const params = tts ? { ...body, voiceId: ttsVoiceId(tts), speed: 1 } : body;
+    const { audioUrl: url, cached } = await ttsCache.getAudio(params);
+    const base = config.PUBLIC_BASE_URL ?? `${request.protocol}://${request.headers.host ?? 'localhost'}`;
+    const audioUrl = url.startsWith('/') ? new URL(url, base).toString() : url;
     return respond(SynthesizeResponseSchema, {
       audioUrl,
       durationMs: Math.max(500, body.text.length * 70),
