@@ -18,3 +18,4 @@ export * from './placement/placement.js';
 export * from './scenarios/scenarios.js';
 export * from './course/course.js';
 export * from './course/speakable.js';
+export * from './pitch/toneSets.js';
