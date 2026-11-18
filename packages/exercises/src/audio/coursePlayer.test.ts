@@ -4,7 +4,7 @@ const speak = vi.fn(async () => undefined);
 vi.mock('@vietlearning/native', () => ({ getDeviceSpeech: () => ({ speak }) }));
 vi.mock('@vietlearning/api-client', () => ({ gatewayBaseUrl: () => 'http://gw.test' }));
 
-import { _resetPacks, findAudioKey, playText, prefetchPack } from './coursePlayer';
+import { _resetPacks, findAudioKey, playText, prefetchPack, SLOW_RATE } from './coursePlayer';
 
 const KEY = 'a'.repeat(64);
 
@@ -53,5 +53,42 @@ describe('coursePlayer', () => {
     fakeCaches();
     await playText('câu chưa có', 'south');
     expect(speak).toHaveBeenCalledWith('câu chưa có', expect.anything());
+  });
+
+  it('đọc chậm (🐢): TTS của máy giảm tốc 0.75 lần', async () => {
+    fakeCaches();
+    await playText('câu chưa có', 'south', { slow: true });
+    const rate = (speak.mock.calls[0] as unknown as [string, { rate: number }])[1].rate;
+    expect(rate).toBeCloseTo(0.85 * SLOW_RATE);
+  });
+
+  it('đọc chậm (🐢): tệp dựng sẵn phát playbackRate 0.75, giữ cao độ', async () => {
+    fakeCaches();
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({ items: { 'Xin chào': KEY } }))));
+    await prefetchPack('u1', 'north');
+    const made: { playbackRate: number; preservesPitch: boolean }[] = [];
+    class FakeAudio {
+      playbackRate = 1;
+      preservesPitch = false;
+      onended: (() => void) | null = null;
+      onerror: (() => void) | null = null;
+      constructor() {
+        made.push(this);
+      }
+      play() {
+        setTimeout(() => this.onended?.(), 0);
+        return Promise.resolve();
+      }
+      pause() {}
+    }
+    vi.stubGlobal('Audio', FakeAudio);
+    vi.stubGlobal('URL', Object.assign(URL, { createObjectURL: () => 'blob:x', revokeObjectURL: () => undefined }));
+    await playText('Xin chào', 'north', { slow: true });
+    await playText('Xin chào', 'north');
+    expect(made.map((a) => [a.playbackRate, a.preservesPitch])).toEqual([
+      [SLOW_RATE, true],
+      [1, true]
+    ]);
+    expect(speak).not.toHaveBeenCalled();
   });
 });
