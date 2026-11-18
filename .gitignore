@@ -45,3 +45,6 @@ apps/host-shell/playwright-report/
 
 # Gateway: DB PGlite cục bộ khi dev
 apps/gateway/.data/
+
+# Python cache (tools/tts-local)
+__pycache__/

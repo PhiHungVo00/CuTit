@@ -28,6 +28,36 @@ class LlmSttProvider implements SttProvider {
   }
 }
 
+/**
+ * STT qua máy chủ kiểu OpenAI `POST {base}/audio/transcriptions` (vd. `tools/tts-local` chạy faster-whisper trên máy).
+ * Hiện chỉ script dựng sẵn âm thanh dùng để kiểm lời đọc (không tốn hạn mức Gemini).
+ */
+export class OpenAiCompatSttProvider implements SttProvider {
+  readonly name = 'openai-compatible-stt';
+  constructor(
+    private readonly baseUrl: string,
+    private readonly language = 'vi',
+    private readonly timeoutMs = 120_000,
+    private readonly fetchImpl: typeof fetch = fetch
+  ) {}
+
+  async transcribe(audio: { bytes: Buffer; mimetype: string }): Promise<SttResult> {
+    const form = new FormData();
+    form.append('file', new Blob([new Uint8Array(audio.bytes)], { type: audio.mimetype }), 'audio.wav');
+    form.append('language', this.language);
+    form.append('model', 'whisper');
+    const res = await this.fetchImpl(`${this.baseUrl.replace(/\/+$/, '')}/audio/transcriptions`, {
+      method: 'POST',
+      body: form,
+      signal: AbortSignal.timeout(this.timeoutMs)
+    });
+    if (!res.ok) throw new Error(`STT lỗi (${res.status})`);
+    const json = (await res.json()) as { text?: unknown };
+    if (typeof json.text !== 'string') throw new Error('STT không trả text');
+    return { text: json.text, confidence: 1, tokens: 0 };
+  }
+}
+
 /** Có LLM đa phương thức => STT qua LLM; không có => null (nơi gọi trả mock: true) */
 export function createSttProvider(llm: LlmProvider | null): SttProvider | null {
   return llm ? new LlmSttProvider(llm) : null;

@@ -7,7 +7,9 @@ import { readWavInfo, encodeWav } from '@vietlearning/audio-dsp';
 import { AudioPackSchema } from '@vietlearning/contracts';
 import { GeminiTtsProvider, directorPrompt, ttsVoiceId } from '../dist/providers/tts.js';
 import { FileAudioStore } from '../dist/services/tts/audioStore.js';
-import { runPrebuild, matchesVerbatim } from '../dist/services/tts/prebuild.js';
+import { runPrebuild, matchesVerbatim, approveReviewed } from '../dist/services/tts/prebuild.js';
+import { OpenAiCompatTtsProvider } from '../dist/providers/tts.js';
+import { OpenAiCompatSttProvider } from '../dist/providers/stt.js';
 import { GatewayError } from '../dist/pipeline/RequestPipeline.js';
 import { ttsCacheKey } from '../dist/cache/TTSCacheProxy.js';
 import { loadConfig } from '../dist/config.js';
@@ -61,6 +63,8 @@ test('matchesVerbatim: bỏ qua dấu câu/hoa thường, KHÔNG bỏ qua từ t
   assert.equal(matchesVerbatim('Chào chị ạ', 'chào chị ạ.'), true);
   assert.equal(matchesVerbatim('Chào chị ạ', 'Chào chị ạ hôn'), false);
   assert.equal(matchesVerbatim('Chị muốn uống gì', 'Chị mua uống gì'), false);
+  assert.equal(matchesVerbatim('Cho tôi hai ly cà phê', 'cho tôi 2 ly cà phê.'), true, 'STT viết số bằng chữ số');
+  assert.equal(matchesVerbatim('Cho tôi hai ly cà phê', 'cho tôi 3 ly cà phê'), false);
 });
 
 /** TTS/STT giả: STT nghe đúng nguyên văn, trừ các câu trong `misread` */
@@ -113,11 +117,13 @@ test('runPrebuild: tạo + kiểm lại; câu đọc thêm từ bị loại; man
   assert.equal(pack.items['xin chào'], key);
   assert.ok(await store.has(key));
 
-  // Lần 2: câu đạt bỏ qua; câu bị loại được tổng hợp lại một lần (tries 2), vẫn sai => thôi
+  // Lần 2: câu đạt bỏ qua; câu bị loại được tổng hợp lại một lần (tries 2), vẫn sai => hết lượt => CHỜ NGƯỜI NGHE
   const f2 = fakes({ misread: { 'Chào chị ạ': 'chào chị à' } });
   const r2 = await runPrebuild({ pack: 'u1', dialect: 'south', texts, tts: f2.tts, stt: f2.stt, store, maxTries: 2 });
   assert.deepEqual(f2.calls.tts, ['Chào chị ạ']);
-  assert.equal(r2.rejected, 1);
+  assert.equal(r2.rejected, 0);
+  assert.equal(r2.review, 1);
+  assert.ok(!('Chào chị ạ' in AudioPackSchema.parse(await store.readJson('packs/u1-south.json')).items), 'chờ nghe => chưa vào manifest');
   const f3 = fakes();
   await runPrebuild({ pack: 'u1', dialect: 'south', texts, tts: f3.tts, stt: f3.stt, store, maxTries: 2 });
   assert.deepEqual(f3.calls.tts, [], 'đã hết số lần thử => không gọi TTS nữa');
@@ -185,5 +191,63 @@ test('Route /audio: phục vụ wav + manifest công khai, chặn tên lạ; /v1
   assert.equal(miss.statusCode, 200);
   assert.deepEqual(f.calls.tts, ['Câu mới']);
   await app2.close();
+  await rm(dir, { recursive: true, force: true });
+});
+
+test('OpenAiCompatTtsProvider: giọng theo miền, gửi /audio/speech, khóa cache khác nhau giữa các miền; không phải WAV => lỗi', async () => {
+  const sent = [];
+  const fetchOk = async (url, init) => {
+    sent.push({ url, body: JSON.parse(init.body) });
+    return new Response(fakeWav(), { status: 200, headers: { 'content-type': 'audio/wav' } });
+  };
+  const voices = { north: 'Trúc Ly', central: 'Ngọc Trân', south: 'Thùy Dung' };
+  const p = new OpenAiCompatTtsProvider('http://127.0.0.1:8765/v1/', 'vieneu-v3-turbo', voices, 1000, fetchOk);
+  const { wav } = await p.synthesize({ text: 'Chào chị ạ', dialect: 'central' });
+  assert.equal(readWavInfo(wav).sampleRate, 16000);
+  assert.equal(sent[0].url, 'http://127.0.0.1:8765/v1/audio/speech');
+  assert.deepEqual(sent[0].body, { model: 'vieneu-v3-turbo', input: 'Chào chị ạ', voice: 'Ngọc Trân', response_format: 'wav' });
+  assert.equal(ttsVoiceId(p, 'south'), 'vieneu-v3-turbo/Thùy Dung/oai-v1');
+  assert.notEqual(ttsVoiceId(p, 'north'), ttsVoiceId(p, 'south'));
+  const bad = new OpenAiCompatTtsProvider('http://x/v1', 'm', voices, 1000, async () => new Response('not audio', { status: 200 }));
+  await assert.rejects(bad.synthesize({ text: 'a', dialect: 'north' }), (e) => e instanceof GatewayError && e.code === 'tts_bad_output');
+
+  const cfg = loadConfig({ NODE_ENV: 'test', TTS_PROVIDER: 'openai-compatible', TTS_VOICE_SOUTH: 'Adam' });
+  const fromCfg = createTtsProvider(cfg);
+  assert.equal(fromCfg.voiceFor('south'), 'Adam');
+  assert.equal(fromCfg.voiceFor('north'), 'Trúc Ly');
+});
+
+test('OpenAiCompatSttProvider: gửi multipart tới /audio/transcriptions, trả text', async () => {
+  let seen;
+  const stt = new OpenAiCompatSttProvider('http://127.0.0.1:8765/v1', 'vi', 1000, async (url, init) => {
+    seen = { url, form: init.body };
+    return new Response(JSON.stringify({ text: 'Xin chào' }), { status: 200 });
+  });
+  const r = await stt.transcribe({ bytes: Buffer.from(fakeWav()), mimetype: 'audio/wav' });
+  assert.equal(r.text, 'Xin chào');
+  assert.equal(seen.url, 'http://127.0.0.1:8765/v1/audio/transcriptions');
+  assert.equal(seen.form.get('language'), 'vi');
+  assert.ok(seen.form.get('file') instanceof Blob);
+});
+
+test('runPrebuild humanReview (giọng Trung): tệp chờ nghe, không vào manifest; duyệt => vào manifest; câu bị loại khi duyệt => tạo lại', async () => {
+  const dir = await tmp();
+  const store = new FileAudioStore(dir);
+  const texts = ['xin chào', 'cảm ơn'];
+  const f = fakes({ misread: { 'cảm ơn': 'cám ơn' } });
+  const r1 = await runPrebuild({ pack: 'u1', dialect: 'central', texts, tts: f.tts, stt: f.stt, store, humanReview: true });
+  assert.equal(r1.review, 2);
+  assert.equal(r1.ok, 0);
+  assert.deepEqual(AudioPackSchema.parse(await store.readJson('packs/u1-central.json')).items, {});
+  const f2 = fakes();
+  await runPrebuild({ pack: 'u1', dialect: 'central', texts, tts: f2.tts, stt: f2.stt, store, humanReview: true });
+  assert.deepEqual(f2.calls.tts, [], 'chờ nghe => không tạo lại');
+
+  assert.deepEqual(await approveReviewed(store, 'u1', 'central', ['cảm ơn']), { approved: 1, rejected: 1 });
+  const f3 = fakes();
+  const r3 = await runPrebuild({ pack: 'u1', dialect: 'central', texts, tts: f3.tts, stt: f3.stt, store, humanReview: true });
+  assert.deepEqual(f3.calls.tts, ['cảm ơn'], 'câu bị người nghe loại được tạo lại');
+  assert.equal(r3.ok, 1);
+  assert.deepEqual(Object.keys(AudioPackSchema.parse(await store.readJson('packs/u1-central.json')).items), ['xin chào']);
   await rm(dir, { recursive: true, force: true });
 });

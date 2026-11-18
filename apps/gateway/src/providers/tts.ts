@@ -16,6 +16,8 @@ export interface TtsProvider {
   readonly voice: string;
   /** đổi prompt => đổi phiên bản => khóa cache mới (không dùng lại âm thanh của prompt cũ) */
   readonly promptVersion: string;
+  /** giọng riêng theo miền (nhà cung cấp có giọng mẫu từng miền); không có => dùng `voice` cho mọi miền */
+  voiceFor?(dialect: Dialect): string;
   synthesize(req: { text: string; dialect: Dialect }): Promise<{ wav: Uint8Array }>;
 }
 
@@ -42,7 +44,8 @@ export function directorPrompt(text: string, dialect: Dialect): string {
 }
 
 /** Khóa cache gồm model + giọng + phiên bản prompt (đổi bất kỳ cái nào => tệp mới) */
-export const ttsVoiceId = (p: Pick<TtsProvider, 'model' | 'voice' | 'promptVersion'>) => `${p.model}/${p.voice}/${p.promptVersion}`;
+export const ttsVoiceId = (p: Pick<TtsProvider, 'model' | 'voice' | 'promptVersion' | 'voiceFor'>, dialect?: Dialect) =>
+  `${p.model}/${(dialect && p.voiceFor?.(dialect)) || p.voice}/${p.promptVersion}`;
 
 interface GeminiAudioResponse {
   candidates?: { content?: { parts?: { inlineData?: { mimeType?: string; data?: string } }[] } }[];
@@ -97,10 +100,65 @@ export class GeminiTtsProvider implements TtsProvider {
 }
 
 /**
+ * TTS qua máy chủ kiểu OpenAI `POST {base}/audio/speech` — vd. `tools/tts-local` (VieNeu-TTS chạy trên máy, Apache-2.0).
+ * Giọng do cấu hình chọn theo miền (giọng mẫu đã là giọng bản xứ từng miền), không cần prompt chỉ dẫn.
+ */
+export class OpenAiCompatTtsProvider implements TtsProvider {
+  readonly name = 'openai-compatible-tts';
+  /** đổi tham số lấy mẫu/khử nhiễu ở máy chủ local => tăng số này để không dùng lại tệp cũ */
+  readonly promptVersion = 'oai-v1';
+
+  constructor(
+    private readonly baseUrl: string,
+    readonly model: string,
+    private readonly voices: Record<Dialect, string>,
+    private readonly timeoutMs = 120_000,
+    private readonly fetchImpl: typeof fetch = fetch
+  ) {}
+
+  get voice(): string {
+    return `${this.voices.north}|${this.voices.central}|${this.voices.south}`;
+  }
+
+  voiceFor(dialect: Dialect): string {
+    return this.voices[dialect];
+  }
+
+  async synthesize({ text, dialect }: { text: string; dialect: Dialect }): Promise<{ wav: Uint8Array }> {
+    let res: Response;
+    try {
+      res = await this.fetchImpl(`${this.baseUrl.replace(/\/+$/, '')}/audio/speech`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ model: this.model, input: text.normalize('NFC').trim(), voice: this.voices[dialect], response_format: 'wav' }),
+        signal: AbortSignal.timeout(this.timeoutMs)
+      });
+    } catch {
+      throw new GatewayError(502, 'tts_unavailable', 'Không kết nối được dịch vụ đọc');
+    }
+    if (res.status === 429) throw new GatewayError(429, 'tts_quota_exhausted', 'Hết hạn mức đọc');
+    if (!res.ok) throw new GatewayError(502, 'tts_unavailable', `Dịch vụ đọc lỗi (${res.status})`);
+    const wav = new Uint8Array(await res.arrayBuffer());
+    // 'RIFF' .... 'WAVE'
+    if (wav.length <= 44 || String.fromCharCode(...wav.slice(0, 4)) !== 'RIFF' || String.fromCharCode(...wav.slice(8, 12)) !== 'WAVE') {
+      throw new GatewayError(502, 'tts_bad_output', 'Dịch vụ đọc không trả WAV');
+    }
+    return { wav };
+  }
+}
+
+/**
  * TTS chỉ bật khi cấu hình RÕ RÀNG `TTS_PROVIDER=gemini` (không suy ra từ việc có khóa): máy dev có khóa Gemini,
  * nếu tự bật thì mọi lần gọi /speech/synthesize sẽ tiêu hạn mức 10 lần/ngày.
  */
 export function createTtsProvider(config: GatewayConfig): TtsProvider | null {
+  if (config.TTS_PROVIDER === 'openai-compatible') {
+    return new OpenAiCompatTtsProvider(config.TTS_BASE_URL, config.TTS_MODEL, {
+      north: config.TTS_VOICE_NORTH,
+      central: config.TTS_VOICE_CENTRAL,
+      south: config.TTS_VOICE_SOUTH
+    });
+  }
   if (config.TTS_PROVIDER !== 'gemini' || !config.GEMINI_API_KEY) return null;
   return new GeminiTtsProvider(config.GEMINI_API_KEY, config.GEMINI_TTS_MODEL, config.GEMINI_TTS_VOICE);
 }
