@@ -1,0 +1,16 @@
+# Nhật ký: Nối tiến độ GĐ0 ↔ GĐ1 (nhánh claude/noi-tien-do-159c6c)
+
+Plan: `docs/superpowers/plans/2026-11-18-noi-tien-do.md`.
+
+| Commit | Việc | Kiểm chứng |
+|---|---|---|
+| 0a3dc31 | Contract `day.mark`, `progress.set`, snapshot `dayFlags`/`progressState`; migration 0001 (`learner_progress`, `deleted_accounts` = bia mộ băm credential 90 ngày); refresh/recover trả `account_deleted`; streak server tính ngày đóng băng | gateway 54/54 |
+| 695ed63 | Engine sync: bóng thứ hai cho `becutit.progress` (xp.add theo delta ngày, lesson.progress, testout:<unit>, day.mark, progress.set); áp snapshot vào progressStore; resetLocal xóa cả tiến độ + `onLocalReset` | state 35/35 (+8) |
+| 6eafd2c | Session: `account_deleted` ⇒ xóa phiên, phát `remote-deleted`, ném lỗi (không tạo khách mới trong cùng lần gọi); Host xóa dữ liệu + hủy nhắc + thông báo song ngữ (`becutit.notice`) | api-client 14/14 |
+| (commit này) | Trang `/quyen-rieng-tu` song ngữ (BẢN NHÁP), link từ M12; e2e `progress-sync.spec.ts` | e2e mới 3/3 (cổng 4020/4193) |
+
+## Chưa làm / ghi chú
+- Link từ hộp đồng ý micro: nằm ở `apps/mfe-conversation/src/chat/ChatPanel.tsx` (vùng GĐ3) ⇒ không sửa; GĐ3 cần thêm `<Link to="/quyen-rieng-tu">`.
+- Không đồng bộ: `times` từng bài, giờ nhắc, lỗi gần đây, điểm thanh. `lessonsDone/freezes/dailyGoal` là LWW (hai máy cùng học có thể lệch số bài).
+- Chưa chạy lại toàn bộ `pnpm test`, `lint:boundaries`, size-limit, e2e đầy đủ sau commit cuối (hết hạn mức phiên).
+- Thông tin liên hệ trong chính sách là chỗ trống cần điền; cần người phụ trách duyệt.

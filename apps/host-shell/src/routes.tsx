@@ -141,11 +141,14 @@ const pathRoute = (path: string, load: Loader): PathRoute => ({ path, load, Comp
 
 export const REVIEW_ROUTE = pathRoute('/on-tap', () => import('./screens/ReviewRoute'));
 export const EXPLORE_ROUTE = pathRoute('/kham-pha', () => import('./screens/Explore'));
+/** Chính sách quyền riêng tư (bản nháp) — M12 và các hộp đồng ý link tới bằng URL */
+export const PRIVACY_ROUTE = pathRoute('/quyen-rieng-tu', () => import('./screens/PrivacyRoute'));
 export const PATH_ROUTES: PathRoute[] = [
   pathRoute('/bai-hoc/:lessonId', () => import('./screens/LessonRoute')),
   pathRoute('/kiem-tra/:unitId', () => import('./screens/TestOutRoute')),
   REVIEW_ROUTE,
-  EXPLORE_ROUTE
+  EXPLORE_ROUTE,
+  PRIVACY_ROUTE
 ];
 
 const prefetched = new Set<string>();
