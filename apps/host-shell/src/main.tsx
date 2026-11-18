@@ -14,8 +14,17 @@ import { applySwapFontsForNativeApp } from './styles/nativeFonts';
 import { ThemeProvider } from './theme/ThemeContext';
 import { configureGateway } from '@vietlearning/api-client';
 
-// Một nơi duy nhất cấu hình Gateway cho mọi màn hình (URL nhúng lúc build, KHÔNG có secret)
-configureGateway({ baseUrl: import.meta.env.VITE_GATEWAY_URL ?? 'http://localhost:4000', timeoutMs: 10_000 });
+// Tài khoản khách + đồng bộ: chunk lười, chỉ tải khi cần token hoặc sau lần vẽ đầu
+const account = () => import('./account/bootstrap');
+
+// Một nơi duy nhất cấu hình Gateway cho mọi màn hình (URL nhúng lúc build, KHÔNG có secret).
+// Token: tài khoản khách tạo lười ở lần gọi Gateway đầu tiên; 401 => làm mới phiên rồi gửi lại một lần.
+configureGateway({
+  baseUrl: import.meta.env.VITE_GATEWAY_URL ?? 'http://localhost:4000',
+  timeoutMs: 10_000,
+  getToken: async () => (await account()).session().getToken(),
+  onUnauthorized: async () => (await account()).session().handleUnauthorized()
+});
 
 if (isNativeApp) applySwapFontsForNativeApp();
 
@@ -33,6 +42,11 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     </ThemeProvider>
   </React.StrictMode>
 );
+
+// Hàng đợi đồng bộ local-first: bắt đầu sau khi trang tải xong (không tranh lần vẽ đầu)
+const startSyncLater = () => setTimeout(() => void account().then((m) => m.startAccountSync()));
+if (document.readyState === 'complete') startSyncLater();
+else window.addEventListener('load', startSyncLater, { once: true });
 
 // Đăng ký Service Worker sau khi trang tải xong để không tranh băng thông với lần hiển thị đầu.
 // Trong app Capacitor không cần SW: mọi file đã nằm sẵn trong gói cài đặt.
