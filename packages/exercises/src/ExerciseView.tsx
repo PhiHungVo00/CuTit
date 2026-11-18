@@ -8,6 +8,8 @@ import type { ExerciseItem, ExerciseResult } from './types';
 const ToneExercise = lazy(() => import('./tone/ToneExercise'));
 // Nói lại câu (A3): bộ ghi âm + gửi Gateway, chỉ tải khi gặp
 const SpeakExercise = lazy(() => import('./speak/SpeakExercise'));
+// Truyện ngắn nghe (GĐ2b): chỉ tải khi gặp
+const StoryExercise = lazy(() => import('./story/StoryExercise'));
 
 /** Khung chung một bài: nhãn dạng bài + đề, rồi component của dạng đó. */
 export function ExerciseView({ item, seed = 1, onDone, onSkip, label }: { item: ExerciseItem; seed?: number; onDone(r: ExerciseResult): void; onSkip?(): void; label?: string }) {
@@ -27,6 +29,11 @@ export function ExerciseView({ item, seed = 1, onDone, onSkip, label }: { item: 
       {item.kind === 'speak' && (
         <Suspense fallback={<div aria-busy="true" className="h-40 animate-pulse rounded-xl bg-surface-2" />}>
           <SpeakExercise item={item} onDone={onDone} onSkip={onSkip} />
+        </Suspense>
+      )}
+      {item.kind === 'story' && (
+        <Suspense fallback={<div aria-busy="true" className="h-40 animate-pulse rounded-xl bg-surface-2" />}>
+          <StoryExercise item={item} onDone={onDone} onSkip={onSkip} />
         </Suspense>
       )}
       {item.kind === 'tone' && (

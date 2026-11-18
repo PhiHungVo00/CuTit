@@ -128,6 +128,15 @@ export async function playText(text: string, dialect: Dialect = learnerStore.get
     .catch(() => undefined);
 }
 
+/** Dừng âm thanh đang phát (rời bài truyện giữa chừng) */
+export function stopPlayback(): void {
+  current?.pause();
+  current = null;
+  void getDeviceSpeech()
+    .stop()
+    .catch(() => undefined);
+}
+
 /** chỉ cho test */
 export function _resetPacks(): void {
   packs.clear();
