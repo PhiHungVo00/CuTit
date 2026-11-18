@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { lazy, Suspense, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { COURSE } from '@vietlearning/content';
 import { useUiLanguage } from '@vietlearning/state';
@@ -7,6 +7,10 @@ import { useT } from './i18n';
 import { TEST_OUT_PASS } from './path/pathModel';
 import { SessionRunner } from './session/SessionRunner';
 import { card, Page, primaryBtn, secondaryBtn } from './ui';
+
+// GĐ4: thông báo huy hiệu mới — chunk lười riêng
+const Motivation = lazy(() => import('./motivation/Motivation'));
+
 
 /**
  * Kiểm tra để vượt unit /kiem-tra/:unitId — bộ câu cố định của unit, không làm lại câu sai,
@@ -69,6 +73,11 @@ function TestOutBody({ unitId }: { unitId: string }) {
             {phase.passed ? t('testOutPassed', { pct: phase.pct, xp: phase.xp }) : t('testOutFailed', { pct: phase.pct })}
           </p>
         </section>
+      )}
+      {typeof phase === 'object' && phase.passed && (
+        <Suspense fallback={null}>
+          <Motivation part="notice" />
+        </Suspense>
       )}
       {(phase === 'intro' || (typeof phase === 'object' && !phase.passed)) && (
         <button
