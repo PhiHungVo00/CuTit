@@ -110,14 +110,14 @@ export function AccountSection({ deps = defaultDeps }: { deps?: AccountDeps }) {
   const remove = () =>
     run('delete', async () => {
       const [s, e] = await Promise.all([deps.session(), deps.engine()]);
+      // Có hàng đợi: resetLocal xóa cả tiến độ lộ trình (khóa riêng becutit.progress) và hủy lịch nhắc (onLocalReset của Host)
       if (e) await e.resetLocal(() => s.deleteAccount());
       else {
         await s.deleteAccount();
         learnerStore.getState().reset();
+        progressStore.getState().resetProgress();
+        void getLocalReminders().cancelAll();
       }
-      // Tiến độ lộ trình (XP, bài đã xong, đóng băng, nhắc học — GĐ1) lưu ở khóa riêng: xóa cùng lúc
-      progressStore.getState().resetProgress();
-      void getLocalReminders().cancelAll();
       setConfirmDelete(false);
       return { kind: 'ok', text: t('deleted') };
     });

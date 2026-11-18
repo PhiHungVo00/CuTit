@@ -7,6 +7,7 @@ import { useUiLanguage } from '@vietlearning/state';
 import { Home } from './screens/Home';
 import { ScreenErrorBoundary } from './components/ScreenErrorBoundary';
 import { useStudyTimer } from './useStudyTimer';
+import { clearNotice, onNotice, readNotice } from './notice';
 
 function useOnline(): boolean {
   const [online, setOnline] = useState(() => navigator.onLine);
@@ -34,6 +35,8 @@ function ScreenLoading() {
 
 export function App() {
   const online = useOnline();
+  const [notice, setNotice] = useState(readNotice);
+  useEffect(() => onNotice(setNotice), []);
   const { pathname } = useLocation();
   const navigate = useNavigate();
   useStudyTimer();
@@ -64,6 +67,15 @@ export function App() {
       {!online && (
         <div className="offline-banner" role="status">
           {t('offline')}
+        </div>
+      )}
+
+      {notice && (
+        <div className="notice-banner" role="alert">
+          <span>{t(notice)}</span>
+          <button type="button" onClick={clearNotice}>
+            {t('dismiss')}
+          </button>
         </div>
       )}
 

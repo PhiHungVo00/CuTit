@@ -7,6 +7,9 @@
  * - Single-flight: nhiều request song song lúc khởi động chỉ tạo/làm mới MỘT lần.
  * - Thứ tự cứu phiên khi refresh thất bại (vd. mất phản hồi giữa lúc xoay vòng token):
  *   refresh → khôi phục bằng mã đã lưu → cuối cùng mới tạo khách mới.
+ * - Gateway báo `account_deleted` (tài khoản đã bị xóa ở máy khác): xóa phiên, phát `remote-deleted` và NÉM lỗi
+ *   (không tạo khách mới trong cùng lần gọi — request đang chờ gửi lại sẽ không rơi vào tài khoản mới).
+ *   App xóa dữ liệu trên máy; lần gọi sau mới tạo khách mới như người dùng mới.
  */
 import type { ZodTypeAny, z } from 'zod';
 import {
@@ -51,7 +54,8 @@ interface StoredAuth {
   recoveryCode: string | null;
 }
 
-export type UserChangeReason = 'guest' | 'recovered' | 'deleted';
+/** remote-deleted = tài khoản bị xóa ở máy khác (Gateway trả account_deleted) */
+export type UserChangeReason = 'guest' | 'recovered' | 'deleted' | 'remote-deleted';
 export interface UserChange {
   reason: UserChangeReason;
   /** null khi tài khoản vừa bị xóa */
@@ -104,7 +108,7 @@ export function createAuthSession(opts: SessionOptions = {}): AuthSession {
   const save = (v: StoredAuth) => storage().set(AUTH_STORAGE_KEY, JSON.stringify(v));
 
   /** POST tới /v1/auth/*: lỗi mạng => 'offline' ngay (không treo các request phía sau) */
-  async function post<S extends ZodTypeAny>(path: string, body: unknown, schema: S): Promise<{ status: number; data?: z.infer<S> }> {
+  async function post<S extends ZodTypeAny>(path: string, body: unknown, schema: S): Promise<{ status: number; data?: z.infer<S>; error?: string }> {
     let res: Response;
     try {
       res = await fetch(`${baseUrl()}${path}`, {
@@ -115,7 +119,15 @@ export function createAuthSession(opts: SessionOptions = {}): AuthSession {
     } catch (err) {
       throw new GatewayRequestError('offline', err instanceof Error ? err.message : 'Lỗi mạng');
     }
-    if (!res.ok) return { status: res.status };
+    if (!res.ok) {
+      let error: string | undefined;
+      try {
+        error = ((await res.json()) as { error?: string }).error;
+      } catch {
+        /* thân lỗi không phải JSON */
+      }
+      return { status: res.status, error };
+    }
     const parsed = schema.safeParse(await res.json());
     if (!parsed.success) throw new GatewayRequestError('contract', `Phản hồi ${path} lệch contract`);
     return { status: res.status, data: parsed.data };
@@ -129,6 +141,14 @@ export function createAuthSession(opts: SessionOptions = {}): AuthSession {
   function adopt(t: AuthTokens): string {
     access = { token: t.accessToken, exp: now() + t.expiresIn * 1000 };
     return t.accessToken;
+  }
+
+  /** Tài khoản đã bị xóa ở máy khác: bỏ phiên trên máy, báo app, ném lỗi riêng */
+  async function remoteDeleted(): Promise<never> {
+    access = null;
+    await storage().remove(AUTH_STORAGE_KEY);
+    emit({ reason: 'remote-deleted', userId: null });
+    throw new GatewayRequestError('unauthorized', 'Tài khoản đã bị xóa trên thiết bị khác', 401, 'account_deleted');
   }
 
   async function createGuest(): Promise<string> {
@@ -148,6 +168,7 @@ export function createAuthSession(opts: SessionOptions = {}): AuthSession {
       return adopt(r.data);
     }
     if (r.status !== 401) fail(r.status, '/v1/auth/refresh');
+    if (r.error === 'account_deleted') return remoteDeleted();
     // Refresh token hỏng (vd. mất phản hồi lúc xoay vòng): cứu bằng mã khôi phục đã lưu
     if (stored.recoveryCode) {
       const rec = await post('/v1/auth/recover', { recoveryCode: stored.recoveryCode }, AuthTokensSchema);
@@ -156,6 +177,7 @@ export function createAuthSession(opts: SessionOptions = {}): AuthSession {
         return adopt(rec.data);
       }
       if (rec.status !== 401) fail(rec.status, '/v1/auth/recover');
+      if (rec.error === 'account_deleted') return remoteDeleted();
     }
     // Tài khoản không còn (đã xóa ở máy khác): bắt đầu tài khoản khách mới
     await storage().remove(AUTH_STORAGE_KEY);
@@ -179,7 +201,9 @@ export function createAuthSession(opts: SessionOptions = {}): AuthSession {
       access = null;
       try {
         return Boolean(await ensure());
-      } catch {
+      } catch (err) {
+        // để request() ném đúng mã account_deleted (không nuốt thành 401 chung)
+        if (err instanceof GatewayRequestError && err.code === 'account_deleted') throw err;
         return false;
       }
     },
