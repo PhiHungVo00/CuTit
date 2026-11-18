@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { canOpenAppSettings, getDeviceSpeech, openAppSettings } from '@vietlearning/native';
-import { learnerStore, speechRate, useLearner } from '@vietlearning/state';
+import { speechRate, useLearner } from '@vietlearning/state';
+import { VoiceConsent } from './VoiceConsent';
 import { AgentBlockView } from './AgentBlockView';
 import type { useChatSession } from './useChatSession';
 import { useVoiceInput } from './useVoiceInput';
@@ -162,28 +163,14 @@ export function ChatPanel({ session, placeholder, emptyHint, tutorName }: { sess
       )}
       {voiceNote && !voice.error && voice.status === 'idle' && <p className="m-0 text-sm text-ink-muted">{voiceNote}</p>}
       {askVoiceConsent && (
-        <div role="dialog" aria-labelledby="ct-voice-privacy" className="flex flex-col gap-2 rounded-xl border border-line-strong bg-surface-2 p-3">
-          <p id="ct-voice-privacy" className="m-0 text-[15px] font-bold text-ink">
-            {t('voicePrivacyTitle')}
-          </p>
-          <p className="m-0 text-sm text-ink-soft">{t('voicePrivacy')}</p>
-          <div className="grid grid-cols-2 gap-2">
-            <button type="button" onClick={() => setAskVoiceConsent(false)} className="min-h-12 rounded-xl border border-line-strong bg-surface px-3 font-bold text-ink">
-              {t('notNow')}
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                learnerStore.getState().giveConsent('voice');
-                setAskVoiceConsent(false);
-                void voice.start();
-              }}
-              className="min-h-12 rounded-xl bg-accent px-3 font-extrabold text-accent-ink"
-            >
-              {t('agreeRecord')}
-            </button>
-          </div>
-        </div>
+        <VoiceConsent
+          text={t('voicePrivacy')}
+          onCancel={() => setAskVoiceConsent(false)}
+          onAgree={() => {
+            setAskVoiceConsent(false);
+            void voice.start();
+          }}
+        />
       )}
       {voice.error && (
         <div role="alert" className="flex flex-col gap-2 rounded-xl bg-danger-soft p-3 text-danger-ink">

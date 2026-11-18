@@ -27,10 +27,19 @@ export type DoneEvent = Extract<ChatEvent, { type: 'done' }>;
 export class TurnError extends Error {
   constructor(
     public readonly kind: 'offline' | 'timeout' | 'quota' | 'unavailable' | 'incomplete' | 'server' | 'contract' | 'unauthorized' | 'invalid-request',
-    message: string
+    message: string,
+    /** mã lỗi Gateway (vd. quota_exceeded = hết lượt AI hôm nay, khác rate-limit theo phút) */
+    public readonly code?: string
   ) {
     super(message);
   }
+}
+
+/** “Hết lượt hôm nay” kèm giờ lượt mới theo giờ máy người học (Gateway tính theo nửa đêm UTC) */
+export function quotaMessage(resetAt: string): string {
+  const d = new Date(resetAt);
+  const time = Number.isNaN(d.getTime()) ? '' : d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  return t('quotaOut', { time });
 }
 
 export async function sendTurn(req: TurnRequest, onEvent: (e: ChatEvent) => void, signal: AbortSignal): Promise<DoneEvent> {
@@ -67,7 +76,11 @@ export async function sendTurn(req: TurnRequest, onEvent: (e: ChatEvent) => void
     if (err instanceof TurnError) throw err;
     if (stalled) throw new TurnError('timeout', t('errStalled'));
     if (signal.aborted) throw err; // người dùng hủy / rời màn hình: để nơi gọi tự bỏ qua
-    if (err instanceof GatewayRequestError) throw new TurnError(err.kind, describeGatewayError(err, req.explanationLanguage));
+    if (err instanceof GatewayRequestError) {
+      const resetAt = err.details?.resetAt;
+      if (err.code === 'quota_exceeded' && typeof resetAt === 'string') throw new TurnError('quota', quotaMessage(resetAt), err.code);
+      throw new TurnError(err.kind, describeGatewayError(err, req.explanationLanguage), err.code);
+    }
     throw new TurnError('offline', t('errDropped'));
   } finally {
     clearTimeout(watchdog);
