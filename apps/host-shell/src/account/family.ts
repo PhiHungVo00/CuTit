@@ -20,9 +20,12 @@ export class SwitchError extends Error {
 /** Gửi hết hàng đợi của hồ sơ hiện tại; còn sót (mất mạng) => không cho chuyển */
 async function flushAll(): Promise<ReturnType<typeof startAccountSync>> {
   const engine = startAccountSync();
-  const ok = await engine.flush();
-  if (!ok || engine.status().pending > 0) throw new SwitchError('offline');
-  return engine;
+  // Đồng hồ học (activity.set) có thể thêm sự kiện ngay lúc đang gửi => gửi lại vài lần tới khi hàng đợi rỗng
+  for (let i = 0; i < 4; i++) {
+    if (!(await engine.flush())) throw new SwitchError('offline');
+    if (engine.status().pending === 0) return engine;
+  }
+  throw new SwitchError('offline');
 }
 
 export const listChildren = () => request('/v1/family/children', { schema: ChildListResponseSchema });
