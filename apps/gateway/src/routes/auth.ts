@@ -10,6 +10,7 @@ import type { RouteDeps } from '../app.js';
 import { schema } from '../db/client.js';
 import { parseOr400, respond } from '../lib/validate.js';
 import { formatRecoveryCode, issueTokens, newRecoveryCode, rotateRefreshToken, sha256 } from '../services/auth/tokens.js';
+import { isDeletedCredential } from '../services/learner/repo.js';
 
 /**
  * /v1/auth/* — KHÔNG đi qua hook xác thực (đây là nơi lấy token), nhưng bị giới hạn theo IP
@@ -29,8 +30,13 @@ export const authRoutes: FastifyPluginAsync<RouteDeps> = async (server, { db }) 
   server.post('/refresh', async (req, reply) => {
     const body = parseOr400(AuthRefreshRequestSchema, req.body, reply);
     if (!body) return reply;
-    const tokens = await rotateRefreshToken(server, await db.get(), body.refreshToken);
-    if (!tokens) return reply.status(401).send({ error: 'invalid_refresh_token' });
+    const d = await db.get();
+    const tokens = await rotateRefreshToken(server, d, body.refreshToken);
+    if (!tokens) {
+      // Tài khoản đã bị xóa (ở máy khác): báo riêng để client xóa dữ liệu trên máy thay vì tạo khách mới
+      const deleted = await isDeletedCredential(d, sha256(body.refreshToken));
+      return reply.status(401).send({ error: deleted ? 'account_deleted' : 'invalid_refresh_token' });
+    }
     return respond(AuthTokensSchema, tokens);
   });
 
@@ -43,7 +49,10 @@ export const authRoutes: FastifyPluginAsync<RouteDeps> = async (server, { db }) 
       .select({ id: schema.users.id })
       .from(schema.users)
       .where(and(eq(schema.users.recoveryCodeHash, sha256(body.recoveryCode)), isNull(schema.users.deletedAt)));
-    if (!user) return reply.status(401).send({ error: 'invalid_recovery_code' });
+    if (!user) {
+      const deleted = await isDeletedCredential(d, sha256(body.recoveryCode));
+      return reply.status(401).send({ error: deleted ? 'account_deleted' : 'invalid_recovery_code' });
+    }
     return respond(AuthTokensSchema, await issueTokens(server, d, user.id));
   });
 };

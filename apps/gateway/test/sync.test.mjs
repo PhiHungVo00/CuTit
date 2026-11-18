@@ -7,7 +7,7 @@ import { makeApp, guest } from './helpers.mjs';
 const dbp = createDbProvider({ PGLITE_DIR: 'memory://' });
 let a;
 before(async () => {
-  a = await makeApp({}, { db: dbp });
+  a = await makeApp({ AUTH_RATE_LIMIT_PER_MINUTE: '100' }, { db: dbp });
 });
 after(async () => {
   await a.close();
@@ -108,4 +108,52 @@ test('Đồng hồ máy chạy nhanh (at ở tương lai) không chặn được
   await new Promise((r) => setTimeout(r, 5));
   const r = await sync(headers, [{ clientEventId: id(), at: new Date().toISOString(), type: 'preferences.set', preferences: prefs(0.75) }]);
   assert.equal(r.json().snapshot.preferences.speed, 0.75);
+});
+
+// ---------- Nối GĐ0 ↔ GĐ1: cờ ngày, trạng thái lộ trình, streak có đóng băng ----------
+
+test('day.mark: cờ đạt mục tiêu / đã dùng đóng băng chỉ bật một chiều; gửi lại => duplicates', async () => {
+  const { headers } = await guest(a);
+  const at = '2026-11-17T08:00:00.000Z';
+  const e1 = { clientEventId: id(), at, type: 'day.mark', day: '2026-11-16', goalMet: true };
+  const e2 = { clientEventId: id(), at, type: 'day.mark', day: '2026-11-16', freezeUsed: true };
+  const e3 = { clientEventId: id(), at, type: 'day.mark', day: '2026-11-15', freezeUsed: true };
+  await sync(headers, [e1, e2, e3]);
+  const r = await sync(headers, [e1]);
+  assert.deepEqual(r.json().duplicates, [e1.clientEventId]);
+  const snap = r.json().snapshot;
+  assert.deepEqual(snap.dayFlags, { goalMet: ['2026-11-16'], frozen: ['2026-11-15', '2026-11-16'] });
+  // ngày chỉ có cờ (chưa có giây học) không hiện thành giây học 0
+  assert.deepEqual(snap.activity, {});
+});
+
+test('progress.set: bản cũ hơn không đè bản mới; tài khoản mới => null', async () => {
+  const { headers } = await guest(a);
+  const empty = await sync(headers, []);
+  assert.equal(empty.json().snapshot.progressState, null);
+  assert.deepEqual(empty.json().snapshot.dayFlags, { goalMet: [], frozen: [] });
+  await sync(headers, [{ clientEventId: id(), at: '2026-11-17T10:00:00.000Z', type: 'progress.set', lessonsDone: 6, freezes: 1, dailyGoal: 15 }]);
+  const r = await sync(headers, [{ clientEventId: id(), at: '2026-11-17T09:00:00.000Z', type: 'progress.set', lessonsDone: 2, freezes: 0, dailyGoal: 5 }]);
+  assert.deepEqual(r.json().snapshot.progressState, { lessonsDone: 6, freezes: 1, dailyGoal: 15 });
+  const bad = await sync(headers, [{ clientEventId: id(), at: '2026-11-17T09:00:00.000Z', type: 'progress.set', lessonsDone: 2, freezes: 3, dailyGoal: 7 }]);
+  assert.equal(bad.statusCode, 400);
+});
+
+test('Vượt unit lưu ở lesson_progress với tiền tố testout:', async () => {
+  const { headers } = await guest(a);
+  const at = '2026-11-17T08:00:00.000Z';
+  const r = await sync(headers, [{ clientEventId: id(), at, type: 'lesson.progress', lessonId: 'testout:u1', status: 'completed', score: 100 }]);
+  assert.deepEqual(r.json().snapshot.lessons, [{ lessonId: 'testout:u1', status: 'completed', bestScore: 100, completedAt: at }]);
+});
+
+test('Streak server tính cả ngày đã dùng đóng băng (khớp streakWithFreezes của client)', async () => {
+  const { headers } = await guest(a);
+  const at = '2026-11-18T08:00:00.000Z';
+  await sync(headers, [
+    { clientEventId: id(), at, type: 'xp.add', source: 'lesson', amount: 10, day: '2026-11-16' },
+    { clientEventId: id(), at, type: 'day.mark', day: '2026-11-17', freezeUsed: true },
+    { clientEventId: id(), at, type: 'xp.add', source: 'lesson', amount: 10, day: '2026-11-18' }
+  ]);
+  const s = (await a.inject({ url: '/v1/analytics/summary?today=2026-11-18', headers })).json();
+  assert.equal(s.streakDays, 3);
 });
