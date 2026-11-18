@@ -48,7 +48,9 @@ Phạm vi theo kế hoạch tổng (mục 9, D4): hồ sơ trẻ do phụ huynh 
   - Chỉ chuyển qua `SyncEngine.pullAndReplace`, sau khi đã gửi hết hàng đợi (gửi lại tới khi `pending=0`, vì đồng hồ học có thể thêm sự kiện giữa chừng). Lý do: nếu đổi token theo đường khác, nhánh “owner đổi” sẽ tải dữ liệu của phụ huynh lên hồ sơ trẻ.
   - **Mất mạng ⇒ không cho chuyển** (dữ liệu của mỗi hồ sơ nằm ở server).
   - Hồ sơ trẻ refresh hỏng ⇒ lỗi `child_session_expired`, **không** tạo khách người lớn mới (nếu tạo thì thoát được chế độ trẻ).
-  - Hồ sơ trẻ bị phụ huynh xóa ⇒ máy quay về phiên phụ huynh.
+  - Hồ sơ trẻ bị phụ huynh xóa ⇒ máy quay về phiên phụ huynh, xóa dữ liệu trên máy (kể cả PIN, biệt danh) rồi **kéo lại** dữ liệu phụ huynh. Không kéo thì thay đổi đầu tiên sẽ đè hồ sơ phụ huynh trên server.
+  - Rời hồ sơ trẻ khi phiên trẻ đã hỏng: gửi hàng đợi lỗi `unauthorized` ⇒ vẫn chuyển về phụ huynh, bỏ vài sự kiện chưa gửi của trẻ. Không làm vậy thì cổng PIN sẽ báo “cần mạng” mãi.
+  - Chế độ (`familyStore.mode`) được đặt NGAY trong lúc đổi tài khoản. Đổi xong mà kéo dữ liệu lỗi ⇒ vẫn coi là đã chuyển (`replacePending` tự kéo lại), nên phiên và lớp khóa giao diện không lệch nhau.
 - **`@vietlearning/state/family`** (subpath, không re-export từ index):
   - `familyStore`: mode, đồng ý media, biệt danh, số hồ sơ trẻ, PIN;
   - `useIsChild()`, `useMediaAllowed()`, `familyErrorText()`.
@@ -80,9 +82,17 @@ Phạm vi theo kế hoạch tổng (mục 9, D4): hồ sơ trẻ do phụ huynh 
 - Đã thử `manualChunks` để gộp chunk: **hỏng**. Rollup kéo zustand vào chunk `family`, chunk này bị modulepreload ngay từ đầu (số đo giả 65.5 kB). Đã bỏ cách này.
 - `PathHomeRoute` 3.3 → **3.4 kB** (lazy): giờ nhắc chỉ xem ở hồ sơ trẻ, đo 3.31 kB.
 
+## 4b. Rủi ro đã biết
+- **“Nuôi” hạn mức AI bằng hồ sơ trẻ.** `MAX_CHILDREN=5` chỉ giới hạn số hồ sơ đang có, không giới hạn số lần tạo. Vòng tạo → dùng → xóa sinh hạn mức mới, nhưng mỗi hồ sơ chỉ có 40% hạn mức và 15 lượt. Tương tự tạo khách mới (giới hạn theo IP ở `/v1/auth`). Đề xuất về sau: giới hạn số lần tạo hồ sơ trẻ/ngày/phụ huynh.
+- **Trẻ rành công nghệ** có thể đọc refresh token của phụ huynh trong localStorage/Preferences của máy. Cổng PIN là lớp chống trẻ bấm nhầm, không chống người có quyền truy cập dữ liệu máy.
+
 ## 5. Kiểm chứng
-- `pnpm build` ✔, `pnpm test` 35/35 task ✔ (gateway 94, state 39, api-client 18, AccountSection 7 …), `pnpm lint:boundaries` ✔, `size` ✔.
-- e2e 80/80, chạy 3 lần liên tiếp. Mới: `e2e/family.spec.ts` với Gateway thật, cổng 4012/4185, không mock endpoint bị chặn. Luồng:
+- `pnpm build` ✔, `pnpm test` 35/35 task ✔, `pnpm lint:boundaries` ✔, `size` ✔. Số test:
+  - gateway 94, state 39, api-client 18;
+  - AccountSection 7, SpeakExercise 6 (thêm: trẻ chưa được phép ⇒ không ghi âm, vẫn bỏ qua được), nhắc học 7 (thêm: trẻ chỉ xem giờ nhắc).
+- e2e: toàn bộ 81/81; riêng `family.spec.ts` ×10 lặp với 3 worker: 20/20.
+- Test e2e “phiên trẻ hỏng” đã được kiểm chứng ngược: tạm bỏ bản sửa thì test ĐỎ, có bản sửa thì xanh.
+- Mới: `e2e/family.spec.ts` với Gateway thật, cổng 4012/4185, không mock endpoint bị chặn. Luồng:
   1. phụ huynh tạo mã khôi phục, đặt PIN, tạo hồ sơ “Bin”, chuyển sang hồ sơ đó;
   2. `/hoi-thoai`, `/goi-thoai`, `/camera` đều khóa;
   3. token trẻ gọi thẳng Gateway: chat tự do 403, gọi thoại 403, ảnh 403, nhập vai 200;
