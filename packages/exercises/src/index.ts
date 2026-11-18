@@ -4,7 +4,7 @@
  * nên không MFE nào phải import MFE khác (Nguyên tắc 7). Package được dùng ở dạng mã nguồn (giống MFE)
  * để Vite đóng gói Web Worker phân tích thanh điệu bằng `new URL(..., import.meta.url)`.
  */
-export type { ExerciseItem, ExerciseResult, ChoiceVariant, ExerciseRef } from './types';
+export type { ExerciseItem, ExerciseResult, ChoiceVariant, ExerciseRef, StoryItemLine, StoryItemQuestion } from './types';
 export { buildItem, refKey, parseRefKey, isResolvable, rng } from './build';
 export { ExerciseView } from './ExerciseView';
 export { ChoiceExercise } from './choice/ChoiceExercise';
@@ -14,4 +14,4 @@ export { useToneRecorder, MAX_RECORD_MS, type RecorderStatus, type RecorderError
 export { ContourChart } from './tone/ContourChart';
 export { verdict } from './tone/verdict';
 export { gradeAssess, SPEAK_PASS } from './speak/grade';
-export { prefetchPack, playText, findAudioKey } from './audio/coursePlayer';
+export { prefetchPack, playText, findAudioKey, stopPlayback } from './audio/coursePlayer';

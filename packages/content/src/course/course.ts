@@ -28,7 +28,11 @@ export type ExerciseRef =
   /** từ theo miền (A7), mục d* */
   | { type: 'dialect'; entry: string; region: 'central' | 'south' }
   /** nói lại câu (A3 + A2, GĐ2): đọc câu (s* hoặc cs*), chấm từng âm tiết */
-  | { type: 'speak'; sentence: string };
+  | { type: 'speak'; sentence: string }
+  /** xưng hô trong ngữ cảnh (A6, GĐ2b): tình huống hs*, đáp án do luật A6 suy ra */
+  | { type: 'situation'; situation: string }
+  /** truyện ngắn nghe + câu hỏi hiểu (GĐ2b), truyện st* */
+  | { type: 'story'; story: string };
 
 export interface CourseWord {
   id: string;

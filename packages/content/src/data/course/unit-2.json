@@ -38,7 +38,8 @@
         {"type": "listen", "word": "w22"},
         {"type": "meaning", "word": "w23", "dir": "en-vi"},
         {"type": "tone", "tone": "hoi", "word": "bảy"},
-        {"type": "meaning", "word": "w34", "dir": "vi-en"}
+        {"type": "meaning", "word": "w34", "dir": "vi-en"},
+        {"type": "situation", "situation": "hs3"}
       ]
     },
     {
@@ -53,6 +54,7 @@
         {"type": "build", "sentence": "s15"},
         {"type": "build", "sentence": "cs4"},
         {"type": "fill", "sentence": "s15", "blank": 3},
+        {"type": "situation", "situation": "hs4"},
         {"type": "meaning", "word": "w30", "dir": "vi-en"},
         {"type": "meaning", "word": "w31", "dir": "en-vi"},
         {"type": "speak", "sentence": "cs4"},
@@ -74,7 +76,8 @@
         {"type": "fill", "sentence": "s49", "blank": 1},
         {"type": "build", "sentence": "cs7"},
         {"type": "speak", "sentence": "cs6"},
-        {"type": "tone", "tone": "nang", "word": "chợ"}
+        {"type": "tone", "tone": "nang", "word": "chợ"},
+        {"type": "story", "story": "st2"}
       ]
     },
     {
