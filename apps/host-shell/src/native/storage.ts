@@ -5,10 +5,22 @@ import type { KeyValue } from '@vietlearning/api-client';
  * không bị hệ điều hành dọn như bộ nhớ WebView. Plugin import động => bản web không tải mã này.
  * Web/PWA dùng localStorage (mặc định của api-client).
  */
-const plugin = () => import('@capacitor/preferences').then((m) => m.Preferences);
+// KHÔNG trả thẳng proxy plugin qua Promise (`.then((m) => m.Preferences)`): Promise dò `.then` trên proxy, Capacitor
+// coi đó là lời gọi native “Preferences.then()” => treo mãi. Trên Android, phiên đăng nhập và đồng bộ chưa từng chạy
+// vì lỗi này (thấy trên emulator). Bọc trong object thường, giống packages/native/src/reminders.ts.
+const plugin = async () => ({ p: (await import('@capacitor/preferences')).Preferences });
 
 export const preferencesStore: KeyValue = {
-  get: async (key) => (await (await plugin()).get({ key })).value ?? null,
-  set: async (key, value) => (await plugin()).set({ key, value }),
-  remove: async (key) => (await plugin()).remove({ key })
+  get: async (key) => {
+    const { p } = await plugin();
+    return (await p.get({ key })).value ?? null;
+  },
+  set: async (key, value) => {
+    const { p } = await plugin();
+    await p.set({ key, value });
+  },
+  remove: async (key) => {
+    const { p } = await plugin();
+    await p.remove({ key });
+  }
 };
