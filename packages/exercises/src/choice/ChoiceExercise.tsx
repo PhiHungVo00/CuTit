@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { playText } from '../audio/coursePlayer';
+import { ExplainButton } from '../explain/ExplainButton';
 import { useT } from '../i18n';
 import type { ExerciseItem, ExerciseResult } from '../types';
 
@@ -73,6 +74,7 @@ export function ChoiceExercise({ item, onDone, onSkip }: { item: ChoiceItem; onD
         <div ref={feedbackRef} role="status" className={['scroll-mb-[calc(80px+env(safe-area-inset-bottom))] rounded-xl p-3 text-[15px]', correct ? 'bg-accent-soft text-heading' : 'bg-danger-soft text-danger-ink'].join(' ')}>
           <strong>{correct ? t('right') : t('wrong', { answer: item.answer })}</strong>
           {item.explanation}
+          {!correct && <ExplainButton request={{ kind: 'choice', question: [item.prompt, item.display].filter(Boolean).join(' — '), answer: item.answer, userAnswer: chosen }} />}
           <button
             type="button"
             onClick={() => onDone({ key: item.key, correct, skipped: false, quality: correct ? 5 : 1, answer: item.answer })}
