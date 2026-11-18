@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, lt, lte, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, inArray, lt, lte, sql } from 'drizzle-orm';
 import type { z } from 'zod';
 import type { PreferencesSchema, ProgressSnapshot, SyncEvent } from '@vietlearning/contracts/api';
 import { schema, type Db } from '../../db/client.js';
@@ -180,16 +180,24 @@ const TOMBSTONE_TTL_MS = 90 * 24 * 3600 * 1000;
  * Trước khi xóa, chép sha256 của refresh token + mã khôi phục vào bia mộ (cùng transaction) để máy khác
  * nhận `account_deleted`. Bia mộ không chứa userId hay dữ liệu học.
  */
-export async function deleteUser(db: Db, userId: string, now = new Date()): Promise<boolean> {
+/**
+ * Xóa cứng tài khoản. Tài khoản phụ huynh: hồ sơ trẻ bị xóa theo (FK parent_user_id ON DELETE CASCADE) —
+ * bia mộ cả credential của trẻ để máy của trẻ nhận `account_deleted` (xóa dữ liệu trên máy) thay vì `invalid_*`.
+ * Trả id mọi tài khoản đã xóa (để Gateway bỏ cache), [] = không tồn tại.
+ */
+export async function deleteUser(db: Db, userId: string, now = new Date()): Promise<string[]> {
   return db.transaction(async (tx) => {
     const [u] = await tx.select({ code: users.recoveryCodeHash }).from(users).where(eq(users.id, userId));
-    if (!u) return false;
-    const tokens = await tx.select({ hash: refreshTokens.tokenHash }).from(refreshTokens).where(eq(refreshTokens.userId, userId));
-    const hashes = [...tokens.map((t) => t.hash), ...(u.code ? [u.code] : [])];
+    if (!u) return [];
+    const kids = await tx.select({ id: users.id, code: users.recoveryCodeHash }).from(users).where(eq(users.parentUserId, userId));
+    const ids = [userId, ...kids.map((k) => k.id)];
+    const tokens = await tx.select({ hash: refreshTokens.tokenHash }).from(refreshTokens).where(inArray(refreshTokens.userId, ids));
+    const codes = [u.code, ...kids.map((k) => k.code)].filter((c): c is string => Boolean(c));
+    const hashes = [...tokens.map((t) => t.hash), ...codes];
     if (hashes.length) await tx.insert(deletedAccounts).values(hashes.map((credentialHash) => ({ credentialHash, deletedAt: now }))).onConflictDoNothing();
     await tx.delete(deletedAccounts).where(lt(deletedAccounts.deletedAt, new Date(now.getTime() - TOMBSTONE_TTL_MS)));
     await tx.delete(users).where(eq(users.id, userId));
-    return true;
+    return ids;
   });
 }
 
