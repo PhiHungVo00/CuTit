@@ -30,7 +30,7 @@ async function recoveryCode(page: Page): Promise<string> {
   const code = page.getByTestId('recovery-code');
   await expect(create.or(code)).toBeVisible();
   if (await create.isVisible()) await create.click();
-  await expect(code).toHaveText(/^[0-9A-Z]{4}(-[0-9A-Z]{4}){3}$/);
+  await expect(code).toHaveText(/^[0-9A-Z]{4}(-[0-9A-Z]{4}){3}$/, { timeout: 15_000 });
   return (await code.textContent())!;
 }
 
@@ -91,5 +91,16 @@ test.describe('GĐ0 Tài khoản khách & đồng bộ', () => {
     await page.goto('/phuong-ngu');
     await page.getByRole('searchbox').fill('heo');
     await expect(page.getByRole('listitem').filter({ hasText: 'Con lợn' }).getByRole('button', { name: /Lưu để ôn tập/ })).toBeVisible();
+  });
+
+  test('người dùng cũ (dữ liệu có từ trước GĐ0, chưa từng đồng bộ): thẻ trên máy được tải lên server', async ({ page, request }) => {
+    await page.addInitScript(() => {
+      if (localStorage.getItem('becutit.learner')) return;
+      const card = { itemRef: 'dialect:d2', front: 'lạc', back: 'đậu phộng', source: 'dialect', ease: 250, intervalDays: 6, repetitions: 2, dueAt: '2026-12-01T00:00:00.000Z' };
+      localStorage.setItem('becutit.learner', JSON.stringify({ version: 1, state: { srs: { 'dialect:d2': card }, activity: { '2026-11-10': 600 } } }));
+    });
+    await page.goto('/');
+    const code = await recoveryCode(page);
+    await expect.poll(() => serverCards(request, code), { timeout: 15_000 }).toEqual(['dialect:d2']);
   });
 });

@@ -80,6 +80,7 @@ export function AccountSection({ deps = defaultDeps }: { deps?: AccountDeps }) {
   const createNow = () =>
     run('create', async () => {
       await (await deps.session()).getToken();
+      await refresh(); // hiện mã khôi phục ngay khi có tài khoản, không chờ đồng bộ xong
       await (await deps.engine())?.flush({ pull: true });
       return null;
     });

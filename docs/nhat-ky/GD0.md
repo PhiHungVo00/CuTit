@@ -18,7 +18,9 @@
 | 9 | `c0442cf` | **e2e với Gateway thật**: Playwright chạy kèm `node apps/gateway/dist/index.js` (PGlite RAM, không AI, không đọc khóa Gemini, cổng qua `E2E_PORT`/`E2E_GATEWAY_PORT`, không dùng lại server có sẵn). `e2e/sync.spec.ts`: lưu thẻ → mất mạng → thêm thẻ → có mạng ⇒ server đúng 2 thẻ không trùng; tải lại còn; hồ sơ trình duyệt mới nhập mã ⇒ thấy đủ thẻ; xóa tài khoản ⇒ mã hết hiệu lực, máy sạch | **e2e 49 passed, 2 skipped** (sync spec chỉ chạy ở pixel-7) |
 | 10 | (commit này) | `AGENTS.md` theo kiến trúc thật (R9): bỏ “Module Federation” runtime, thêm `api-client`, `native`, `state`, mục “Lệch TDD có chủ đích”, lệnh boundaries/migration/e2e; giữ khối turbo | `pnpm build` xong ⇒ `git status` sạch |
 
-**Kết quả cuối (2026-11-18):** `pnpm build` 17/17 · `pnpm test` 31/31 task (gateway **48** test, contracts 10, api-client 11, state 15, mfe-learner 9, …) · `pnpm lint:boundaries` 0 vi phạm (236 module) · size-limit đạt hết · e2e 49/49 (+2 skip).
+| 11 | (commit sau) | **Sau review:** (a) khôi phục dở dang (đã đổi tài khoản nhưng kéo dữ liệu lỗi/app bị tắt) ⇒ cờ `replacePending` lưu bền: không đưa dữ liệu máy cũ lên tài khoản mới, lần sau chỉ kéo + thay; (b) `at` của client bị chặn ở “bây giờ” của server (đồng hồ máy chạy nhanh không thắng LWW mãi); (c) e2e người dùng cũ: dữ liệu `becutit.learner` có từ trước GĐ0 được tải lên server; (d) M12 hiện mã khôi phục ngay khi có tài khoản; (e) chạy thật Gateway với PGlite **trên đĩa** ở đường dẫn mặc định (có dấu tiếng Việt + khoảng trắng): tạo khách, đồng bộ 1 thẻ, tắt (PID 41948) rồi mở lại (PID 22440, đã tắt) ⇒ refresh token còn dùng được, thẻ còn | state 16, gateway 49, e2e 50 passed + 3 skip |
+
+**Kết quả cuối (2026-11-18):** `pnpm build` 17/17 · `pnpm test` 31/31 task (gateway **49** test, contracts 10, api-client 11, state 16, mfe-learner 9, …) · `pnpm lint:boundaries` 0 vi phạm (236 module) · size-limit đạt hết · e2e **50 passed, 3 skipped**. Test `@perf` (mở M3 < 1.5 s) có lần trượt khi chạy cả bộ, chạy riêng thì qua — đúng vấn đề đã biết Q19/R12, không do GĐ0.
 
 ## Cách chạy
 
@@ -30,6 +32,13 @@ VITE_GATEWAY_URL=http://localhost:4010 pnpm --filter @vietlearning/host-shell bu
 E2E_PORT=4183 E2E_GATEWAY_PORT=4010 pnpm --filter @vietlearning/host-shell e2e
 ```
 Production: đặt `DATABASE_URL` (Neon/Supabase) + `JWT_SECRET` (≥ 32 ký tự).
+
+## Chưa kiểm chứng
+- **Đường Postgres thật (`DATABASE_URL`, postgres-js + migrator) CHƯA chạy lần nào** — chỉ PGlite (RAM + đĩa). Cần thử với Neon/Supabase trước khi phát hành (GĐ5).
+- APK chưa build lại sau khi thêm `@capacitor/preferences`.
+
+## Cần người quyết
+- **Xóa tài khoản trên máy A khi máy B vẫn còn dữ liệu:** máy B (khi mở lại) không làm mới được phiên ⇒ hiện tại tự tạo tài khoản khách MỚI và tải dữ liệu đang có trên máy B lên. Như vậy “xóa thật” chỉ thật với dữ liệu trên server lúc xóa. Phương án khác: máy B thấy tài khoản bị xóa thì xóa luôn dữ liệu local (cần một mã lỗi phân biệt “đã xóa” với “token hỏng”). Đề xuất: làm phương án khác ở GĐ5.
 
 ## Việc chưa làm / lưu ý cho phiên sau
 - **Chưa build lại APK** sau khi thêm `@capacitor/preferences` (cần `cap sync`; chưa thử trên emulator).

@@ -166,3 +166,26 @@ test('GĐ1: enqueueSyncEvent trước khi engine chạy vẫn được gửi khi
   assert.equal(xp.length, 1);
   assert.match(xp[0].clientEventId, /^[0-9a-f-]{36}$/);
 });
+
+test('Khôi phục dở dang (đã đổi tài khoản nhưng kéo dữ liệu thất bại): KHÔNG tải dữ liệu máy cũ lên tài khoản mới', async () => {
+  const OTHER = '00000000-0000-4000-8000-000000000009';
+  const serverCard = { itemRef: 'server:1', front: 's', back: 's', source: 'dialect', ease: 250, intervalDays: 1, repetitions: 1, dueAt: '2026-12-01T00:00:00.000Z' };
+  const tr = fakeTransport(() => emptySnap({ userId: OTHER, srs: [serverCard] }));
+  const { engine, storage } = start(tr);
+  s().addCard({ itemRef: 'old:1', front: 'cũ', back: 'cũ', source: 'drill' });
+  await engine.flush(); // tài khoản cũ đã có thẻ old:1 (owner = USER... theo snapshot giả)
+  tr.batches.length = 0;
+
+  tr.fail = true;
+  await assert.rejects(engine.pullAndReplace(async () => 'switched'));
+  s().addCard({ itemRef: 'old:2', front: 'cũ', back: 'cũ', source: 'drill' }); // thay đổi trong lúc dở dang
+  engine.stop();
+
+  // mở lại app khi đã có mạng: chỉ kéo + thay, không gửi old:1/old:2
+  tr.fail = false;
+  const again = start(tr, storage, true).engine;
+  await again.flush({ pull: true });
+  const sent = tr.batches.flat();
+  assert.deepEqual(sent, [], `không được gửi dữ liệu máy cũ: ${sent.map((e) => e.type)}`);
+  assert.deepEqual(Object.keys(s().srs), ['server:1']);
+});
