@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { AudioCaptureBridge } from '@vietlearning/audio-dsp';
+import { SilenceDetector } from '../call/silenceDetector';
 
 export type VoiceStatus = 'idle' | 'starting' | 'recording' | 'transcribing';
 export type VoiceError = 'permission-denied' | 'no-microphone' | 'unsupported' | 'too-short' | 'no-speech' | 'network' | 'failed';
@@ -27,7 +28,12 @@ async function transcribeWav(wav: ArrayBuffer, signal: AbortSignal): Promise<Tra
  * Nhập bằng giọng nói cho M1/M7: bấm để nói → bấm lần nữa (hoặc hết 15 giây) để dừng → chữ đã chép
  * được đưa vào ô nhập để người học XEM và SỬA trước khi gửi (không tự gửi: STT có thể nghe nhầm).
  */
-export function useVoiceInput(onText: (t: Transcript) => void, createBridge?: () => Promise<AudioCaptureBridge>) {
+export interface VoiceInputOptions {
+  /** Gọi thoại: tự dừng khi người học ngừng nói (SilenceDetector); không nói gì => lỗi no-speech */
+  autoStop?: boolean;
+}
+
+export function useVoiceInput(onText: (t: Transcript) => void, createBridge?: () => Promise<AudioCaptureBridge>, options: VoiceInputOptions = {}) {
   const [status, setStatus] = useState<VoiceStatus>('idle');
   const [error, setError] = useState<VoiceError | null>(null);
   const [level, setLevel] = useState(0);
@@ -37,6 +43,9 @@ export function useVoiceInput(onText: (t: Transcript) => void, createBridge?: ()
   const abortRef = useRef<AbortController | null>(null);
   const onTextRef = useRef(onText);
   onTextRef.current = onText;
+  // Ref thay vì đọc `status` trong closure: lượt sau của cuộc gọi không bị chặn bởi giá trị cũ
+  const busyRef = useRef(false);
+  const autoStop = options.autoStop === true;
 
   const stop = useCallback(async () => {
     const bridge = bridgeRef.current;
@@ -48,6 +57,7 @@ export function useVoiceInput(onText: (t: Transcript) => void, createBridge?: ()
       bridge.cancel();
       setError('too-short');
       setStatus('idle');
+      busyRef.current = false;
       return;
     }
     setStatus('transcribing');
@@ -66,11 +76,13 @@ export function useVoiceInput(onText: (t: Transcript) => void, createBridge?: ()
     } finally {
       if (abortRef.current === ac) abortRef.current = null;
       if (!ac.signal.aborted) setStatus('idle');
+      busyRef.current = false;
     }
   }, []);
 
   const start = useCallback(async () => {
-    if (bridgeRef.current || status !== 'idle') return;
+    if (bridgeRef.current || busyRef.current) return;
+    busyRef.current = true;
     setError(null);
     setStatus('starting');
     let bridge: AudioCaptureBridge | null = null;
@@ -81,8 +93,21 @@ export function useVoiceInput(onText: (t: Transcript) => void, createBridge?: ()
       bridge = b;
       bridgeRef.current = b;
       let n = 0;
+      const detector = autoStop ? new SilenceDetector({ maxMs: MAX_VOICE_MS }) : null;
       await b.record((rms) => {
         if (++n % 8 === 0) setLevel(Math.min(1, rms * 6));
+        if (!detector || bridgeRef.current !== b) return;
+        const e = detector.push(rms, performance.now());
+        if (e === 'end' || e === 'max') void stop();
+        else if (e === 'no-speech') {
+          bridgeRef.current = null;
+          window.clearTimeout(timerRef.current);
+          b.cancel();
+          setLevel(0);
+          setError('no-speech');
+          setStatus('idle');
+          busyRef.current = false;
+        }
       });
       startedRef.current = performance.now();
       setStatus('recording');
@@ -93,8 +118,9 @@ export function useVoiceInput(onText: (t: Transcript) => void, createBridge?: ()
       const code = (err as { code?: string }).code;
       setError(code === 'permission-denied' || code === 'no-microphone' || code === 'unsupported' ? code : 'failed');
       setStatus('idle');
+      busyRef.current = false;
     }
-  }, [createBridge, status, stop]);
+  }, [createBridge, autoStop, stop]);
 
   // Rời màn hình: tắt micro, hủy yêu cầu đang chạy
   useEffect(
