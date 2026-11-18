@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { getDeviceSpeech } from '@vietlearning/native';
+import { getDeviceSpeech, getLocalReminders } from '@vietlearning/native';
 import { learnerStore, useLearner, type CorrectionLevel, type Dialect, type Preferences, type UiLanguage } from '@vietlearning/state';
 import { progressStore } from '@vietlearning/state/progress';
 import { ChoiceGroup, ScreenFrame, card, linkBtn, secondaryBtn } from '../common/ui';
@@ -209,6 +209,7 @@ export function PreferencesScreen() {
                 learnerStore.getState().reset();
                 // Tiến độ lộ trình (XP, bài đã xong, đóng băng, nhắc học) lưu ở khóa riêng: xóa cùng lúc
                 progressStore.getState().resetProgress();
+                void getLocalReminders().cancelAll();
                 setConfirmReset(false);
                 setSync('idle');
               }}
