@@ -11,6 +11,7 @@ import {
   PitchReferenceFlyweight,
   findSentence,
   findWord,
+  localizeText,
   sentenceText,
   type ExerciseRef,
   type ToneId
@@ -20,6 +21,8 @@ import { meaningFor, t } from './i18n';
 import type { ExerciseItem } from './types';
 
 const lang = () => learnerStore.getState().preferences.uiLanguage;
+/** Chế độ miền (GĐ2): đổi từ vựng hiển thị/đọc theo miền đã chọn (A7). refKey KHÔNG đổi (thẻ ôn, lỗi gần đây dùng chung) */
+const loc = (text: string) => localizeText(text, learnerStore.getState().preferences.dialect);
 
 export function rng(seed: number): () => number {
   let s = Math.abs(Math.floor(seed)) % 2147483646 || 1;
@@ -144,11 +147,12 @@ export function buildItem(ref: ExerciseRef, seed: number, choices = 4): Exercise
       if (!w) throw new Error(`Không có từ ${ref.word}`);
       const near = nearWords(w.id);
       const note = lang() === 'en' ? w.noteEn : w.note;
-      const explanation = `“${w.vi}” = ${w.en}.${note ? ` ${note}` : ''}`;
+      const vi = loc(w.vi);
+      const explanation = `“${vi}” = ${w.en}.${note ? ` ${note}` : ''}`;
       if (ref.dir === 'vi-en') {
-        return { kind: 'choice', key, variant: 'meaning', prompt: t('qMeaningViEn', { word: w.vi }), speak: w.vi, options: options(w.en, near.map((x) => x.en), choices, r), answer: w.en, explanation };
+        return { kind: 'choice', key, variant: 'meaning', prompt: t('qMeaningViEn', { word: vi }), speak: vi, options: options(w.en, near.map((x) => x.en), choices, r), answer: w.en, explanation };
       }
-      return { kind: 'choice', key, variant: 'meaning', prompt: t('qMeaningEnVi', { meaning: w.en }), options: options(w.vi, near.map((x) => x.vi), choices, r), answer: w.vi, explanation };
+      return { kind: 'choice', key, variant: 'meaning', prompt: t('qMeaningEnVi', { meaning: w.en }), options: options(vi, near.map((x) => loc(x.vi)), choices, r), answer: vi, explanation };
     }
     case 'listen': {
       const w = findWord(ref.word);
@@ -158,10 +162,10 @@ export function buildItem(ref: ExerciseRef, seed: number, choices = 4): Exercise
         key,
         variant: 'listen',
         prompt: t('qListen'),
-        speak: w.vi,
-        options: options(w.vi, nearWords(w.id).map((x) => x.vi), choices, r),
-        answer: w.vi,
-        explanation: `“${w.vi}” = ${w.en}.`
+        speak: loc(w.vi),
+        options: options(loc(w.vi), nearWords(w.id).map((x) => loc(x.vi)), choices, r),
+        answer: loc(w.vi),
+        explanation: `“${loc(w.vi)}” = ${w.en}.`
       };
     }
     case 'fill': {
@@ -169,9 +173,9 @@ export function buildItem(ref: ExerciseRef, seed: number, choices = 4): Exercise
       const tok = s?.tokens[ref.blank];
       if (!s || !tok) throw new Error(`Không có câu ${ref.sentence}#${ref.blank}`);
       const order = s.accepted[0];
-      const sentence = order.map((i) => s.tokens[i].text).join(' ');
-      const shown = order.map((i) => (i === ref.blank ? '____' : s.tokens[i].text)).join(' ');
-      const pool = ALL_SENTENCES.flatMap((x) => x.tokens.filter((k) => k.tag === tok.tag).map((k) => k.text));
+      const sentence = loc(order.map((i) => s.tokens[i].text).join(' '));
+      const shown = order.map((i) => (i === ref.blank ? '____' : loc(s.tokens[i].text))).join(' ');
+      const pool = ALL_SENTENCES.flatMap((x) => x.tokens.filter((k) => k.tag === tok.tag).map((k) => loc(k.text)));
       return {
         kind: 'choice',
         key,
@@ -179,15 +183,15 @@ export function buildItem(ref: ExerciseRef, seed: number, choices = 4): Exercise
         prompt: t('qFill'),
         display: shown,
         hint: s.translation,
-        options: options(tok.text, pool, choices, r),
-        answer: tok.text,
+        options: options(loc(tok.text), pool, choices, r),
+        answer: loc(tok.text),
         explanation: t('exFill', { sentence, translation: s.translation })
       };
     }
     case 'build': {
       const s = findSentence(ref.sentence);
       if (!s) throw new Error(`Không có câu ${ref.sentence}`);
-      return { kind: 'build', key, prompt: t('qBuild', { translation: s.translation }), sentence: s };
+      return { kind: 'build', key, prompt: t('qBuild', { translation: s.translation }), sentence: { ...s, tokens: s.tokens.map((k) => ({ ...k, text: loc(k.text) })) } };
     }
     case 'tone': {
       PitchReferenceFlyweight.get(ref.tone); // ném lỗi nếu thanh lạ
@@ -226,7 +230,7 @@ export function buildItem(ref: ExerciseRef, seed: number, choices = 4): Exercise
     case 'speak': {
       const s = findSentence(ref.sentence);
       if (!s) throw new Error(`Không có câu ${ref.sentence}`);
-      return { kind: 'speak', key, prompt: t('qSpeak'), text: sentenceText(s), translation: s.translation };
+      return { kind: 'speak', key, prompt: t('qSpeak'), text: loc(sentenceText(s)), translation: s.translation };
     }
   }
 }
