@@ -99,7 +99,7 @@ export function gatewayStorage(): KeyValue | undefined {
 }
 
 export interface RequestOptions<S extends ZodTypeAny> {
-  method?: 'GET' | 'POST' | 'PUT';
+  method?: 'GET' | 'POST' | 'PUT' | 'DELETE';
   /** JSON body hoặc FormData (multipart) */
   body?: unknown;
   schema: S;
