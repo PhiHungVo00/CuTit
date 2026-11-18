@@ -4,6 +4,7 @@ import type { AssessResponse, AssessWord } from '@vietlearning/contracts/api';
 import { learnerStore, useLearner } from '@vietlearning/state';
 import { useT } from '../i18n';
 import { say } from '../choice/ChoiceExercise';
+import { SlowButton } from '../audio/SlowButton';
 import type { ExerciseItem, ExerciseResult } from '../types';
 import { gradeAssess } from './grade';
 import { MAX_SENTENCE_MS, useSentenceRecorder, type AssessFn } from './useSentenceRecorder';
@@ -110,9 +111,12 @@ export default function SpeakExercise({ item, onDone, onSkip, assess }: { item: 
           </p>
           <p className="m-0 text-sm text-ink-soft">{item.translation}</p>
         </div>
-        <button type="button" onClick={() => say(item.text)} className="min-h-12 shrink-0 rounded-xl border border-line bg-surface-2 px-3 text-sm font-bold text-ink">
-          {t('playSample')}
-        </button>
+        <div className="flex shrink-0 gap-2">
+          <button type="button" onClick={() => say(item.text)} className="min-h-12 shrink-0 rounded-xl border border-line bg-surface-2 px-3 text-sm font-bold text-ink">
+            {t('playSample')}
+          </button>
+          <SlowButton text={item.text} />
+        </div>
       </div>
 
       {askConsent && (

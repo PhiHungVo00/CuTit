@@ -10,7 +10,8 @@
 import { useStore } from 'zustand';
 import { createStore } from 'zustand/vanilla';
 import { createJSONStorage, persist } from 'zustand/middleware';
-import { dayKey, safeStorage } from './index.js';
+import { dayKey, learnerStore, safeStorage } from './index.js';
+import { badgeStatuses, knownDay, newlyEarned, weekStart, KNOWN_DAYS, type BadgeFacts } from './badges.js';
 import {
   applyStreakFreezes,
   freezesEarned,
@@ -26,6 +27,7 @@ import {
 } from './gamification.js';
 
 export * from './gamification.js';
+export * from './badges.js';
 
 export const PROGRESS_VERSION = 1;
 
@@ -36,13 +38,29 @@ export interface ProgressState extends ProgressData {
   addXp(amount: number, now?: Date): void;
   recordMistake(key: string, now?: Date): void;
   clearMistake(key: string): void;
-  recordTone(tone: string, score: number): void;
+  recordTone(tone: string, score: number, now?: Date): void;
+  /** GĐ4: trao các huy hiệu vừa đạt điều kiện (đọc thẻ từ learnerStore); trả khóa huy hiệu mới */
+  awardBadges(facts: BadgeFacts, now?: Date): string[];
+  /** đánh dấu đã thông báo (không truyền = tất cả) */
+  markBadgesSeen(keys?: readonly string[]): void;
+  /** ghi ngày “đã thuộc” cho thẻ vừa đạt khoảng ôn ≥ 6 ngày (gọi khi mở lộ trình/tổng kết) */
+  noteKnownWords(srs: Record<string, { itemRef: string; intervalDays: number; dueAt: string }>): void;
   /** Tiêu đóng băng cho ngày lỡ (gọi khi mở lộ trình); trả số đóng băng vừa dùng */
   settleFreezes(activity: Record<string, number>, now?: Date): number;
   setDailyGoal(goal: GoalMinutes): void;
   setReminder(p: Partial<ReminderSettings>): void;
   resetProgress(): void;
 }
+
+/** Giữ 70 ngày gần nhất của bộ đếm bài theo ngày (đủ cho tuần này + tuần trước) */
+const LESSON_DAYS_KEPT = 70;
+const addLessonDay = (byDay: Record<string, number>, now: Date) => {
+  const k = dayKey(now);
+  const out = { ...byDay, [k]: (byDay[k] ?? 0) + 1 };
+  const keys = Object.keys(out).sort();
+  for (const old of keys.slice(0, Math.max(0, keys.length - LESSON_DAYS_KEPT))) delete out[old];
+  return out;
+};
 
 const addDayXp = (xpByDay: Record<string, number>, amount: number, now: Date) => {
   const k = dayKey(now);
@@ -65,7 +83,8 @@ export const progressStore = createStore<ProgressState>()(
           xpByDay: addDayXp(s.xpByDay, xp, now),
           lessons: { ...s.lessons, [lessonId]: { best: Math.max(prev?.best ?? 0, accuracy), times: (prev?.times ?? 0) + 1, at: now.toISOString() } },
           lessonsDone,
-          freezes
+          freezes,
+          lessonsByDay: addLessonDay(s.lessonsByDay, now)
         });
         return { xp, freezeEarned: freezes > s.freezes };
       },
@@ -85,10 +104,42 @@ export const progressStore = createStore<ProgressState>()(
 
       clearMistake: (key) => set((s) => ({ mistakes: s.mistakes.filter((m) => m.key !== key) })),
 
-      recordTone: (tone, score) =>
+      recordTone: (tone, score, now = new Date()) =>
         set((s) => {
           const cur = s.toneStats[tone] ?? { n: 0, sum: 0 };
-          return { toneStats: { ...s.toneStats, [tone]: { n: cur.n + 1, sum: cur.sum + Math.round(score) } } };
+          const week = weekStart(now);
+          // lượt đầu tiên của tuần: chốt điểm tích lũy làm mốc so sánh (tổng kết tuần)
+          const toneWeek = s.toneWeek?.week === week ? s.toneWeek : { week, base: { ...s.toneStats } };
+          return { toneStats: { ...s.toneStats, [tone]: { n: cur.n + 1, sum: cur.sum + Math.round(score) } }, toneWeek };
+        }),
+
+      awardBadges: (facts, now = new Date()) => {
+        const s = get();
+        const fresh = newlyEarned(badgeStatuses({ toneStats: s.toneStats, srs: learnerStore.getState().srs, lessons: s.lessons, testedOut: s.testedOut }, facts), s.badges);
+        if (fresh.length === 0) return fresh;
+        const at = now.toISOString();
+        set({ badges: { ...s.badges, ...Object.fromEntries(fresh.map((k) => [k, { at, seen: false }])) } });
+        return fresh;
+      },
+
+      markBadgesSeen: (keys) =>
+        set((s) => {
+          const pick = keys ? new Set(keys) : null;
+          let changed = false;
+          const badges = { ...s.badges };
+          for (const [k, b] of Object.entries(badges)) {
+            if (b.seen || (pick && !pick.has(k))) continue;
+            badges[k] = { ...b, seen: true };
+            changed = true;
+          }
+          return changed ? { badges } : s;
+        }),
+
+      noteKnownWords: (srs) =>
+        set((s) => {
+          const add: Record<string, string> = {};
+          for (const c of Object.values(srs)) if (c.intervalDays >= KNOWN_DAYS && !s.knownAt[c.itemRef]) add[c.itemRef] = knownDay(c);
+          return Object.keys(add).length ? { knownAt: { ...s.knownAt, ...add } } : s;
         }),
 
       settleFreezes: (activity, now = new Date()) => {
@@ -121,7 +172,11 @@ export const progressStore = createStore<ProgressState>()(
         dailyGoal: s.dailyGoal,
         reminder: s.reminder,
         mistakes: s.mistakes,
-        toneStats: s.toneStats
+        toneStats: s.toneStats,
+        badges: s.badges,
+        lessonsByDay: s.lessonsByDay,
+        knownAt: s.knownAt,
+        toneWeek: s.toneWeek
       })
     }
   )

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import { Link, Navigate, useNavigate, useParams } from 'react-router-dom';
 import { COURSE, findLesson, findWord, PitchReferenceFlyweight, type ToneId } from '@vietlearning/content';
 import { useLearner, useUiLanguage } from '@vietlearning/state';
@@ -10,6 +10,10 @@ import { lessonHref } from './path/lessonHref';
 import { syncReminders } from './reminders';
 import { SessionRunner, type SessionOutcome } from './session/SessionRunner';
 import { Page, primaryBtn, secondaryBtn } from './ui';
+
+// GĐ4: thông báo huy hiệu mới — chunk lười riêng
+const Motivation = lazy(() => import('./motivation/Motivation'));
+
 
 interface Finished extends SessionOutcome {
   xp: number;
@@ -92,6 +96,10 @@ function LessonBody({ lessonId }: { lessonId: string }) {
         {result.freezeEarned && <p className="m-0 text-sm font-bold text-heading">{t('summaryFreeze')}</p>}
         {result.mistakes.length > 0 && <p className="m-0 text-sm text-ink-soft">{t('summaryMistakes')}</p>}
       </section>
+
+      <Suspense fallback={null}>
+        <Motivation part="notice" />
+      </Suspense>
 
       {words.length > 0 && (
         <section aria-labelledby="ct-sum-words" className="flex flex-col gap-2">

@@ -38,7 +38,7 @@ const emptySnap = (extra = {}) => ({
 
 /** Server giả có nhớ: cộng XP theo xp.add, giữ bài/cờ/progress.set — đủ để kiểm tra không cộng hai lần */
 function fakeServer() {
-  const st = { byDay: {}, lessons: {}, goalMet: new Set(), frozen: new Set(), progressState: null, seen: new Set() };
+  const st = { byDay: {}, lessons: {}, goalMet: new Set(), frozen: new Set(), progressState: null, seen: new Set(), achievements: {} };
   const t = {
     batches: [],
     fail: false,
@@ -48,7 +48,8 @@ function fakeServer() {
         xp: { total: Object.values(st.byDay).reduce((a, b) => a + b, 0), byDay: { ...st.byDay } },
         lessons: Object.entries(st.lessons).map(([lessonId, l]) => ({ lessonId, status: 'completed', bestScore: l.score, completedAt: l.at })),
         dayFlags: { goalMet: [...st.goalMet].sort(), frozen: [...st.frozen].sort() },
-        progressState: st.progressState
+        progressState: st.progressState,
+        achievements: Object.entries(st.achievements).map(([key, earnedAt]) => ({ key, earnedAt }))
       }),
     async push(events) {
       if (t.fail) throw Object.assign(new Error('offline'), { kind: 'offline' });
@@ -62,6 +63,7 @@ function fakeServer() {
           if (e.goalMet) st.goalMet.add(e.day);
           if (e.freezeUsed) st.frozen.add(e.day);
         }
+        if (e.type === 'achievement.earn') st.achievements[e.key] ??= e.at;
         if (e.type === 'progress.set') st.progressState = { lessonsDone: e.lessonsDone, freezes: e.freezes, dailyGoal: e.dailyGoal };
       }
       return { accepted: events.map((e) => e.clientEventId), duplicates: [], snapshot: t.snap() };
@@ -215,4 +217,57 @@ test('resetLocal: xóa cả tiến độ lộ trình, gọi onLocalReset, không
   assert.deepEqual(p().reminder, initialProgress().reminder);
   assert.equal(resets, 1);
   assert.equal(engine.status().pending, 0);
+});
+
+// ---------- GĐ4: huy hiệu đi qua hàng đợi có sẵn (achievement.earn + bảng achievements của GĐ0) ----------
+const FACTS = { tones: ['ngang'], units: [{ id: 'u1', lessonIds: ['u1l1'], roleplayIds: [] }] };
+
+test('GĐ4: đạt huy hiệu => achievement.earn đúng một lần; đánh dấu đã xem không gửi gì', async () => {
+  const tr = fakeServer();
+  const { engine } = start(tr);
+  p().completeLesson('u1l1', { total: 1, firstTryCorrect: 1 }, NOW);
+  assert.deepEqual(p().awardBadges(FACTS, NOW), ['unit:u1']);
+  await engine.flush();
+  p().markBadgesSeen();
+  await engine.flush({ pull: true });
+  assert.deepEqual(ofType(tr, 'achievement.earn').map((e) => e.key), ['unit:u1']);
+  assert.equal(p().badges['unit:u1'].seen, true, 'kéo ảnh chụp không đặt lại cờ đã xem');
+});
+
+test('GĐ4: khôi phục trên máy mới => huy hiệu về (đã xem, không báo lại); dữ liệu tuần của khách tạm bị xóa', async () => {
+  const tr = fakeServer();
+  tr.st.achievements = { tones80: '2026-11-10T08:00:00.000Z' };
+  progressStore.setState({ badges: { testout: { at: NOW.toISOString(), seen: false } }, lessonsByDay: { [TODAY]: 3 }, knownAt: { a: TODAY }, toneWeek: { week: TODAY, base: {} } });
+  const { engine } = start(tr);
+  await engine.pullAndReplace(async () => undefined);
+  assert.deepEqual(p().badges, { tones80: { at: '2026-11-10T08:00:00.000Z', seen: true } });
+  assert.deepEqual(p().lessonsByDay, {});
+  assert.deepEqual(p().knownAt, {});
+  assert.equal(p().toneWeek, null);
+  await engine.flush({ pull: true });
+  assert.equal(ofType(tr, 'achievement.earn').length, 0, 'không gửi vọng lại');
+});
+
+test('GĐ4: hai máy — huy hiệu máy kia về máy này, giữ huy hiệu của máy này', async () => {
+  const tr = fakeServer();
+  const { engine } = start(tr);
+  progressStore.setState({ badges: { testout: { at: NOW.toISOString(), seen: true } } });
+  await engine.flush();
+  tr.st.achievements.cards25 = '2026-11-17T08:00:00.000Z';
+  await engine.flush({ pull: true });
+  assert.deepEqual(Object.keys(p().badges).sort(), ['cards25', 'testout']);
+  assert.equal(p().badges.cards25.seen, true);
+});
+
+test('GĐ4: huy hiệu trao NGAY trong lúc áp ảnh chụp (subscriber của trang chủ) vẫn được gửi lên', async () => {
+  const tr = fakeServer();
+  const { engine } = start(tr);
+  tr.st.lessons['u1l1'] = { score: 100, at: NOW.toISOString() }; // máy kia vừa xong bài => đủ điều kiện unit:u1
+  const off = progressStore.subscribe(() => p().awardBadges(FACTS, NOW));
+  await engine.flush({ pull: true });
+  off();
+  assert.ok(p().badges['unit:u1'], 'đã trao trên máy');
+  p().markBadgesSeen(); // thay đổi bất kỳ => quét lại
+  await engine.flush();
+  assert.deepEqual(ofType(tr, 'achievement.earn').map((e) => e.key), ['unit:u1']);
 });

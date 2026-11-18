@@ -9,6 +9,12 @@ import { learnerStore, speechRate } from '@vietlearning/state';
 
 export type Dialect = 'north' | 'central' | 'south';
 export const AUDIO_CACHE = 'becutit-audio-v1';
+/** Nút 🐢 đọc chậm (D9 mục 6): âm thanh dựng sẵn đọc ở tốc độ tự nhiên, hơi nhanh với người mới */
+export const SLOW_RATE = 0.75;
+
+export interface PlayOptions {
+  slow?: boolean;
+}
 
 interface Pack {
   dialect: Dialect;
@@ -89,13 +95,16 @@ export function findAudioKey(text: string, dialect: Dialect): string | undefined
 
 let current: HTMLAudioElement | null = null;
 
-async function playFile(key: string): Promise<boolean> {
+async function playFile(key: string, rate: number): Promise<boolean> {
   try {
     const url = `${await baseUrl()}/audio/${key}.wav`;
     const cached = await (await openCache())?.match(url);
     const src = cached ? URL.createObjectURL(await cached.blob()) : url;
     current?.pause();
     const audio = new Audio(src);
+    // trình duyệt giữ cao độ khi đổi tốc độ (mặc định đã bật; đặt rõ để thanh điệu không bị méo)
+    audio.preservesPitch = true;
+    audio.playbackRate = rate;
     current = audio;
     await new Promise<void>((resolve, reject) => {
       audio.onended = () => resolve();
@@ -110,11 +119,12 @@ async function playFile(key: string): Promise<boolean> {
 }
 
 /** Đọc một từ/câu của khóa học theo miền đang chọn (tệp dựng sẵn) hoặc bằng TTS của máy. */
-export async function playText(text: string, dialect: Dialect = learnerStore.getState().preferences.dialect): Promise<void> {
+export async function playText(text: string, dialect: Dialect = learnerStore.getState().preferences.dialect, opts: PlayOptions = {}): Promise<void> {
+  const slow = opts.slow ? SLOW_RATE : 1;
   const key = findAudioKey(text, dialect);
-  if (key && (await playFile(key))) return;
+  if (key && (await playFile(key, slow))) return;
   await getDeviceSpeech()
-    .speak(text, { rate: speechRate(0.85) })
+    .speak(text, { rate: speechRate(0.85 * slow) })
     .catch(() => undefined);
 }
 

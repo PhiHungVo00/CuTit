@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { ExplainButton } from '../explain/ExplainButton';
 import { useT } from '../i18n';
 import { say } from '../choice/ChoiceExercise';
+import { SlowButton } from '../audio/SlowButton';
 import type { ExerciseItem, ExerciseResult } from '../types';
 import { useSentenceBuilder } from './useSentenceBuilder';
 
@@ -78,9 +79,12 @@ export function SentenceExercise({ item, seed, onDone }: { item: BuildItem; seed
           <div role="status" className="flex flex-col gap-2 rounded-xl bg-accent-soft p-3">
             <div className="flex items-center justify-between gap-2">
               <span className="text-[15px] font-bold text-heading">{t('correct', { sentence })}</span>
-              <button type="button" aria-label={t('listenSentence')} onClick={() => say(sentence)} className="min-h-11 min-w-11 rounded-xl bg-surface text-lg">
-                🔈
-              </button>
+              <span className="flex shrink-0 gap-2">
+                <button type="button" aria-label={t('listenSentence')} onClick={() => say(sentence)} className="min-h-11 min-w-11 rounded-xl bg-surface text-lg">
+                  🔈
+                </button>
+                <SlowButton text={sentence} />
+              </span>
             </div>
             <button type="button" onClick={() => done(true)} className="min-h-12 w-full rounded-xl bg-accent font-extrabold text-accent-ink">
               {t('next')}

@@ -12,6 +12,8 @@ import { card, primaryBtn } from './ui';
 
 // Thẻ miền (GĐ2) chỉ tải khi người học mở
 const DialectCard = lazy(() => import('./DialectCard'));
+// GĐ4: huy hiệu + tổng kết tuần (một chunk lười, cùng module)
+const Motivation = lazy(() => import('./motivation/Motivation'));
 
 /**
  * Phần lộ trình của trang chủ (Host đặt dưới tiêu đề app, tải lazy):
@@ -79,6 +81,10 @@ export function PathHome() {
         </p>
       )}
 
+      <Suspense fallback={null}>
+        <Motivation part="notice" />
+      </Suspense>
+
       <Link to={lessonHref(next)} className={`${primaryBtn} min-h-16 flex-col gap-0 text-lg`}>
         <span>{isNew ? t('startFirst') : t('continue')}</span>
         <span className="text-sm font-semibold opacity-90">{t('continueSub', { unit: en ? nextUnit.titleEn : nextUnit.title, lesson: en ? next.titleEn : next.title })}</span>
@@ -117,6 +123,10 @@ export function PathHome() {
           ))}
         </ol>
       </section>
+
+      <Suspense fallback={null}>
+        <Motivation part="panel" />
+      </Suspense>
 
       <section aria-labelledby="ct-path" className="flex flex-col gap-3">
         <h2 id="ct-path" className="m-0 text-lg font-black text-heading">
