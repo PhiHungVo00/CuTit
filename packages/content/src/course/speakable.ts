@@ -4,6 +4,7 @@
  */
 import { localizeText, type Dialect } from '../dialects/dialectMap.js';
 import { COURSE, findSentence, findWord, sentenceText, type ExerciseRef } from './course.js';
+import { TONE_SETS } from '../pitch/toneSets.js';
 
 function textsOf(ref: ExerciseRef, dialect: Dialect): string[] {
   switch (ref.type) {
@@ -25,8 +26,12 @@ function textsOf(ref: ExerciseRef, dialect: Dialect): string[] {
   }
 }
 
-/** Văn bản đọc của gói `pack` (id unit, vd. "u1") cho miền `dialect`, bỏ trùng theo NFC, giữ thứ tự xuất hiện */
+/**
+ * Văn bản đọc của gói `pack` cho miền `dialect`, bỏ trùng theo NFC, giữ thứ tự xuất hiện.
+ * `pack` = id unit (vd. "u1") hoặc "tones" (các âm tiết của phòng tập thanh điệu, không đổi theo A7).
+ */
 export function speakableTexts(pack: string, dialect: Dialect): string[] {
+  if (pack === 'tones') return [...new Set(TONE_SETS.flatMap((s) => Object.values(s.forms).map((f) => f!.vi.normalize('NFC'))))];
   const unit = COURSE.units.find((u) => u.id === pack);
   if (!unit) return [];
   const refs = [...unit.lessons.flatMap((l) => l.exercises), ...unit.testOut];

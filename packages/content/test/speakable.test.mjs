@@ -18,3 +18,9 @@ test('Gói theo miền: câu có từ A7 đổi theo miền; từ luyện thanh 
   assert.ok(!allSouth.some((t) => t.includes('dứa')), 'gói miền Nam không còn "dứa"');
   assert.ok(allSouth.some((t) => /thơm/.test(t)));
 });
+
+test('Gói "tones": các âm tiết của phòng tập thanh, không trùng', () => {
+  const t = speakableTexts('tones', 'south');
+  assert.ok(t.includes('má') && t.includes('mạ') && t.includes('bạn'));
+  assert.equal(new Set(t).size, t.length);
+});
