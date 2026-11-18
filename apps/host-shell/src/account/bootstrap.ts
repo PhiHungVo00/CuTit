@@ -4,9 +4,10 @@
  */
 import { configureGateway, request } from '@vietlearning/api-client';
 import { getAuthSession } from '@vietlearning/api-client/session';
-import { SyncResponseSchema } from '@vietlearning/contracts/api';
+import { AccountInfoSchema, SyncResponseSchema } from '@vietlearning/contracts/api';
 import { getLocalReminders } from '@vietlearning/native';
 import { getSyncEngine, startSync, type SyncEngine } from '@vietlearning/state/sync';
+import { familyStore } from '@vietlearning/state/family';
 import { isNativeApp } from '../native/bootstrap';
 import { preferencesStore } from '../native/storage';
 import { showNotice } from '../notice';
@@ -17,6 +18,17 @@ if (isNativeApp) configureGateway({ storage: preferencesStore });
 
 export const session = getAuthSession;
 
+/** GĐ4b: loại tài khoản (người lớn / trẻ) do server quyết định => lớp khóa giao diện (familyStore) */
+export async function refreshAccountInfo(): Promise<void> {
+  const info = await request('/v1/me/account', { schema: AccountInfoSchema });
+  familyStore.getState().setAccount({
+    mode: info.accountType,
+    mediaConsent: info.mediaConsent,
+    childCount: info.accountType === 'adult' ? info.childCount : undefined,
+    activeChildId: info.accountType === 'child' ? info.userId : null
+  });
+}
+
 export function startAccountSync(): SyncEngine {
   const existing = getSyncEngine();
   if (existing) return existing;
@@ -24,9 +36,15 @@ export function startAccountSync(): SyncEngine {
   const engine = startSync({
     transport: { push: (events) => request('/v1/sync', { method: 'POST', body: { events }, schema: SyncResponseSchema }) },
     hasAccount: async () => Boolean(await auth.info()),
-    // Một đường xóa dữ liệu duy nhất (xóa ở máy này hoặc bị xóa ở máy khác): hủy luôn lịch nhắc học
-    onLocalReset: () => void getLocalReminders().cancelAll().catch(() => undefined)
+    // Một đường xóa dữ liệu duy nhất (xóa ở máy này hoặc bị xóa ở máy khác): hủy luôn lịch nhắc học,
+    // xóa dữ liệu gia đình trên máy (biệt danh trẻ, PIN phụ huynh) — GĐ4b
+    onLocalReset: () => {
+      void getLocalReminders().cancelAll().catch(() => undefined);
+      familyStore.getState().resetFamily();
+    }
   });
+  // GĐ4b: loại tài khoản (người lớn / trẻ) do server quyết định — cập nhật lớp khóa giao diện mỗi lần khởi động
+  void auth.info().then((i) => i && refreshAccountInfo()).catch(() => undefined);
   return engine;
 }
 
@@ -38,5 +56,7 @@ getAuthSession().onUserChange((e) => {
   void startAccountSync()
     .resetLocal()
     .then(() => showNotice('accountDeleted'))
+    // hồ sơ trẻ bị phụ huynh xóa => máy đã quay về phiên phụ huynh: đọc lại loại tài khoản
+    .then(() => (e.userId ? refreshAccountInfo() : undefined))
     .catch((err) => console.error('[Sync] Xóa dữ liệu trên máy lỗi', err));
 });

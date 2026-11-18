@@ -28,7 +28,8 @@ module.exports = [
   { name: 'M4 Camera từ vựng (lazy)', path: 'dist/assets/CameraRoute-*.js', limit: '5 kB', gzip: true },
   // GĐ1 Lộ trình (mfe-path + packages/exercises), đo 2026-11-18, mọi chunk đều lazy
   // 3 → 3.3 kB (GĐ2): khung thẻ “miền khác nói thế nào” (nội dung thẻ là chunk DialectCard riêng)
-  { name: 'GĐ1 Phần lộ trình của trang chủ (lazy)', path: 'dist/assets/PathHomeRoute-*.js', limit: '3.3 kB', gzip: true },
+  // 3.3 → 3.4 kB (GĐ4b, 2026-11-18): giờ nhắc học chỉ xem ở hồ sơ trẻ (đo 3.31 kB)
+  { name: 'GĐ1 Phần lộ trình của trang chủ (lazy)', path: 'dist/assets/PathHomeRoute-*.js', limit: '3.4 kB', gzip: true },
   { name: 'GĐ1 Phiên bài học (lazy)', path: 'dist/assets/LessonRoute-*.js', limit: '2.5 kB', gzip: true },
   { name: 'GĐ1 Ôn tập (lazy)', path: 'dist/assets/ReviewRoute-*.js', limit: '3 kB', gzip: true },
   { name: 'GĐ1 Kiểm tra vượt unit (lazy)', path: 'dist/assets/TestOutRoute-*.js', limit: '2 kB', gzip: true },

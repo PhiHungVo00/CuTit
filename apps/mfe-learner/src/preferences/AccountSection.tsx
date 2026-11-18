@@ -4,7 +4,9 @@ import type { SyncEngine, SyncStatus } from '@vietlearning/state/sync';
 import { learnerStore, useLearner } from '@vietlearning/state';
 import { progressStore } from '@vietlearning/state/progress';
 import { getLocalReminders } from '@vietlearning/native';
-import { card, secondaryBtn } from '../common/ui';
+import { Link } from 'react-router-dom';
+import { familyStore } from '@vietlearning/state/family';
+import { card, linkBtn, secondaryBtn } from '../common/ui';
 import { useT } from '../i18n';
 
 /** Phụ thuộc nạp lười (chunk riêng) — test tiêm bản giả */
@@ -42,6 +44,9 @@ export function AccountSection({ deps = defaultDeps }: { deps?: AccountDeps }) {
   const [copied, setCopied] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const mounted = useRef(true);
+  // GĐ4b: hồ sơ trẻ do phụ huynh quản lý — không tự khôi phục/xóa tài khoản (Gateway cũng chặn DELETE /v1/me)
+  const isChild = familyStore((s) => s.mode === 'child');
+  const childCount = familyStore((s) => s.childCount);
 
   const refresh = async () => {
     const s = await deps.session();
@@ -146,8 +151,23 @@ export function AccountSection({ deps = defaultDeps }: { deps?: AccountDeps }) {
             ? t('syncDone', { time })
             : t('syncNever');
 
+  // Gia đình: mục riêng ở Host (/tuy-chinh?muc=gia-dinh) — chỉ link bằng URL (không import chéo)
+  const family = (
+    <section className={card} aria-labelledby="ct-family">
+      <h2 id="ct-family" className="m-0 text-lg font-extrabold text-ink">
+        👨‍👩‍👧 {t('familySection')}
+      </h2>
+      <p className="m-0 text-[15px] text-ink-soft">{isChild ? t('familyChild') : t('familyHint')}</p>
+      <Link to="/tuy-chinh?muc=gia-dinh" className={`${linkBtn} self-start`} data-testid="family-link">
+        {isChild ? t('familySwitch') : t('familyOpen')}
+      </Link>
+    </section>
+  );
+  if (isChild) return family;
+
   return (
     <>
+      {family}
       <section className={card} aria-labelledby="ct-account">
         <h2 id="ct-account" className="m-0 text-lg font-extrabold text-ink">
           {t('accountSection')}
@@ -235,6 +255,7 @@ export function AccountSection({ deps = defaultDeps }: { deps?: AccountDeps }) {
         ) : (
           <div role="alert" className="flex flex-col gap-2 rounded-xl bg-danger-soft p-3 text-danger-ink">
             <p className="m-0 text-[15px] font-bold">{t('resetConfirm')}</p>
+            {childCount > 0 && <p className="m-0 text-[15px] font-bold">⚠️ {t('resetChildren', { n: childCount })}</p>}
             <button type="button" disabled={busy !== null} className="min-h-12 w-full rounded-xl bg-danger px-4 font-extrabold text-white disabled:opacity-50" onClick={() => void remove()}>
               {busy === 'delete' ? t('deleting') : t('resetYes')}
             </button>
