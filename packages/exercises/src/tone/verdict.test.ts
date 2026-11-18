@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { verdict } from './ToneLabScreen';
+import { verdict } from './verdict';
 
 describe('verdict', () => {
   it('chỉ khen "Rất tốt" khi điểm cao VÀ thanh gần nhất đúng là thanh mục tiêu', () => {

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { AudioCaptureBridge, CaptureError, type CaptureErrorCode, type ToneAnalysisResult, type ToneId } from '@vietlearning/audio-dsp';
 import { PitchReferenceFlyweight } from '@vietlearning/content';
-import { analyzeInWorker, disposeAnalyzer } from '../services/toneAnalyzer';
+import { analyzeInWorker, disposeAnalyzer } from './toneAnalyzer';
 
 export type RecorderStatus = 'idle' | 'starting' | 'recording' | 'analyzing' | 'done' | 'error';
 export type RecorderError = CaptureErrorCode | 'no-voice' | 'too-short';

@@ -1,0 +1,89 @@
+{
+  "id": "u2",
+  "level": "A1",
+  "title": "Số đếm & mua bán",
+  "titleEn": "Numbers & shopping",
+  "icon": "🛒",
+  "reviewed": false,
+  "lessons": [
+    {
+      "id": "u2l1",
+      "title": "Số từ 1 đến 5",
+      "titleEn": "Numbers 1 to 5",
+      "exercises": [
+        {"type": "meaning", "word": "w16", "dir": "vi-en"},
+        {"type": "meaning", "word": "w17", "dir": "vi-en"},
+        {"type": "meaning", "word": "w18", "dir": "vi-en"},
+        {"type": "meaning", "word": "w19", "dir": "vi-en"},
+        {"type": "meaning", "word": "w20", "dir": "vi-en"},
+        {"type": "listen", "word": "w18"},
+        {"type": "meaning", "word": "w17", "dir": "en-vi"},
+        {"type": "fill", "sentence": "s11", "blank": 2},
+        {"type": "tone", "tone": "sac", "word": "bốn"},
+        {"type": "meaning", "word": "w20", "dir": "en-vi"}
+      ]
+    },
+    {
+      "id": "u2l2",
+      "title": "Số từ 6 đến 10",
+      "titleEn": "Numbers 6 to 10",
+      "exercises": [
+        {"type": "meaning", "word": "w21", "dir": "vi-en"},
+        {"type": "meaning", "word": "w22", "dir": "vi-en"},
+        {"type": "meaning", "word": "w23", "dir": "vi-en"},
+        {"type": "meaning", "word": "w24", "dir": "vi-en"},
+        {"type": "meaning", "word": "w25", "dir": "vi-en"},
+        {"type": "listen", "word": "w22"},
+        {"type": "meaning", "word": "w23", "dir": "en-vi"},
+        {"type": "tone", "tone": "hoi", "word": "bảy"},
+        {"type": "meaning", "word": "w34", "dir": "vi-en"}
+      ]
+    },
+    {
+      "id": "u2l3",
+      "title": "Bao nhiêu tiền?",
+      "titleEn": "How much is it?",
+      "exercises": [
+        {"type": "meaning", "word": "w26", "dir": "vi-en"},
+        {"type": "meaning", "word": "w27", "dir": "vi-en"},
+        {"type": "meaning", "word": "w28", "dir": "vi-en"},
+        {"type": "meaning", "word": "w29", "dir": "en-vi"},
+        {"type": "build", "sentence": "s15"},
+        {"type": "build", "sentence": "cs4"},
+        {"type": "fill", "sentence": "s15", "blank": 3},
+        {"type": "meaning", "word": "w30", "dir": "vi-en"},
+        {"type": "meaning", "word": "w31", "dir": "en-vi"},
+        {"type": "listen", "word": "w30"}
+      ]
+    },
+    {
+      "id": "u2l4",
+      "title": "Đi chợ",
+      "titleEn": "At the market",
+      "exercises": [
+        {"type": "meaning", "word": "w32", "dir": "vi-en"},
+        {"type": "dialect", "entry": "d3", "region": "south"},
+        {"type": "dialect", "entry": "d15", "region": "south"},
+        {"type": "build", "sentence": "cs6"},
+        {"type": "build", "sentence": "cs5"},
+        {"type": "dialect", "entry": "d4", "region": "south"},
+        {"type": "meaning", "word": "w33", "dir": "vi-en"},
+        {"type": "fill", "sentence": "s49", "blank": 1},
+        {"type": "build", "sentence": "cs7"},
+        {"type": "tone", "tone": "nang", "word": "chợ"}
+      ]
+    }
+  ],
+  "testOut": [
+    {"type": "meaning", "word": "w18", "dir": "en-vi"},
+    {"type": "meaning", "word": "w25", "dir": "vi-en"},
+    {"type": "meaning", "word": "w26", "dir": "en-vi"},
+    {"type": "build", "sentence": "s15"},
+    {"type": "dialect", "entry": "d3", "region": "south"},
+    {"type": "meaning", "word": "w30", "dir": "en-vi"},
+    {"type": "fill", "sentence": "s11", "blank": 2},
+    {"type": "build", "sentence": "cs5"},
+    {"type": "meaning", "word": "w28", "dir": "en-vi"},
+    {"type": "dialect", "entry": "d15", "region": "south"}
+  ]
+}
