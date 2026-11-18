@@ -1,12 +1,9 @@
 import { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
 import {
-  AnalyticsSummaryResponseSchema,
   CultureAskRequestSchema,
   CultureAskResponseSchema,
   PitchReferenceResponseSchema,
-  PreferencesSchema,
-  SrsDueResponseSchema,
   VisionLabelRequestSchema,
   VisionLabelResponseSchema
 } from '@vietlearning/contracts';
@@ -18,7 +15,7 @@ import { answerCulture, labelImage } from '../services/ai/tasks.js';
 const MB = 1024 * 1024;
 const ItemIdParams = z.object({ id: z.string().regex(/^[\w-]{1,64}$/) });
 
-/** Các route nội dung / học viên. Hiện vẫn trả dữ liệu MOCK nhưng đã xác thực đầu vào/đầu ra. */
+/** Các route nội dung (ảnh, cao độ mẫu, văn hóa). Dữ liệu người học nằm ở routes/me.ts (DB). */
 export const contentRoutes: FastifyPluginAsync<RouteDeps> = async (server, { pipeline, config, llm }) => {
   // POST /v1/vision/label (ảnh base64 nên cần giới hạn body lớn hơn). Có AI => nhận diện thật; không => nhãn mẫu, mock: true
   server.post('/vision/label', { bodyLimit: config.AUDIO_BODY_LIMIT_MB * MB }, async (req, reply) => {
@@ -76,41 +73,5 @@ export const contentRoutes: FastifyPluginAsync<RouteDeps> = async (server, { pip
           : 'Bé Cu Tít chưa có thẻ văn hóa nào khớp với câu hỏi này. Bạn thử hỏi về chào hỏi, bữa cơm, ngày Tết hoặc kiêng kỵ nhé!',
       sources: cards.map((c) => c.id)
     });
-  });
-
-  // GET /v1/srs/due
-  server.get('/srs/due', async () =>
-    respond(SrsDueResponseSchema, [
-      { id: 'card-1', itemRef: 'ngô_bắp', ease: 250, intervalDays: 1, dueAt: new Date().toISOString() }
-    ])
-  );
-
-  // GET /v1/analytics/summary
-  server.get('/analytics/summary', async () =>
-    respond(AnalyticsSummaryResponseSchema, {
-      streakDays: 5,
-      studyMinutes: 45,
-      accuracyRate: 88,
-      dueCardsCount: 3,
-      cefrEstimate: 'A1'
-    })
-  );
-
-  // GET /v1/preferences
-  server.get('/preferences', async () =>
-    respond(PreferencesSchema, {
-      voiceId: 'vi-VN-Standard-A',
-      speed: 1.0,
-      dialect: 'north',
-      correctionLevel: 'gentle',
-      persona: 'be_cu_tit'
-    })
-  );
-
-  // PUT /v1/preferences (MOCK: xác thực rồi trả lại, chưa lưu DB)
-  server.put('/preferences', async (req, reply) => {
-    const body = parseOr400(PreferencesSchema, req.body, reply);
-    if (!body) return reply;
-    return respond(PreferencesSchema, body);
   });
 };

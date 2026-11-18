@@ -1,6 +1,11 @@
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import type { GatewayConfig } from '../config.js';
 import type { Capability, QuotaStore } from './QuotaStore.js';
+import { and, eq, isNull } from 'drizzle-orm';
+import { schema, type DbProvider } from '../db/client.js';
+
+/** Nhớ “user còn tồn tại” trong thời gian ngắn để không truy vấn DB ở mọi request */
+const USER_CACHE_MS = 60_000;
 
 /**
  * GoF Chain of Responsibility Pattern (15)
@@ -26,10 +31,19 @@ export class GatewayError extends Error {
   }
 }
 
+/** Route dữ liệu người học cần tài khoản thật (không chấp nhận principal ẩn danh `anon:<ip>`) */
+export function requireUserId(request: FastifyRequest): string {
+  const p = request.principal;
+  if (!p || p.anonymous) throw new GatewayError(401, 'unauthorized', 'Cần tài khoản (POST /v1/auth/guest)');
+  return p.id;
+}
+
 export class RequestPipeline {
   private readonly limits: Record<Capability, number>;
 
-  constructor(private config: GatewayConfig, private quota: QuotaStore) {
+  private knownUsers = new Map<string, number>();
+
+  constructor(private config: GatewayConfig, private quota: QuotaStore, private db: DbProvider) {
     this.limits = {
       tts: config.MAX_TTS_CHARS_PER_DAY,
       stt: config.MAX_STT_SECONDS_PER_DAY,
@@ -43,16 +57,23 @@ export class RequestPipeline {
     const hasBearer = request.headers.authorization?.startsWith('Bearer ') ?? false;
 
     if (hasBearer && this.config.JWT_SECRET) {
+      let sub: string;
       try {
-        const payload = await request.jwtVerify<{ sub?: string }>();
-        if (!payload.sub) throw new Error('missing sub');
-        request.principal = { id: payload.sub, anonymous: false };
-        return;
+        const payload = await request.jwtVerify<{ sub?: string; typ?: string }>();
+        if (!payload.sub || payload.typ !== 'access') throw new Error('not an access token');
+        sub = payload.sub;
       } catch {
         // Token có gửi nhưng sai/hết hạn: luôn từ chối, kể cả ở dev
         reply.status(401).send({ error: 'invalid_token' });
         return;
       }
+      // Tài khoản đã xóa (DELETE /v1/me) => access token còn hạn cũng không dùng được nữa
+      if (!(await this.userExists(sub))) {
+        reply.status(401).send({ error: 'account_deleted' });
+        return;
+      }
+      request.principal = { id: sub, anonymous: false };
+      return;
     }
 
     if (this.config.AUTH_REQUIRED) {
@@ -62,6 +83,25 @@ export class RequestPipeline {
 
     request.principal = { id: `anon:${request.ip}`, anonymous: true };
   };
+
+  private async userExists(id: string): Promise<boolean> {
+    const until = this.knownUsers.get(id);
+    if (until && until > Date.now()) return true;
+    const db = await this.db.get();
+    const [row] = await db
+      .select({ id: schema.users.id })
+      .from(schema.users)
+      .where(and(eq(schema.users.id, id), isNull(schema.users.deletedAt)));
+    if (!row) return false;
+    if (this.knownUsers.size > 50_000) this.knownUsers.clear();
+    this.knownUsers.set(id, Date.now() + USER_CACHE_MS);
+    return true;
+  }
+
+  /** Gọi sau khi xóa tài khoản để token cũ bị từ chối ngay (một instance; nhiều instance: trễ ≤ 60 s) */
+  forgetUser(id: string): void {
+    this.knownUsers.delete(id);
+  }
 
   /** Mắt xích 2: trừ hạn mức theo năng lực. Gọi trong handler trước khi gọi Provider trả phí. */
   async consume(request: FastifyRequest, capability: Capability, units: number): Promise<void> {

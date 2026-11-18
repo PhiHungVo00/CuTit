@@ -15,5 +15,15 @@
   "dependencies": {
     "@vietlearning/contracts": "workspace:*",
     "zod": "^3.25.76"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./session": {
+      "types": "./dist/session.d.ts",
+      "default": "./dist/session.js"
+    }
   }
 }

@@ -3,8 +3,7 @@ import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { AdaptivePlacement, MIN_QUESTIONS, MAX_QUESTIONS } from '../dist/services/placement/adaptivePlacement.js';
 import { PLACEMENT_QUESTIONS } from '@vietlearning/content';
-import { loadConfig } from '../dist/config.js';
-import { buildApp } from '../dist/app.js';
+import { makeApp, guest } from './helpers.mjs';
 
 const byId = new Map(PLACEMENT_QUESTIONS.map((q) => [q.id, q]));
 
@@ -68,16 +67,23 @@ test('A5: lựa chọn được xáo (đáp án không luôn ở vị trí đầ
   assert.ok(positions.size > 1, 'đáp án luôn ở cùng vị trí');
 });
 
-test('/placement/next: luồng HTTP thật, trả lời sai câu => 409, contract hợp lệ', async () => {
-  const a = await buildApp(loadConfig({ NODE_ENV: 'test', CORS_ORIGIN: 'http://localhost:3000' }), { logger: false });
+test('/placement/next: luồng HTTP thật (phiên lưu DB), trả lời sai câu => 409, phiên của người khác => 404', async () => {
+  const a = await makeApp();
+  const { headers } = await guest(a);
   const sessionId = randomUUID();
-  const r1 = await a.inject({ method: 'POST', url: '/v1/placement/next', payload: { sessionId } });
+  const post = (payload, h = headers) => a.inject({ method: 'POST', url: '/v1/placement/next', payload, headers: h });
+  const r1 = await post({ sessionId });
   assert.equal(r1.statusCode, 200);
   const q = r1.json().question;
   assert.equal(q.index, 1);
-  const stale = await a.inject({ method: 'POST', url: '/v1/placement/next', payload: { sessionId, answer: { questionId: 'p999', choice: 0 } } });
+  const stale = await post({ sessionId, answer: { questionId: 'p999', choice: 0 } });
   assert.equal(stale.statusCode, 409);
-  const r2 = await a.inject({ method: 'POST', url: '/v1/placement/next', payload: { sessionId, answer: { questionId: q.id, choice: 0 } } });
+  // Người khác đoán/biết sessionId: không đọc được, không ghi được
+  const intruder = await guest(a);
+  const steal = await post({ sessionId, answer: { questionId: q.id, choice: 0 } }, intruder.headers);
+  assert.equal(steal.statusCode, 404);
+  assert.equal(steal.json().error, 'placement_not_found');
+  const r2 = await post({ sessionId, answer: { questionId: q.id, choice: 0 } });
   assert.equal(r2.statusCode, 200);
   assert.equal(typeof r2.json().lastCorrect, 'boolean');
   assert.equal(r2.json().question.index, 2);
