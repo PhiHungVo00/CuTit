@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
-import { getDeviceSpeech } from '@vietlearning/native';
-import { speechRate } from '@vietlearning/state';
+import { playText } from '../audio/coursePlayer';
 import { useT } from '../i18n';
 import type { ExerciseItem, ExerciseResult } from '../types';
 
 type ChoiceItem = Extract<ExerciseItem, { kind: 'choice' }>;
 
-export const say = (text: string) => getDeviceSpeech().speak(text, { rate: speechRate(0.85) }).catch(() => undefined);
+/** Đọc từ/câu: tệp dựng sẵn theo miền nếu đã tải gói, không thì TTS của máy (GĐ2) */
+export const say = (text: string) => playText(text);
 
 /**
  * Trắc nghiệm / nghe chọn / điền từ / chọn đại từ (A6) / từ theo miền (A7): cùng một dạng “chọn một đáp án”.
