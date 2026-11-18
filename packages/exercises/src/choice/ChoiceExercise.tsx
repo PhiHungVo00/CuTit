@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { playText } from '../audio/coursePlayer';
+import { SlowButton } from '../audio/SlowButton';
 import { ExplainButton } from '../explain/ExplainButton';
 import { useT } from '../i18n';
 import type { ExerciseItem, ExerciseResult } from '../types';
@@ -42,6 +43,7 @@ export function ChoiceExercise({ item, onDone, onSkip }: { item: ChoiceItem; onD
           <button type="button" onClick={() => say(item.speak!)} className="min-h-12 rounded-xl border border-line bg-surface-2 px-4 font-bold text-ink">
             {t('replay')}
           </button>
+          <SlowButton text={item.speak} />
           {listen && onSkip && chosen === null && (
             <button type="button" onClick={onSkip} className="min-h-12 rounded-xl border border-line bg-surface px-4 text-sm font-bold text-ink-soft">
               {t('cantListen')}

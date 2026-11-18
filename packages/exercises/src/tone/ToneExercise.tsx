@@ -3,6 +3,7 @@ import { PitchReferenceFlyweight } from '@vietlearning/content';
 import { useLearner } from '@vietlearning/state';
 import { useT } from '../i18n';
 import { say } from '../choice/ChoiceExercise';
+import { SlowButton } from '../audio/SlowButton';
 import type { ExerciseItem, ExerciseResult } from '../types';
 import { ContourChart } from './ContourChart';
 import { MAX_RECORD_MS, useToneRecorder } from './useToneRecorder';
@@ -34,9 +35,12 @@ export default function ToneExercise({ item, onDone, onSkip }: { item: ToneItem;
         <p lang="vi" className="m-0 text-3xl font-black text-ink">
           {item.word}
         </p>
-        <button type="button" onClick={() => say(item.word)} className="min-h-12 shrink-0 rounded-xl border border-line bg-surface-2 px-3 text-sm font-bold text-ink">
-          {t('playSample')}
-        </button>
+        <div className="flex shrink-0 gap-2">
+          <button type="button" onClick={() => say(item.word)} className="min-h-12 shrink-0 rounded-xl border border-line bg-surface-2 px-3 text-sm font-bold text-ink">
+            {t('playSample')}
+          </button>
+          <SlowButton text={item.word} />
+        </div>
       </div>
       <p className="m-0 text-sm text-ink-soft">{en ? tone.descriptionEn : tone.description}</p>
       <ContourChart reference={tone.contour} learner={result?.contour ?? null} label={t('chartLabel', { tone: (en ? tone.nameEn : tone.name).toLowerCase() })} />

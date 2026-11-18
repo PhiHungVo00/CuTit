@@ -54,6 +54,8 @@ interface ProgressShadow {
   goalDays: string[];
   /** JSON [lessonsDone, freezes, dailyGoal] */
   scalars: string;
+  /** GĐ4: khóa huy hiệu đã gửi (thiếu ở bản ghi cũ => coi như rỗng) */
+  badges?: string[];
 }
 
 const scalarsOf = (p: Pick<ProgressData, 'lessonsDone' | 'freezes' | 'dailyGoal'>) => JSON.stringify([p.lessonsDone, p.freezes, p.dailyGoal]);
@@ -71,7 +73,8 @@ function progressShadowOf(p: ProgressData, goalDays: string[]): ProgressShadow {
     testedOut: Object.keys(p.testedOut),
     frozenDays: [...p.frozenDays],
     goalDays: [...goalDays],
-    scalars: scalarsOf(p)
+    scalars: scalarsOf(p),
+    badges: Object.keys(p.badges)
   };
 }
 
@@ -380,6 +383,13 @@ export function startSync(opts: SyncOptions): SyncEngine {
       changed = true;
       if (DAY_RE.test(day)) push(ev({ type: 'day.mark', day, goalMet: true }));
     }
+    const sentBadges = (sh.badges ??= []);
+    for (const [key, b] of Object.entries(p.badges)) {
+      if (sentBadges.includes(key)) continue;
+      sentBadges.push(key);
+      changed = true;
+      if (/^[\w.:-]{1,60}$/.test(key)) push(ev({ type: 'achievement.earn', key, at: b.at }));
+    }
     const scalars = scalarsOf(p);
     if (scalars !== sh.scalars) {
       sh.scalars = scalars;
@@ -409,22 +419,29 @@ export function startSync(opts: SyncOptions): SyncEngine {
     const flags = snap.dayFlags ?? { goalMet: [], frozen: [] };
     const frozenDays = [...new Set([...(replace ? [] : p.frozenDays), ...flags.frozen])].sort();
     const ps = snap.progressState ?? null;
+    // huy hiệu: hợp (không bao giờ mất); về từ server => coi như đã báo (không thông báo lại trên máy này)
+    const badges: ProgressData['badges'] = replace ? {} : { ...p.badges };
+    for (const a of snap.achievements ?? []) badges[a.key] ??= { at: a.earnedAt, seen: true };
     const next: Partial<ProgressData> = {
       // hàng đợi đã rỗng khi áp => mọi XP của máy này đã có trên server; XP máy khác về theo
       xpByDay: snap.xp ? { ...snap.xp.byDay } : p.xpByDay,
       lessons,
       testedOut,
       frozenDays,
+      badges,
       ...(ps
         ? { lessonsDone: ps.lessonsDone, freezes: ps.freezes, dailyGoal: ps.dailyGoal }
         : replace
           ? { lessonsDone: Object.keys(lessons).length, freezes: 0, dailyGoal: initialProgress().dailyGoal }
           : {}),
-      ...(replace ? { mistakes: [], toneStats: {} } : {})
+      ...(replace ? { mistakes: [], toneStats: {}, lessonsByDay: {}, knownAt: {}, toneWeek: null } : {})
     };
     progressStore.setState(next);
     const goalDays = [...new Set([...(replace ? [] : pshadow().goalDays), ...flags.goalMet])];
-    rec.progressShadow = progressShadowOf(progressStore.getState(), goalDays);
+    // bóng huy hiệu = đã gửi trước đó ∪ server có; KHÔNG lấy từ store (subscriber có thể vừa trao huy hiệu mới
+    // ngay trong lúc áp — huy hiệu đó phải còn được gửi ở lần quét sau)
+    const sentBadges = [...new Set([...(replace ? [] : (pshadow().badges ?? [])), ...(snap.achievements ?? []).map((a) => a.key)])];
+    rec.progressShadow = { ...progressShadowOf(progressStore.getState(), goalDays), badges: sentBadges };
   }
 
   function schedule(ms: number) {
