@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Link, Navigate, useNavigate, useParams } from 'react-router-dom';
 import { COURSE, findLesson, findWord, PitchReferenceFlyweight, type ToneId } from '@vietlearning/content';
 import { useUiLanguage } from '@vietlearning/state';
 import { progressStore, useProgress } from '@vietlearning/state/progress';
 import { useT } from './i18n';
 import { nextLesson } from './path/pathModel';
+import { lessonHref } from './path/lessonHref';
 import { syncReminders } from './reminders';
 import { SessionRunner, type SessionOutcome } from './session/SessionRunner';
 import { Page, primaryBtn, secondaryBtn } from './ui';
@@ -41,6 +42,8 @@ function LessonBody({ lessonId }: { lessonId: string }) {
     );
   }
   const { unit, lesson } = found;
+  // Bài nhập vai cuối unit (GĐ3) sống ở màn nhập vai: chuyển hướng qua URL
+  if (lesson.roleplay) return <Navigate replace to={lessonHref(lesson)} />;
   const lessonTitle = en ? lesson.titleEn : lesson.title;
 
   if (!result) {
@@ -104,7 +107,7 @@ function LessonBody({ lessonId }: { lessonId: string }) {
 
       <div className="flex flex-col gap-2">
         {!nextIsSame && (
-          <Link to={`/bai-hoc/${next.id}`} className={primaryBtn}>
+          <Link to={lessonHref(next)} className={primaryBtn}>
             {t('nextLesson', { lesson: en ? next.titleEn : next.title })}
           </Link>
         )}
