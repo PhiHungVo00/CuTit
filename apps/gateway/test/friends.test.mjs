@@ -252,3 +252,17 @@ test('Rate limit riêng cho tạo/nhập mã mời (không ảnh hưởng xem da
     await app.close();
   }
 });
+
+test('Lệch múi giờ: kết bạn tối Chủ nhật giờ địa phương (UTC đã sang thứ Hai) vẫn tính tuần hiện tại', async () => {
+  const lan = await person('Lan');
+  const tom = await person('Tom');
+  const { id } = await befriend(lan, tom);
+  const db = await dbp.get();
+  await db.update(schema.friendships).set({ createdAt: new Date('2026-11-23T02:00:00Z') }).where(eq(schema.friendships.id, id));
+  await study(lan, '2026-11-20', 30);
+  await study(tom, '2026-11-22', 30);
+  const q = (await list(lan, '2026-11-22')).json().friends[0].quest;
+  assert.equal(q.totalMinutes, 60);
+  assert.equal(q.completed, true);
+  assert.equal(q.streakWeeks, 1);
+});

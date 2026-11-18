@@ -103,7 +103,10 @@ function Quest({ f, t, onGoal, onRemove }: { f: FriendQuest; t: T; onGoal: (g: n
  * GĐ4c — Bạn học hợp tác (chunk lười, mở từ màn Tiến độ). Không có bảng xếp hạng (D7): mỗi cặp bạn một
  * nhiệm vụ tuần chung “chúng ta”, thành viên luôn theo thứ tự cố định (mình trước).
  */
-export function FriendsPanel({ api = gatewayApi }: { api?: FriendsApi }) {
+/** Mã 403 của tài khoản trẻ em: GĐ4c dùng social_not_allowed; nhánh trẻ em (GĐ4b) dùng adult_only */
+const CHILD_CODES = ['social_not_allowed', 'adult_only'];
+
+export function FriendsPanel({ api = gatewayApi, onBlocked }: { api?: FriendsApi; /** gọi khi là tài khoản trẻ em => nơi chứa ẩn cả thẻ */ onBlocked?: () => void }) {
   const t = useT();
   const lang = useLearner((s) => s.preferences.uiLanguage);
   const [data, setData] = useState<FriendsResponse | null>(null);
@@ -125,7 +128,10 @@ export function FriendsPanel({ api = gatewayApi }: { api?: FriendsApi }) {
       setLoad('ok');
     } catch (e) {
       if (!alive.current) return;
-      if ((e as { code?: string })?.code === 'social_not_allowed') return setLoad('child');
+      if (CHILD_CODES.includes((e as { code?: string })?.code ?? '')) {
+        onBlocked?.();
+        return setLoad('child');
+      }
       setLoadErr(errText(e, t) === t('err.other') ? t('failed') : errText(e, t));
       setLoad('error');
     }

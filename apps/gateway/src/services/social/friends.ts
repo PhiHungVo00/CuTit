@@ -123,7 +123,8 @@ async function questFor(db: Db, userId: string, f: FriendshipRow, today: string)
   const friendId = f.userA === userId ? f.userB : f.userA;
   const weekStart = weekStartOf(today);
   const weekEnd = addDays(weekStart, 6);
-  const firstWeek = weekStartOf(f.createdAt.toISOString().slice(0, 10));
+  // createdAt là giờ UTC còn tuần theo ngày địa phương của người hỏi: kẹp để tuần kết bạn không “ở tương lai”
+  const firstWeek = [weekStartOf(f.createdAt.toISOString().slice(0, 10)), weekStart].sort()[0];
   const from = [firstWeek, addDays(weekStart, -7 * MAX_STREAK_WEEKS)].sort().at(-1)!;
   const rows = await db
     .select({ userId: dailyActivity.userId, day: dailyActivity.day, seconds: dailyActivity.seconds })
