@@ -412,8 +412,12 @@ test.describe('M1 Trò chuyện & M7 Nhập vai', () => {
     await page.getByRole('button', { name: 'Hoàn thành! Xem tổng kết' }).click();
     await expect(page.getByRole('heading', { name: 'Tổng kết: 4/4 nhiệm vụ' })).toBeVisible();
     await expect(page.getByText('Lỗi cần nhớ (1)')).toBeVisible();
-    const srs = await page.evaluate(() => JSON.parse(localStorage.getItem('becutit.learner')!).state.srs);
-    expect(srs['roleplay:chào anh']).toMatchObject({ front: 'chào anh', source: 'conversation' });
+    // GĐ3: không tự lưu — người học chạm một lần để thêm vào ôn tập
+    const srsOf = () => page.evaluate(() => JSON.parse(localStorage.getItem('becutit.learner')!).state.srs);
+    expect((await srsOf())['roleplay:chào anh']).toBeUndefined();
+    await page.getByRole('button', { name: '＋ Thêm vào ôn tập: chào anh' }).click();
+    await expect(page.getByRole('button', { name: 'chào anh: ✓ Đã có trong ôn tập' })).toBeDisabled();
+    expect((await srsOf())['roleplay:chào anh']).toMatchObject({ front: 'chào anh', source: 'conversation' });
   });
 });
 
