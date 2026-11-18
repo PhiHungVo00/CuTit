@@ -14,6 +14,7 @@
     "android:apk:win": "pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/build-apk.ps1",
     "test": "vitest run",
     "size": "size-limit",
+    "analyze": "vite build -c vite.analyze.config.ts",
     "e2e": "playwright test",
     "perf": "node scripts/lighthouse.mjs",
     "android:release:win": "pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/build-apk.ps1 -Release"

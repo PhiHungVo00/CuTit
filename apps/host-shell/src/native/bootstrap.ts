@@ -1,29 +1,37 @@
-import { Capacitor, registerPlugin } from '@capacitor/core';
+import { getPlatform, isNativeApp } from './platform';
 
 /**
  * Khởi tạo các hành vi native khi chạy trong app Capacitor.
- * Plugin được import động => bản web/PWA không phải tải mã plugin.
+ * Plugin và cả `@capacitor/core` đều import động (R10) => bản web/PWA không tải mã Capacitor ở gói đầu.
  */
-export const isNativeApp = Capacitor.isNativePlatform();
+export { isNativeApp };
 
 /** Plugin nội bộ (android/.../SystemBarsPlugin.java): màu dải status/navigation bar theo giao diện */
 interface SystemBarsPlugin {
   setTheme(opts: { dark: boolean; color?: string }): Promise<void>;
 }
-const SystemBars = registerPlugin<SystemBarsPlugin>('SystemBars');
 
-/** Gọi khi giao diện đổi. Không trả proxy plugin khỏi hàm async (Promise sẽ dò `.then` trên proxy). */
+// Một promise dùng chung => các lần đổi giao diện liên tiếp vẫn gửi xuống native đúng thứ tự.
+// Không resolve promise bằng proxy plugin (Promise sẽ dò `.then` trên proxy) => giữ proxy ở biến ngoài.
+let systemBars: SystemBarsPlugin | undefined;
+let systemBarsReady: Promise<void> | undefined;
+const loadSystemBars = () =>
+  (systemBarsReady ??= import('@capacitor/core').then(({ registerPlugin }) => {
+    systemBars = registerPlugin<SystemBarsPlugin>('SystemBars');
+  }));
+
+/** Gọi khi giao diện đổi. */
 export function applySystemBars(theme: 'dark' | 'light'): void {
-  if (!isNativeApp || Capacitor.getPlatform() !== 'android') return;
-  SystemBars.setTheme({ dark: theme === 'dark', color: theme === 'dark' ? '#16100B' : '#F6F3EC' }).catch((err) =>
-    console.warn('[Native] Không đổi được màu thanh hệ thống', err)
-  );
+  if (!isNativeApp || getPlatform() !== 'android') return;
+  loadSystemBars()
+    .then(() => systemBars!.setTheme({ dark: theme === 'dark', color: theme === 'dark' ? '#16100B' : '#F6F3EC' }))
+    .catch((err) => console.warn('[Native] Không đổi được màu thanh hệ thống', err));
 }
 
 export async function bootstrapNative(navigateBack: () => void): Promise<void> {
   if (!isNativeApp) return;
 
-  document.documentElement.classList.add('native-app', `platform-${Capacitor.getPlatform()}`);
+  document.documentElement.classList.add('native-app', `platform-${getPlatform()}`);
 
   const [{ App }, { SplashScreen }] = await Promise.all([import('@capacitor/app'), import('@capacitor/splash-screen')]);
 
