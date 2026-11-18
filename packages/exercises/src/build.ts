@@ -63,6 +63,19 @@ const toneName = (id: ToneId) => {
   return (lang() === 'en' ? tone.nameEn : tone.name).toLowerCase();
 };
 
+/**
+ * Nhiễu cho bài chọn đại từ: bỏ những cách xưng cũng chấp nhận được với cùng người nghe, để không chấm sai
+ * một câu trả lời đúng: “tôi” (trung tính, lịch sự trong nhiều tình huống), cách xưng của các cặp khác có
+ * cùng người nghe, và cặp “cháu”/“con” trong gia đình.
+ */
+function pronounDistractors(answer: string, listener: string): string[] {
+  const listeners = new Set(listener.split('/').map(norm));
+  const sameListener = HONORIFIC_PAIRS_20.filter((x) => x.listener.split('/').some((l) => listeners.has(norm(l)))).map((x) => norm(x.speaker));
+  const kin = ['cháu', 'con'].includes(norm(answer)) ? ['cháu', 'con'] : [];
+  const banned = new Set([...sameListener, ...kin, 'tôi']);
+  return HONORIFIC_PAIRS_20.map((x) => x.speaker).filter((sp) => !banned.has(norm(sp)));
+}
+
 /** Khóa ổn định của một ref: dùng cho thẻ ôn, “lỗi gần đây”, câu sai quay lại */
 export function refKey(ref: ExerciseRef): string {
   switch (ref.type) {
@@ -125,7 +138,8 @@ export function buildItem(ref: ExerciseRef, seed: number, choices = 4): Exercise
       const w = findWord(ref.word);
       if (!w) throw new Error(`Không có từ ${ref.word}`);
       const near = nearWords(w.id);
-      const explanation = `“${w.vi}” = ${w.en}.${w.note ? ` ${w.note}` : ''}`;
+      const note = lang() === 'en' ? w.noteEn : w.note;
+      const explanation = `“${w.vi}” = ${w.en}.${note ? ` ${note}` : ''}`;
       if (ref.dir === 'vi-en') {
         return { kind: 'choice', key, variant: 'meaning', prompt: t('qMeaningViEn', { word: w.vi }), speak: w.vi, options: options(w.en, near.map((x) => x.en), choices, r), answer: w.en, explanation };
       }
@@ -183,7 +197,7 @@ export function buildItem(ref: ExerciseRef, seed: number, choices = 4): Exercise
         key,
         variant: 'pronoun',
         prompt: t('qPronoun', { relation: en && p.relationNameEn ? p.relationNameEn : p.relationName, listener: p.listener }),
-        options: options(p.speaker, HONORIFIC_PAIRS_20.map((x) => x.speaker), choices, r),
+        options: options(p.speaker, pronounDistractors(p.speaker, p.listener), choices, r),
         answer: p.speaker,
         explanation: `${p.example} — ${en && p.explanationEn ? p.explanationEn : p.explanation}`
       };

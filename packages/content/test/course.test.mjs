@@ -91,6 +91,7 @@ test('Nội dung mới là bản nháp (reviewed:false), chuỗi NFC, id câu m�
     wordIds.add(w.id);
     assert.equal(w.reviewed, false);
     assert.ok(isNfc(w.vi) && isNfc(w.en), w.id);
+    assert.equal(Boolean(w.note), Boolean(w.noteEn), `${w.id}: ghi chú cần cả vi và en`);
   }
   const old = new Set(SENTENCE_ITEMS.map((s) => s.id));
   for (const s of COURSE_SENTENCES) {

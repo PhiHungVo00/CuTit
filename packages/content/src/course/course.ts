@@ -35,6 +35,8 @@ export interface CourseWord {
   en: string;
   /** ghi chú tiếng Việt, vd. từ miền khác */
   note?: string;
+  /** ghi chú cho giao diện tiếng Anh */
+  noteEn?: string;
   reviewed: boolean;
 }
 

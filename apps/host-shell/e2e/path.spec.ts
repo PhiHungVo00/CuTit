@@ -63,7 +63,7 @@ async function solveLesson(page: Page, s: Strings, memory = new Map<string, stri
     if (await summary.isVisible()) return answered;
     const section = page.locator('section[aria-labelledby="ct-ex-q"]');
     const key = (await section.locator('#ct-ex-q').textContent()) + '|' + ((await section.locator('p[lang="vi"]').first().textContent({ timeout: 50 }).catch(() => '')) ?? '');
-    if (onItem && answered === 1) await onItem();
+    if (onItem) await onItem();
 
     const skip = section.getByRole('button', { name: s.skip });
     if (await skip.isVisible()) {
@@ -193,7 +193,13 @@ test.describe('GĐ1 Lộ trình', () => {
   });
 
   test('tab Khám phá giữ đủ 12 công cụ; trang chủ có skeleton rồi lộ trình', async ({ page }) => {
+    // Làm chậm chunk lộ trình để thấy khung xương (skeleton) trong lúc tải
+    await page.route('**/assets/PathHomeRoute-*.js', async (route) => {
+      await new Promise((r) => setTimeout(r, 800));
+      await route.continue();
+    });
     await page.goto('/');
+    await expect(page.locator('[aria-busy="true"]')).toBeVisible();
     await expect(page.getByRole('link', { name: /Bắt đầu bài đầu tiên/ })).toBeVisible();
     await expect(page.getByRole('link', { name: /Ôn hôm nay \(0\)/ })).toBeVisible();
     await assertMobileLayout(page);
@@ -214,6 +220,10 @@ test.describe('GĐ1 Lộ trình — giao diện tiếng Anh', () => {
     await page.getByRole('link', { name: /Start your first lesson/ }).click();
     await solveLesson(page, EN, new Map(), () => assertMobileLayout(page));
     await expect(page.getByText(/Right first time: \d+%/)).toBeVisible();
+    await assertMobileLayout(page);
+    // Bài 2 có đủ dạng: đại từ, điền từ, nghe, luyện thanh, ghép câu — kiểm bố cục ở mọi câu
+    await page.getByRole('link', { name: /^Continue: Older and younger/ }).click();
+    await solveLesson(page, EN, new Map(), () => assertMobileLayout(page));
     await assertMobileLayout(page);
     await page.getByRole('link', { name: 'Back to path' }).click();
     await expect(page.getByTestId('xp')).not.toHaveText('⭐ 0');

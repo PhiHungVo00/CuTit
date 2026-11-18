@@ -6,7 +6,7 @@ import { goalProgress, learnedDays, progressStore, streakWithFreezes, totalXp, u
 import { useT } from './i18n';
 import { lessonStatuses, nextLesson, unitProgress } from './path/pathModel';
 import { GoalPanel } from './GoalPanel';
-import { syncReminders } from './reminders';
+import { startGoalWatch, syncReminders } from './reminders';
 import { card, primaryBtn } from './ui';
 
 /**
@@ -31,6 +31,7 @@ export function PathHome() {
     setFreezeUsed(progressStore.getState().settleFreezes(learnerStore.getState().activity));
     // Mở app: đặt lại lịch nhắc (bỏ mốc hôm nay nếu đã đạt mục tiêu); web thì không làm gì
     void syncReminders().catch(() => undefined);
+    startGoalWatch();
   }, []);
 
   const today = dayKey(new Date());

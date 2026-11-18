@@ -10,7 +10,8 @@ import { useT } from '../i18n';
  * không đợi tới lúc render; trong lúc chờ hiện khung xương (skeleton).
  */
 const loadPath = () => import('./PathHomeRoute');
-void loadPath().catch(() => undefined);
+// Mở thẳng một màn khác (deep link) thì không tải trước chunk lộ trình
+if (typeof location !== 'undefined' && location.pathname === '/') void loadPath().catch(() => undefined);
 const PathHome = lazy(loadPath);
 
 function PathSkeleton() {

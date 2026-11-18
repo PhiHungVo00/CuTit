@@ -46,6 +46,18 @@ describe('buildItem', () => {
     expect(item.kind === 'choice' && item.options).not.toContain('dứa');
   });
 
+  it('chọn đại từ: không lấy “tôi” hay cách xưng khác cũng đúng với cùng người nghe làm nhiễu', () => {
+    for (const pair of ['h2', 'h10', 'h11', 'h12', 'h13', 'h14']) {
+      for (const seed of [1, 2, 3, 99]) {
+        const item = buildItem({ type: 'pronoun', pair }, seed);
+        if (item.kind !== 'choice') throw new Error();
+        const wrong = item.options.filter((o) => o !== item.answer);
+        expect(wrong, pair).not.toContain('tôi');
+        if (pair === 'h2') expect(wrong).not.toContain('con');
+      }
+    }
+  });
+
   it('ref lạ => ném lỗi (test toàn vẹn bắt được)', () => {
     expect(() => buildItem({ type: 'meaning', word: 'w999', dir: 'vi-en' }, 1)).toThrow();
   });

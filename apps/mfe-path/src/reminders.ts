@@ -30,3 +30,27 @@ export async function enableReminders(r: LocalReminders = getLocalReminders(), n
   await syncReminders(r, now);
   return true;
 }
+
+/**
+ * Mục tiêu ngày thường được vượt qua bởi bộ đếm giờ học (mỗi 15 giây), không phải lúc xong bài:
+ * theo dõi kho người học, khi “đạt mục tiêu hôm nay” chuyển sang true thì đặt lại lịch (bỏ mốc hôm nay).
+ * Trả về hàm hủy theo dõi.
+ */
+export function watchGoalForReminders(r: LocalReminders = getLocalReminders(), now: () => Date = () => new Date()): () => void {
+  if (!r.supported()) return () => undefined;
+  const metNow = () => goalProgress(learnerStore.getState().activity[dayKey(now())] ?? 0, progressStore.getState().dailyGoal).met;
+  let met = metNow();
+  return learnerStore.subscribe(() => {
+    const m = metNow();
+    if (m && !met) void syncReminders(r, now()).catch(() => undefined);
+    met = m;
+  });
+}
+
+let watching = false;
+/** Bật theo dõi một lần cho cả phiên app (gọi khi lộ trình mở) */
+export function startGoalWatch(): void {
+  if (watching) return;
+  watching = true;
+  watchGoalForReminders();
+}
