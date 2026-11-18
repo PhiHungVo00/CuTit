@@ -40,6 +40,11 @@ interface Persisted {
   outbox: SyncEvent[];
   shadow: Shadow;
   lastSyncAt: string | null;
+  /**
+   * Đã chuyển sang tài khoản khôi phục nhưng CHƯA kéo được dữ liệu của nó (mất mạng / app bị tắt giữa chừng).
+   * Còn cờ này: không đưa dữ liệu máy cũ vào hàng đợi; lần gửi kế tiếp chỉ kéo và THAY dữ liệu.
+   */
+  replacePending?: boolean;
 }
 
 export interface SyncStatus {
@@ -225,7 +230,7 @@ export function startSync(opts: SyncOptions): SyncEngine {
 
   /** So store với bóng => sự kiện. Gọi sau mỗi thay đổi store. */
   function scan() {
-    if (applying || stopped) return;
+    if (applying || stopped || rec.replacePending) return;
     const s = learnerStore.getState();
     const sh = rec.shadow;
     const at = now().toISOString();
@@ -311,12 +316,26 @@ export function startSync(opts: SyncOptions): SyncEngine {
     }
   }
 
+  async function replaceFromServer() {
+    const res = await opts.transport.push([]);
+    applySnapshot(res.snapshot, true);
+    rec.replacePending = false;
+    rec.lastSyncAt = now().toISOString();
+    save();
+  }
+
   async function doFlush(pull: boolean): Promise<boolean> {
     if (switching) return false;
-    if (!rec.outbox.length && !pull) return true;
+    if (!rec.outbox.length && !pull && !rec.replacePending) return true;
     syncing = true;
     notify();
     try {
+      if (rec.replacePending) {
+        await replaceFromServer();
+        error = null;
+        backoff = 0;
+        return true;
+      }
       do {
         const batch = rec.outbox.slice(0, BATCH);
         const res = await opts.transport.push(batch);
@@ -377,10 +396,17 @@ export function startSync(opts: SyncOptions): SyncEngine {
         await inflight?.catch(() => undefined);
         await switchAccount?.();
         rec.outbox = [];
+        rec.replacePending = true;
         save();
-        const res = await opts.transport.push([]);
-        applySnapshot(res.snapshot, true);
-        rec.lastSyncAt = now().toISOString();
+        try {
+          await replaceFromServer();
+        } catch (err) {
+          // Tài khoản đã đổi nhưng chưa kéo được dữ liệu: sẽ tự kéo + thay khi có mạng (không tải dữ liệu cũ lên)
+          error = (err as { kind?: string }).kind ?? 'error';
+          backoff = 5_000;
+          schedule(backoff);
+          throw err;
+        }
         error = null;
       } finally {
         switching = false;
@@ -438,7 +464,7 @@ export function startSync(opts: SyncOptions): SyncEngine {
   void (async () => {
     const has = opts.hasAccount ? await opts.hasAccount().catch(() => false) : true;
     if (stopped) return;
-    if (has || rec.outbox.length) void flush({ pull: has });
+    if (has || rec.outbox.length || rec.replacePending) void flush({ pull: has });
   })();
 
   return engine;

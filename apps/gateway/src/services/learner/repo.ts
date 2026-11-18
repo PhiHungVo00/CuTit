@@ -168,7 +168,8 @@ export async function deleteUser(db: Db, userId: string): Promise<boolean> {
 // ---------- Đồng bộ ----------
 
 async function applyOne(tx: Tx, userId: string, e: SyncEvent): Promise<void> {
-  const at = new Date(e.at);
+  // Đồng hồ máy chạy nhanh không được “thắng” mãi mọi lần ghi sau (LWW): chặn ở thời điểm hiện tại của server
+  const at = new Date(Math.min(Date.parse(e.at), Date.now()));
   switch (e.type) {
     case 'profile.set': {
       const p = e.profile;

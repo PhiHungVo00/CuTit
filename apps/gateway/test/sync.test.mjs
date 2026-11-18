@@ -100,3 +100,12 @@ test('Khôi phục trên “máy khác” thấy đủ thẻ SRS đã đồng b�
   const snap = (await sync(h2, [])).json().snapshot;
   assert.deepEqual(snap.srs.map((c) => c.itemRef), ['dialect:a', 'dialect:b', 'dialect:c']);
 });
+
+test('Đồng hồ máy chạy nhanh (at ở tương lai) không chặn được lần ghi sau', async () => {
+  const { headers } = await guest(a);
+  const prefs = (speed) => ({ voiceId: 'v', speed, dialect: 'north', correctionLevel: 'gentle', persona: 'be_cu_tit', uiLanguage: 'en' });
+  await sync(headers, [{ clientEventId: id(), at: '2099-01-01T00:00:00.000Z', type: 'preferences.set', preferences: prefs(2) }]);
+  await new Promise((r) => setTimeout(r, 5));
+  const r = await sync(headers, [{ clientEventId: id(), at: new Date().toISOString(), type: 'preferences.set', preferences: prefs(0.75) }]);
+  assert.equal(r.json().snapshot.preferences.speed, 0.75);
+});
