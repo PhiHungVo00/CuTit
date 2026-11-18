@@ -311,3 +311,42 @@ export const aiUsage = pgTable(
   },
   (t) => [primaryKey({ columns: [t.userId, t.usageDayUtc, t.capability] })]
 );
+
+/**
+ * 20–22. GĐ4c — Bạn học hợp tác (D7: không xếp hạng). Không lưu tiến độ/streak: tính lúc đọc từ
+ * `daily_activity` => xóa tài khoản (cascade) là mất luôn đóng góp, không còn bản sao nào.
+ */
+/** Tên hiển thị tự chọn (tài khoản khách không có tên thật) — chỉ bạn bè thấy */
+export const socialProfiles = pgTable('social_profiles', {
+  userId: uuid('user_id')
+    .primaryKey()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  displayName: text('display_name').notNull(),
+  updatedAt: ts('updated_at').notNull().defaultNow()
+});
+
+/**
+ * Mã mời đang sống: mỗi người MỘT mã, dùng một lần, hạn 48 giờ. Giữ mã gốc (không băm) để chủ mã mở lại app vẫn
+ * thấy mã của mình; mã ngắn hạn, chỉ tạo được quan hệ bạn học (không đăng nhập được) nên rủi ro rò rỉ thấp.
+ */
+export const friendInvites = pgTable('friend_invites', {
+  userId: uuid('user_id')
+    .primaryKey()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  code: text('code').notNull().unique(),
+  expiresAt: ts('expires_at').notNull(),
+  createdAt: ts('created_at').notNull().defaultNow()
+});
+
+/** Quan hệ bạn bè (một dòng mỗi cặp, user_a < user_b) + mục tiêu nhiệm vụ tuần chung của cặp */
+export const friendships = pgTable(
+  'friendships',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    userA: userRef('user_a'),
+    userB: userRef('user_b'),
+    goalMinutes: integer('goal_minutes').notNull().default(60),
+    createdAt: ts('created_at').notNull().defaultNow()
+  },
+  (t) => [uniqueIndex('friendships_pair_uq').on(t.userA, t.userB), index('friendships_user_b_idx').on(t.userB)]
+);

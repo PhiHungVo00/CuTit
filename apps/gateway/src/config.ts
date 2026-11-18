@@ -44,6 +44,8 @@ const EnvSchema = z
     RATE_LIMIT_PER_MINUTE: z.coerce.number().int().positive().default(60),
     /** Giới hạn theo IP cho /v1/auth/* (tạo khách = một hạn mức AI mới => phải chặt) */
     AUTH_RATE_LIMIT_PER_MINUTE: z.coerce.number().int().positive().default(10),
+    /** GĐ4c: tạo / nhập mã mời bạn học — mỗi route, mỗi người, mỗi phút (chống dò mã) */
+    FRIEND_INVITE_RATE_LIMIT_PER_MINUTE: z.coerce.number().int().positive().default(5),
     /** Production: Postgres (Neon/Supabase). Không đặt => PGlite nhúng */
     DATABASE_URL: z.string().url().optional(),
     /** Thư mục dữ liệu PGlite, hoặc `memory://` (mặc định khi NODE_ENV=test) */

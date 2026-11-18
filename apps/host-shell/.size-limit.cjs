@@ -50,5 +50,7 @@ module.exports = [
   { name: 'GĐ2 Phát âm thanh dựng sẵn theo miền', path: 'dist/assets/coursePlayer-*.js', limit: '1.5 kB', gzip: true },
   // GĐ4a (đo 2026-11-18): huy hiệu theo thành thạo + tổng kết tuần + thông báo nhẹ, lazy
   { name: 'GĐ4 Huy hiệu + tổng kết tuần (lazy)', path: 'dist/assets/Motivation-*.js', limit: '3.5 kB', gzip: true },
-  { name: 'GĐ2 A7 đổi từ theo miền', path: 'dist/assets/dialectMap-*.js', limit: '2 kB', gzip: true }
+  { name: 'GĐ2 A7 đổi từ theo miền', path: 'dist/assets/dialectMap-*.js', limit: '2 kB', gzip: true },
+  // GĐ4c Bạn học hợp tác (đo 2026-11-18: 4.52 kB, gồm contract Zod /v1/friends + chuỗi vi/en), lazy khi bấm mở ở M9
+  { name: 'GĐ4c Bạn học: mã mời + nhiệm vụ tuần chung (lazy)', path: 'dist/assets/FriendsPanel-*.js', limit: '5 kB', gzip: true }
 ];
