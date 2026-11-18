@@ -93,3 +93,25 @@ test('Giới hạn theo IP cho /auth: quá AUTH_RATE_LIMIT_PER_MINUTE => 429', a
     await a.close();
   }
 });
+
+test('Tài khoản đã xóa ở máy khác: refresh/recover bằng credential cũ => account_deleted (khác token hỏng)', async () => {
+  const a = await makeApp();
+  try {
+    const A = await guest(a);
+    // máy B: một refresh token khác của cùng tài khoản (đăng nhập bằng mã khôi phục)
+    const B = (await a.inject({ method: 'POST', url: '/v1/auth/recover', payload: { recoveryCode: A.body.recoveryCode } })).json();
+    assert.equal((await a.inject({ method: 'DELETE', url: '/v1/me', headers: A.headers })).statusCode, 200);
+
+    const refreshB = await a.inject({ method: 'POST', url: '/v1/auth/refresh', payload: { refreshToken: B.refreshToken } });
+    assert.equal(refreshB.statusCode, 401);
+    assert.equal(refreshB.json().error, 'account_deleted');
+    const recoverB = await a.inject({ method: 'POST', url: '/v1/auth/recover', payload: { recoveryCode: A.body.recoveryCode } });
+    assert.equal(recoverB.statusCode, 401);
+    assert.equal(recoverB.json().error, 'account_deleted');
+
+    const junk = await a.inject({ method: 'POST', url: '/v1/auth/refresh', payload: { refreshToken: 'x'.repeat(43) } });
+    assert.equal(junk.json().error, 'invalid_refresh_token');
+  } finally {
+    await a.close();
+  }
+});

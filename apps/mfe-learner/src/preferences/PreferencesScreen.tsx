@@ -187,6 +187,10 @@ export function PreferencesScreen() {
         </h2>
         <p className="m-0 text-[15px] text-ink-soft">{t('privacyAi')}</p>
         <p className="m-0 text-[15px] text-ink-soft">{t('privacyLocal')}</p>
+        {/* Trang chính sách nằm ở Host: chỉ link bằng URL (không import chéo) */}
+        <Link to="/quyen-rieng-tu" className={`${linkBtn} self-start`}>
+          {t('privacyPolicy')}
+        </Link>
       </section>
 
       <AccountSection />

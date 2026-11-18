@@ -118,3 +118,49 @@ test('request: 401 => onUnauthorized rồi gửi lại đúng MỘT lần với 
   await assert.rejects(request('/v1/x', { schema: z.object({ ok: z.boolean() }) }), (e) => e.kind === 'unauthorized');
   assert.equal(refreshes, 1);
 });
+
+test('Tài khoản bị xóa ở máy khác: refresh trả account_deleted => xóa phiên, báo remote-deleted, KHÔNG tạo khách mới trong cùng lần gọi', async () => {
+  const store = memStore({ [AUTH_STORAGE_KEY]: JSON.stringify({ userId: uid(1), refreshToken: 'refresh-0-xxxxxxxxxxxxxxxx', recoveryCode: 'ABCD-EFGH-JKMN-PQRS' }) });
+  const calls = fakeGateway({
+    '/v1/auth/refresh': () => json({ error: 'account_deleted' }, 401),
+    '/v1/auth/guest': () => json({ ...tokens(2, { userId: uid(2) }), recoveryCode: 'ZZZZ-ZZZZ-ZZZZ-ZZZZ' })
+  });
+  const s = createAuthSession(opts(store));
+  const seen = [];
+  s.onUserChange((e) => seen.push(e));
+  await assert.rejects(s.getToken(), (e) => e instanceof GatewayRequestError && e.code === 'account_deleted' && e.status === 401);
+  assert.deepEqual(seen, [{ reason: 'remote-deleted', userId: null }]);
+  assert.equal(store.m.has(AUTH_STORAGE_KEY), false);
+  assert.equal(calls.filter((c) => c.path === '/v1/auth/guest').length, 0);
+  assert.equal(calls.filter((c) => c.path === '/v1/auth/recover').length, 0, 'không thử mã khôi phục của tài khoản đã xóa');
+  // lần sau (sau khi app đã xóa dữ liệu) mới bắt đầu tài khoản khách mới
+  assert.equal(await s.getToken(), 'access-2-xxxxxxxx');
+});
+
+test('Refresh token hỏng nhưng mã khôi phục báo account_deleted => cũng là remote-deleted', async () => {
+  const store = memStore({ [AUTH_STORAGE_KEY]: JSON.stringify({ userId: uid(1), refreshToken: 'refresh-0-xxxxxxxxxxxxxxxx', recoveryCode: 'ABCD-EFGH-JKMN-PQRS' }) });
+  fakeGateway({
+    '/v1/auth/refresh': () => json({ error: 'invalid_refresh_token' }, 401),
+    '/v1/auth/recover': () => json({ error: 'account_deleted' }, 401)
+  });
+  const s = createAuthSession(opts(store));
+  const seen = [];
+  s.onUserChange((e) => seen.push(e.reason));
+  await assert.rejects(s.getToken(), (e) => e.code === 'account_deleted');
+  assert.deepEqual(seen, ['remote-deleted']);
+});
+
+test('request(): access token còn hạn bị từ chối account_deleted => lỗi account_deleted, không gửi lại lô bằng token khách mới', async () => {
+  const store = memStore({ [AUTH_STORAGE_KEY]: JSON.stringify({ userId: uid(1), refreshToken: 'refresh-0-xxxxxxxxxxxxxxxx', recoveryCode: null }) });
+  let t = 0;
+  const calls = fakeGateway({
+    '/v1/auth/refresh': [json(tokens(1)), json({ error: 'account_deleted' }, 401)],
+    '/v1/sync': () => json({ error: 'account_deleted' }, 401),
+    '/v1/auth/guest': () => json({ ...tokens(2, { userId: uid(2) }), recoveryCode: 'ZZZZ-ZZZZ-ZZZZ-ZZZZ' })
+  });
+  const s = createAuthSession(opts(store, () => t));
+  configureGateway({ baseUrl: 'http://gw.test', getToken: () => s.getToken(), onUnauthorized: () => s.handleUnauthorized() });
+  await assert.rejects(request('/v1/sync', { method: 'POST', body: { events: [] }, schema: z.any() }), (e) => e.code === 'account_deleted');
+  assert.equal(calls.filter((c) => c.path === '/v1/sync').length, 1);
+  assert.equal(calls.filter((c) => c.path === '/v1/auth/guest').length, 0);
+});

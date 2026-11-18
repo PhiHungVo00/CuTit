@@ -268,3 +268,24 @@ export const syncEvents = pgTable(
   },
   (t) => [primaryKey({ columns: [t.userId, t.clientEventId] })]
 );
+
+/** 17. Trạng thái lộ trình không suy ra được từ sự kiện (số bài đã xong, đóng băng đang giữ, mục tiêu ngày) — LWW */
+export const learnerProgress = pgTable('learner_progress', {
+  userId: uuid('user_id')
+    .primaryKey()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  lessonsDone: integer('lessons_done').notNull().default(0),
+  freezes: integer('freezes').notNull().default(0),
+  dailyGoal: integer('daily_goal').notNull().default(10),
+  updatedAt: ts('updated_at').notNull().defaultNow()
+});
+
+/**
+ * 18. “Bia mộ” tài khoản đã xóa: CHỈ sha256 của refresh token / mã khôi phục lúc xóa (không userId, không dữ liệu học).
+ * Để máy khác còn giữ credential cũ nhận `account_deleted` (xóa dữ liệu trên máy) thay vì `invalid_*` (lặng lẽ tạo khách mới).
+ * Dọn sau 90 ngày (= hạn refresh token).
+ */
+export const deletedAccounts = pgTable('deleted_accounts', {
+  credentialHash: text('credential_hash').primaryKey(),
+  deletedAt: ts('deleted_at').notNull().defaultNow()
+});

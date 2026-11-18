@@ -318,3 +318,27 @@ textarea {
   font-size: 14px;
   text-align: center;
 }
+
+/* Thông báo một lần (vd. tài khoản bị xóa ở máy khác) */
+.notice-banner {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: calc(10px + var(--safe-top)) 16px 10px;
+  background: #1e3a8a;
+  color: #dbeafe;
+  font-size: 15px;
+}
+.notice-banner span {
+  flex: 1;
+}
+.notice-banner button {
+  min-height: 44px;
+  padding: 0 14px;
+  border: 1px solid currentColor;
+  border-radius: 10px;
+  background: transparent;
+  color: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
