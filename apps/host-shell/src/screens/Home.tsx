@@ -1,7 +1,30 @@
+import { lazy, Suspense } from 'react';
 import { Link } from 'react-router-dom';
 import { cefrLabel, learnerStore, useLearner } from '@vietlearning/state';
-import { SCREENS, prefetchScreen, screenId } from '../routes';
+import { SCREENS, prefetchScreen } from '../routes';
 import { useT } from '../i18n';
+
+/**
+ * Lộ trình (nút “Học tiếp”, ôn hôm nay, bản đồ unit) nằm trong chunk lazy của mfe-path để bundle đầu
+ * giữ trong ngân sách. Bắt đầu tải NGAY khi module này được đánh giá (song song lúc React khởi tạo),
+ * không đợi tới lúc render; trong lúc chờ hiện khung xương (skeleton).
+ */
+const loadPath = () => import('./PathHomeRoute');
+// Mở thẳng một màn khác (deep link) thì không tải trước chunk lộ trình
+if (typeof location !== 'undefined' && location.pathname === '/') void loadPath().catch(() => undefined);
+const PathHome = lazy(loadPath);
+
+function PathSkeleton() {
+  const t = useT();
+  return (
+    <div aria-busy="true" role="status" aria-label={t('pathLoading')} className="flex flex-col gap-4">
+      <div className="h-16 animate-pulse rounded-xl bg-surface-2" />
+      <div className="h-16 animate-pulse rounded-xl bg-surface-2" />
+      <div className="h-14 animate-pulse rounded-2xl bg-surface-2" />
+      <div className="h-48 animate-pulse rounded-2xl bg-surface-2" />
+    </div>
+  );
+}
 
 export function Home() {
   const profile = useLearner((s) => s.profile);
@@ -27,6 +50,11 @@ export function Home() {
         {t('homeLead')}
       </p>
 
+      <Suspense fallback={<PathSkeleton />}>
+        <PathHome />
+      </Suspense>
+
+      {/* Làm quen/xếp lớp là tùy chọn: người mới học được bài đầu tiên ngay, không cần đăng ký */}
       {!profile.onboarded && onboarding && (
         <Link className="onboard-banner" to="/bat-dau" onPointerDown={() => prefetchScreen(onboarding)} onFocus={() => prefetchScreen(onboarding)}>
           <span aria-hidden="true">🌱</span>
@@ -37,29 +65,6 @@ export function Home() {
           </span>
         </Link>
       )}
-
-      <ul className="screen-grid">
-        {SCREENS.map((s) => (
-          <li key={s.path}>
-            <Link
-              className="screen-card"
-              to={s.path}
-              onPointerDown={() => prefetchScreen(s)}
-              onFocus={() => prefetchScreen(s)}
-            >
-              <span className="card-icon" aria-hidden="true">
-                {s.icon}
-              </span>
-              <span>
-                <span className="card-title">{t(`${screenId(s)}.label`)}</span>
-                <br />
-                <span className="card-desc">{t(`${screenId(s)}.desc`)}</span>
-              </span>
-              <span className={s.ready ? 'badge ready' : 'badge'}>{s.ready ? t('open') : t('soon')}</span>
-            </Link>
-          </li>
-        ))}
-      </ul>
     </div>
   );
 }

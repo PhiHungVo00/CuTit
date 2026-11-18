@@ -22,8 +22,11 @@ test.describe('Khung app', () => {
   test('trang chủ: liệt kê 6 màn hình, thanh tab, bố cục mobile chuẩn', async ({ page }) => {
     await page.goto('/');
     await expect(page.getByRole('heading', { name: 'Học Tiếng Việt Cùng Bé Cu Tít' })).toBeVisible();
-    await expect(page.locator('.screen-card')).toHaveCount(12);
     await expect(page.getByRole('navigation', { name: 'Điều hướng chính' })).toBeVisible();
+    await assertMobileLayout(page);
+    // GĐ1: 12 công cụ chuyển từ trang chủ sang tab Khám phá (trang chủ nay là lộ trình)
+    await page.getByRole('navigation').getByRole('link', { name: /Khám phá/ }).click();
+    await expect(page.locator('.screen-card')).toHaveCount(12);
     await assertMobileLayout(page);
   });
 

@@ -1,6 +1,6 @@
 import { transfer, wrap, type Remote } from 'comlink';
 import type { ToneAnalysisInput, ToneAnalysisResult } from '@vietlearning/audio-dsp';
-import type { PitchWorkerApi } from '../workers/pitch.worker';
+import type { PitchWorkerApi } from './pitch.worker';
 
 let worker: Worker | null = null;
 let remote: Remote<PitchWorkerApi> | null = null;
@@ -10,7 +10,7 @@ function getRemote(): Remote<PitchWorkerApi> | null {
   if (remote) return remote;
   if (typeof Worker === 'undefined') return null;
   try {
-    worker = new Worker(new URL('../workers/pitch.worker.ts', import.meta.url), { type: 'module' });
+    worker = new Worker(new URL('./pitch.worker.ts', import.meta.url), { type: 'module' });
     remote = wrap<PitchWorkerApi>(worker);
     return remote;
   } catch {

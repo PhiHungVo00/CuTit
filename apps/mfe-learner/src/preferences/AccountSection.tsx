@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import type { AuthSession } from '@vietlearning/api-client/session';
 import type { SyncEngine, SyncStatus } from '@vietlearning/state/sync';
 import { learnerStore, useLearner } from '@vietlearning/state';
+import { progressStore } from '@vietlearning/state/progress';
+import { getLocalReminders } from '@vietlearning/native';
 import { card, secondaryBtn } from '../common/ui';
 import { useT } from '../i18n';
 
@@ -113,6 +115,9 @@ export function AccountSection({ deps = defaultDeps }: { deps?: AccountDeps }) {
         await s.deleteAccount();
         learnerStore.getState().reset();
       }
+      // Tiến độ lộ trình (XP, bài đã xong, đóng băng, nhắc học — GĐ1) lưu ở khóa riêng: xóa cùng lúc
+      progressStore.getState().resetProgress();
+      void getLocalReminders().cancelAll();
       setConfirmDelete(false);
       return { kind: 'ok', text: t('deleted') };
     });

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { SENTENCE_ITEMS, type SentenceBank } from '@vietlearning/content';
 import { getDeviceSpeech } from '@vietlearning/native';
 import { dueCards, learnerStore, speechRate, useLearner } from '@vietlearning/state';
-import { useSentenceBuilder } from './useSentenceBuilder';
+import { useSentenceBuilder } from '@vietlearning/exercises';
 import { useT } from '../i18n';
 
 /** Chủ đề câu (dữ liệu tiếng Việt) => nhãn tiếng Anh */

@@ -12,8 +12,9 @@ import { defineConfig, devices } from '@playwright/test';
  * Đổi cổng khi nhiều worktree chạy song song: E2E_PORT, E2E_GATEWAY_PORT (gateway không bao giờ dùng lại
  * server có sẵn để không vô tình kiểm tra bản của worktree khác).
  */
-const PORT = Number(process.env.E2E_PORT ?? 4173);
-export const GATEWAY_PORT = Number(process.env.E2E_GATEWAY_PORT ?? 4000);
+// Cổng đổi được qua E2E_PORT / E2E_GATEWAY_PORT để nhiều worktree chạy e2e song song không dùng nhầm server của nhau
+const PORT = Number(process.env.E2E_PORT) || 4173;
+export const GATEWAY_PORT = Number(process.env.E2E_GATEWAY_PORT) || 4000;
 
 export default defineConfig({
   testDir: './e2e',

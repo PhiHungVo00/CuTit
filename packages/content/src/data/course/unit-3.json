@@ -1,0 +1,90 @@
+{
+  "id": "u3",
+  "level": "A1",
+  "title": "Gọi món & hỏi đường",
+  "titleEn": "Ordering food & asking the way",
+  "icon": "🍜",
+  "reviewed": false,
+  "lessons": [
+    {
+      "id": "u3l1",
+      "title": "Gọi món",
+      "titleEn": "Ordering",
+      "exercises": [
+        {"type": "meaning", "word": "w35", "dir": "vi-en"},
+        {"type": "meaning", "word": "w41", "dir": "vi-en"},
+        {"type": "meaning", "word": "w36", "dir": "vi-en"},
+        {"type": "meaning", "word": "w37", "dir": "en-vi"},
+        {"type": "meaning", "word": "w38", "dir": "vi-en"},
+        {"type": "build", "sentence": "s16"},
+        {"type": "fill", "sentence": "s16", "blank": 4},
+        {"type": "build", "sentence": "cs8"},
+        {"type": "dialect", "entry": "d28", "region": "south"},
+        {"type": "listen", "word": "w38"}
+      ]
+    },
+    {
+      "id": "u3l2",
+      "title": "Ngon quá!",
+      "titleEn": "So tasty!",
+      "exercises": [
+        {"type": "meaning", "word": "w39", "dir": "vi-en"},
+        {"type": "meaning", "word": "w40", "dir": "vi-en"},
+        {"type": "build", "sentence": "cs9"},
+        {"type": "build", "sentence": "s48"},
+        {"type": "fill", "sentence": "s48", "blank": 2},
+        {"type": "dialect", "entry": "d11", "region": "south"},
+        {"type": "meaning", "word": "w42", "dir": "vi-en"},
+        {"type": "tone", "tone": "hoi", "word": "phở"},
+        {"type": "fill", "sentence": "s7", "blank": 3},
+        {"type": "listen", "word": "w39"}
+      ]
+    },
+    {
+      "id": "u3l3",
+      "title": "Ở đâu?",
+      "titleEn": "Where is it?",
+      "exercises": [
+        {"type": "meaning", "word": "w43", "dir": "vi-en"},
+        {"type": "build", "sentence": "s31"},
+        {"type": "build", "sentence": "cs10"},
+        {"type": "fill", "sentence": "s31", "blank": 3},
+        {"type": "dialect", "entry": "d20", "region": "central"},
+        {"type": "meaning", "word": "w47", "dir": "vi-en"},
+        {"type": "meaning", "word": "w48", "dir": "en-vi"},
+        {"type": "build", "sentence": "s14"},
+        {"type": "listen", "word": "w47"},
+        {"type": "tone", "tone": "huyen", "word": "đường"}
+      ]
+    },
+    {
+      "id": "u3l4",
+      "title": "Rẽ trái, rẽ phải",
+      "titleEn": "Left and right",
+      "exercises": [
+        {"type": "meaning", "word": "w44", "dir": "vi-en"},
+        {"type": "meaning", "word": "w45", "dir": "vi-en"},
+        {"type": "meaning", "word": "w46", "dir": "vi-en"},
+        {"type": "meaning", "word": "w49", "dir": "en-vi"},
+        {"type": "build", "sentence": "cs11"},
+        {"type": "dialect", "entry": "d9", "region": "south"},
+        {"type": "meaning", "word": "w44", "dir": "en-vi"},
+        {"type": "listen", "word": "w45"},
+        {"type": "tone", "tone": "sac", "word": "trái"},
+        {"type": "fill", "sentence": "cs11", "blank": 1}
+      ]
+    }
+  ],
+  "testOut": [
+    {"type": "meaning", "word": "w41", "dir": "en-vi"},
+    {"type": "build", "sentence": "s16"},
+    {"type": "meaning", "word": "w39", "dir": "en-vi"},
+    {"type": "dialect", "entry": "d11", "region": "south"},
+    {"type": "build", "sentence": "cs10"},
+    {"type": "meaning", "word": "w43", "dir": "en-vi"},
+    {"type": "fill", "sentence": "s48", "blank": 2},
+    {"type": "meaning", "word": "w46", "dir": "en-vi"},
+    {"type": "build", "sentence": "cs9"},
+    {"type": "dialect", "entry": "d20", "region": "central"}
+  ]
+}

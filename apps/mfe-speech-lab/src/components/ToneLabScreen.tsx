@@ -3,18 +3,10 @@ import type { ToneId } from '@vietlearning/audio-dsp';
 import { PitchReferenceFlyweight } from '@vietlearning/content';
 import { canOpenAppSettings, getDeviceSpeech, openAppSettings } from '@vietlearning/native';
 import { speechRate, useLearner } from '@vietlearning/state';
-import { ContourChart } from './ContourChart';
-import { MAX_RECORD_MS, useToneRecorder } from '../hooks/useToneRecorder';
+import { ContourChart, MAX_RECORD_MS, useToneRecorder, verdict } from '@vietlearning/exercises';
 import { useT } from '../i18n';
 
 const TONES = PitchReferenceFlyweight.all();
-
-/** Chỉ khen "Rất tốt" khi thanh gần nhất đúng là thanh mục tiêu (tránh vừa khen vừa nói "giống thanh khác") */
-export function verdict(score: number, matchesTarget: boolean): 'good' | 'ok' | 'bad' {
-  if (score >= 75 && matchesTarget) return 'good';
-  if (score >= 55) return 'ok';
-  return 'bad';
-}
 
 /**
  * Màn hình M2: luyện 6 thanh điệu.
