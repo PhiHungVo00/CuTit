@@ -6,8 +6,14 @@ import { defineConfig, devices } from '@playwright/test';
  * Chạy: pnpm --filter @vietlearning/host-shell build && pnpm --filter @vietlearning/host-shell e2e
  *
  * Chưa có WebKit (iPhone/Safari): cần `npx playwright install webkit` (tải ~70MB) hoặc máy Mac.
+ *
+ * Gateway THẬT (PGlite trong RAM, không AI, không đọc khóa Gemini) chạy kèm để kiểm tra tài khoản khách
+ * + đồng bộ. Bản build phải trỏ đúng cổng: VITE_GATEWAY_URL=http://localhost:<E2E_GATEWAY_PORT>.
+ * Đổi cổng khi nhiều worktree chạy song song: E2E_PORT, E2E_GATEWAY_PORT (gateway không bao giờ dùng lại
+ * server có sẵn để không vô tình kiểm tra bản của worktree khác).
  */
-const PORT = 4173;
+const PORT = Number(process.env.E2E_PORT ?? 4173);
+export const GATEWAY_PORT = Number(process.env.E2E_GATEWAY_PORT ?? 4000);
 
 export default defineConfig({
   testDir: './e2e',
@@ -38,10 +44,29 @@ export default defineConfig({
       }
     }
   ],
-  webServer: {
-    command: `npx vite preview --port ${PORT} --strictPort`,
-    port: PORT,
-    reuseExistingServer: !process.env.CI,
-    timeout: 60_000
-  }
+  webServer: [
+    {
+      command: `npx vite preview --port ${PORT} --strictPort`,
+      port: PORT,
+      reuseExistingServer: !process.env.CI && !process.env.E2E_PORT,
+      timeout: 60_000
+    },
+    {
+      command: 'node ../gateway/dist/index.js',
+      url: `http://localhost:${GATEWAY_PORT}/healthz`,
+      reuseExistingServer: false,
+      timeout: 60_000,
+      env: {
+        NODE_ENV: 'development',
+        PORT: String(GATEWAY_PORT),
+        HOST: 'localhost',
+        PGLITE_DIR: 'memory://',
+        CORS_ORIGIN: `http://localhost:${PORT}`,
+        GEMINI_API_KEY: '',
+        BECUTIT_ENV_FILE: 'e2e-khong-co-tep.env',
+        AUTH_RATE_LIMIT_PER_MINUTE: '1000',
+        RATE_LIMIT_PER_MINUTE: '1000'
+      }
+    }
+  ]
 });
