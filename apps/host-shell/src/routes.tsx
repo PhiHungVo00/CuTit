@@ -148,6 +148,8 @@ export const TONE_GYM_ROUTE = pathRoute('/phong-thanh', () => import('./screens/
 export const PATH_ROUTES: PathRoute[] = [
   pathRoute('/bai-hoc/:lessonId', () => import('./screens/LessonRoute')),
   pathRoute('/kiem-tra/:unitId', () => import('./screens/TestOutRoute')),
+  // GĐ3: gọi thoại với Bé Cu Tít (mfe-conversation) — không nằm trong 12 công cụ của Khám phá, vào từ màn Trò chuyện
+  pathRoute('/goi-thoai', () => import('./screens/CallRoute')),
   REVIEW_ROUTE,
   EXPLORE_ROUTE,
   PRIVACY_ROUTE,

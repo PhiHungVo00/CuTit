@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { AgentUIBlock, ChatCorrection, ChatHistoryItem } from '@vietlearning/contracts/api';
+import type { AgentUIBlock, ChatCorrection, ChatHistoryItem, NewWord } from '@vietlearning/contracts/api';
 import { learnerStore } from '@vietlearning/state';
 import { sanitizeAgentBlocks } from '@vietlearning/ui/agent-blocks';
 import { TurnStateMachine, type TurnState } from '../state/TurnStateMachine';
@@ -34,17 +34,30 @@ export interface UseChatOptions {
   scenarioId?: string;
   /** phương ngữ của kịch bản (nếu cố định), mặc định theo tùy chỉnh người học */
   dialect?: 'north' | 'central' | 'south';
-  onTurnDone?: (r: { completedTasks: number[]; correction?: ChatCorrection; reply: string }) => void;
+  /** GĐ3: 'call' khi gọi thoại */
+  mode?: 'chat' | 'call';
+  onTurnDone?: (r: TurnDone) => void;
+}
+
+export interface TurnDone {
+  completedTasks: number[];
+  correction?: ChatCorrection;
+  reply: string;
+  newWords: NewWord[];
+  /** số lượt AI còn lại hôm nay (Gateway báo) */
+  turnsLeft?: number;
+  audioUrl?: string;
 }
 
 /**
  * Quản lý một buổi hội thoại: danh sách tin nhắn, trạng thái lượt (TurnStateMachine), luồng SSE.
  * Token được gộp theo khung hình (requestAnimationFrame) để không render lại mỗi từ.
  */
-export function useChatSession({ scenarioId, dialect, onTurnDone }: UseChatOptions = {}) {
+export function useChatSession({ scenarioId, dialect, mode, onTurnDone }: UseChatOptions = {}) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [turnState, setTurnState] = useState<TurnState>('IDLE');
   const [error, setError] = useState<string | null>(null);
+  const [errorCode, setErrorCode] = useState<string | null>(null);
   const machine = useRef<TurnStateMachine>();
   machine.current ??= new TurnStateMachine(setTurnState);
   const sessionId = useRef(newSessionId());
@@ -64,6 +77,7 @@ export function useChatSession({ scenarioId, dialect, onTurnDone }: UseChatOptio
       const m = machine.current!;
       if (!text || m.isBusy()) return;
       setError(null);
+      setErrorCode(null);
       lastText.current = text;
 
       const prior = messagesRef.current.filter((x) => !x.pending && x.text);
@@ -100,7 +114,8 @@ export function useChatSession({ scenarioId, dialect, onTurnDone }: UseChatOptio
             persona: preferences.persona,
             explanationLanguage: preferences.uiLanguage,
             scenarioId,
-            history
+            history,
+            ...(mode ? { mode } : {})
           },
           (e) => {
             m.transition('STREAMING');
@@ -128,18 +143,19 @@ export function useChatSession({ scenarioId, dialect, onTurnDone }: UseChatOptio
         setMessages((list) => list.map((x) => (x.id === tutorId ? { ...x, text: done.reply, pending: false, mock: done.mock } : x)));
         m.transition('IDLE');
         learnerStore.getState().recordAttempt('conversation', !correction);
-        onDoneRef.current?.({ completedTasks: done.completedTasks, correction, reply: done.reply });
+        onDoneRef.current?.({ completedTasks: done.completedTasks, correction, reply: done.reply, newWords: done.newWords, turnsLeft: done.turnsLeft, audioUrl: done.audioUrl });
       } catch (err) {
         cancelAnimationFrame(frame);
         m.reset();
         setMessages((list) => list.filter((x) => x.id !== tutorId));
         if (controller.signal.aborted && !(err instanceof TurnError)) return; // người dùng hủy / rời màn hình
         setError(err instanceof TurnError ? err.message : tConv('errGeneric'));
+        setErrorCode(err instanceof TurnError ? (err.code ?? err.kind) : null);
       } finally {
         if (abortRef.current === controller) abortRef.current = null;
       }
     },
-    [scenarioId, dialect]
+    [scenarioId, dialect, mode]
   );
 
   const retry = useCallback(() => {
@@ -148,5 +164,5 @@ export function useChatSession({ scenarioId, dialect, onTurnDone }: UseChatOptio
 
   const cancel = useCallback(() => abortRef.current?.abort(), []);
 
-  return { messages, turnState, busy: turnState !== 'IDLE', error, send, retry, cancel };
+  return { messages, turnState, busy: turnState !== 'IDLE', error, errorCode, send, retry, cancel };
 }

@@ -76,6 +76,13 @@
         {"type": "speak", "sentence": "cs6"},
         {"type": "tone", "tone": "nang", "word": "chợ"}
       ]
+    },
+    {
+      "id": "u2l5",
+      "title": "Nhập vai: Mua trái cây",
+      "titleEn": "Role-play: Buying fruit",
+      "roleplay": "sc6",
+      "exercises": []
     }
   ],
   "testOut": [

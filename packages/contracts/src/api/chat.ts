@@ -36,7 +36,9 @@ export const VoiceTurnRequestSchema = z
     persona: z.string().max(32).default('be_cu_tit'),
     history: z.array(ChatHistoryItemSchema).max(6).default([]),
     /** Ngôn ngữ giao diện của người học: lời giải thích lỗi viết bằng ngôn ngữ này (câu mẫu vẫn là tiếng Việt) */
-    explanationLanguage: z.enum(['vi', 'en']).default('vi')
+    explanationLanguage: z.enum(['vi', 'en']).default('vi'),
+    /** GĐ3: 'call' = gọi thoại — userText là bản chép lời giọng nói, gia sư trả lời văn nói ngắn */
+    mode: z.enum(['chat', 'call']).default('chat')
   })
   .refine((b) => b.userText || b.userAudioBase64, { message: 'Cần userText hoặc userAudioBase64' });
 
@@ -45,6 +47,12 @@ export const ChatCorrectionSchema = z.object({
   original: z.string().max(500),
   corrected: z.string().max(500),
   explanation: z.string().max(500)
+});
+
+/** GĐ3: từ mới xuất hiện trong câu trả lời (để tổng kết + thêm vào ôn tập) */
+export const NewWordSchema = z.object({
+  vi: z.string().min(1).max(40),
+  en: z.string().min(1).max(80)
 });
 
 /**
@@ -64,7 +72,11 @@ export const ChatEventSchema = z.discriminatedUnion('type', [
     /** M7: chỉ số nhiệm vụ của kịch bản đã hoàn thành (tính đến lượt này, do Gateway/LLM chấm) */
     completedTasks: z.array(z.number().int().min(0).max(9)).default([]),
     /** true nếu câu trả lời do bộ giả lập sinh (chưa nối LLM thật) */
-    mock: z.boolean().default(false)
+    mock: z.boolean().default(false),
+    /** GĐ3: từ mới trong câu trả lời (Gateway đã lọc: phải có trong reply, có nghĩa) */
+    newWords: z.array(NewWordSchema).max(5).default([]),
+    /** GĐ3: số lượt hội thoại AI còn lại hôm nay (theo ngày UTC của server) */
+    turnsLeft: z.number().int().min(0).optional()
   }),
   z.object({ type: z.literal('error'), code: z.string(), message: z.string().optional() })
 ]);
@@ -83,4 +95,25 @@ export type VoiceTurnRequest = z.infer<typeof VoiceTurnRequestSchema>;
 export type VoiceTurnResponse = z.infer<typeof VoiceTurnResponseSchema>;
 export type ChatEvent = z.infer<typeof ChatEventSchema>;
 export type ChatCorrection = z.infer<typeof ChatCorrectionSchema>;
+const QuotaCounterSchema = z.object({ used: z.number().int().min(0), limit: z.number().int().min(0) });
+
+/** GĐ3: GET /v1/quota — hạn mức AI hôm nay (ngày UTC của server; resetAt = nửa đêm UTC kế tiếp) */
+export const QuotaStatusSchema = z.object({
+  day: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  resetAt: z.string().datetime(),
+  turns: QuotaCounterSchema,
+  llmTokens: QuotaCounterSchema,
+  sttSeconds: QuotaCounterSchema
+});
+
+/** Thân lỗi 429 khi hết hạn mức ngày (rate-limit theo phút dùng mã khác) */
+export const QuotaExceededSchema = z.object({
+  error: z.literal('quota_exceeded'),
+  capability: z.enum(['turn', 'llm', 'stt', 'tts', 'vision']),
+  resetAt: z.string().datetime(),
+  message: z.string().optional()
+});
+
+export type QuotaStatus = z.infer<typeof QuotaStatusSchema>;
+export type NewWord = z.infer<typeof NewWordSchema>;
 export type ChatHistoryItem = z.infer<typeof ChatHistoryItemSchema>;

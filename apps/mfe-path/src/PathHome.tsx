@@ -5,6 +5,7 @@ import { dayKey, dueCards, learnerStore, useLearner, useUiLanguage } from '@viet
 import { goalProgress, learnedDays, progressStore, streakWithFreezes, totalXp, useProgress, weekCalendar } from '@vietlearning/state/progress';
 import { useT } from './i18n';
 import { lessonStatuses, nextLesson, unitProgress } from './path/pathModel';
+import { lessonAfter, lessonHref } from './path/lessonHref';
 import { GoalPanel } from './GoalPanel';
 import { startGoalWatch, syncReminders } from './reminders';
 import { card, primaryBtn } from './ui';
@@ -46,6 +47,8 @@ export function PathHome() {
   const nextUnit = COURSE.units.find((u) => u.lessons.some((l) => l.id === next.id))!;
   const statuses = lessonStatuses(COURSE, lessons, testedOut);
   const isNew = Object.keys(lessons).length === 0 && Object.keys(testedOut).length === 0;
+  // Bài nhập vai cần mạng + lượt AI: luôn có lối sang bài sau (không ghi là đã xong)
+  const skip = next.roleplay ? lessonAfter(COURSE, next.id) : null;
 
   return (
     <div className="flex flex-col gap-4">
@@ -76,10 +79,15 @@ export function PathHome() {
         </p>
       )}
 
-      <Link to={`/bai-hoc/${next.id}`} className={`${primaryBtn} min-h-16 flex-col gap-0 text-lg`}>
+      <Link to={lessonHref(next)} className={`${primaryBtn} min-h-16 flex-col gap-0 text-lg`}>
         <span>{isNew ? t('startFirst') : t('continue')}</span>
         <span className="text-sm font-semibold opacity-90">{t('continueSub', { unit: en ? nextUnit.titleEn : nextUnit.title, lesson: en ? next.titleEn : next.title })}</span>
       </Link>
+      {skip && (
+        <Link to={lessonHref(skip)} className="-mt-2 flex min-h-11 items-center justify-center text-sm font-bold text-ink-soft underline">
+          {t('skipRoleplay', { lesson: en ? skip.titleEn : skip.title })}
+        </Link>
+      )}
 
       <Link to="/on-tap" className="flex min-h-14 items-center justify-between gap-3 rounded-2xl border border-line-strong bg-surface px-4 py-2 text-ink no-underline shadow-card">
         <span className="font-bold">
@@ -132,14 +140,14 @@ export function PathHome() {
                   return (
                     <li key={l.id}>
                       <Link
-                        to={`/bai-hoc/${l.id}`}
+                        to={lessonHref(l)}
                         className={[
                           'flex min-h-12 items-center gap-3 rounded-xl border-2 px-3 no-underline',
                           st === 'next' ? 'border-accent bg-accent-soft text-heading' : st === 'done' ? 'border-line bg-surface-2 text-ink' : 'border-line bg-surface text-ink'
                         ].join(' ')}
                       >
                         <span aria-hidden="true" className={['grid size-8 shrink-0 place-items-center rounded-full text-sm font-black', st === 'done' ? 'bg-accent text-accent-ink' : 'bg-surface-2 text-ink'].join(' ')}>
-                          {st === 'done' ? '✓' : i + 1}
+                          {st === 'done' ? '✓' : l.roleplay ? '🎭' : i + 1}
                         </span>
                         <span className="flex-1 font-bold">{en ? l.titleEn : l.title}</span>
                         <span className="text-xs text-ink-muted">{t(st === 'done' ? 'lessonDone' : st === 'next' ? 'lessonNext' : 'lessonOpen')}</span>

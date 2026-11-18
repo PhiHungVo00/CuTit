@@ -1,6 +1,6 @@
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import type { GatewayConfig } from '../config.js';
-import type { Capability, QuotaStore } from './QuotaStore.js';
+import { quotaResetAt, type Capability, type QuotaStore } from './QuotaStore.js';
 import { and, eq, isNull } from 'drizzle-orm';
 import { schema, type DbProvider } from '../db/client.js';
 
@@ -26,7 +26,7 @@ declare module 'fastify' {
 }
 
 export class GatewayError extends Error {
-  constructor(public statusCode: number, public code: string, message?: string) {
+  constructor(public statusCode: number, public code: string, message?: string, public details?: Record<string, unknown>) {
     super(message ?? code);
   }
 }
@@ -48,7 +48,8 @@ export class RequestPipeline {
       tts: config.MAX_TTS_CHARS_PER_DAY,
       stt: config.MAX_STT_SECONDS_PER_DAY,
       llm: config.MAX_LLM_TOKENS_PER_DAY,
-      vision: 200
+      vision: 200,
+      turn: config.MAX_CHAT_TURNS_PER_DAY
     };
   }
 
@@ -103,16 +104,35 @@ export class RequestPipeline {
     this.knownUsers.delete(id);
   }
 
-  /** Mắt xích 2: trừ hạn mức theo năng lực. Gọi trong handler trước khi gọi Provider trả phí. */
-  async consume(request: FastifyRequest, capability: Capability, units: number): Promise<void> {
+  /**
+   * Mắt xích 2: trừ hạn mức theo năng lực (nguyên tử, lưu DB). Gọi trong handler trước khi gọi Provider trả phí.
+   * Hết hạn mức => 429 { error: 'quota_exceeded', capability, resetAt }. Trả tổng đã dùng hôm nay.
+   */
+  async consume(request: FastifyRequest, capability: Capability, units: number): Promise<number> {
+    const id = this.principalId(request);
+    const r = await this.quota.tryConsume(id, capability, units, this.limits[capability]);
+    if (!r.ok) {
+      throw new GatewayError(429, 'quota_exceeded', `Đã hết hạn mức ${capability} hôm nay`, { capability, resetAt: quotaResetAt() });
+    }
+    return r.used;
+  }
+
+  /** Cộng phần chênh lệch sau khi biết chi phí thật (không chặn, không ném lỗi hạn mức) */
+  async addUsage(request: FastifyRequest, capability: Capability, units: number): Promise<void> {
+    if (units > 0) await this.quota.add(this.principalId(request), capability, units);
+  }
+
+  limit(capability: Capability): number {
+    return this.limits[capability];
+  }
+
+  async used(request: FastifyRequest, capability: Capability): Promise<number> {
+    return this.quota.get(this.principalId(request), capability);
+  }
+
+  private principalId(request: FastifyRequest): string {
     const principal = request.principal;
     if (!principal) throw new GatewayError(401, 'unauthorized');
-
-    const key = `${principal.id}:${capability}`;
-    const used = await this.quota.get(key);
-    if (used + units > this.limits[capability]) {
-      throw new GatewayError(429, 'quota_exceeded', `Đã hết hạn mức ${capability} hôm nay`);
-    }
-    await this.quota.increment(key, units);
+    return principal.id;
   }
 }
