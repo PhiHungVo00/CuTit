@@ -141,11 +141,14 @@ const pathRoute = (path: string, load: Loader): PathRoute => ({ path, load, Comp
 
 export const REVIEW_ROUTE = pathRoute('/on-tap', () => import('./screens/ReviewRoute'));
 export const EXPLORE_ROUTE = pathRoute('/kham-pha', () => import('./screens/Explore'));
+/** GĐ2: phòng tập thanh điệu (mfe-speech-lab), mở từ Khám phá — không tính vào 12 công cụ M1–M12 */
+export const TONE_GYM_ROUTE = pathRoute('/phong-thanh', () => import('./screens/ToneGymRoute'));
 export const PATH_ROUTES: PathRoute[] = [
   pathRoute('/bai-hoc/:lessonId', () => import('./screens/LessonRoute')),
   pathRoute('/kiem-tra/:unitId', () => import('./screens/TestOutRoute')),
   REVIEW_ROUTE,
-  EXPLORE_ROUTE
+  EXPLORE_ROUTE,
+  TONE_GYM_ROUTE
 ];
 
 const prefetched = new Set<string>();
