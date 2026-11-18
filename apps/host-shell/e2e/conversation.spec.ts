@@ -44,12 +44,15 @@ async function fakeMicSpeechThenSilence(page: Page) {
 test.describe('GĐ3 Hội thoại AI', () => {
   test('nhập vai cuối unit 1: “Học tiếp” → nhập vai (Gateway thật) → xong bài, +XP, unit 5/5, một chạm thêm từ mới vào ôn tập', async ({ page }) => {
     test.setTimeout(60_000);
-    await page.goto('/');
-    await page.evaluate(() => {
+    // Ghi dữ liệu TRƯỚC khi app chạy (một lần): ghi lúc app đang chạy rồi reload thì có thể bị ghi đè
+    // bởi lần lưu store đang dở (đồng bộ / kiểm tra huy hiệu lúc khởi động — GĐ4).
+    await page.addInitScript(() => {
+      if (sessionStorage.getItem('e2e.seeded')) return;
+      sessionStorage.setItem('e2e.seeded', '1');
       const rec = { best: 1, times: 1, at: new Date().toISOString() };
       localStorage.setItem('becutit.progress', JSON.stringify({ state: { lessons: { u1l1: rec, u1l2: rec, u1l3: rec, u1l4: rec }, lessonsDone: 4 }, version: 1 }));
     });
-    await page.reload();
+    await page.goto('/');
     const unit1 = page.getByRole('region', { name: /Chào hỏi & xưng hô/ });
     await expect(unit1.getByText('4/5 bài')).toBeVisible();
     const xpBefore = Number(((await page.getByTestId('xp').textContent()) ?? '').replace(/\D/g, ''));
