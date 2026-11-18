@@ -221,6 +221,12 @@ CI chạy thật, staging/prod tách DB, host Gateway (Render/Fly), keystore ngo
   - `gemini-3.8-flash-lite-tts`: mẫu “giọng Bắc” bị đoán là giọng Nam ⇒ kiểm soát giọng yếu.
   - **Gói miễn phí chỉ cho 10 lần gọi/ngày mỗi model TTS** ⇒ dựng sẵn cần bật trả phí cho khóa Gemini, hoặc chạy rải nhiều ngày.
   - **Còn mở:** người bản ngữ (bạn) phải nghe các mẫu trong `docs/d9-tts-mau/` để xác nhận. Model đánh giá là AI, không đủ tin cậy. Mẫu Bắc/Trung sạch chưa tạo được vì đã hết lượt trong ngày. Nếu chất lượng không đạt thì phương án dự phòng là nhà cung cấp Việt có giọng 3 miền (FPT.AI, Zalo AI, Viettel AI); phương án này cần bạn tạo tài khoản.
+- **D9 — cập nhật (2026-11-18): bạn KHÔNG bật trả phí Gemini ⇒ chuyển sang nguồn miễn phí.** Ứng viên số 1 là **VieNeu-TTS v3 Turbo** (mã nguồn mở, giấy phép Apache-2.0, cả trọng số lẫn giọng mẫu; giọng mẫu được phép dùng thương mại). Lý do chọn:
+  - Có **giọng mẫu sẵn theo 3 miền**: Bắc ~9 giọng, **Trung chỉ 2** (Quang Sơn, Ngọc Trân), Nam ~9 giọng. Danh sách giữa HF và README lệch nhau, nên lấy danh sách thật bằng `list_preset_voices()`.
+  - Chạy **CPU, không cần GPU**: `pip install vieneu`, ONNX, khoảng 2× thời gian thực. Có **server tương thích OpenAI** `POST /v1/audio/speech`.
+  - Cách dùng **giữ nguyên kiến trúc**: chỉ dùng **lúc soạn nội dung** để dựng sẵn âm thanh theo miền, rồi commit hoặc đưa lên kho tĩnh. Thêm một adapter `TtsProvider` kiểu "openai-compatible", chọn bằng biến môi trường (Nguyên tắc 4). Không chạy model trong app hay ở Gateway production, nên không trái Nguyên tắc 1 (chỉ là công cụ soạn nội dung).
+  - **Kiểm tra lời đọc** bằng STT chạy local (faster-whisper) để so khớp nguyên văn, thay cho model đánh giá Gemini. **Giọng miền vẫn cần người bản ngữ nghe xác nhận.**
+  - Dự phòng: FPT.AI (có giọng 3 miền, gói miễn phí theo tháng nhưng mức hiện tại chưa xác minh, cần tạo tài khoản). Edge TTS chỉ có giọng Bắc và không phải API chính thức, nên loại.
 - **D2, D3 (tạm, để không chặn GĐ0):** dev/test dùng **PGlite** (Postgres nhúng, không cần cài) qua Drizzle; production đọc `DATABASE_URL` (Neon hoặc Supabase chọn lúc deploy ở GĐ5). Đăng nhập: tài khoản khách + **mã khôi phục** (không cần dịch vụ ngoài); Google/email nối sau khi có OAuth client.
 
 | # | Câu hỏi | Đề xuất của tôi |

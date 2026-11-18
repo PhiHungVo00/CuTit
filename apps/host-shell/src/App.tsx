@@ -1,4 +1,4 @@
-import { Suspense, useEffect, useState } from 'react';
+import { Suspense, lazy, useEffect, useState } from 'react';
 import { NavLink, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import { bootstrapNative } from './native/bootstrap';
 import { EXPLORE_ROUTE, PATH_ROUTES, REVIEW_ROUTE, SCREENS, prefetchScreen, screenId } from './routes';
@@ -7,7 +7,9 @@ import { useUiLanguage } from '@vietlearning/state';
 import { Home } from './screens/Home';
 import { ScreenErrorBoundary } from './components/ScreenErrorBoundary';
 import { useStudyTimer } from './useStudyTimer';
-import { clearNotice, onNotice, readNotice } from './notice';
+import { onNotice, readNotice } from './notice';
+
+const NoticeBanner = lazy(() => import('./NoticeBanner'));
 
 function useOnline(): boolean {
   const [online, setOnline] = useState(() => navigator.onLine);
@@ -71,12 +73,9 @@ export function App() {
       )}
 
       {notice && (
-        <div className="notice-banner" role="alert">
-          <span>{t(notice)}</span>
-          <button type="button" onClick={clearNotice}>
-            {t('dismiss')}
-          </button>
-        </div>
+        <Suspense fallback={null}>
+          <NoticeBanner notice={notice} />
+        </Suspense>
       )}
 
       <main className="shell-main">
