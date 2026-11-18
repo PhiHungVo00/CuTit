@@ -258,3 +258,16 @@ test('GĐ4: hai máy — huy hiệu máy kia về máy này, giữ huy hiệu c�
   assert.deepEqual(Object.keys(p().badges).sort(), ['cards25', 'testout']);
   assert.equal(p().badges.cards25.seen, true);
 });
+
+test('GĐ4: huy hiệu trao NGAY trong lúc áp ảnh chụp (subscriber của trang chủ) vẫn được gửi lên', async () => {
+  const tr = fakeServer();
+  const { engine } = start(tr);
+  tr.st.lessons['u1l1'] = { score: 100, at: NOW.toISOString() }; // máy kia vừa xong bài => đủ điều kiện unit:u1
+  const off = progressStore.subscribe(() => p().awardBadges(FACTS, NOW));
+  await engine.flush({ pull: true });
+  off();
+  assert.ok(p().badges['unit:u1'], 'đã trao trên máy');
+  p().markBadgesSeen(); // thay đổi bất kỳ => quét lại
+  await engine.flush();
+  assert.deepEqual(ofType(tr, 'achievement.earn').map((e) => e.key), ['unit:u1']);
+});
