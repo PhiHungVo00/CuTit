@@ -5,6 +5,7 @@
 import { localizeText, type Dialect } from '../dialects/dialectMap.js';
 import { COURSE, findSentence, findWord, sentenceText, type ExerciseRef } from './course.js';
 import { TONE_SETS } from '../pitch/toneSets.js';
+import { findStory } from './stories.js';
 
 function textsOf(ref: ExerciseRef, dialect: Dialect): string[] {
   switch (ref.type) {
@@ -21,6 +22,9 @@ function textsOf(ref: ExerciseRef, dialect: Dialect): string[] {
     }
     case 'tone':
       return [ref.word.normalize('NFC')];
+    case 'story':
+      // mỗi câu thoại một tệp: trình phát tra đúng chuỗi localizeText(câu, miền)
+      return findStory(ref.story)?.lines.map((l) => localizeText(l.text, dialect)) ?? [];
     default:
       return [];
   }
