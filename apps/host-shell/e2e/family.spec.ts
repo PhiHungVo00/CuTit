@@ -89,4 +89,33 @@ test.describe('GĐ4b Chế độ trẻ em', () => {
     await page.goto('/tuy-chinh');
     await expect(page.getByTestId('recovery-code')).toHaveText(code);
   });
+
+  test('phiên hồ sơ trẻ hỏng (refresh token sai) + có thay đổi chưa gửi: PIN vẫn đưa máy về phụ huynh, không tạo khách mới', async ({ page }) => {
+    const code = await recoveryCode(page);
+    await page.getByTestId('family-link').click();
+    await page.getByLabel('Mã PIN mới').fill('2580');
+    await page.getByLabel('Nhập lại mã PIN').fill('2580');
+    await page.getByRole('button', { name: 'Lưu mã PIN' }).click();
+    await page.getByLabel(/Tên gọi ở nhà/).fill('Na');
+    await page.getByRole('button', { name: 'Tạo hồ sơ' }).click();
+    await page.getByTestId('kid').filter({ hasText: 'Na' }).getByRole('button', { name: 'Dùng hồ sơ này' }).click();
+    await expect(page.getByTestId('child-now')).toContainText('Na', { timeout: 15_000 });
+
+    // Làm hỏng phiên trẻ rồi tải lại (access token trong RAM mất) + tạo thay đổi chưa gửi được
+    await page.evaluate(() => {
+      const a = JSON.parse(localStorage.getItem('becutit.auth')!);
+      localStorage.setItem('becutit.auth', JSON.stringify({ ...a, refreshToken: 'x'.repeat(43) }));
+    });
+    await page.reload();
+    await page.goto('/phuong-ngu');
+    await page.getByRole('searchbox').fill('heo');
+    await page.getByRole('listitem').filter({ hasText: 'Con lợn' }).getByRole('button', { name: /Lưu để ôn tập/ }).click();
+
+    await page.goto('/tuy-chinh?muc=gia-dinh');
+    await page.getByLabel('Mã PIN').fill('2580');
+    await page.getByRole('button', { name: 'Mở' }).click();
+    await expect(page.getByTestId('kid').filter({ hasText: 'Na' })).toBeVisible({ timeout: 15_000 });
+    await page.goto('/tuy-chinh');
+    await expect(page.getByTestId('recovery-code')).toHaveText(code);
+  });
 });

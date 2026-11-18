@@ -3,6 +3,7 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { LocalReminders, ReminderItem } from '@vietlearning/native';
 import { dayKey, learnerStore } from '@vietlearning/state';
 import { progressStore } from '@vietlearning/state/progress';
+import { familyStore } from '@vietlearning/state/family';
 import { enableReminders, reminderTexts, syncReminders, watchGoalForReminders } from './reminders';
 import { GoalPanel } from './GoalPanel';
 
@@ -93,3 +94,17 @@ describe('nhắc học cục bộ', () => {
     expect(reminderTexts(0).title).toBe('Time for Vietnamese');
   });
 });
+
+describe('GĐ4b nhắc học do phụ huynh đặt', () => {
+  afterEach(() => familyStore.getState().resetFamily());
+  it('hồ sơ trẻ: thấy giờ nhắc, không có nút bật/tắt/đổi giờ', () => {
+    progressStore.getState().setReminder({ enabled: true, hour: 19, minute: 30 });
+    familyStore.getState().setAccount({ mode: 'child', mediaConsent: false, activeChildId: 'c1' });
+    render(<GoalPanel reminders={fake()} />);
+    expect(screen.getByText(/19:30/)).toBeTruthy();
+    expect(screen.getByText('Giờ nhắc học do bố mẹ đặt.')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: /Tắt nhắc|Bật nhắc/ })).toBeNull();
+    expect(screen.queryByLabelText(/giờ/i, { selector: 'input' })).toBeNull();
+  });
+});
+

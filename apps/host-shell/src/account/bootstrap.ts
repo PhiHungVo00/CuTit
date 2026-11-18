@@ -56,7 +56,8 @@ getAuthSession().onUserChange((e) => {
   void startAccountSync()
     .resetLocal()
     .then(() => showNotice('accountDeleted'))
-    // hồ sơ trẻ bị phụ huynh xóa => máy đã quay về phiên phụ huynh: đọc lại loại tài khoản
-    .then(() => (e.userId ? refreshAccountInfo() : undefined))
+    // hồ sơ trẻ bị phụ huynh xóa => máy đã quay về phiên phụ huynh: đọc lại loại tài khoản và KÉO dữ liệu phụ huynh về
+    // (máy vừa bị xóa trắng; không kéo thì thay đổi đầu tiên trên máy sẽ đè hồ sơ phụ huynh trên server)
+    .then(() => (e.userId ? Promise.all([refreshAccountInfo(), startAccountSync().flush({ pull: true })]) : undefined))
     .catch((err) => console.error('[Sync] Xóa dữ liệu trên máy lỗi', err));
 });
