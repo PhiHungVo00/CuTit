@@ -44,3 +44,11 @@ test('chế độ trẻ: người lớn luôn được gửi media; trẻ theo �
   assert.equal(s().names.c1, undefined);
   assert.equal(s().childCount, 1);
 });
+
+test('lỗi 403 của chế độ trẻ em có câu thân thiện vi/en; lỗi khác => null', async () => {
+  const { familyErrorText } = await import('../dist/family.js');
+  assert.match(familyErrorText({ code: 'parent_consent_required' }, 'vi'), /bố mẹ cho phép/);
+  assert.match(familyErrorText({ code: 'child_free_chat_blocked' }, 'en'), /role-play/);
+  assert.equal(familyErrorText({ code: 'internal_error' }, 'vi'), null);
+  assert.equal(familyErrorText(null, 'vi'), null);
+});

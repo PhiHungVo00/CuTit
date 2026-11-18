@@ -136,3 +136,24 @@ export async function verifyPin(pin: string, rec: PinRecord): Promise<boolean> {
   for (let i = 0; i < Math.min(got.length, rec.hash.length); i++) diff |= got.charCodeAt(i) ^ rec.hash.charCodeAt(i);
   return diff === 0;
 }
+
+// ---------- Lỗi 403 của chế độ trẻ em (FAMILY_ERROR trong contracts) ----------
+// Đặt ở đây (chunk lười) thay vì api-client: bảng lỗi của api-client nằm trong bundle đầu.
+const FAMILY_TEXT: Record<'vi' | 'en', Record<string, string>> = {
+  vi: {
+    child_free_chat_blocked: 'Hồ sơ của bé chỉ dùng nhập vai có kịch bản thôi nhé.',
+    parent_consent_required: 'Cần bố mẹ cho phép thì mới gửi ảnh hoặc giọng nói được nhé.',
+    adult_only: 'Phần này dành cho bố mẹ.'
+  },
+  en: {
+    child_free_chat_blocked: 'Kids’ profiles can only use scripted role-play.',
+    parent_consent_required: 'A parent needs to allow sending photos or voice first.',
+    adult_only: 'This part is for parents.'
+  }
+};
+
+/** Câu thân thiện cho lỗi 403 của chế độ trẻ em; null = không phải lỗi chế độ trẻ em */
+export function familyErrorText(err: unknown, lang: 'vi' | 'en'): string | null {
+  const code = (err as { code?: unknown } | null)?.code;
+  return typeof code === 'string' && Object.prototype.hasOwnProperty.call(FAMILY_TEXT.vi, code) ? FAMILY_TEXT[lang][code] : null;
+}

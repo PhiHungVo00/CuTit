@@ -7,6 +7,7 @@ import { say } from '../choice/ChoiceExercise';
 import type { ExerciseItem, ExerciseResult } from '../types';
 import { gradeAssess } from './grade';
 import { MAX_SENTENCE_MS, useSentenceRecorder, type AssessFn } from './useSentenceRecorder';
+import { useMediaAllowed } from '@vietlearning/state/family';
 
 type SpeakItem = Extract<ExerciseItem, { kind: 'speak' }>;
 
@@ -87,6 +88,9 @@ export default function SpeakExercise({ item, onDone, onSkip, assess }: { item: 
   const { status, error, result, level, start, stop, reset } = useSentenceRecorder(item.text, assess);
   const consent = useLearner((s) => s.consents.voice === true);
   const [askConsent, setAskConsent] = useState(false);
+  // GĐ4b: hồ sơ trẻ chỉ gửi ghi âm khi phụ huynh đã cho phép (Gateway cũng chặn) — vẫn bỏ qua được câu này
+  const mediaAllowed = useMediaAllowed();
+  const [needParent, setNeedParent] = useState(false);
   const recording = status === 'recording' || status === 'starting';
   const feedbackRef = useRef<HTMLDivElement>(null);
   const grade = result ? gradeAssess(result) : null;
@@ -97,6 +101,7 @@ export default function SpeakExercise({ item, onDone, onSkip, assess }: { item: 
 
   const onMic = () => {
     if (recording) return void stop();
+    if (!mediaAllowed) return setNeedParent(true);
     if (!consent) return setAskConsent(true);
     void start();
   };
@@ -165,6 +170,11 @@ export default function SpeakExercise({ item, onDone, onSkip, assess }: { item: 
       )}
 
       <div ref={feedbackRef} className="flex flex-col gap-2 scroll-mb-[calc(80px+env(safe-area-inset-bottom))]">
+        {needParent && (
+          <p role="status" data-testid="speak-need-parent" className="m-0 rounded-xl bg-surface-2 p-3 text-sm text-ink">
+            {t('speak.needParent')}
+          </p>
+        )}
         {error && (
           <p role="alert" className="m-0 rounded-xl bg-danger-soft p-3 text-sm text-danger-ink">
             {error === 'network' || error === 'quota' || error === 'failed' ? t(`speak.err.${error}`) : t(`err.${error}`)}
