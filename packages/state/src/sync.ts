@@ -11,14 +11,24 @@
  *
  * Gộp: hồ sơ, tùy chỉnh, từng thẻ (itemRef), từng ngày học chỉ giữ sự kiện mới nhất trong hàng đợi.
  * Lượt làm bài dùng con trỏ thời gian (mảng bị cắt 1000 nên không so theo chỉ số).
+ *
+ * Tiến độ lộ trình (store riêng `becutit.progress`, GĐ1) dùng cùng cơ chế với một bóng thứ hai:
+ * XP = phần tăng theo ngày (`xp.add`, chỉ thêm), bài/vượt unit = `lesson.progress`, đóng băng + đạt mục tiêu
+ * = `day.mark`, số bài/đóng băng đang giữ/mục tiêu = `progress.set`. Không đồng bộ: giờ nhắc (theo máy),
+ * lỗi gần đây, điểm thanh, số lần làm từng bài.
  */
 import type { ProgressSnapshot, SyncEvent, SyncResponse } from '@vietlearning/contracts/api';
 import { learnerStore, type Attempt, type LearnerState, type Preferences, type Profile, type SrsCard } from './index.js';
+import { initialProgress, progressStore, type LessonRecord, type ProgressData } from './progress.js';
 
 export const SYNC_STORAGE_KEY = 'becutit.sync';
 const BATCH = 200;
 const OUTBOX_MAX = 5000;
 const CONSENT_VERSION = '1';
+/** = TESTOUT_PREFIX của contracts (không import giá trị từ contracts để chunk đồng bộ không kéo Zod) */
+const TESTOUT = 'testout:';
+const XP_EVENT_MAX = 1000;
+const DAY_RE = /^\d{4}-\d{2}-\d{2}$/;
 
 type DistributiveOmit<T, K extends PropertyKey> = T extends unknown ? Omit<T, K> : never;
 /** Sự kiện do tính năng khác (GĐ1: xp.add, lesson.progress, achievement.earn) đưa vào hàng đợi */
@@ -34,11 +44,44 @@ interface Shadow {
   attemptCursor: string | null;
 }
 
+/** Bóng của tiến độ lộ trình (đã đưa vào hàng đợi) */
+interface ProgressShadow {
+  xpByDay: Record<string, number>;
+  /** lessonId -> điểm 0–100 đã gửi (so theo đơn vị server để không gửi lại mãi vì làm tròn) */
+  lessons: Record<string, number>;
+  testedOut: string[];
+  frozenDays: string[];
+  goalDays: string[];
+  /** JSON [lessonsDone, freezes, dailyGoal] */
+  scalars: string;
+}
+
+const scalarsOf = (p: Pick<ProgressData, 'lessonsDone' | 'freezes' | 'dailyGoal'>) => JSON.stringify([p.lessonsDone, p.freezes, p.dailyGoal]);
+const scoreOf = (best: number) => Math.max(0, Math.min(100, Math.round((Number.isFinite(best) ? best : 0) * 100)));
+
+/** Bóng ứng với dữ liệu mặc định: máy mới không sinh sự kiện, người dùng cũ tải lên toàn bộ tiến độ */
+function initialProgressShadow(): ProgressShadow {
+  return { xpByDay: {}, lessons: {}, testedOut: [], frozenDays: [], goalDays: [], scalars: scalarsOf(initialProgress()) };
+}
+
+function progressShadowOf(p: ProgressData, goalDays: string[]): ProgressShadow {
+  return {
+    xpByDay: { ...p.xpByDay },
+    lessons: Object.fromEntries(Object.entries(p.lessons).map(([id, l]) => [id, scoreOf(l.best)])),
+    testedOut: Object.keys(p.testedOut),
+    frozenDays: [...p.frozenDays],
+    goalDays: [...goalDays],
+    scalars: scalarsOf(p)
+  };
+}
+
 interface Persisted {
   /** userId của tài khoản mà bóng/hàng đợi thuộc về (null = chưa biết) */
   owner: string | null;
   outbox: SyncEvent[];
   shadow: Shadow;
+  /** thiếu ở bản ghi trước khi có đồng bộ tiến độ => coi như mặc định (tải lên tiến độ cũ) */
+  progressShadow?: ProgressShadow;
   lastSyncAt: string | null;
   /**
    * Đã chuyển sang tài khoản khôi phục nhưng CHƯA kéo được dữ liệu của nó (mất mạng / app bị tắt giữa chừng).
@@ -71,6 +114,8 @@ export interface SyncOptions {
   storage?: SyncStorage;
   debounceMs?: number;
   now?: () => Date;
+  /** gọi sau khi resetLocal xóa dữ liệu trên máy (Host: hủy lịch nhắc học) */
+  onLocalReset?: () => void;
 }
 
 export interface SyncEngine {
@@ -158,6 +203,10 @@ function coalesceKey(e: SyncEvent): string | null {
       return `srs:${e.card.itemRef}`;
     case 'activity.set':
       return `activity:${e.day}`;
+    case 'lesson.progress':
+      return `lesson:${e.lessonId}`;
+    case 'progress.set':
+      return e.type;
     default:
       return null;
   }
@@ -196,14 +245,16 @@ export function startSync(opts: SyncOptions): SyncEngine {
       const raw = storage.getItem(SYNC_STORAGE_KEY);
       if (raw) {
         const r = JSON.parse(raw) as Persisted;
-        if (r && Array.isArray(r.outbox) && r.shadow) return r;
+        if (r && Array.isArray(r.outbox) && r.shadow) return { ...r, progressShadow: r.progressShadow ?? initialProgressShadow() };
       }
     } catch {
       /* hỏng => làm lại từ mặc định */
     }
-    return { owner: null, outbox: [], shadow: shadowOf(learnerStore.getInitialState()), lastSyncAt: null };
+    return fresh();
   };
+  const fresh = (): Persisted => ({ owner: null, outbox: [], shadow: shadowOf(learnerStore.getInitialState()), progressShadow: initialProgressShadow(), lastSyncAt: null });
   let rec = load();
+  const pshadow = () => (rec.progressShadow ??= initialProgressShadow());
   const save = () => storage.setItem(SYNC_STORAGE_KEY, JSON.stringify(rec));
 
   const listeners = new Set<(s: SyncStatus) => void>();
@@ -274,12 +325,106 @@ export function startSync(opts: SyncOptions): SyncEngine {
       changed = true;
     }
     if (fresh.length) sh.attemptCursor = fresh[fresh.length - 1].at;
+    if (scanProgress(s.activity, ev)) changed = true;
 
     if (changed) {
       save();
       notify();
       if (rec.outbox.length) schedule(debounceMs);
     }
+  }
+
+  /** So tiến độ lộ trình với bóng thứ hai => sự kiện. Trả true nếu có thay đổi. */
+  function scanProgress(activity: Record<string, number>, ev: (body: NewSyncEvent) => SyncEvent): boolean {
+    const p = progressStore.getState();
+    const sh = pshadow();
+    let changed = false;
+    for (const [day, raw] of Object.entries(p.xpByDay)) {
+      const value = Math.round(raw);
+      let delta = value - Math.round(sh.xpByDay[day] ?? 0);
+      if (delta === 0) continue;
+      sh.xpByDay[day] = value;
+      changed = true;
+      // khóa ngày hỏng không gửi (một sự kiện sai làm cả lô bị 400 mãi); số âm (không xảy ra) bỏ qua
+      if (!DAY_RE.test(day)) continue;
+      while (delta > 0) {
+        const amount = Math.min(XP_EVENT_MAX, delta);
+        push(ev({ type: 'xp.add', source: 'path', amount, day }));
+        delta -= amount;
+      }
+    }
+    for (const [lessonId, l] of Object.entries(p.lessons)) {
+      const score = scoreOf(l.best);
+      if ((sh.lessons[lessonId] ?? -1) >= score) continue;
+      sh.lessons[lessonId] = score;
+      changed = true;
+      if (lessonId.length >= 1 && lessonId.length <= 80) push(ev({ type: 'lesson.progress', lessonId, status: 'completed', score }));
+    }
+    for (const unit of Object.keys(p.testedOut)) {
+      if (sh.testedOut.includes(unit)) continue;
+      sh.testedOut.push(unit);
+      changed = true;
+      const lessonId = TESTOUT + unit;
+      if (lessonId.length <= 80) push(ev({ type: 'lesson.progress', lessonId, status: 'completed', score: 100 }));
+    }
+    for (const day of p.frozenDays) {
+      if (sh.frozenDays.includes(day)) continue;
+      sh.frozenDays.push(day);
+      changed = true;
+      if (DAY_RE.test(day)) push(ev({ type: 'day.mark', day, freezeUsed: true }));
+    }
+    const need = p.dailyGoal * 60;
+    for (const [day, seconds] of Object.entries(activity)) {
+      if (!(seconds >= need) || sh.goalDays.includes(day)) continue;
+      sh.goalDays.push(day);
+      changed = true;
+      if (DAY_RE.test(day)) push(ev({ type: 'day.mark', day, goalMet: true }));
+    }
+    const scalars = scalarsOf(p);
+    if (scalars !== sh.scalars) {
+      sh.scalars = scalars;
+      changed = true;
+      push(ev({ type: 'progress.set', lessonsDone: Math.max(0, Math.floor(p.lessonsDone)), freezes: Math.max(0, Math.min(2, p.freezes)), dailyGoal: p.dailyGoal }));
+    }
+    return changed;
+  }
+
+  /** Áp phần tiến độ lộ trình của ảnh chụp (server là nguồn chuẩn cho tổng XP và các cờ ngày) */
+  function applyProgress(snap: ProgressSnapshot, replace: boolean) {
+    const p = progressStore.getState();
+    const nowIso = now().toISOString();
+    const lessons: Record<string, LessonRecord> = replace ? {} : { ...p.lessons };
+    const testedOut: Record<string, string> = replace ? {} : { ...p.testedOut };
+    for (const l of snap.lessons ?? []) {
+      if (l.status !== 'completed') continue;
+      if (l.lessonId.startsWith(TESTOUT)) {
+        const unit = l.lessonId.slice(TESTOUT.length);
+        testedOut[unit] ??= l.completedAt ?? nowIso;
+        continue;
+      }
+      const best = Math.max(0, Math.min(1, (l.bestScore ?? 0) / 100));
+      const cur = lessons[l.lessonId];
+      lessons[l.lessonId] = cur ? { ...cur, best: Math.max(cur.best, best) } : { best, times: 1, at: l.completedAt ?? nowIso };
+    }
+    const flags = snap.dayFlags ?? { goalMet: [], frozen: [] };
+    const frozenDays = [...new Set([...(replace ? [] : p.frozenDays), ...flags.frozen])].sort();
+    const ps = snap.progressState ?? null;
+    const next: Partial<ProgressData> = {
+      // hàng đợi đã rỗng khi áp => mọi XP của máy này đã có trên server; XP máy khác về theo
+      xpByDay: snap.xp ? { ...snap.xp.byDay } : p.xpByDay,
+      lessons,
+      testedOut,
+      frozenDays,
+      ...(ps
+        ? { lessonsDone: ps.lessonsDone, freezes: ps.freezes, dailyGoal: ps.dailyGoal }
+        : replace
+          ? { lessonsDone: Object.keys(lessons).length, freezes: 0, dailyGoal: initialProgress().dailyGoal }
+          : {}),
+      ...(replace ? { mistakes: [], toneStats: {} } : {})
+    };
+    progressStore.setState(next);
+    const goalDays = [...new Set([...(replace ? [] : pshadow().goalDays), ...flags.goalMet])];
+    rec.progressShadow = progressShadowOf(progressStore.getState(), goalDays);
   }
 
   function schedule(ms: number) {
@@ -308,6 +453,7 @@ export function startSync(opts: SyncOptions): SyncEngine {
         consents,
         attempts
       });
+      applyProgress(snap, replace);
       rec.shadow = shadowOf(learnerStore.getState());
       rec.owner = snap.userId;
       save();
@@ -348,6 +494,7 @@ export function startSync(opts: SyncOptions): SyncEngine {
           // Phiên đã chuyển sang tài khoản khách MỚI (tài khoản cũ bị xóa ở máy khác): tải lại toàn bộ dữ liệu máy
           rec.owner = res.snapshot.userId;
           rec.shadow = shadowOf(learnerStore.getInitialState());
+          rec.progressShadow = initialProgressShadow();
           save();
           scan();
           if (rec.outbox.length) continue;
@@ -378,6 +525,7 @@ export function startSync(opts: SyncOptions): SyncEngine {
   }
 
   const unsubscribe = learnerStore.subscribe(() => scan());
+  const unsubscribeProgress = progressStore.subscribe(() => scan());
   const onOnline = () => void flush();
   const onHidden = () => {
     if (typeof document !== 'undefined' && document.visibilityState === 'hidden') void flush();
@@ -424,11 +572,18 @@ export function startSync(opts: SyncOptions): SyncEngine {
         applying = true;
         try {
           learnerStore.getState().reset();
+          // tiến độ lộ trình (XP, bài đã xong, đóng băng, cài đặt nhắc) lưu ở khóa riêng: xóa cùng lúc
+          progressStore.getState().resetProgress();
         } finally {
           applying = false;
         }
-        rec = { owner: null, outbox: [], shadow: shadowOf(learnerStore.getState()), lastSyncAt: null };
+        rec = { ...fresh(), shadow: shadowOf(learnerStore.getState()) };
         error = null;
+        try {
+          opts.onLocalReset?.();
+        } catch {
+          /* hủy nhắc lỗi không chặn việc xóa */
+        }
       } finally {
         switching = false;
         save();
@@ -444,6 +599,7 @@ export function startSync(opts: SyncOptions): SyncEngine {
       stopped = true;
       clearTimeout(timer);
       unsubscribe();
+      unsubscribeProgress();
       if (typeof window !== 'undefined') {
         window.removeEventListener('online', onOnline);
         document.removeEventListener('visibilitychange', onHidden);
