@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, lte, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, lt, lte, sql } from 'drizzle-orm';
 import type { z } from 'zod';
 import type { PreferencesSchema, ProgressSnapshot, SyncEvent } from '@vietlearning/contracts/api';
 import { schema, type Db } from '../../db/client.js';
@@ -26,7 +26,10 @@ const {
   xpEvents,
   lessonProgress,
   achievements,
-  syncEvents
+  syncEvents,
+  learnerProgress,
+  deletedAccounts,
+  refreshTokens
 } = schema;
 
 export async function getPreferences(db: Db, userId: string): Promise<Preferences | null> {
@@ -83,10 +86,11 @@ export function streakFrom(activeDays: Set<string>, today: string): number {
 
 export async function summary(db: Db, userId: string, today: string, now: Date) {
   const days = await db
-    .select({ day: dailyActivity.day, seconds: dailyActivity.seconds, xp: dailyActivity.xp })
+    .select({ day: dailyActivity.day, seconds: dailyActivity.seconds, xp: dailyActivity.xp, freezeUsed: dailyActivity.freezeUsed })
     .from(dailyActivity)
     .where(eq(dailyActivity.userId, userId));
-  const active = new Set(days.filter((d) => d.seconds > 0 || d.xp > 0).map((d) => d.day));
+  // Ngày “đã học” = có giây học HOẶC có XP HOẶC đã dùng đóng băng (khớp learnedDays của client)
+  const active = new Set(days.filter((d) => d.seconds > 0 || d.xp > 0 || d.freezeUsed).map((d) => d.day));
   let weekStart = today;
   for (let i = 0; i < 6; i++) weekStart = prevDay(weekStart);
   const weekSeconds = days.filter((d) => d.day >= weekStart && d.day <= today).reduce((s, d) => s + d.seconds, 0);
@@ -114,7 +118,7 @@ export async function summary(db: Db, userId: string, today: string, now: Date) 
 
 export async function snapshot(db: Db, userId: string): Promise<ProgressSnapshot> {
   const [u] = await db.select().from(users).where(eq(users.id, userId));
-  const [prefs, cards, att, days, cons, xpTotal, lessons, ach] = await Promise.all([
+  const [prefs, cards, att, days, cons, xpTotal, lessons, ach, prog] = await Promise.all([
     getPreferences(db, userId),
     db.select().from(srsCards).where(eq(srsCards.userId, userId)).orderBy(asc(srsCards.itemRef)),
     db.select().from(attempts).where(eq(attempts.userId, userId)).orderBy(desc(attempts.createdAt)).limit(1000),
@@ -122,8 +126,10 @@ export async function snapshot(db: Db, userId: string): Promise<ProgressSnapshot
     db.select().from(consents).where(eq(consents.userId, userId)),
     db.select({ total: sql<number>`coalesce(sum(${xpEvents.amount}), 0)::int` }).from(xpEvents).where(eq(xpEvents.userId, userId)),
     db.select().from(lessonProgress).where(eq(lessonProgress.userId, userId)),
-    db.select().from(achievements).where(eq(achievements.userId, userId))
+    db.select().from(achievements).where(eq(achievements.userId, userId)),
+    db.select().from(learnerProgress).where(eq(learnerProgress.userId, userId))
   ]);
+  const sortedDays = [...days].sort((x, y) => x.day.localeCompare(y.day));
   return {
     userId,
     profile: u?.profileUpdatedAt
@@ -155,14 +161,42 @@ export async function snapshot(db: Db, userId: string): Promise<ProgressSnapshot
       bestScore: l.bestScore,
       completedAt: l.completedAt?.toISOString() ?? null
     })),
-    achievements: ach.map((a) => ({ key: a.key, earnedAt: a.earnedAt.toISOString() }))
+    achievements: ach.map((a) => ({ key: a.key, earnedAt: a.earnedAt.toISOString() })),
+    dayFlags: {
+      goalMet: sortedDays.filter((d) => d.goalMet).map((d) => d.day),
+      frozen: sortedDays.filter((d) => d.freezeUsed).map((d) => d.day)
+    },
+    progressState: prog[0]
+      ? { lessonsDone: prog[0].lessonsDone, freezes: prog[0].freezes, dailyGoal: prog[0].dailyGoal as 5 | 10 | 15 | 20 }
+      : null
   };
 }
 
-/** Xóa cứng: mọi bảng con (kể cả xp_events, refresh_tokens, hồ sơ trẻ) bị xóa theo nhờ ON DELETE CASCADE */
-export async function deleteUser(db: Db, userId: string): Promise<boolean> {
-  const rows = await db.delete(users).where(eq(users.id, userId)).returning({ id: users.id });
-  return rows.length > 0;
+/** Bia mộ giữ 90 ngày (= hạn refresh token): sau đó credential cũ đằng nào cũng hết hạn */
+const TOMBSTONE_TTL_MS = 90 * 24 * 3600 * 1000;
+
+/**
+ * Xóa cứng: mọi bảng con (kể cả xp_events, refresh_tokens, hồ sơ trẻ) bị xóa theo nhờ ON DELETE CASCADE.
+ * Trước khi xóa, chép sha256 của refresh token + mã khôi phục vào bia mộ (cùng transaction) để máy khác
+ * nhận `account_deleted`. Bia mộ không chứa userId hay dữ liệu học.
+ */
+export async function deleteUser(db: Db, userId: string, now = new Date()): Promise<boolean> {
+  return db.transaction(async (tx) => {
+    const [u] = await tx.select({ code: users.recoveryCodeHash }).from(users).where(eq(users.id, userId));
+    if (!u) return false;
+    const tokens = await tx.select({ hash: refreshTokens.tokenHash }).from(refreshTokens).where(eq(refreshTokens.userId, userId));
+    const hashes = [...tokens.map((t) => t.hash), ...(u.code ? [u.code] : [])];
+    if (hashes.length) await tx.insert(deletedAccounts).values(hashes.map((credentialHash) => ({ credentialHash, deletedAt: now }))).onConflictDoNothing();
+    await tx.delete(deletedAccounts).where(lt(deletedAccounts.deletedAt, new Date(now.getTime() - TOMBSTONE_TTL_MS)));
+    await tx.delete(users).where(eq(users.id, userId));
+    return true;
+  });
+}
+
+/** credentialHash = sha256 của refresh token / mã khôi phục đã chuẩn hóa */
+export async function isDeletedCredential(db: Db, credentialHash: string): Promise<boolean> {
+  const [row] = await db.select({ h: deletedAccounts.credentialHash }).from(deletedAccounts).where(eq(deletedAccounts.credentialHash, credentialHash));
+  return Boolean(row);
 }
 
 // ---------- Đồng bộ ----------
@@ -233,6 +267,31 @@ async function applyOne(tx: Tx, userId: string, e: SyncEvent): Promise<void> {
     case 'achievement.earn':
       await tx.insert(achievements).values({ userId, key: e.key, earnedAt: at }).onConflictDoNothing();
       return;
+    case 'day.mark': {
+      const goalMet = e.goalMet === true;
+      const freezeUsed = e.freezeUsed === true;
+      await tx
+        .insert(dailyActivity)
+        .values({ userId, day: e.day, goalMet, freezeUsed, updatedAt: at })
+        .onConflictDoUpdate({
+          target: [dailyActivity.userId, dailyActivity.day],
+          // chỉ bật, không tắt: OR với giá trị đã có
+          set: {
+            goalMet: sql`${dailyActivity.goalMet} or excluded.goal_met`,
+            freezeUsed: sql`${dailyActivity.freezeUsed} or excluded.freeze_used`,
+            updatedAt: at
+          }
+        });
+      return;
+    }
+    case 'progress.set': {
+      const row = { lessonsDone: e.lessonsDone, freezes: e.freezes, dailyGoal: e.dailyGoal, updatedAt: at };
+      await tx
+        .insert(learnerProgress)
+        .values({ userId, ...row })
+        .onConflictDoUpdate({ target: learnerProgress.userId, set: row, setWhere: lte(learnerProgress.updatedAt, at) });
+      return;
+    }
   }
 }
 
