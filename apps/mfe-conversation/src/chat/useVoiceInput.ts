@@ -3,7 +3,7 @@ import type { AudioCaptureBridge } from '@vietlearning/audio-dsp';
 import { SilenceDetector } from '../call/silenceDetector';
 
 export type VoiceStatus = 'idle' | 'starting' | 'recording' | 'transcribing';
-export type VoiceError = 'permission-denied' | 'no-microphone' | 'unsupported' | 'too-short' | 'no-speech' | 'network' | 'failed';
+export type VoiceError = 'permission-denied' | 'no-microphone' | 'unsupported' | 'too-short' | 'no-speech' | 'network' | 'quota' | 'failed';
 
 /** Một câu nói khi luyện hội thoại hiếm khi quá 15 giây: tự dừng để tiết kiệm dữ liệu và quota STT */
 export const MAX_VOICE_MS = 15000;
@@ -71,8 +71,9 @@ export function useVoiceInput(onText: (t: Transcript) => void, createBridge?: ()
       else onTextRef.current(t);
     } catch (err) {
       if (ac.signal.aborted) return;
-      const kind = (err as { kind?: string }).kind;
-      setError(kind === 'offline' || kind === 'timeout' ? 'network' : 'failed');
+      const { kind, code } = err as { kind?: string; code?: string };
+      // hết thời lượng nhận giọng nói hôm nay (STT tính theo giây) — khác lỗi micro/nhận dạng
+      setError(code === 'quota_exceeded' ? 'quota' : kind === 'offline' || kind === 'timeout' ? 'network' : 'failed');
     } finally {
       if (abortRef.current === ac) abortRef.current = null;
       if (!ac.signal.aborted) setStatus('idle');

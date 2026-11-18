@@ -123,6 +123,27 @@ test.describe('GĐ3 Hội thoại AI', () => {
     await assertMobileLayout(page);
   });
 
+  test('gọi thoại mất mạng giữa lượt => “Thử lại” gửi lại đúng câu cũ, không lặp dòng của người học', async ({ page }) => {
+    let n = 0;
+    const histories: unknown[] = [];
+    await page.route('**/v1/chat/turn', async (route) => {
+      n++;
+      histories.push(route.request().postDataJSON().history);
+      if (n === 1) return route.abort('internetdisconnected');
+      return route.continue();
+    });
+    await page.goto('/goi-thoai');
+    await page.getByRole('button', { name: '⌨️ Gõ thay nói' }).click();
+    await page.getByLabel('Tin nhắn').fill('Xin chào');
+    await page.getByRole('button', { name: 'Gửi' }).click();
+    await expect(page.getByTestId('call-status')).toContainText('Không có kết nối mạng');
+    await page.getByRole('button', { name: 'Thử lại' }).click();
+    const subs = page.getByRole('log', { name: 'Phụ đề' });
+    await expect(subs.getByText(/Bé Cu Tít đây/)).toBeVisible({ timeout: 20_000 });
+    await expect(subs.getByText('Xin chào', { exact: true })).toHaveCount(1);
+    expect(histories[1]).toEqual([]);
+  });
+
   test('hết lượt AI hôm nay: cuộc gọi báo song ngữ dễ hiểu kèm giờ lượt mới; gửi quá nhanh không bị báo là hết lượt', async ({ page }) => {
     let mode: 'day' | 'minute' = 'day';
     await page.route('**/v1/chat/turn', (route) =>

@@ -8,28 +8,42 @@ import { callReducer, initialCall } from './callMachine';
 import { createSpeaker, type SpeakerDeps } from './speakReply';
 
 /** Gọi /v1/speech/synthesize (Gateway quyết định nhà cung cấp TTS); 503 => kind 'unavailable' */
-async function synth(text: string, slow: boolean): Promise<string | null> {
+async function synth(text: string): Promise<string | null> {
   const [{ request }, { SynthesizeResponseSchema }] = await Promise.all([import('@vietlearning/api-client'), import('@vietlearning/contracts/api')]);
   const { preferences } = learnerStore.getState();
   const r = await request('/v1/speech/synthesize', {
-    body: { text: text.slice(0, 500), voiceId: preferences.voiceId, speed: slow ? 0.75 : 1, dialect: preferences.dialect },
+    body: { text: text.slice(0, 500), voiceId: preferences.voiceId, speed: 1, dialect: preferences.dialect },
     schema: SynthesizeResponseSchema
   });
   return r.audioUrl;
 }
 
+/** Âm thanh máy chủ đang phát (để gác máy / watchdog dừng được) */
+let current: HTMLAudioElement | null = null;
+
+function stopPlayback(): void {
+  current?.pause();
+  current = null;
+}
+
 function play(url: string, rate: number): Promise<void> {
   return new Promise((resolve, reject) => {
+    stopPlayback();
     const audio = new Audio(url);
+    current = audio;
     audio.playbackRate = rate;
     (audio as HTMLAudioElement & { preservesPitch?: boolean }).preservesPitch = true;
-    audio.onended = () => resolve();
+    audio.onended = () => {
+      if (current === audio) current = null;
+      resolve();
+    };
     audio.onerror = () => reject(new Error('audio_error'));
     audio.play().catch(reject);
   });
 }
 
-const VOICE_TO_TEXT = new Set(['permission-denied', 'no-microphone', 'unsupported']);
+// Micro không dùng được, hoặc hết thời lượng nhận giọng nói hôm nay => gõ chữ để gọi tiếp (lượt chat vẫn còn)
+const VOICE_TO_TEXT = new Set(['permission-denied', 'no-microphone', 'unsupported', 'quota']);
 
 /** Điều phối một cuộc gọi: micro (tự dừng) → STT → lượt chat mode 'call' → đọc trả lời → nghe tiếp. */
 export function useCall(deps?: Partial<SpeakerDeps>) {
@@ -42,7 +56,7 @@ export function useCall(deps?: Partial<SpeakerDeps>) {
   slowRef.current = slow;
 
   const speak = useMemo(
-    () => createSpeaker({ synth, play, device: getDeviceSpeech(), deviceRate: (b) => speechRate(b), ...deps }),
+    () => createSpeaker({ synth, play, stopPlayback, device: getDeviceSpeech(), deviceRate: (b) => speechRate(b), ...deps }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     []
   );
@@ -80,9 +94,12 @@ export function useCall(deps?: Partial<SpeakerDeps>) {
 
   // thinking => gửi lượt
   useEffect(() => {
-    if (state.phase === 'thinking' && state.pendingText) void session.send(state.pendingText);
+    if (state.phase !== 'thinking' || !state.pendingText) return;
+    // Gửi lại sau lỗi: session.retry không thêm lại câu của người học vào hội thoại/lịch sử
+    if (state.retry) session.retry();
+    else void session.send(state.pendingText);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state.phase, state.pendingText]);
+  }, [state.phase, state.pendingText, state.retry]);
 
   // speaking => đọc (micro đã tắt), xong (hoặc watchdog) thì nghe tiếp
   useEffect(() => {
@@ -112,12 +129,14 @@ export function useCall(deps?: Partial<SpeakerDeps>) {
     if (state.phase === 'ended') {
       voice.cancel();
       session.cancel();
+      stopPlayback();
       void getDeviceSpeech().stop().catch(() => undefined);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.phase]);
   useEffect(
     () => () => {
+      stopPlayback();
       void getDeviceSpeech().stop().catch(() => undefined);
     },
     []
