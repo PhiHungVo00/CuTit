@@ -6,7 +6,8 @@ import multipart from '@fastify/multipart';
 import rateLimit from '@fastify/rate-limit';
 import type { GatewayConfig } from './config.js';
 import { RequestPipeline } from './pipeline/RequestPipeline.js';
-import { InMemoryQuotaStore, QuotaStore } from './pipeline/QuotaStore.js';
+import type { QuotaStore } from './pipeline/QuotaStore.js';
+import { DbQuotaStore } from './pipeline/DbQuotaStore.js';
 import { TTSCacheProxy } from './cache/TTSCacheProxy.js';
 import { createLlmProvider, type LlmProvider } from './providers/llm.js';
 import { createTutor, type Tutor } from './services/chat/tutor.js';
@@ -16,6 +17,7 @@ import { practiceRoutes } from './routes/practice.js';
 import { contentRoutes } from './routes/content.js';
 import { authRoutes } from './routes/auth.js';
 import { meRoutes } from './routes/me.js';
+import { quotaRoutes } from './routes/quota.js';
 import { createDbProvider, type DbProvider } from './db/client.js';
 
 export interface RouteDeps {
@@ -69,7 +71,7 @@ export async function buildApp(config: GatewayConfig, opts: BuildOptions = {}): 
   const db = opts.db ?? createDbProvider(config);
   if (!opts.db) app.addHook('onClose', () => db.close());
 
-  const pipeline = new RequestPipeline(config, opts.quotaStore ?? new InMemoryQuotaStore(), db);
+  const pipeline = new RequestPipeline(config, opts.quotaStore ?? new DbQuotaStore(db), db);
   const llm = opts.llm !== undefined ? opts.llm : createLlmProvider(config);
   const deps: RouteDeps = { pipeline, ttsCache: opts.ttsCache ?? new TTSCacheProxy(), config, llm, tutor: createTutor(llm, app.log), db };
   app.log.info({ ai: llm ? `${llm.name}:${config.GEMINI_MODEL}` : 'mock' }, 'AI provider');
@@ -81,6 +83,8 @@ export async function buildApp(config: GatewayConfig, opts: BuildOptions = {}): 
     const code = (error as { code?: string }).code;
     reply.status(status).send({
       error: status >= 500 && !code ? 'internal_error' : code ?? 'error',
+      // GatewayError.details: trường máy đọc được (vd. quota_exceeded => capability, resetAt)
+      ...(error as { details?: Record<string, unknown> }).details,
       message: status >= 500 && config.NODE_ENV === 'production' ? undefined : error.message
     });
   });
@@ -111,6 +115,7 @@ export async function buildApp(config: GatewayConfig, opts: BuildOptions = {}): 
       await v1.register(practiceRoutes, deps);
       await v1.register(contentRoutes, deps);
       await v1.register(meRoutes, deps);
+      await v1.register(quotaRoutes, deps);
     },
     { prefix: '/v1' }
   );
