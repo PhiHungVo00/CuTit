@@ -7,6 +7,7 @@
  * “đóng băng” kiếm bằng học (không bán); mục tiêu ngày do người học chọn; nhắc trung tính, có giờ yên lặng.
  */
 import { computeStreak, dayKey } from './index.js';
+import type { EarnedBadge, ToneWeek } from './badges.js';
 
 export const GOAL_OPTIONS = [5, 10, 15, 20] as const;
 export type GoalMinutes = (typeof GOAL_OPTIONS)[number];
@@ -171,6 +172,15 @@ export interface ProgressData {
   mistakes: { key: string; at: string }[];
   /** điểm luyện thanh theo thanh: số lượt + tổng điểm */
   toneStats: Record<string, { n: number; sum: number }>;
+  // ---- GĐ4 ----
+  /** huy hiệu đã đạt (không bao giờ bị xóa, trừ khi xóa tài khoản / đổi tài khoản) — đồng bộ qua achievement.earn */
+  badges: Record<string, EarnedBadge>;
+  /** số bài xong theo ngày (tổng kết tuần; chỉ trên máy) */
+  lessonsByDay: Record<string, number>;
+  /** itemRef thẻ => ngày “đã thuộc” (khoảng ôn ≥ 6 ngày lần đầu thấy; chỉ trên máy) */
+  knownAt: Record<string, string>;
+  /** mốc điểm thanh đầu tuần để tìm thanh tiến bộ nhất (chỉ trên máy) */
+  toneWeek: ToneWeek | null;
 }
 
 export const MAX_MISTAKES = 30;
@@ -185,7 +195,11 @@ export const initialProgress = (): ProgressData => ({
   dailyGoal: DEFAULT_GOAL,
   reminder: { enabled: false, hour: 19, minute: 0 },
   mistakes: [],
-  toneStats: {}
+  toneStats: {},
+  badges: {},
+  lessonsByDay: {},
+  knownAt: {},
+  toneWeek: null
 });
 
 const isObj = (x: unknown): x is Record<string, unknown> => typeof x === 'object' && x !== null && !Array.isArray(x);
@@ -213,6 +227,14 @@ export function migrateProgress(persisted: unknown, _version: number): ProgressD
     dailyGoal: goal,
     reminder: { enabled: r.enabled === true, hour: clampReminderHour(typeof r.hour === 'number' ? r.hour : 19), minute },
     mistakes: Array.isArray(p.mistakes) ? p.mistakes.filter((m) => isObj(m) && typeof m.key === 'string').slice(-MAX_MISTAKES) as ProgressData['mistakes'] : [],
-    toneStats: isObj(p.toneStats) ? (p.toneStats as ProgressData['toneStats']) : {}
+    toneStats: isObj(p.toneStats) ? (p.toneStats as ProgressData['toneStats']) : {},
+    badges: isObj(p.badges)
+      ? Object.fromEntries(
+          Object.entries(p.badges).flatMap(([k, b]) => (isObj(b) && typeof b.at === 'string' ? [[k, { at: b.at, seen: b.seen === true }]] : []))
+        )
+      : {},
+    lessonsByDay: numRecord(p.lessonsByDay),
+    knownAt: isObj(p.knownAt) ? (Object.fromEntries(Object.entries(p.knownAt).filter(([, d]) => typeof d === 'string')) as Record<string, string>) : {},
+    toneWeek: isObj(p.toneWeek) && typeof p.toneWeek.week === 'string' && isObj(p.toneWeek.base) ? (p.toneWeek as unknown as ToneWeek) : null
   };
 }
