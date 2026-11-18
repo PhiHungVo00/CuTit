@@ -1,10 +1,13 @@
-import { useMemo, useState } from 'react';
+import { lazy, Suspense, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { accuracyBySkill, cefrLabel, computeStreak, dueCards, useLearner, type SrsCard, type Skill } from '@vietlearning/state';
-import { ScreenFrame, card, linkBtn, primaryBtn } from '../common/ui';
+import { ScreenFrame, card, linkBtn, primaryBtn, secondaryBtn } from '../common/ui';
 import { useT } from '../i18n';
 import { ReviewSession } from './ReviewSession';
 import { formatDue, lastSevenDays, nextDue } from './stats';
+
+/** GĐ4c: chunk lười riêng, chỉ tải (và chỉ gọi mạng) khi người học bấm mở */
+const FriendsPanel = lazy(() => import('../friends/FriendsPanel'));
 
 function Tile({ value, label }: { value: string; label: string }) {
   return (
@@ -24,6 +27,7 @@ export function ProgressScreen() {
   const attempts = useLearner((s) => s.attempts);
   const srs = useLearner((s) => s.srs);
   const [reviewing, setReviewing] = useState<SrsCard[] | null>(null);
+  const [friendsOpen, setFriendsOpen] = useState(false);
 
   const week = useMemo(() => lastSevenDays(activity, new Date(), lang), [activity, lang]);
   const weekMinutes = week.reduce((a, d) => a + d.minutes, 0);
@@ -137,7 +141,25 @@ export function ProgressScreen() {
             )}
           </section>
 
-          <Link to="/bat-dau" className={`${linkBtn} justify-center`}>
+          <section className={card} aria-labelledby="ct-friends">
+            <h2 id="ct-friends" className="m-0 text-lg font-extrabold text-ink">
+              {t('friendsTitle')}
+            </h2>
+            {friendsOpen ? (
+              <Suspense fallback={null}>
+                <FriendsPanel />
+              </Suspense>
+            ) : (
+              <>
+                <p className="m-0 text-[15px] text-ink-soft">{t('friendsHint')}</p>
+                <button type="button" className={secondaryBtn} onClick={() => setFriendsOpen(true)}>
+                  {t('friendsOpen')}
+                </button>
+              </>
+            )}
+          </section>
+
+          <Link to="/bat-dau"className={`${linkBtn} justify-center`}>
             🌱 {profile.onboarded ? t('redoPlacement') : t('doPlacement')}
           </Link>
         </>
