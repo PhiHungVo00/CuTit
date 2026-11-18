@@ -5,6 +5,7 @@
   "titleEn": "Ordering food & asking the way",
   "icon": "🍜",
   "reviewed": false,
+  "dialectNotes": ["d20", "d21", "d5", "d13", "d9"],
   "lessons": [
     {
       "id": "u3l1",
@@ -20,6 +21,7 @@
         {"type": "fill", "sentence": "s16", "blank": 4},
         {"type": "build", "sentence": "cs8"},
         {"type": "dialect", "entry": "d28", "region": "south"},
+        {"type": "speak", "sentence": "s16"},
         {"type": "listen", "word": "w38"}
       ]
     },
@@ -37,6 +39,7 @@
         {"type": "meaning", "word": "w42", "dir": "vi-en"},
         {"type": "tone", "tone": "hoi", "word": "phở"},
         {"type": "fill", "sentence": "s7", "blank": 3},
+        {"type": "speak", "sentence": "cs9"},
         {"type": "listen", "word": "w39"}
       ]
     },
@@ -54,6 +57,7 @@
         {"type": "meaning", "word": "w48", "dir": "en-vi"},
         {"type": "build", "sentence": "s14"},
         {"type": "listen", "word": "w47"},
+        {"type": "speak", "sentence": "s31"},
         {"type": "tone", "tone": "huyen", "word": "đường"}
       ]
     },
@@ -71,6 +75,7 @@
         {"type": "meaning", "word": "w44", "dir": "en-vi"},
         {"type": "listen", "word": "w45"},
         {"type": "tone", "tone": "sac", "word": "trái"},
+        {"type": "speak", "sentence": "cs11"},
         {"type": "fill", "sentence": "cs11", "blank": 1}
       ]
     }

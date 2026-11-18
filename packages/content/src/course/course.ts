@@ -26,7 +26,9 @@ export type ExerciseRef =
   /** chọn đại từ xưng hô (A6), cặp h* */
   | { type: 'pronoun'; pair: string }
   /** từ theo miền (A7), mục d* */
-  | { type: 'dialect'; entry: string; region: 'central' | 'south' };
+  | { type: 'dialect'; entry: string; region: 'central' | 'south' }
+  /** nói lại câu (A3 + A2, GĐ2): đọc câu (s* hoặc cs*), chấm từng âm tiết */
+  | { type: 'speak'; sentence: string };
 
 export interface CourseWord {
   id: string;
@@ -57,6 +59,8 @@ export interface Unit {
   lessons: Lesson[];
   /** bộ câu cố định của bài “kiểm tra để vượt unit” */
   testOut: ExerciseRef[];
+  /** mục phương ngữ d* cho thẻ “miền khác nói thế nào” (GĐ2) */
+  dialectNotes?: string[];
 }
 
 export interface Course {
@@ -87,3 +91,8 @@ export function findSentence(id: string): SentenceBank | undefined {
 
 /** Mọi câu ghép (kho cũ + khóa học), dùng làm nguồn nhiễu cho bài điền từ */
 export const ALL_SENTENCES: readonly SentenceBank[] = [...SENTENCE_ITEMS, ...COURSE_SENTENCES];
+
+/** Câu chuẩn của một câu ghép (thứ tự accepted[0]): dùng chung cho câu đọc mẫu, câu cần nói lại, gói âm thanh */
+export function sentenceText(s: SentenceBank): string {
+  return s.accepted[0].map((i) => s.tokens[i].text).join(' ');
+}

@@ -70,9 +70,20 @@ test('Toàn vẹn tham chiếu: mọi exercise trỏ tới nội dung có thật
         assert.notEqual(e[r.region], e.north, `${where}: miền đích phải khác miền Bắc`);
         break;
       }
+      case 'speak':
+        assert.ok(findSentence(r.sentence), where);
+        break;
       default:
         assert.fail(`dạng lạ ${where}`);
     }
+  }
+});
+
+test('GĐ2: mỗi unit có ≥ 1 bài nói lại câu và thẻ miền trỏ mục phương ngữ có thật', () => {
+  for (const u of COURSE.units) {
+    assert.ok(u.lessons.some((l) => l.exercises.some((e) => e.type === 'speak')), `${u.id} thiếu bài speak`);
+    assert.ok(Array.isArray(u.dialectNotes) && u.dialectNotes.length >= 3, `${u.id} dialectNotes`);
+    for (const id of u.dialectNotes) assert.ok(DIALECT_DICTIONARY.some((d) => d.id === id), `${u.id}: ${id}`);
   }
 });
 
