@@ -10,7 +10,9 @@ import {
   PitchReferenceFlyweight,
   findLesson,
   findWord,
-  findSentence
+  findSentence,
+  findSituation,
+  findStory
 } from '../dist/index.js';
 
 const TONE_IDS = new Set(PitchReferenceFlyweight.all().map((t) => t.id));
@@ -72,6 +74,12 @@ test('Toàn vẹn tham chiếu: mọi exercise trỏ tới nội dung có thật
       }
       case 'speak':
         assert.ok(findSentence(r.sentence), where);
+        break;
+      case 'situation':
+        assert.ok(findSituation(r.situation), where);
+        break;
+      case 'story':
+        assert.ok(findStory(r.story), where);
         break;
       default:
         assert.fail(`dạng lạ ${where}`);

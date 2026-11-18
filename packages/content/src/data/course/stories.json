@@ -1,0 +1,61 @@
+[
+  {
+    "id": "st1",
+    "unit": "u1",
+    "title": "Gặp bạn mới",
+    "titleEn": "Meeting someone new",
+    "reviewed": false,
+    "lines": [
+      { "speaker": "Lan", "text": "Xin chào! Tôi tên là Lan.", "en": "Hello! My name is Lan." },
+      { "speaker": "Nam", "text": "Chào chị! Em tên là Nam.", "en": "Hello! My name is Nam." },
+      { "speaker": "Lan", "text": "Em có khỏe không?", "en": "How are you?" },
+      { "speaker": "Nam", "text": "Dạ, em khỏe. Cảm ơn chị.", "en": "I'm fine. Thank you." },
+      { "speaker": "Lan", "text": "Tạm biệt em!", "en": "Goodbye!" },
+      { "speaker": "Nam", "text": "Tạm biệt chị!", "en": "Goodbye!" }
+    ],
+    "questions": [
+      { "q": "Chị ấy tên là gì?", "qEn": "What is her name?", "answer": "Lan", "distractors": ["Nam", "Mai"] },
+      { "q": "Nam gọi Lan là gì?", "qEn": "What does Nam call Lan?", "answer": "chị", "distractors": ["em", "bà"] },
+      { "q": "Nam có khỏe không?", "qEn": "Is Nam well?", "answer": "Nam khỏe.", "distractors": ["Nam không khỏe.", "Nam không nói."] }
+    ]
+  },
+  {
+    "id": "st2",
+    "unit": "u2",
+    "title": "Đi chợ mua dứa",
+    "titleEn": "Buying a pineapple at the market",
+    "reviewed": false,
+    "lines": [
+      { "speaker": "Mai", "text": "Chị ơi, dứa bao nhiêu tiền một quả?", "en": "Excuse me, how much is one pineapple?" },
+      { "speaker": "Người bán", "text": "Hai mươi nghìn một quả, em ạ.", "en": "Twenty thousand each." },
+      { "speaker": "Mai", "text": "Đắt quá! Mười lăm nghìn được không chị?", "en": "Too expensive! Is fifteen thousand OK?" },
+      { "speaker": "Người bán", "text": "Được. Em mua mấy quả?", "en": "OK. How many do you want?" },
+      { "speaker": "Mai", "text": "Em mua hai quả. Cảm ơn chị!", "en": "I'll take two. Thank you!" }
+    ],
+    "questions": [
+      { "q": "Mai mua gì?", "qEn": "What does Mai buy?", "answer": "dứa", "distractors": ["phở", "trà"] },
+      { "q": "Lúc đầu, một quả giá bao nhiêu?", "qEn": "At first, how much is one?", "answer": "hai mươi nghìn", "distractors": ["mười lăm nghìn", "năm nghìn"] },
+      { "q": "Mai mua mấy quả?", "qEn": "How many does Mai buy?", "answer": "hai quả", "distractors": ["một quả", "ba quả"] }
+    ]
+  },
+  {
+    "id": "st3",
+    "unit": "u3",
+    "title": "Ăn phở rồi hỏi đường",
+    "titleEn": "Eating phở, then asking the way",
+    "reviewed": false,
+    "lines": [
+      { "speaker": "Nam", "text": "Em ơi, cho anh một phở bò và một trà đá.", "en": "Excuse me, one beef phở and one iced tea, please." },
+      { "speaker": "Phục vụ", "text": "Dạ, anh đợi một chút ạ.", "en": "Yes, please wait a moment." },
+      { "speaker": "Nam", "text": "Phở ngon quá! Em ơi, tính tiền.", "en": "The phở is delicious! The bill, please." },
+      { "speaker": "Phục vụ", "text": "Dạ, năm mươi nghìn ạ.", "en": "Fifty thousand, please." },
+      { "speaker": "Nam", "text": "Chợ ở đâu, em?", "en": "Where is the market?" },
+      { "speaker": "Phục vụ", "text": "Anh đi thẳng, rồi rẽ trái. Chợ ở gần đây.", "en": "Go straight, then turn left. The market is near here." }
+    ],
+    "questions": [
+      { "q": "Nam ăn gì?", "qEn": "What does Nam eat?", "answer": "phở bò", "distractors": ["bánh mì", "cơm"] },
+      { "q": "Nam trả bao nhiêu tiền?", "qEn": "How much does Nam pay?", "answer": "năm mươi nghìn", "distractors": ["mười lăm nghìn", "hai mươi nghìn"] },
+      { "q": "Đi chợ thế nào?", "qEn": "How do you get to the market?", "answer": "Đi thẳng, rồi rẽ trái.", "distractors": ["Đi thẳng, rồi rẽ phải.", "Rẽ phải, rồi đi thẳng."] }
+    ]
+  }
+]

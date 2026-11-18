@@ -33,6 +33,7 @@
         {"type": "pronoun", "pair": "h10"},
         {"type": "pronoun", "pair": "h11"},
         {"type": "pronoun", "pair": "h12"},
+        {"type": "situation", "situation": "hs1"},
         {"type": "fill", "sentence": "s30", "blank": 2},
         {"type": "listen", "word": "w7"},
         {"type": "tone", "tone": "huyen", "word": "chào"},
@@ -67,14 +68,14 @@
         {"type": "build", "sentence": "s5"},
         {"type": "fill", "sentence": "s5", "blank": 2},
         {"type": "pronoun", "pair": "h2"},
-        {"type": "pronoun", "pair": "h14"},
+        {"type": "situation", "situation": "hs2"},
         {"type": "build", "sentence": "cs3"},
         {"type": "meaning", "word": "w13", "dir": "vi-en"},
         {"type": "meaning", "word": "w14", "dir": "en-vi"},
         {"type": "tone", "tone": "hoi", "word": "khỏe"},
         {"type": "build", "sentence": "s53"},
         {"type": "speak", "sentence": "s5"},
-        {"type": "listen", "word": "w12"}
+        {"type": "story", "story": "st1"}
       ]
     },
     {
