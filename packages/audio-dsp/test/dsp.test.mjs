@@ -163,3 +163,19 @@ test('WAV: encodeWav ra header PCM16 mono hợp lệ, readWavInfo đọc lại �
   assert.ok(Math.abs(info.durationSec - 1.5) < 0.001);
   assert.equal(readWavInfo(new TextEncoder().encode('không phải wav nhưng dài hơn bốn mươi bốn byte nhé.....')), null);
 });
+
+test('WAV: decodeWavPcm đọc lại mẫu Float32; pcm16ToWav bọc PCM thô (L16 của TTS) thành WAV', async () => {
+  const { encodeWav, decodeWavPcm, pcm16ToWav, readWavInfo } = await import('../dist/index.js');
+  const pcm = new Float32Array([0, 0.5, -0.5, 0.25]);
+  const out = decodeWavPcm(new Uint8Array(encodeWav(pcm, 16000)));
+  assert.equal(out.sampleRate, 16000);
+  assert.equal(out.pcm.length, 4);
+  for (let i = 0; i < 4; i++) assert.ok(Math.abs(out.pcm[i] - pcm[i]) < 1e-3);
+  assert.equal(decodeWavPcm(new Uint8Array(10)), null);
+  // PCM16 little-endian thô 24 kHz (giống inlineData audio/L16;rate=24000)
+  const raw = new Uint8Array(48000); // 1 giây
+  const wav = pcm16ToWav(raw, 24000);
+  const info = readWavInfo(wav);
+  assert.equal(info.sampleRate, 24000);
+  assert.equal(info.durationSec, 1);
+});

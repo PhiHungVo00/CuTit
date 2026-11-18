@@ -9,6 +9,7 @@ import { RequestPipeline } from './pipeline/RequestPipeline.js';
 import { InMemoryQuotaStore, QuotaStore } from './pipeline/QuotaStore.js';
 import { TTSCacheProxy } from './cache/TTSCacheProxy.js';
 import { createLlmProvider, type LlmProvider } from './providers/llm.js';
+import { createSttProvider, type SttProvider } from './providers/stt.js';
 import { createTutor, type Tutor } from './services/chat/tutor.js';
 import { chatRoutes } from './routes/chat.js';
 import { speechRoutes } from './routes/speech.js';
@@ -24,6 +25,8 @@ export interface RouteDeps {
   config: GatewayConfig;
   /** null = chưa cấu hình nhà cung cấp AI => các route dùng bộ giả lập, gắn mock: true */
   llm: LlmProvider | null;
+  /** null = chưa có nhà cung cấp STT => route giọng nói trả mock: true (GĐ2) */
+  stt: SttProvider | null;
   tutor: Tutor;
   /** DB mở lười: chỉ route cần dữ liệu người học mới mở */
   db: DbProvider;
@@ -35,6 +38,8 @@ export interface BuildOptions {
   ttsCache?: TTSCacheProxy;
   /** Test tiêm nhà cung cấp giả; bỏ trống = theo cấu hình (GEMINI_API_KEY) */
   llm?: LlmProvider | null;
+  /** Test tiêm STT giả; bỏ trống = STT qua LLM (nếu có) */
+  stt?: SttProvider | null;
   /** Test tiêm DB dùng chung; bỏ trống = theo cấu hình (DATABASE_URL hoặc PGlite) và tự đóng khi app đóng */
   db?: DbProvider;
 }
@@ -71,7 +76,8 @@ export async function buildApp(config: GatewayConfig, opts: BuildOptions = {}): 
 
   const pipeline = new RequestPipeline(config, opts.quotaStore ?? new InMemoryQuotaStore(), db);
   const llm = opts.llm !== undefined ? opts.llm : createLlmProvider(config);
-  const deps: RouteDeps = { pipeline, ttsCache: opts.ttsCache ?? new TTSCacheProxy(), config, llm, tutor: createTutor(llm, app.log), db };
+  const stt = opts.stt !== undefined ? opts.stt : createSttProvider(llm);
+  const deps: RouteDeps = { pipeline, ttsCache: opts.ttsCache ?? new TTSCacheProxy(), config, llm, stt, tutor: createTutor(llm, app.log), db };
   app.log.info({ ai: llm ? `${llm.name}:${config.GEMINI_MODEL}` : 'mock' }, 'AI provider');
 
   // Phải đặt trước khi đăng ký các scope con để chúng thừa hưởng

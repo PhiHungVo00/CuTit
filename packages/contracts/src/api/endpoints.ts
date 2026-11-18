@@ -167,13 +167,7 @@ export const VoiceListResponseSchema = z.array(
   })
 );
 
-// POST /speech/assess (A3 + A2)
-export const AssessResponseSchema = z.object({
-  transcript: z.string(),
-  diff: z.array(z.object({ expected: z.string(), actual: z.string() })),
-  score: z.number().min(0).max(100),
-  hints: z.array(z.string())
-});
+// POST /speech/assess (A3 + A2): xem AssessResponseSchema trong ./speech.ts (GĐ2)
 
 export const DrillListResponseSchema = z.array(DrillItemSchema);
 
