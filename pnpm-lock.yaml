@@ -825,6 +825,9 @@ importers:
 
   packages/exercises:
     dependencies:
+      '@vietlearning/api-client':
+        specifier: workspace:*
+        version: link:../api-client
       '@vietlearning/audio-dsp':
         specifier: workspace:*
         version: link:../audio-dsp

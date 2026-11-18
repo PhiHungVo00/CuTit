@@ -11,6 +11,7 @@ import {
   PitchReferenceFlyweight,
   findSentence,
   findWord,
+  sentenceText,
   type ExerciseRef,
   type ToneId
 } from '@vietlearning/content';
@@ -93,6 +94,8 @@ export function refKey(ref: ExerciseRef): string {
       return `pronoun:${ref.pair}`;
     case 'dialect':
       return `dialect:${ref.entry}:${ref.region}`;
+    case 'speak':
+      return `speak:${ref.sentence}`;
   }
 }
 
@@ -115,6 +118,8 @@ export function parseRefKey(key: string): ExerciseRef | null {
       return { type, pair: a };
     case 'dialect':
       return b === 'central' || b === 'south' ? { type, entry: a, region: b } : null;
+    case 'speak':
+      return { type, sentence: a };
     default:
       return null;
   }
@@ -217,6 +222,11 @@ export function buildItem(ref: ExerciseRef, seed: number, choices = 4): Exercise
         answer,
         explanation: t('exDialect', { meaning: meaningFor(e.meaning, lang()), north: e.north, central: e.central, south: e.south })
       };
+    }
+    case 'speak': {
+      const s = findSentence(ref.sentence);
+      if (!s) throw new Error(`Không có câu ${ref.sentence}`);
+      return { kind: 'speak', key, prompt: t('qSpeak'), text: sentenceText(s), translation: s.translation };
     }
   }
 }

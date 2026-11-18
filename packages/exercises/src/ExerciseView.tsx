@@ -6,6 +6,8 @@ import type { ExerciseItem, ExerciseResult } from './types';
 
 // Luyện thanh kéo theo bộ thu âm + biểu đồ: chỉ tải khi gặp bài luyện thanh
 const ToneExercise = lazy(() => import('./tone/ToneExercise'));
+// Nói lại câu (A3): bộ ghi âm + gửi Gateway, chỉ tải khi gặp
+const SpeakExercise = lazy(() => import('./speak/SpeakExercise'));
 
 /** Khung chung một bài: nhãn dạng bài + đề, rồi component của dạng đó. */
 export function ExerciseView({ item, seed = 1, onDone, onSkip, label }: { item: ExerciseItem; seed?: number; onDone(r: ExerciseResult): void; onSkip?(): void; label?: string }) {
@@ -22,6 +24,11 @@ export function ExerciseView({ item, seed = 1, onDone, onSkip, label }: { item: 
       </h2>
       {item.kind === 'choice' && <ChoiceExercise item={item} onDone={onDone} onSkip={onSkip} />}
       {item.kind === 'build' && <SentenceExercise item={item} seed={seed} onDone={onDone} />}
+      {item.kind === 'speak' && (
+        <Suspense fallback={<div aria-busy="true" className="h-40 animate-pulse rounded-xl bg-surface-2" />}>
+          <SpeakExercise item={item} onDone={onDone} onSkip={onSkip} />
+        </Suspense>
+      )}
       {item.kind === 'tone' && (
         <Suspense fallback={<div aria-busy="true" className="h-40 animate-pulse rounded-xl bg-surface-2" />}>
           <ToneExercise item={item} onDone={onDone} onSkip={onSkip} />

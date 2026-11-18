@@ -20,7 +20,9 @@ export type ExerciseItem =
       explanation: string;
     }
   | { kind: 'build'; key: string; prompt: string; sentence: SentenceBank }
-  | { kind: 'tone'; key: string; prompt: string; tone: ToneId; word: string };
+  | { kind: 'tone'; key: string; prompt: string; tone: ToneId; word: string }
+  /** nói lại câu (A3): `text` là câu chuẩn cần đọc (đã đổi theo miền) */
+  | { kind: 'speak'; key: string; prompt: string; text: string; translation: string };
 
 /** Kết quả một bài, mọi dạng bài trả cùng hình dạng */
 export interface ExerciseResult {
