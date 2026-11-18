@@ -73,7 +73,12 @@ test.describe('GĐ1 Lộ trình', () => {
     await assertMobileLayout(page);
 
     // Hôm sau: chuỗi vẫn giữ (hôm nay chưa học vẫn tính tới hôm qua), thẻ ôn đến hạn
-    await page.clock.install({ time: new Date(Date.now() + 26 * 3600_000) });
+    // 23:59 ngày mai (giờ máy): vẫn là “hôm sau” và thẻ tạo hôm nay (hạn +1 ngày) đã đến hạn. Trước đây +26 giờ
+    // => chạy sau 22:00 thì nhảy sang ngày kia, chuỗi về 0 (test trượt theo giờ chạy)
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    tomorrow.setHours(23, 59, 0, 0);
+    await page.clock.install({ time: tomorrow });
     await page.goto('/');
     await expect(page.getByTestId('streak')).toHaveText(/🔥 1/);
     const reviewLink = page.getByRole('link', { name: /Ôn hôm nay \((\d+)\)/ });
