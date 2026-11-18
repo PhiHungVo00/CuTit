@@ -20,6 +20,30 @@ import { GatewayRequestError, gatewayBaseUrl, gatewayStorage, type KeyValue } fr
 
 export const AUTH_STORAGE_KEY = 'becutit.auth';
 
+const localStorageKV: KeyValue = {
+  get: async (k) => {
+    try {
+      return globalThis.localStorage?.getItem(k) ?? null;
+    } catch {
+      return null;
+    }
+  },
+  set: async (k, v) => {
+    try {
+      globalThis.localStorage?.setItem(k, v);
+    } catch {
+      /* chế độ riêng tư: chỉ giữ trong phiên */
+    }
+  },
+  remove: async (k) => {
+    try {
+      globalThis.localStorage?.removeItem(k);
+    } catch {
+      /* bỏ qua */
+    }
+  }
+};
+
 interface StoredAuth {
   userId: string;
   refreshToken: string;
@@ -58,7 +82,7 @@ export interface SessionOptions {
 const EARLY_MS = 30_000;
 
 export function createAuthSession(opts: SessionOptions = {}): AuthSession {
-  const storage = () => opts.storage ?? gatewayStorage();
+  const storage = () => opts.storage ?? gatewayStorage() ?? localStorageKV;
   const baseUrl = opts.baseUrl ?? gatewayBaseUrl;
   const now = opts.now ?? Date.now;
   const listeners = new Set<(e: UserChange) => void>();

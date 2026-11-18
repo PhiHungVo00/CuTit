@@ -86,32 +86,9 @@ export function gatewayBaseUrl(): string {
   return config.baseUrl;
 }
 
-const localStorageKV: KeyValue = {
-  get: async (k) => {
-    try {
-      return globalThis.localStorage?.getItem(k) ?? null;
-    } catch {
-      return null;
-    }
-  },
-  set: async (k, v) => {
-    try {
-      globalThis.localStorage?.setItem(k, v);
-    } catch {
-      /* chế độ riêng tư: chỉ giữ trong phiên */
-    }
-  },
-  remove: async (k) => {
-    try {
-      globalThis.localStorage?.removeItem(k);
-    } catch {
-      /* bỏ qua */
-    }
-  }
-};
-
-export function gatewayStorage(): KeyValue {
-  return config.storage ?? localStorageKV;
+/** Kho phiên do Host cấp (undefined => phiên dùng localStorage) */
+export function gatewayStorage(): KeyValue | undefined {
+  return config.storage;
 }
 
 export interface RequestOptions<S extends ZodTypeAny> {
