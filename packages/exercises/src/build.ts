@@ -10,6 +10,9 @@ import {
   HONORIFIC_PAIRS_20,
   PitchReferenceFlyweight,
   findSentence,
+  findSituation,
+  findStory,
+  situationAnswer,
   findWord,
   localizeText,
   sentenceText,
@@ -80,6 +83,31 @@ function pronounDistractors(answer: string, listener: string): string[] {
   return HONORIFIC_PAIRS_20.map((x) => x.speaker).filter((sp) => !banned.has(norm(sp)));
 }
 
+/** Một bên của cặp xưng hô A6 hiển thị ngắn: “thầy/cô” => “thầy”, “quý vị / các cụ” => “quý vị” */
+const firstTerm = (s: string) => s.split('/')[0].trim();
+const pairLabel = (speaker: string, listener: string) => `${firstTerm(speaker)} – ${firstTerm(listener)}`;
+
+/**
+ * Nhiễu cho bài xưng hô ngữ cảnh: lấy từ 20 cặp A6 nhưng bỏ cặp có thể chấp nhận được, để không chấm sai câu đúng:
+ * cùng cách xưng hoặc cùng cách gọi với đáp án, cặp xưng “tôi” (trung tính), “con” khi đáp án là “cháu” (nhiều nơi
+ * cháu xưng con với ông bà), và cặp bạn bè còn lại (mình – bạn ↔ tớ – cậu).
+ */
+function situationDistractors(speaker: string, listener: string): string[] {
+  const peers = new Set(['mình – bạn', 'tớ – cậu']);
+  const answer = pairLabel(speaker, listener);
+  const out = new Set<string>();
+  for (const p of HONORIFIC_PAIRS_20) {
+    const sp = norm(firstTerm(p.speaker));
+    const li = norm(firstTerm(p.listener));
+    const label = pairLabel(p.speaker, p.listener);
+    if (sp === norm(speaker) || li === norm(listener) || sp === 'tôi') continue;
+    if (norm(speaker) === 'cháu' && sp === 'con') continue;
+    if (peers.has(answer) && peers.has(label)) continue;
+    out.add(label);
+  }
+  return [...out];
+}
+
 /** Khóa ổn định của một ref: dùng cho thẻ ôn, “lỗi gần đây”, câu sai quay lại */
 export function refKey(ref: ExerciseRef): string {
   switch (ref.type) {
@@ -99,6 +127,10 @@ export function refKey(ref: ExerciseRef): string {
       return `dialect:${ref.entry}:${ref.region}`;
     case 'speak':
       return `speak:${ref.sentence}`;
+    case 'situation':
+      return `situation:${ref.situation}`;
+    case 'story':
+      return `story:${ref.story}`;
   }
 }
 
@@ -123,6 +155,10 @@ export function parseRefKey(key: string): ExerciseRef | null {
       return b === 'central' || b === 'south' ? { type, entry: a, region: b } : null;
     case 'speak':
       return { type, sentence: a };
+    case 'situation':
+      return { type, situation: a };
+    case 'story':
+      return { type, story: a };
     default:
       return null;
   }
@@ -231,6 +267,40 @@ export function buildItem(ref: ExerciseRef, seed: number, choices = 4): Exercise
       const s = findSentence(ref.sentence);
       if (!s) throw new Error(`Không có câu ${ref.sentence}`);
       return { kind: 'speak', key, prompt: t('qSpeak'), text: loc(sentenceText(s)), translation: s.translation };
+    }
+    case 'situation': {
+      const s = findSituation(ref.situation);
+      if (!s) throw new Error(`Không có tình huống ${ref.situation}`);
+      const a = situationAnswer(s);
+      const answer = pairLabel(a.speaker, a.listener);
+      const en = lang() === 'en';
+      return {
+        kind: 'choice',
+        key,
+        variant: 'situation',
+        prompt: t('qSituation'),
+        display: s.scene,
+        hint: en ? s.sceneEn : undefined,
+        options: options(answer, situationDistractors(a.speaker, a.listener), choices, r),
+        answer,
+        explanation: en ? a.explanationEn : a.explanation
+      };
+    }
+    case 'story': {
+      const s = findStory(ref.story);
+      if (!s) throw new Error(`Không có truyện ${ref.story}`);
+      return {
+        kind: 'story',
+        key,
+        prompt: t('qStory'),
+        title: loc(s.title),
+        titleEn: s.titleEn,
+        lines: s.lines.map((l) => ({ speaker: l.speaker, text: loc(l.text), en: l.en })),
+        questions: s.questions.map((q) => {
+          const answer = loc(q.answer);
+          return { question: loc(q.q), questionEn: q.qEn, answer, options: options(answer, q.distractors.map(loc), q.distractors.length + 1, r) };
+        })
+      };
     }
   }
 }

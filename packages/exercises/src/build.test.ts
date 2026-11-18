@@ -58,6 +58,57 @@ describe('buildItem', () => {
     }
   });
 
+  it('xưng hô ngữ cảnh (A6): cảnh tiếng Việt, đáp án “xưng – gọi” do luật A6 suy ra, nhiễu không chấp nhận được', () => {
+    const item = buildItem({ type: 'situation', situation: 'hs4' }, 3);
+    if (item.kind !== 'choice') throw new Error();
+    expect(item.variant).toBe('situation');
+    expect(item.display).toContain('55 tuổi');
+    expect(item.answer).toBe('cháu – bác');
+    expect(item.hint).toBeUndefined();
+    expect(item.explanation).toContain('cháu');
+    for (const id of ['hs1', 'hs2', 'hs3', 'hs4', 'hs5', 'hs6']) {
+      for (const seed of [1, 2, 3, 42, 99]) {
+        const it = buildItem({ type: 'situation', situation: id }, seed);
+        if (it.kind !== 'choice') throw new Error();
+        const [sp, li] = it.answer.split(' – ');
+        for (const o of it.options.filter((x) => x !== it.answer)) {
+          const [osp, oli] = o.split(' – ');
+          // không cùng cách xưng, không cùng cách gọi; không lấy “tôi”; mình–bạn và tớ–cậu không làm nhiễu của nhau
+          expect(osp, `${id}: ${o}`).not.toBe(sp);
+          expect(oli, `${id}: ${o}`).not.toBe(li);
+          expect(osp).not.toBe('tôi');
+          expect(o).not.toMatch(/\//);
+          if (it.answer === 'mình – bạn') expect(o).not.toBe('tớ – cậu');
+          if (sp === 'cháu') expect(osp).not.toBe('con');
+        }
+      }
+    }
+    learnerStore.getState().setPreferences({ uiLanguage: 'en' });
+    const en = buildItem({ type: 'situation', situation: 'hs4' }, 3);
+    expect(en.kind === 'choice' && en.hint).toMatch(/55-year-old man/);
+    expect(en.kind === 'choice' && en.display).toContain('55 tuổi');
+    expect(en.prompt).toMatch(/[A-Za-z]/);
+  });
+
+  it('truyện: câu và câu hỏi đổi theo miền (A7), lựa chọn chứa đáp án, xác định theo seed', () => {
+    const north = buildItem({ type: 'story', story: 'st2' }, 5);
+    if (north.kind !== 'story') throw new Error();
+    expect(north.title).toBe('Đi chợ mua dứa');
+    expect(north.lines[0].text).toBe('Chị ơi, dứa bao nhiêu tiền một quả?');
+    expect(north.questions).toHaveLength(3);
+    for (const q of north.questions) {
+      expect(q.options.filter((o) => o === q.answer)).toHaveLength(1);
+      expect(q.options).toHaveLength(3);
+    }
+    expect(buildItem({ type: 'story', story: 'st2' }, 5)).toEqual(north);
+    learnerStore.getState().setPreferences({ dialect: 'south' });
+    const south = buildItem({ type: 'story', story: 'st2' }, 5);
+    if (south.kind !== 'story') throw new Error();
+    expect(south.lines[0].text).toBe('Chị ơi, thơm bao nhiêu tiền một trái?');
+    expect(south.questions[0].answer).toBe('thơm');
+    expect(south.questions[1].question).toBe('Lúc đầu, một trái giá bao nhiêu?');
+  });
+
   it('ref lạ => ném lỗi (test toàn vẹn bắt được)', () => {
     expect(() => buildItem({ type: 'meaning', word: 'w999', dir: 'vi-en' }, 1)).toThrow();
   });
