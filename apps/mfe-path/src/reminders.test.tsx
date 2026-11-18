@@ -3,7 +3,7 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { LocalReminders, ReminderItem } from '@vietlearning/native';
 import { dayKey, learnerStore } from '@vietlearning/state';
 import { progressStore } from '@vietlearning/state/progress';
-import { enableReminders, reminderTexts, syncReminders } from './reminders';
+import { enableReminders, reminderTexts, syncReminders, watchGoalForReminders } from './reminders';
 import { GoalPanel } from './GoalPanel';
 
 function fake(granted = true) {
@@ -54,6 +54,20 @@ describe('nhắc học cục bộ', () => {
     expect(r.scheduled.at(-1)).toHaveLength(6);
     expect(dayKey(r.scheduled.at(-1)![0].at)).toBe('2026-11-19');
     expect(new Set(r.scheduled.at(-1)!.map((x) => x.id)).size).toBe(6);
+  });
+
+  it('vừa đạt mục tiêu (bộ đếm giờ học) => tự bỏ mốc hôm nay, không cần mở lại lộ trình', async () => {
+    const r = fake();
+    await enableReminders(r, NOW);
+    const stop = watchGoalForReminders(r, () => NOW);
+    learnerStore.getState().addStudyTime(5 * 60, NOW);
+    expect(r.scheduled).toHaveLength(1);
+    learnerStore.getState().addStudyTime(5 * 60, NOW);
+    await vi.waitFor(() => expect(r.scheduled).toHaveLength(2));
+    expect(r.scheduled.at(-1)).toHaveLength(6);
+    learnerStore.getState().addStudyTime(60, NOW);
+    expect(r.scheduled).toHaveLength(2);
+    stop();
   });
 
   it('tắt nhắc => hủy hết; web không hỗ trợ => ẩn tùy chọn nhắc', async () => {
