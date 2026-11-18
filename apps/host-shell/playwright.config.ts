@@ -7,7 +7,8 @@ import { defineConfig, devices } from '@playwright/test';
  *
  * Chưa có WebKit (iPhone/Safari): cần `npx playwright install webkit` (tải ~70MB) hoặc máy Mac.
  */
-const PORT = 4173;
+// Cổng đổi được qua E2E_PORT để hai worktree chạy e2e song song không dùng nhầm server của nhau
+const PORT = Number(process.env.E2E_PORT) || 4173;
 
 export default defineConfig({
   testDir: './e2e',

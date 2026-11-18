@@ -1,7 +1,7 @@
 import { Suspense, useEffect, useState } from 'react';
 import { NavLink, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import { bootstrapNative } from './native/bootstrap';
-import { SCREENS, prefetchScreen, screenId } from './routes';
+import { EXPLORE_ROUTE, PATH_ROUTES, REVIEW_ROUTE, SCREENS, prefetchScreen, screenId } from './routes';
 import { t as tShell, useT } from './i18n';
 import { useUiLanguage } from '@vietlearning/state';
 import { Home } from './screens/Home';
@@ -72,7 +72,7 @@ export function App() {
           <Suspense fallback={<ScreenLoading />}>
             <Routes>
               <Route path="/" element={<Home />} />
-              {SCREENS.map(({ path, Component }) => (
+              {[...SCREENS, ...PATH_ROUTES].map(({ path, Component }) => (
                 <Route key={path} path={path} element={<Component />} />
               ))}
               <Route path="*" element={<Home />} />
@@ -86,7 +86,13 @@ export function App() {
           <span className="tab-icon" aria-hidden="true">
             🏠
           </span>
-          <span>{t('home')}</span>
+          <span>{t('learn')}</span>
+        </NavLink>
+        <NavLink to={REVIEW_ROUTE.path} onPointerDown={() => prefetchScreen(REVIEW_ROUTE)} onFocus={() => prefetchScreen(REVIEW_ROUTE)}>
+          <span className="tab-icon" aria-hidden="true">
+            🔁
+          </span>
+          <span>{t('review')}</span>
         </NavLink>
         {tabs.map((s) => (
           <NavLink
@@ -101,6 +107,12 @@ export function App() {
             <span>{t(`${screenId(s)}.short`)}</span>
           </NavLink>
         ))}
+        <NavLink to={EXPLORE_ROUTE.path} onPointerDown={() => prefetchScreen(EXPLORE_ROUTE)} onFocus={() => prefetchScreen(EXPLORE_ROUTE)}>
+          <span className="tab-icon" aria-hidden="true">
+            🧭
+          </span>
+          <span>{t('explore')}</span>
+        </NavLink>
       </nav>
     </div>
   );
