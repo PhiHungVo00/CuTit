@@ -32,6 +32,9 @@ export const chatRoutes: FastifyPluginAsync<RouteDeps> = async (server, { pipeli
     const scenario = body.scenarioId ? ROLEPLAY_SCENARIOS.find((s) => s.id === body.scenarioId) : undefined;
     if (body.scenarioId && !scenario) return reply.status(404).send({ error: 'unknown_scenario' });
 
+    // GĐ3: một lượt hội thoại AI (đơn vị người học hiểu được, báo "hết lượt" rõ ràng); lưu DB theo ngày UTC
+    const turnsUsed = await pipeline.consume(request, 'turn', 1);
+    const turnsLeft = Math.max(0, pipeline.limit('turn') - turnsUsed);
     // Trừ quota theo ước lượng TRƯỚC khi gọi AI (chặn sớm khi hết hạn mức); sau đó bù phần chênh theo token thật
     const historyChars = body.history.reduce((a, h) => a + h.text.length, 0);
     const estimatedTokens = Math.ceil(((body.userText?.length ?? 200) + historyChars) / 3) + 300;
@@ -53,7 +56,7 @@ export const chatRoutes: FastifyPluginAsync<RouteDeps> = async (server, { pipeli
         explanationLanguage: body.explanationLanguage,
         mode: body.mode
       });
-      if (turn.tokens > estimatedTokens) await pipeline.consume(request, 'llm', turn.tokens - estimatedTokens).catch(() => undefined);
+      if (turn.tokens > estimatedTokens) await pipeline.addUsage(request, 'llm', turn.tokens - estimatedTokens).catch(() => undefined);
       // GĐ3: KHÔNG tổng hợp giọng ở đây — chờ TTS làm chậm cả lượt (dưới watchdog 15 s của client) và đốt hạn mức
       // TTS cho cả chat gõ. Màn gọi thoại tự gọi /v1/speech/synthesize sau `done`, lỗi thì dùng TTS của máy.
       const audioUrl: string | undefined = undefined;
@@ -91,7 +94,7 @@ export const chatRoutes: FastifyPluginAsync<RouteDeps> = async (server, { pipeli
       }
       if (turn.correction) yield sse({ type: 'correction', correction: turn.correction });
       if (turn.blocks.length) yield sse({ type: 'blocks', blocks: turn.blocks });
-      yield sse({ type: 'done', turnId, reply: turn.reply, audioUrl, completedTasks: turn.completedTasks, mock: turn.mock, newWords: turn.newWords });
+      yield sse({ type: 'done', turnId, reply: turn.reply, audioUrl, completedTasks: turn.completedTasks, mock: turn.mock, newWords: turn.newWords, turnsLeft });
     }
 
     // Không dùng reply.raw/hijack: giữ nguyên header CORS, helmet, rate-limit của Fastify

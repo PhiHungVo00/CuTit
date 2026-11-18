@@ -95,5 +95,25 @@ export type VoiceTurnRequest = z.infer<typeof VoiceTurnRequestSchema>;
 export type VoiceTurnResponse = z.infer<typeof VoiceTurnResponseSchema>;
 export type ChatEvent = z.infer<typeof ChatEventSchema>;
 export type ChatCorrection = z.infer<typeof ChatCorrectionSchema>;
+const QuotaCounterSchema = z.object({ used: z.number().int().min(0), limit: z.number().int().min(0) });
+
+/** GĐ3: GET /v1/quota — hạn mức AI hôm nay (ngày UTC của server; resetAt = nửa đêm UTC kế tiếp) */
+export const QuotaStatusSchema = z.object({
+  day: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  resetAt: z.string().datetime(),
+  turns: QuotaCounterSchema,
+  llmTokens: QuotaCounterSchema,
+  sttSeconds: QuotaCounterSchema
+});
+
+/** Thân lỗi 429 khi hết hạn mức ngày (rate-limit theo phút dùng mã khác) */
+export const QuotaExceededSchema = z.object({
+  error: z.literal('quota_exceeded'),
+  capability: z.enum(['turn', 'llm', 'stt', 'tts', 'vision']),
+  resetAt: z.string().datetime(),
+  message: z.string().optional()
+});
+
+export type QuotaStatus = z.infer<typeof QuotaStatusSchema>;
 export type NewWord = z.infer<typeof NewWordSchema>;
 export type ChatHistoryItem = z.infer<typeof ChatHistoryItemSchema>;
