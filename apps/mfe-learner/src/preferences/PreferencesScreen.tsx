@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { getDeviceSpeech } from '@vietlearning/native';
 import { learnerStore, useLearner, type CorrectionLevel, type Dialect, type Preferences, type UiLanguage } from '@vietlearning/state';
+import { progressStore } from '@vietlearning/state/progress';
 import { ChoiceGroup, ScreenFrame, card, linkBtn, secondaryBtn } from '../common/ui';
 import { useT } from '../i18n';
 
@@ -206,6 +207,8 @@ export function PreferencesScreen() {
               className="min-h-12 w-full rounded-xl bg-danger px-4 font-extrabold text-white"
               onClick={() => {
                 learnerStore.getState().reset();
+                // Tiến độ lộ trình (XP, bài đã xong, đóng băng, nhắc học) lưu ở khóa riêng: xóa cùng lúc
+                progressStore.getState().resetProgress();
                 setConfirmReset(false);
                 setSync('idle');
               }}

@@ -10,7 +10,7 @@ import { lazy, type ComponentType, type LazyExoticComponent } from 'react';
  */
 type Loader = () => Promise<{ default: ComponentType }>;
 
-/** Nhãn/mô tả lấy từ từ điển Shell theo khóa `<đường dẫn>.label|short|desc` (src/i18n.ts) */
+/** Nhãn ngắn (thanh tab) theo khóa `<đường dẫn>.short` (src/i18n.ts); tên + mô tả ở src/exploreI18n.ts (màn Khám phá) */
 export type ScreenId = 'xung-ho' | 'van-hoa' | 'hoi-thoai' | 'nhap-vai' | 'phat-am' | 'phuong-ngu' | 'luyen-tap' | 'ghep-cau' | 'camera' | 'ho-so' | 'tuy-chinh' | 'bat-dau';
 
 export const screenId = (r: ScreenRoute) => r.path.slice(1) as ScreenId;
@@ -51,7 +51,7 @@ export const SCREENS: ScreenRoute[] = [
     icon: '💬',
     owner: 'mfe-conversation',
     ready: true,
-    inTabBar: true,
+    inTabBar: false,
     load: () => import('./screens/ChatRoute')
   }),
   screen({
@@ -83,7 +83,7 @@ export const SCREENS: ScreenRoute[] = [
     icon: '🧩',
     owner: 'mfe-practice',
     ready: true,
-    inTabBar: true,
+    inTabBar: false,
     load: () => import('./screens/DrillRoute')
   }),
   screen({
@@ -128,10 +128,30 @@ export const SCREENS: ScreenRoute[] = [
   })
 ];
 
+/**
+ * Màn hình của lộ trình (GĐ1, mfe-path) + Khám phá. Tách khỏi SCREENS vì có tham số đường dẫn và không
+ * nằm trong danh sách 12 công cụ ở màn Khám phá.
+ */
+export interface PathRoute {
+  path: string;
+  load: Loader;
+  Component: LazyExoticComponent<ComponentType>;
+}
+const pathRoute = (path: string, load: Loader): PathRoute => ({ path, load, Component: lazy(load) });
+
+export const REVIEW_ROUTE = pathRoute('/on-tap', () => import('./screens/ReviewRoute'));
+export const EXPLORE_ROUTE = pathRoute('/kham-pha', () => import('./screens/Explore'));
+export const PATH_ROUTES: PathRoute[] = [
+  pathRoute('/bai-hoc/:lessonId', () => import('./screens/LessonRoute')),
+  pathRoute('/kiem-tra/:unitId', () => import('./screens/TestOutRoute')),
+  REVIEW_ROUTE,
+  EXPLORE_ROUTE
+];
+
 const prefetched = new Set<string>();
 
 /** Tải trước chunk khi người dùng vừa chạm vào link (trước khi nhả tay ~100ms). */
-export function prefetchScreen(route: ScreenRoute): void {
+export function prefetchScreen(route: Pick<ScreenRoute, 'path' | 'load'>): void {
   if (prefetched.has(route.path)) return;
   prefetched.add(route.path);
   route.load().catch(() => prefetched.delete(route.path));
