@@ -9,11 +9,13 @@ import {
 import type { RouteDeps } from '../app.js';
 import { parseOr400, respond } from '../lib/validate.js';
 import { readAudioUpload } from '../lib/audioUpload.js';
-import { transcribe } from '../services/ai/tasks.js';
+import { decodeWavPcm } from '@vietlearning/audio-dsp';
+import { GatewayError } from '../pipeline/RequestPipeline.js';
+import { assessPronunciation } from '../services/assessment/assess.js';
 
 const MB = 1024 * 1024;
 
-export const speechRoutes: FastifyPluginAsync<RouteDeps> = async (server, { pipeline, ttsCache, config, llm }) => {
+export const speechRoutes: FastifyPluginAsync<RouteDeps> = async (server, { pipeline, ttsCache, config, stt }) => {
   const audioLimit = { bodyLimit: config.AUDIO_BODY_LIMIT_MB * MB };
 
   // POST /v1/speech/transcribe (multipart: file "audio"). Có AI => chép lời thật (không có mốc thời gian từng từ);
@@ -21,8 +23,8 @@ export const speechRoutes: FastifyPluginAsync<RouteDeps> = async (server, { pipe
   server.post('/speech/transcribe', audioLimit, async (request) => {
     const upload = await readAudioUpload(request);
     await pipeline.consume(request, 'stt', Math.max(1, Math.ceil(upload.durationSec)));
-    if (llm) {
-      const { text, confidence } = await transcribe(llm, upload);
+    if (stt) {
+      const { text, confidence } = await stt.transcribe(upload);
       return respond(TranscribeResponseSchema, { text, confidence, words: [], mock: false });
     }
     return respond(TranscribeResponseSchema, {
@@ -63,15 +65,18 @@ export const speechRoutes: FastifyPluginAsync<RouteDeps> = async (server, { pipe
     ])
   );
 
-  // POST /v1/speech/assess (A3 + A2) (multipart: file "audio" + expectedText/targetTone) — chấm điểm còn MOCK
+  // POST /v1/speech/assess (A3 + A2) — multipart: file "audio" + expectedText (bắt buộc).
+  // STT chép lời KHÔNG được biết câu mẫu (tránh "nghe theo đáp án"); so khớp âm tiết + A2 làm ở Gateway.
   server.post('/speech/assess', audioLimit, async (request) => {
     const upload = await readAudioUpload(request);
+    const expectedText = upload.fields.expectedText;
+    if (!expectedText) throw new GatewayError(400, 'missing_expected_text', 'Thiếu trường expectedText (câu cần đọc)');
     await pipeline.consume(request, 'stt', Math.max(1, Math.ceil(upload.durationSec)));
-    return respond(AssessResponseSchema, {
-      transcript: 'Xin chào',
-      diff: [],
-      score: 92,
-      hints: ['Phát âm thanh huyền ở từ "chào" rất chuẩn xác!']
-    });
+    const wav = upload.mimetype.includes('wav') || upload.mimetype === 'audio/wave' ? decodeWavPcm(new Uint8Array(upload.bytes.buffer, upload.bytes.byteOffset, upload.bytes.byteLength)) : null;
+    const transcript = stt ? (await stt.transcribe({ bytes: upload.bytes, mimetype: upload.mimetype })).text : null;
+    return respond(
+      AssessResponseSchema,
+      assessPronunciation({ expectedText, transcript, pcm: wav?.pcm ?? null, sampleRate: wav?.sampleRate ?? 16000 })
+    );
   });
 };
