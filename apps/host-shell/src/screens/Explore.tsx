@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { SCREENS, prefetchScreen, screenId } from '../routes';
+import { SCREENS, TONE_GYM_ROUTE, prefetchScreen, screenId } from '../routes';
 import { useT as useShellT } from '../i18n';
 import { useT } from '../exploreI18n';
 
@@ -11,6 +11,19 @@ export default function Explore() {
     <div className="home">
       <h1>{t('exploreTitle')}</h1>
       <p className="lead">{t('exploreLead')}</p>
+      <Link
+        to="/phong-thanh"
+        onPointerDown={() => prefetchScreen(TONE_GYM_ROUTE)}
+        className="mb-3 flex min-h-14 items-center gap-3 rounded-2xl border border-line-strong bg-accent-soft p-3 text-ink no-underline"
+      >
+        <span aria-hidden="true" className="text-2xl">
+          🎯
+        </span>
+        <span>
+          <strong className="block text-heading">{t('gym.label')}</strong>
+          <span className="text-sm text-ink-soft">{t('gym.desc')}</span>
+        </span>
+      </Link>
       <ul className="screen-grid">
         {SCREENS.map((s) => (
           <li key={s.path}>

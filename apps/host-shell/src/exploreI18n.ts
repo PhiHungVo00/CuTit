@@ -5,6 +5,8 @@ export const { useT } = defineMessages(
   {
     exploreTitle: 'Khám phá',
     exploreLead: 'Tất cả công cụ luyện tập, mở tự do bất cứ lúc nào.',
+    'gym.label': 'Phòng tập thanh điệu',
+    'gym.desc': 'Nghe phân biệt ma/má/mà…, bắt thanh tốc độ, xem tiến bộ từng thanh',
     'xung-ho.label': 'Ma trận xưng hô',
     'xung-ho.desc': 'M3 · Đại từ xưng hô theo tuổi, quan hệ và bối cảnh (A6)',
     'van-hoa.label': 'Cẩm nang văn hóa',
@@ -33,6 +35,8 @@ export const { useT } = defineMessages(
   {
     exploreTitle: 'Explore',
     exploreLead: 'Every practice tool, open any time.',
+    'gym.label': 'Tone gym',
+    'gym.desc': 'Tell ma/má/mà… apart, catch tones at speed, track each tone',
     'xung-ho.label': 'Pronoun matrix',
     'xung-ho.desc': 'M3 · How to address people by age, relationship and setting (A6)',
     'van-hoa.label': 'Culture guide',
