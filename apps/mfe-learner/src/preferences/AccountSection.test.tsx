@@ -1,11 +1,14 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import { learnerStore } from '@vietlearning/state';
+import { familyStore } from '@vietlearning/state/family';
 import { AccountSection, type AccountDeps } from './AccountSection';
 
 afterEach(() => {
   cleanup();
   learnerStore.getState().reset();
+  familyStore.getState().resetFamily();
 });
 
 function fakes(overrides: Partial<{ info: unknown; recover: () => Promise<string>; deleteAccount: () => Promise<void> }> = {}) {
@@ -37,13 +40,13 @@ function fakes(overrides: Partial<{ info: unknown; recover: () => Promise<string
 
 describe('AccountSection (M12)', () => {
   it('hiện mã khôi phục đã lưu trên máy', async () => {
-    render(<AccountSection deps={fakes().deps} />);
+    render(<AccountSection deps={fakes().deps} />, { wrapper: MemoryRouter });
     expect(await screen.findByTestId('recovery-code')).toHaveProperty('textContent', 'ABCD-EFGH-JKMN-PQRS');
   });
 
   it('khôi phục: gọi recover BÊN TRONG pullAndReplace rồi báo số thẻ', async () => {
     const f = fakes();
-    render(<AccountSection deps={f.deps} />);
+    render(<AccountSection deps={f.deps} />, { wrapper: MemoryRouter });
     fireEvent.change(await screen.findByPlaceholderText('XXXX-XXXX-XXXX-XXXX'), { target: { value: 'wxyz-wxyz-wxyz-wxyz' } });
     fireEvent.submit(screen.getByPlaceholderText('XXXX-XXXX-XXXX-XXXX').closest('form')!);
     await waitFor(() => expect(f.calls).toEqual(['recover', 'pull']));
@@ -53,7 +56,7 @@ describe('AccountSection (M12)', () => {
 
   it('mã sai => báo lỗi, không thay dữ liệu', async () => {
     const f = fakes({ recover: async () => Promise.reject(Object.assign(new Error('x'), { kind: 'unauthorized', code: 'invalid_recovery_code' })) });
-    render(<AccountSection deps={f.deps} />);
+    render(<AccountSection deps={f.deps} />, { wrapper: MemoryRouter });
     fireEvent.change(await screen.findByPlaceholderText('XXXX-XXXX-XXXX-XXXX'), { target: { value: '0000000000000000' } });
     fireEvent.submit(screen.getByPlaceholderText('XXXX-XXXX-XXXX-XXXX').closest('form')!);
     const alert = await screen.findByRole('alert');
@@ -63,7 +66,7 @@ describe('AccountSection (M12)', () => {
 
   it('xóa tài khoản: xác nhận 2 bước, DELETE chạy bên trong resetLocal', async () => {
     const f = fakes();
-    render(<AccountSection deps={f.deps} />);
+    render(<AccountSection deps={f.deps} />, { wrapper: MemoryRouter });
     fireEvent.click(await screen.findByRole('button', { name: /Xóa tài khoản và dữ liệu|Delete account and data/ }));
     fireEvent.click(screen.getByRole('button', { name: /Xóa vĩnh viễn|Delete permanently/ }));
     await waitFor(() => expect(f.calls).toEqual(['delete', 'reset']));
@@ -71,10 +74,28 @@ describe('AccountSection (M12)', () => {
 
   it('xóa khi mất mạng => báo cần mạng, không xóa dữ liệu máy', async () => {
     const f = fakes({ deleteAccount: async () => Promise.reject(Object.assign(new Error('offline'), { kind: 'offline' })) });
-    render(<AccountSection deps={f.deps} />);
+    render(<AccountSection deps={f.deps} />, { wrapper: MemoryRouter });
     fireEvent.click(await screen.findByRole('button', { name: /Xóa tài khoản và dữ liệu|Delete account and data/ }));
     fireEvent.click(screen.getByRole('button', { name: /Xóa vĩnh viễn|Delete permanently/ }));
     expect(await screen.findByText(/Cần kết nối mạng|needs an internet/)).toBeTruthy();
     expect(f.calls).not.toContain('reset');
+  });
+
+  it('GĐ4b: hồ sơ trẻ không thấy mã khôi phục / khôi phục / xóa tài khoản, chỉ có lối sang mục Gia đình', async () => {
+    familyStore.getState().setAccount({ mode: 'child', mediaConsent: false, activeChildId: 'c1' });
+    render(<AccountSection deps={fakes().deps} />, { wrapper: MemoryRouter });
+    expect(screen.getByTestId('family-link').getAttribute('href')).toBe('/tuy-chinh?muc=gia-dinh');
+    expect(screen.queryByTestId('recovery-code')).toBeNull();
+    expect(screen.queryByText(/Xóa tài khoản|Delete/i)).toBeNull();
+  });
+
+  it('GĐ4b: xóa tài khoản phụ huynh cảnh báo số hồ sơ trẻ bị xóa theo', async () => {
+    familyStore.getState().setAccount({ mode: 'adult', mediaConsent: true, childCount: 2 });
+    const f = fakes();
+    render(<AccountSection deps={f.deps} />, { wrapper: MemoryRouter });
+    await screen.findByTestId('recovery-code');
+    const ask = screen.getAllByRole('button').find((b) => /xóa|delete/i.test(b.textContent ?? ''))!;
+    fireEvent.click(ask);
+    expect(await screen.findByText(/2 (hồ sơ trẻ|child)/)).toBeTruthy();
   });
 });

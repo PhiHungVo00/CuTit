@@ -13,10 +13,14 @@ const USER_CACHE_MS = 60_000;
  * Mỗi mắt xích có thể dừng chuỗi bằng cách gửi phản hồi lỗi.
  */
 
+export type AccountType = 'adult' | 'child';
+
 export interface Principal {
   /** sub của JWT, hoặc "anon:<ip>" khi dev cho phép khách ẩn danh */
   id: string;
   anonymous: boolean;
+  /** GĐ4b (D4): loại tài khoản do SERVER quyết định (users.account_type); ẩn danh = 'adult'. Xem accountPolicy.ts */
+  accountType: AccountType;
 }
 
 declare module 'fastify' {
@@ -40,8 +44,10 @@ export function requireUserId(request: FastifyRequest): string {
 
 export class RequestPipeline {
   private readonly limits: Record<Capability, number>;
+  private readonly childLimits: Record<Capability, number>;
 
-  private knownUsers = new Map<string, number>();
+  /** id -> { hạn cache, loại tài khoản } (loại tài khoản không đổi trong vòng đời tài khoản) */
+  private knownUsers = new Map<string, { until: number; accountType: AccountType }>();
 
   constructor(private config: GatewayConfig, private quota: QuotaStore, private db: DbProvider) {
     this.limits = {
@@ -50,6 +56,14 @@ export class RequestPipeline {
       llm: config.MAX_LLM_TOKENS_PER_DAY,
       vision: 200,
       turn: config.MAX_CHAT_TURNS_PER_DAY
+    };
+    const pct = (n: number) => Math.max(1, Math.floor((n * config.CHILD_AI_LIMIT_PERCENT) / 100));
+    this.childLimits = {
+      tts: pct(this.limits.tts),
+      stt: pct(this.limits.stt),
+      llm: pct(this.limits.llm),
+      vision: pct(this.limits.vision),
+      turn: Math.min(config.CHILD_MAX_CHAT_TURNS_PER_DAY, this.limits.turn)
     };
   }
 
@@ -69,11 +83,12 @@ export class RequestPipeline {
         return;
       }
       // Tài khoản đã xóa (DELETE /v1/me) => access token còn hạn cũng không dùng được nữa
-      if (!(await this.userExists(sub))) {
+      const accountType = await this.lookupUser(sub);
+      if (!accountType) {
         reply.status(401).send({ error: 'account_deleted' });
         return;
       }
-      request.principal = { id: sub, anonymous: false };
+      request.principal = { id: sub, anonymous: false, accountType };
       return;
     }
 
@@ -82,21 +97,23 @@ export class RequestPipeline {
       return;
     }
 
-    request.principal = { id: `anon:${request.ip}`, anonymous: true };
+    request.principal = { id: `anon:${request.ip}`, anonymous: true, accountType: 'adult' };
   };
 
-  private async userExists(id: string): Promise<boolean> {
-    const until = this.knownUsers.get(id);
-    if (until && until > Date.now()) return true;
+  /** null = không tồn tại / đã xóa */
+  private async lookupUser(id: string): Promise<AccountType | null> {
+    const hit = this.knownUsers.get(id);
+    if (hit && hit.until > Date.now()) return hit.accountType;
     const db = await this.db.get();
     const [row] = await db
-      .select({ id: schema.users.id })
+      .select({ accountType: schema.users.accountType })
       .from(schema.users)
       .where(and(eq(schema.users.id, id), isNull(schema.users.deletedAt)));
-    if (!row) return false;
+    if (!row) return null;
+    const accountType: AccountType = row.accountType === 'child' ? 'child' : 'adult';
     if (this.knownUsers.size > 50_000) this.knownUsers.clear();
-    this.knownUsers.set(id, Date.now() + USER_CACHE_MS);
-    return true;
+    this.knownUsers.set(id, { until: Date.now() + USER_CACHE_MS, accountType });
+    return accountType;
   }
 
   /** Gọi sau khi xóa tài khoản để token cũ bị từ chối ngay (một instance; nhiều instance: trễ ≤ 60 s) */
@@ -110,7 +127,7 @@ export class RequestPipeline {
    */
   async consume(request: FastifyRequest, capability: Capability, units: number): Promise<number> {
     const id = this.principalId(request);
-    const r = await this.quota.tryConsume(id, capability, units, this.limits[capability]);
+    const r = await this.quota.tryConsume(id, capability, units, this.limitFor(request, capability));
     if (!r.ok) {
       throw new GatewayError(429, 'quota_exceeded', `Đã hết hạn mức ${capability} hôm nay`, { capability, resetAt: quotaResetAt() });
     }
@@ -122,8 +139,14 @@ export class RequestPipeline {
     if (units > 0) await this.quota.add(this.principalId(request), capability, units);
   }
 
+  /** Hạn mức người lớn (mặc định) */
   limit(capability: Capability): number {
     return this.limits[capability];
+  }
+
+  /** Hạn mức theo người gửi request: hồ sơ trẻ thấp hơn (D4) */
+  limitFor(request: FastifyRequest, capability: Capability): number {
+    return request.principal?.accountType === 'child' ? this.childLimits[capability] : this.limits[capability];
   }
 
   async used(request: FastifyRequest, capability: Capability): Promise<number> {

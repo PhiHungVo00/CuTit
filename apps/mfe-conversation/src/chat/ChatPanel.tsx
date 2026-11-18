@@ -5,6 +5,7 @@ import { VoiceConsent } from './VoiceConsent';
 import { AgentBlockView } from './AgentBlockView';
 import type { useChatSession } from './useChatSession';
 import { useVoiceInput } from './useVoiceInput';
+import { useMediaAllowed } from '@vietlearning/state/family';
 import { useT } from '../i18n';
 
 type Session = ReturnType<typeof useChatSession>;
@@ -33,8 +34,11 @@ export function ChatPanel({ session, placeholder, emptyHint, tutorName }: { sess
   // Quyền riêng tư: lần đầu dùng micro, nói rõ giọng nói được gửi đi đâu rồi mới ghi âm
   const voiceConsent = useLearner((s) => s.consents.voice === true);
   const [askVoiceConsent, setAskVoiceConsent] = useState(false);
+  // GĐ4b: hồ sơ trẻ chỉ gửi giọng nói khi phụ huynh đã cho phép (Gateway cũng chặn)
+  const mediaAllowed = useMediaAllowed();
   const onMic = () => {
     if (recording) return void voice.stop();
+    if (!mediaAllowed) return setVoiceNote(t('micNeedsParent'));
     if (!voiceConsent) return setAskVoiceConsent(true);
     void voice.start();
   };
