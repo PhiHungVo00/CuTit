@@ -4,11 +4,13 @@ import { AgentUIBlockType, type AgentUIBlock, type ChatHistoryItem } from '@viet
 import { SystemPromptBuilder } from '@vietlearning/prompts';
 import type { LlmProvider } from '../../providers/llm.js';
 import { mockTutorTurn, type TutorInput, type TutorResult } from './mockTutor.js';
+import { filterNewWords } from './newWords.js';
 
 export interface LiveTutorInput extends TutorInput {
   dialect: 'north' | 'central' | 'south';
   level: number;
   explanationLanguage: 'vi' | 'en';
+  mode: 'chat' | 'call';
 }
 
 export interface TutorTurn extends TutorResult {
@@ -35,9 +37,13 @@ const OUTPUT_SCHEMA = {
         required: ['type', 'title', 'note']
       }
     },
-    completedTasks: { type: 'ARRAY', items: { type: 'INTEGER' } }
+    completedTasks: { type: 'ARRAY', items: { type: 'INTEGER' } },
+    newWords: {
+      type: 'ARRAY',
+      items: { type: 'OBJECT', properties: { vi: { type: 'STRING' }, en: { type: 'STRING' } }, required: ['vi', 'en'] }
+    }
   },
-  required: ['reply', 'correction', 'blocks', 'completedTasks']
+  required: ['reply', 'correction', 'blocks', 'completedTasks', 'newWords']
 } as const;
 
 /** Nguyên tắc 6: không tin đầu ra LLM — xác thực, cắt độ dài, lọc chỉ số nhiệm vụ ngoài phạm vi */
@@ -50,7 +56,8 @@ const LlmTutorOutput = z.object({
   blocks: z
     .array(z.object({ type: AgentUIBlockType, title: z.string().trim().min(1).max(80), note: z.string().trim().max(300) }))
     .catch([]),
-  completedTasks: z.array(z.number().int()).catch([])
+  completedTasks: z.array(z.number().int()).catch([]),
+  newWords: z.array(z.object({ vi: z.string(), en: z.string() })).catch([])
 });
 
 /** Mỗi loại block hiển thị một trường văn bản khác nhau (xem AgentBlockView phía client) */
@@ -90,10 +97,11 @@ export function createTutor(llm: LlmProvider | null, log?: { warn: (o: object, m
         .setCorrectionLevel(input.correctionLevel)
         .setExplanationLanguage(input.explanationLanguage)
         .setScenario(scenario ? { title: scenario.title, location: scenario.location, tasks: scenario.tasks } : null)
+        .setMode(input.mode)
         .build();
 
       try {
-        const { json, tokens } = await llm.generateJson({ system, turns: toTurns(input.history, input.userText), schema: OUTPUT_SCHEMA, maxOutputTokens: 700 });
+        const { json, tokens } = await llm.generateJson({ system, turns: toTurns(input.history, input.userText), schema: OUTPUT_SCHEMA, maxOutputTokens: input.mode === 'call' ? 300 : 700 });
         const out = LlmTutorOutput.parse(json);
         const taskCount = scenario?.tasks.length ?? 0;
         const correction =
@@ -107,6 +115,7 @@ export function createTutor(llm: LlmProvider | null, log?: { warn: (o: object, m
             ? []
             : out.blocks.slice(0, 2).map((b, i) => ({ id: `b-${i}-${b.type}`, type: b.type, title: b.title, payload: { [FIELD[b.type]]: b.note } })),
           completedTasks: [...new Set(out.completedTasks.filter((t) => t >= 0 && t < taskCount))].sort((a, b) => a - b),
+          newWords: filterNewWords(out.reply, out.newWords),
           mock: false,
           tokens
         };
