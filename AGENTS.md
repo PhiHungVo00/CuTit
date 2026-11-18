@@ -9,8 +9,8 @@
 
 Hệ thống được tổ chức theo **Turborepo + PNPM Workspaces**. Mỗi thành viên sở hữu các module độc lập:
 
-- `apps/host-shell` (M3 - FE Lead): Điều phối Module Federation, Agent UI Registry, Event Bus.
-- `apps/gateway` (M1 - BE Lead, M2): Backend Fastify, Adapter STT/TTS/LLM/Vision, Rate Limit & Quota.
+- `apps/host-shell` (M3 - FE Lead): Khung app **ghép MFE lúc build** (route lazy, không Module Federation runtime), thanh tab, PWA, Capacitor 7 (Android), cấu hình Gateway + phiên tài khoản khách + khởi động đồng bộ (`src/account/`).
+- `apps/gateway` (M1 - BE Lead, M2): Backend Fastify, Adapter STT/TTS/LLM/Vision (Gemini), Rate Limit & Quota theo user, **DB qua Drizzle** (`DATABASE_URL` → Postgres; không có → PGlite), migration đánh số trong `apps/gateway/drizzle/`, tài khoản khách + JWT (`/v1/auth/*`), `/v1/sync`, `DELETE /v1/me`.
 - `apps/mfe-conversation` (M3 FE, M1 BE): Màn hình M1 (Chat Canvas), M7 (Roleplay Simulator).
 - `apps/mfe-practice` (M4 FE, M2 BE): Màn hình M5 (Adaptive Drills), M8 (Sentence Builder).
 - `apps/mfe-learner` (M4 FE, M2 BE): Màn hình M9 (Analytics), M11 (Onboarding), M12 (Preferences).
@@ -23,6 +23,16 @@ Hệ thống được tổ chức theo **Turborepo + PNPM Workspaces**. Mỗi th
 - `packages/prompts`: Thư viện Prompt có phiên bản cho Bé Cu Tít (PromptBuilder).
 - `packages/shared`: EventBus (Singleton + Observer), Thuật toán SM-2 (A4).
 - `packages/ui`: Design System, Design Tokens, Thành phần giao diện dùng chung (M3).
+- `packages/api-client`: Client Gateway có kiểu (Zod theo contract, lỗi chuẩn hóa, SSE, gửi lại một lần khi 401); subpath `./session` = phiên tài khoản khách (tạo lười, refresh xoay vòng, mã khôi phục) — import lười.
+- `packages/native`: Cầu nối năng lực thiết bị (TTS native/Web Speech, mở Cài đặt app).
+- `packages/state`: Kho người học Zustand + lưu bền (hồ sơ, tùy chỉnh, thẻ SM-2, lượt làm bài, thời gian học, đồng ý), i18n `defineMessages`; subpath `./sync` = hàng đợi đồng bộ local-first (KHÔNG re-export từ `index.ts`).
+
+### Lệch TDD có chủ đích (đã ghi trong nhật ký)
+- **Ghép MFE lúc build thay cho Module Federation runtime** (offline, đóng gói store, không trùng React). Nguyên tắc 7 được ép bằng `pnpm lint:boundaries` (dependency-cruiser).
+- **Capacitor 7** thay vì 6 (targetSdk 35 của Google Play).
+- **i18n tự viết** (`defineMessages` trong `packages/state`) thay i18next — ngân sách bundle đầu.
+- **Đăng nhập = tài khoản khách + mã khôi phục** (chưa có email/Google); dev/test dùng **PGlite** thay Postgres; `AUTH_REQUIRED` bật ở mọi môi trường (chỉ test cô lập đặt `false`).
+- Nhật ký: `docs/NHAT_KY_CHUYEN_DOI_MOBILE.md`, theo giai đoạn: `docs/nhat-ky/`; kế hoạch tổng: `docs/KE_HOACH_PHAT_TRIEN_TOAN_DIEN.md`.
 
 ---
 
@@ -69,7 +79,19 @@ pnpm dev
 
 # Chạy kiểm thử tự động
 pnpm test
+
+# Kiểm tra ranh giới MFE (Nguyên tắc 7)
+pnpm lint:boundaries
+
+# Sinh migration sau khi sửa packages/contracts/src/db/schema.ts (không sửa migration đã phát hành)
+pnpm --filter @vietlearning/gateway db:generate --name <ten>
+
+# e2e (Gateway thật PGlite tự chạy kèm; bản build phải trỏ đúng cổng gateway)
+VITE_GATEWAY_URL=http://localhost:4000 pnpm --filter @vietlearning/host-shell build
+pnpm --filter @vietlearning/host-shell e2e
 ```
+
+> `turbo.json` đặt `"agentGuidance": false` để `pnpm build` không tự sửa tệp này (R13). Khối turbo bên dưới được giữ nguyên có chủ đích.
 
 <!-- BEGIN:turborepo-agent-rules -->
 
