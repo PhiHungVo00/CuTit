@@ -72,6 +72,13 @@
         {"type": "build", "sentence": "s53"},
         {"type": "listen", "word": "w12"}
       ]
+    },
+    {
+      "id": "u1l5",
+      "title": "Nhập vai: Gặp hàng xóm mới",
+      "titleEn": "Role-play: Meeting a new neighbour",
+      "roleplay": "sc5",
+      "exercises": []
     }
   ],
   "testOut": [

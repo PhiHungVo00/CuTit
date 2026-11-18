@@ -14,6 +14,15 @@ export interface RoleplayScenario {
   tasks: string[];
   /** cùng thứ tự với tasks (Gateway chấm theo chỉ số) */
   tasksEn: string[];
+  /** GĐ3: kịch bản khép lại unit này của lộ trình (vd. "u1") */
+  unit?: string;
+  /** false = bản nháp chờ người bản ngữ duyệt (kịch bản M7 cũ không có trường này) */
+  reviewed?: boolean;
 }
 
 export const ROLEPLAY_SCENARIOS: readonly RoleplayScenario[] = scenarioData as RoleplayScenario[];
+
+/** Kịch bản nhập vai khép lại một unit của lộ trình */
+export function scenarioForUnit(unitId: string): RoleplayScenario | undefined {
+  return ROLEPLAY_SCENARIOS.find((s) => s.unit === unitId);
+}

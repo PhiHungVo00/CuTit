@@ -38,5 +38,41 @@
     "targetDialect": "all",
     "tasks": ["Chào bạn và tự giới thiệu tên, quốc tịch", "Hỏi tuổi để xưng hô đúng (anh/chị/em)", "Hỏi bạn học ngành gì", "Hẹn cùng nhau đi uống trà đá"],
     "tasksEn": ["Say hi and introduce your name and nationality", "Ask their age to pick the right pronoun (anh/chị/em)", "Ask what they study", "Arrange to go for iced tea (trà đá) together"]
+  },
+  {
+    "id": "sc5",
+    "unit": "u1",
+    "reviewed": false,
+    "title": "Gặp hàng xóm mới",
+    "titleEn": "Meeting a new neighbour",
+    "location": "Hành lang chung cư",
+    "locationEn": "the apartment hallway",
+    "targetDialect": "all",
+    "tasks": ["Chào cô hàng xóm lễ phép (có “ạ”)", "Nói tên của bạn", "Hỏi thăm sức khỏe của cô", "Chào tạm biệt"],
+    "tasksEn": ["Greet your neighbour politely (with “ạ”)", "Say your name", "Ask how she is", "Say goodbye"]
+  },
+  {
+    "id": "sc6",
+    "unit": "u2",
+    "reviewed": false,
+    "title": "Mua trái cây ở chợ",
+    "titleEn": "Buying fruit at the market",
+    "location": "Sạp trái cây ở chợ",
+    "locationEn": "a fruit stall at the market",
+    "targetDialect": "all",
+    "tasks": ["Chào chị bán hàng", "Hỏi giá một quả dứa (miền Nam: trái thơm)", "Nói số lượng muốn mua, vd. “hai quả”", "Trả tiền và cảm ơn"],
+    "tasksEn": ["Greet the stallholder", "Ask the price of a pineapple (Southern: trái thơm)", "Say how many you want, e.g. “hai quả”", "Pay and say thank you"]
+  },
+  {
+    "id": "sc7",
+    "unit": "u3",
+    "reviewed": false,
+    "title": "Ăn trưa rồi hỏi đường",
+    "titleEn": "Lunch, then asking the way",
+    "location": "Quán cơm bình dân",
+    "locationEn": "a local rice eatery",
+    "targetDialect": "all",
+    "tasks": ["Gọi một món ăn hoặc đồ uống (“Cho tôi…”)", "Khen món ăn ngon", "Gọi tính tiền", "Hỏi đường đến bưu điện (“… ở đâu?”)"],
+    "tasksEn": ["Order a dish or a drink (“Cho tôi…”)", "Say the food is tasty", "Ask for the bill", "Ask the way to the post office (“… ở đâu?”)"]
   }
 ]
