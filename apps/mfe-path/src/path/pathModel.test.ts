@@ -24,12 +24,12 @@ describe('pathModel', () => {
     const st = lessonStatuses(COURSE, {}, { u1: '2026-11-17' });
     expect(COURSE.units[0].lessons.every((l) => st[l.id] === 'done')).toBe(true);
     expect(nextLesson(COURSE, {}, { u1: '2026-11-17' }).id).toBe('u2l1');
-    expect(unitProgress(COURSE.units[0], {}, { u1: 'x' })).toEqual({ done: 4, total: 4 });
+    expect(unitProgress(COURSE.units[0], {}, { u1: 'x' })).toEqual({ done: 5, total: 5 });
   });
 
   it('xong hết khóa => “Học tiếp” trỏ bài cuối để ôn lại', () => {
     const all = Object.fromEntries(COURSE.units.flatMap((u) => u.lessons.map((l) => [l.id, rec])));
-    expect(nextLesson(COURSE, all, {}).id).toBe('u3l4');
+    expect(nextLesson(COURSE, all, {}).id).toBe('u3l5');
   });
 
   it('thanh yếu nhất: điểm trung bình thấp nhất, chưa luyện => null', () => {
