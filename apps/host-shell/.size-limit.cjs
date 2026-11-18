@@ -9,7 +9,10 @@ module.exports = [
     path: ['dist/assets/app-*.js', 'dist/assets/react-*.js'],
     // 68 → 68.5 kB (GĐ0, 2026-11-18): getToken/onUnauthorized + gửi lại khi 401 + map chunk tài khoản lười
     // (~0.1–0.3 kB). Phiên khách, Zod, hàng đợi đồng bộ đều nằm ở chunk lười `bootstrap`/`sync`.
-    limit: '68.5 kB', gzip: true
+    // 68.5 → 64.5 kB (R10, 2026-11-18): đo 68.49 → 64.12 kB. @capacitor/core ra khỏi gói đầu (nhận biết nền tảng
+    // bằng native/platform.ts) và client api-client (request/SSE/lỗi) thành chunk lười; gói đầu chỉ giữ
+    // `@vietlearning/api-client/config`. Dư ~0.4 kB. Đo lại theo module: pnpm --filter @vietlearning/host-shell analyze
+    limit: '64.5 kB', gzip: true
   },
   // 7.5 → 7.8 kB (GĐ2, 2026-11-18): lớp Tailwind mới của nói lại câu / phòng tập thanh / thẻ miền (+13 B lúc đo)
   { name: 'CSS toàn app (Tailwind + tokens)', path: 'dist/assets/*.css', limit: '7.8 kB', gzip: true },
@@ -30,7 +33,9 @@ module.exports = [
   // 3 → 3.3 kB (GĐ2): khung thẻ “miền khác nói thế nào” (nội dung thẻ là chunk DialectCard riêng)
   // 3.3 → 3.4 kB (GĐ4a, 2026-11-18): điểm nạp lười huy hiệu + tổng kết tuần (+33 B lúc đo); nội dung ở chunk Motivation
   // 3.3 → 3.4 kB (GĐ4b, 2026-11-18): giờ nhắc học chỉ xem ở hồ sơ trẻ (đo 3.31 kB)
-  { name: 'GĐ1 Phần lộ trình của trang chủ (lazy)', path: 'dist/assets/PathHomeRoute-*.js', limit: '3.4 kB', gzip: true },
+  // 3.4 → 3.45 kB (R10, 2026-11-18): đo 3.40 kB (+12 B) vì client api-client giờ là chunk lười riêng => thêm một câu
+  // `import … from './index-*.js'`; gói đầu đổi lại giảm 4.37 kB. Mã của PathHome không đổi
+  { name: 'GĐ1 Phần lộ trình của trang chủ (lazy)', path: 'dist/assets/PathHomeRoute-*.js', limit: '3.45 kB', gzip: true },
   { name: 'GĐ1 Phiên bài học (lazy)', path: 'dist/assets/LessonRoute-*.js', limit: '2.5 kB', gzip: true },
   { name: 'GĐ1 Ôn tập (lazy)', path: 'dist/assets/ReviewRoute-*.js', limit: '3 kB', gzip: true },
   { name: 'GĐ1 Kiểm tra vượt unit (lazy)', path: 'dist/assets/TestOutRoute-*.js', limit: '2 kB', gzip: true },

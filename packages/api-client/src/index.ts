@@ -8,6 +8,7 @@
  * Host gọi configureGateway() một lần lúc khởi động.
  */
 import type { ZodTypeAny, z } from 'zod';
+import { gatewayConfig } from './config.js';
 
 export type GatewayErrorKind =
   | 'offline' // mất mạng / không tới được máy chủ
@@ -66,37 +67,9 @@ export function describeGatewayError(err: unknown, lang: 'vi' | 'en' = 'vi'): st
   return ERROR_TEXT[lang][kind] ?? ERROR_TEXT[lang].server;
 }
 
-/** Kho khóa–giá trị bất đồng bộ (Capacitor Preferences trên app, localStorage trên web) */
-export interface KeyValue {
-  get(key: string): Promise<string | null>;
-  set(key: string, value: string): Promise<void>;
-  remove(key: string): Promise<void>;
-}
-
-interface GatewayConfig {
-  baseUrl: string;
-  getToken?: () => string | null | Promise<string | null>;
-  /** Gọi khi Gateway trả 401: làm mới phiên; true => gửi lại request đúng MỘT lần */
-  onUnauthorized?: () => Promise<boolean>;
-  /** Nơi lưu phiên đăng nhập (refresh token, mã khôi phục). Bỏ trống => localStorage */
-  storage?: KeyValue;
-  timeoutMs: number;
-}
-
-let config: GatewayConfig = { baseUrl: 'http://localhost:4000', timeoutMs: 15000 };
-
-export function configureGateway(next: Partial<GatewayConfig>): void {
-  config = { ...config, ...next, baseUrl: (next.baseUrl ?? config.baseUrl).replace(/\/$/, '') };
-}
-
-export function gatewayBaseUrl(): string {
-  return config.baseUrl;
-}
-
-/** Kho phiên do Host cấp (undefined => phiên dùng localStorage) */
-export function gatewayStorage(): KeyValue | undefined {
-  return config.storage;
-}
+// Cấu hình + kho phiên nằm ở module riêng (subpath `./config`) để Host chỉ kéo phần nhỏ này vào gói tải
+// ban đầu; phần còn lại của client (request, SSE, lỗi) theo chunk lười của màn hình (R10).
+export { configureGateway, gatewayBaseUrl, gatewayStorage, type KeyValue } from './config.js';
 
 export interface RequestOptions<S extends ZodTypeAny> {
   method?: 'GET' | 'POST' | 'PUT' | 'DELETE';
@@ -116,7 +89,7 @@ function kindForStatus(status: number): GatewayErrorKind {
 
 async function send(path: string, method: string, body: unknown, signal?: AbortSignal, accept = 'application/json', retried = false): Promise<Response> {
   const headers: Record<string, string> = { Accept: accept };
-  const token = await config.getToken?.();
+  const token = await gatewayConfig().getToken?.();
   if (token) headers.Authorization = `Bearer ${token}`;
   let payload: BodyInit | undefined;
   if (body instanceof FormData) payload = body;
@@ -126,13 +99,14 @@ async function send(path: string, method: string, body: unknown, signal?: AbortS
   }
 
   const timeout = new AbortController();
-  const timer = setTimeout(() => timeout.abort(), config.timeoutMs);
+  const timer = setTimeout(() => timeout.abort(), gatewayConfig().timeoutMs);
   signal?.addEventListener('abort', () => timeout.abort(), { once: true });
   try {
-    const res = await fetch(`${config.baseUrl}${path}`, { method, headers, body: payload, signal: timeout.signal });
-    if (res.status === 401 && !retried && config.onUnauthorized) {
+    const res = await fetch(`${gatewayConfig().baseUrl}${path}`, { method, headers, body: payload, signal: timeout.signal });
+    const onUnauthorized = gatewayConfig().onUnauthorized;
+    if (res.status === 401 && !retried && onUnauthorized) {
       clearTimeout(timer);
-      if (await config.onUnauthorized()) return send(path, method, body, signal, accept, true);
+      if (await onUnauthorized()) return send(path, method, body, signal, accept, true);
     }
     if (!res.ok) {
       let details: Record<string, unknown> | undefined;

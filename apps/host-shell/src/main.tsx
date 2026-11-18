@@ -12,7 +12,7 @@ import { SCREENS, prefetchScreen } from './routes';
 import { isNativeApp } from './native/bootstrap';
 import { applySwapFontsForNativeApp } from './styles/nativeFonts';
 import { ThemeProvider } from './theme/ThemeContext';
-import { configureGateway } from '@vietlearning/api-client';
+import { configureGateway } from '@vietlearning/api-client/config';
 
 // Tài khoản khách + đồng bộ: chunk lười, chỉ tải khi cần token hoặc sau lần vẽ đầu
 const account = () => import('./account/bootstrap');
