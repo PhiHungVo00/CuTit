@@ -438,7 +438,10 @@ export function startSync(opts: SyncOptions): SyncEngine {
     };
     progressStore.setState(next);
     const goalDays = [...new Set([...(replace ? [] : pshadow().goalDays), ...flags.goalMet])];
-    rec.progressShadow = progressShadowOf(progressStore.getState(), goalDays);
+    // bóng huy hiệu = đã gửi trước đó ∪ server có; KHÔNG lấy từ store (subscriber có thể vừa trao huy hiệu mới
+    // ngay trong lúc áp — huy hiệu đó phải còn được gửi ở lần quét sau)
+    const sentBadges = [...new Set([...(replace ? [] : (pshadow().badges ?? [])), ...(snap.achievements ?? []).map((a) => a.key)])];
+    rec.progressShadow = { ...progressShadowOf(progressStore.getState(), goalDays), badges: sentBadges };
   }
 
   function schedule(ms: number) {
