@@ -254,6 +254,9 @@ importers:
       '@capacitor/core':
         specifier: ^7.6.10
         version: 7.6.10
+      '@capacitor/local-notifications':
+        specifier: ^7.0.7
+        version: 7.0.7(@capacitor/core@7.6.10)
       '@capacitor/splash-screen':
         specifier: ^7.0.5
         version: 7.0.5(@capacitor/core@7.6.10)
@@ -853,6 +856,9 @@ importers:
       '@capacitor/core':
         specifier: ^7.6.10
         version: 7.6.10
+      '@capacitor/local-notifications':
+        specifier: ^7.0.7
+        version: 7.0.7(@capacitor/core@7.6.10)
     devDependencies:
       typescript:
         specifier: ^5.7.3
@@ -1492,6 +1498,11 @@ packages:
 
   '@capacitor/core@7.6.10':
     resolution: {integrity: sha512-foYHd//t6E3RTELVG8wdkp5jVnmLcHKUurAa9BA8EUSNd2eY0SijCHpfO0bFwYBP5DrCeXwgSFYi3NJw413gtQ==}
+
+  '@capacitor/local-notifications@7.0.7':
+    resolution: {integrity: sha512-3qSpa8PpVMONHqBOaJ4RbA/lB5vOdEngtep0myGmP3S56gShPScDCotbw7dwmQy3NCdY4Up9nH3ySrGvUh2jZg==}
+    peerDependencies:
+      '@capacitor/core': '>=7.0.0'
 
   '@capacitor/splash-screen@7.0.5':
     resolution: {integrity: sha512-bPG2SamFL7VT5I3XsgsGgJhkiyxq3OXCOVKEDupSieVdtEiG7j2vLbSD0xL+91zteF/qLuxsjbugGy5LD8mS2A==}
@@ -5857,6 +5868,10 @@ snapshots:
   '@capacitor/core@7.6.10':
     dependencies:
       tslib: 2.9.1
+
+  '@capacitor/local-notifications@7.0.7(@capacitor/core@7.6.10)':
+    dependencies:
+      '@capacitor/core': 7.6.10
 
   '@capacitor/splash-screen@7.0.5(@capacitor/core@7.6.10)':
     dependencies:

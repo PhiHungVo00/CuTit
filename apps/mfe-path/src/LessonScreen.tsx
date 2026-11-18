@@ -5,6 +5,7 @@ import { useUiLanguage } from '@vietlearning/state';
 import { progressStore, useProgress } from '@vietlearning/state/progress';
 import { useT } from './i18n';
 import { nextLesson } from './path/pathModel';
+import { syncReminders } from './reminders';
 import { SessionRunner, type SessionOutcome } from './session/SessionRunner';
 import { Page, primaryBtn, secondaryBtn } from './ui';
 
@@ -54,6 +55,7 @@ function LessonBody({ lessonId }: { lessonId: string }) {
           onFinish={(o) => {
             const r = progressStore.getState().completeLesson(lessonId, { total: o.total, firstTryCorrect: o.firstTryCorrect });
             setResult({ ...o, ...r });
+            void syncReminders().catch(() => undefined);
           }}
         />
       </Page>
