@@ -22,6 +22,8 @@ import {
 import { GatewayRequestError, gatewayBaseUrl, gatewayStorage, type KeyValue } from './index.js';
 
 export const AUTH_STORAGE_KEY = 'becutit.auth';
+/** GĐ4b: phiên phụ huynh được cất khi máy đang dùng hồ sơ trẻ (có khóa này = đang ở chế độ trẻ) */
+export const PARENT_AUTH_STORAGE_KEY = `${AUTH_STORAGE_KEY}.parent`;
 
 const localStorageKV: KeyValue = {
   get: async (k) => {
@@ -54,8 +56,8 @@ interface StoredAuth {
   recoveryCode: string | null;
 }
 
-/** remote-deleted = tài khoản bị xóa ở máy khác (Gateway trả account_deleted) */
-export type UserChangeReason = 'guest' | 'recovered' | 'deleted' | 'remote-deleted';
+/** remote-deleted = tài khoản bị xóa ở máy khác (Gateway trả account_deleted); switched = đổi hồ sơ phụ huynh ↔ trẻ */
+export type UserChangeReason = 'guest' | 'recovered' | 'deleted' | 'remote-deleted' | 'switched';
 export interface UserChange {
   reason: UserChangeReason;
   /** null khi tài khoản vừa bị xóa */
@@ -74,6 +76,15 @@ export interface AuthSession {
   /** Xóa tài khoản trên server rồi xóa phiên trên máy */
   deleteAccount(): Promise<void>;
   onUserChange(cb: (e: UserChange) => void): () => void;
+  /**
+   * GĐ4b: chuyển máy sang hồ sơ trẻ bằng token phụ huynh vừa xin (POST /v1/family/children/:id/session).
+   * Phiên phụ huynh được cất riêng. CHỈ gọi qua SyncEngine.pullAndReplace (sau khi hàng đợi đã gửi hết).
+   */
+  switchToChild(tokens: AuthTokens): Promise<void>;
+  /** Trả máy về phiên phụ huynh đã cất (sau cổng phụ huynh). Không có phiên cất => lỗi */
+  switchToParent(): Promise<void>;
+  /** Phiên phụ huynh đang cất (null = máy không ở chế độ trẻ) */
+  parentInfo(): Promise<{ userId: string; recoveryCode: string | null } | null>;
 }
 
 export interface SessionOptions {
@@ -144,10 +155,26 @@ export function createAuthSession(opts: SessionOptions = {}): AuthSession {
   }
 
   /** Tài khoản đã bị xóa ở máy khác: bỏ phiên trên máy, báo app, ném lỗi riêng */
+  async function loadParent(): Promise<StoredAuth | null> {
+    const raw = await storage().get(PARENT_AUTH_STORAGE_KEY);
+    if (!raw) return null;
+    try {
+      const v = JSON.parse(raw) as StoredAuth;
+      return v && typeof v.refreshToken === 'string' && typeof v.userId === 'string' ? v : null;
+    } catch {
+      return null;
+    }
+  }
+
   async function remoteDeleted(): Promise<never> {
     access = null;
-    await storage().remove(AUTH_STORAGE_KEY);
-    emit({ reason: 'remote-deleted', userId: null });
+    // Hồ sơ trẻ bị phụ huynh xóa: máy quay về phiên phụ huynh đã cất (không tạo khách mới)
+    const parent = await loadParent();
+    if (parent) {
+      await save(parent);
+      await storage().remove(PARENT_AUTH_STORAGE_KEY);
+    } else await storage().remove(AUTH_STORAGE_KEY);
+    emit({ reason: 'remote-deleted', userId: parent?.userId ?? null });
     throw new GatewayRequestError('unauthorized', 'Tài khoản đã bị xóa trên thiết bị khác', 401, 'account_deleted');
   }
 
@@ -169,6 +196,9 @@ export function createAuthSession(opts: SessionOptions = {}): AuthSession {
     }
     if (r.status !== 401) fail(r.status, '/v1/auth/refresh');
     if (r.error === 'account_deleted') return remoteDeleted();
+    // Hồ sơ trẻ (không có mã khôi phục): KHÔNG rơi xuống tạo khách người lớn — thế là thoát chế độ trẻ.
+    // Phụ huynh mở lại hồ sơ qua cổng phụ huynh (cấp phiên mới).
+    if (await loadParent()) throw new GatewayRequestError('unauthorized', 'Phiên hồ sơ trẻ hết hạn', 401, 'child_session_expired');
     // Refresh token hỏng (vd. mất phản hồi lúc xoay vòng): cứu bằng mã khôi phục đã lưu
     if (stored.recoveryCode) {
       const rec = await post('/v1/auth/recover', { recoveryCode: stored.recoveryCode }, AuthTokensSchema);
@@ -249,6 +279,33 @@ export function createAuthSession(opts: SessionOptions = {}): AuthSession {
     onUserChange(cb) {
       listeners.add(cb);
       return () => listeners.delete(cb);
+    },
+
+    async switchToChild(t) {
+      const parked = await loadParent();
+      const current = await load();
+      // đang ở hồ sơ trẻ khác: giữ phiên phụ huynh đã cất; chưa thì cất phiên hiện tại (phụ huynh)
+      if (!parked) {
+        if (!current) throw new GatewayRequestError('unauthorized', 'Chưa có tài khoản phụ huynh trên máy', 401);
+        await storage().set(PARENT_AUTH_STORAGE_KEY, JSON.stringify(current));
+      }
+      await save({ userId: t.userId, refreshToken: t.refreshToken, recoveryCode: null });
+      adopt(t);
+      emit({ reason: 'switched', userId: t.userId });
+    },
+
+    async switchToParent() {
+      const parked = await loadParent();
+      if (!parked) throw new GatewayRequestError('unauthorized', 'Không có phiên phụ huynh trên máy', 401, 'no_parent_session');
+      access = null;
+      await save(parked);
+      await storage().remove(PARENT_AUTH_STORAGE_KEY);
+      emit({ reason: 'switched', userId: parked.userId });
+    },
+
+    async parentInfo() {
+      const p = await loadParent();
+      return p ? { userId: p.userId, recoveryCode: p.recoveryCode } : null;
     }
   };
 }

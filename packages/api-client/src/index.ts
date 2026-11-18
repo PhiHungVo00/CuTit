@@ -34,7 +34,9 @@ export class GatewayRequestError extends Error {
 }
 
 /** Câu thông báo tiếng Việt thống nhất cho người học */
-const ERROR_TEXT: Record<'vi' | 'en', Partial<Record<GatewayErrorKind | 'rate', string>> & { server: string }> = {
+/** GĐ4b: mã 403 của chế độ trẻ em (FAMILY_ERROR trong contracts) có câu riêng */
+type FamilyCode = 'child_free_chat_blocked' | 'parent_consent_required' | 'adult_only';
+const ERROR_TEXT: Record<'vi' | 'en', Partial<Record<GatewayErrorKind | 'rate' | FamilyCode, string>> & { server: string }> = {
   vi: {
     offline: 'Không có kết nối mạng. Phần này cần mạng, hãy thử lại khi có mạng.',
     timeout: 'Máy chủ phản hồi chậm. Vui lòng thử lại.',
@@ -43,7 +45,10 @@ const ERROR_TEXT: Record<'vi' | 'en', Partial<Record<GatewayErrorKind | 'rate', 
     rate: 'Bạn gửi hơi nhanh. Đợi một chút rồi thử lại nhé.',
     unavailable: 'Tính năng AI đang tạm ngưng. Vui lòng thử lại sau.',
     'invalid-request': 'Dữ liệu gửi lên chưa hợp lệ.',
-    server: 'Có lỗi ở máy chủ. Vui lòng thử lại.'
+    server: 'Có lỗi ở máy chủ. Vui lòng thử lại.',
+    child_free_chat_blocked: 'Hồ sơ của bé chỉ dùng nhập vai có kịch bản thôi nhé.',
+    parent_consent_required: 'Cần bố mẹ cho phép thì mới gửi ảnh hoặc giọng nói được nhé.',
+    adult_only: 'Phần này dành cho bố mẹ.'
   },
   en: {
     offline: 'No internet connection. This part needs the network; please try again when you are online.',
@@ -53,7 +58,10 @@ const ERROR_TEXT: Record<'vi' | 'en', Partial<Record<GatewayErrorKind | 'rate', 
     rate: 'You’re sending too fast. Wait a moment and try again.',
     unavailable: 'The AI feature is temporarily unavailable. Please try again later.',
     'invalid-request': 'The request was not valid.',
-    server: 'Something went wrong on the server. Please try again.'
+    server: 'Something went wrong on the server. Please try again.',
+    child_free_chat_blocked: 'Kids’ profiles can only use scripted role-play.',
+    parent_consent_required: 'A parent needs to allow sending photos or voice first.',
+    adult_only: 'This part is for parents.'
   }
 };
 
@@ -63,6 +71,7 @@ export function describeGatewayError(err: unknown, lang: 'vi' | 'en' = 'vi'): st
   // 429 có mã khác quota_exceeded = giới hạn tốc độ theo phút, KHÔNG phải "hết lượt hôm nay"
   const code = err instanceof GatewayRequestError ? err.code : undefined;
   if (kind === 'quota' && code && code !== 'quota_exceeded') return ERROR_TEXT[lang].rate!;
+  if (code && Object.prototype.hasOwnProperty.call(ERROR_TEXT[lang], code) && code.includes('_')) return ERROR_TEXT[lang][code as FamilyCode]!;
   return ERROR_TEXT[lang][kind] ?? ERROR_TEXT[lang].server;
 }
 
