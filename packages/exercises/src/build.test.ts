@@ -4,7 +4,7 @@ import { checkSentenceOrder, type SentenceItem } from '@vietlearning/contracts/a
 import { learnerStore } from '@vietlearning/state';
 import { buildItem, parseRefKey, refKey } from './build';
 
-beforeEach(() => learnerStore.getState().setPreferences({ uiLanguage: 'vi' }));
+beforeEach(() => learnerStore.getState().setPreferences({ uiLanguage: 'vi', dialect: 'north' }));
 
 const allRefs = COURSE.units.flatMap((u) => [...u.lessons.flatMap((l) => l.exercises), ...u.testOut]);
 
@@ -85,6 +85,37 @@ describe('câu ghép mới của khóa học (A8)', () => {
       for (const acc of s.accepted) {
         const r = checkSentenceOrder(s as unknown as SentenceItem, acc.map((i) => s.tokens[i].text));
         expect(r.valid, s.id).toBe(true);
+      }
+    }
+  });
+});
+
+describe('Chế độ miền (A7)', () => {
+  it('miền Nam/Trung: từ có trong A7 đổi theo miền; refKey giữ nguyên; bài luyện thanh không đổi', () => {
+    learnerStore.getState().setPreferences({ dialect: 'south' });
+    const m = buildItem({ type: 'meaning', word: 'w32', dir: 'en-vi' }, 3);
+    expect(m.kind === 'choice' && m.answer).toBe('thơm');
+    expect(m.key).toBe('meaning:w32:en-vi');
+    const sp = buildItem({ type: 'speak', sentence: 'cs4' }, 1);
+    expect(sp.kind === 'speak' && sp.text).toBe('Trái thơm này bao nhiêu tiền');
+    const b = buildItem({ type: 'build', sentence: 'cs4' }, 1);
+    expect(b.kind === 'build' && b.sentence.tokens.map((k) => k.text)).toEqual(['Trái', 'thơm', 'này', 'bao nhiêu tiền']);
+    const tone = buildItem({ type: 'tone', tone: 'nga', word: 'ngã' }, 1);
+    expect(tone.kind === 'tone' && tone.word).toBe('ngã');
+    learnerStore.getState().setPreferences({ dialect: 'north' });
+    const n = buildItem({ type: 'meaning', word: 'w32', dir: 'en-vi' }, 3);
+    expect(n.kind === 'choice' && n.answer).toBe('dứa');
+  });
+
+  it('mọi bài vẫn dựng được ở cả 3 miền, lựa chọn không trùng', () => {
+    for (const dialect of ['central', 'south'] as const) {
+      learnerStore.getState().setPreferences({ dialect });
+      for (const ref of allRefs) {
+        const item = buildItem(ref, 5);
+        if (item.kind !== 'choice') continue;
+        const norm = item.options.map((o) => o.normalize('NFC').toLowerCase());
+        expect(new Set(norm).size, `${dialect} ${JSON.stringify(ref)}`).toBe(item.options.length);
+        expect(item.options).toContain(item.answer);
       }
     }
   });
