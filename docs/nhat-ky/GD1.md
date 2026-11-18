@@ -42,18 +42,30 @@
 
 ## 5. Kết quả kiểm tra cuối (2026-11-18) 🟢
 - `pnpm build` 19/19 · `pnpm test` **35/35 task** · `pnpm lint:boundaries` **0 vi phạm (355 module)**.
-- Test mới: content +6 (course), state +11 (gamification/store), exercises 22 (5 file, gồm 3 file chuyển từ M2/M8), mfe-path 18 (session, path model, review model, nhắc học), speech-lab 1 (M6, thay test đã chuyển đi).
+- Test mới: content +6 (course), state +11 (gamification/store), exercises 23 (5 file, gồm 3 file chuyển từ M2/M8), mfe-path 19 (session, path model, review model, nhắc học), speech-lab 1 (M6, thay test đã chuyển đi).
 - size-limit: **tải ban đầu 67.33 / 68 kB** (giảm từ 67.88 nhờ chuyển lưới 12 công cụ + nhãn dài sang chunk Khám phá) — **không nâng ngân sách**. CSS 7.22 / 7.5 kB. Thêm 8 mục ngân sách cho chunk GĐ1 (trang chủ lộ trình 2.3 kB, bài học 1.4, ôn tập 2.0, kiểm tra vượt 1.0, Khám phá 1.9, trình chạy bài 5.0, dữ liệu khóa A1 6.8, bài luyện thanh 1.7 kB gzip).
 - e2e **57/57** (47 cũ + 10 mới ở `e2e/path.spec.ts`, mỗi kịch bản chạy trên Pixel 7 và màn 320 px): người mới xong bài đầu tiên **~4–6 giây** (yêu cầu < 60 s) không đăng ký; đi hết 4 bài unit 1 rồi “Học tiếp” trỏ sang unit 2; XP + chuỗi còn sau tải lại; hôm sau (đồng hồ giả) chuỗi vẫn 1 và thẻ ôn đến hạn, ôn được; kiểm tra vượt unit; giao diện tiếng Anh ở 320 px không tràn, vùng chạm ≥ 44 px.
 - **Sửa e2e cũ (1 chỗ, do yêu cầu đổi trang chủ):** `app.spec.ts` “trang chủ: …” — kiểm 12 `.screen-card` nay ở tab Khám phá thay vì `/`; các khẳng định khác giữ nguyên.
+- Hiệu năng M3 (CPU chậm 4×): 859 ms (baseline) → 1004–1186 ms qua các lần chạy sau GĐ1, vẫn < 1500 ms. Có thể do thêm tab/chunk hoặc do máy bận (chạy song song phiên khác) — cần theo dõi.
 - `playwright.config.ts`: cổng lấy từ `E2E_PORT` (mặc định 4173) để không dùng nhầm server của worktree khác.
 - Ảnh: `docs/nhat-ky/img/gd1-trang-chu-moi.png`, `gd1-trang-chu-en-320.png`, `gd1-bai-hoc.png`, `gd1-kham-pha.png`.
+
+## 5b. Android emulator (AVD `BeCuTit_Pixel_API35`, API 35) 🟢
+- APK debug build bằng `build-apk.ps1 -Drive Q:` (ổ ảo khác `B:` để không đụng phiên GĐ0), cài, xóa dữ liệu app, mở: trang chủ lộ trình hiện đúng (máy tiếng Anh ⇒ giao diện tiếng Anh), 5 tab vừa thanh dưới — `img/gd1-emulator-trang-chu.png`.
+- Mở “Goal & reminders”: tùy chọn nhắc CÓ hiện trên app (web thì ẩn). Trước khi bấm, cửa sổ đang focus vẫn là MainActivity; bấm “Turn on reminders” ⇒ hộp xin quyền `GrantPermissionsActivity` (POST_NOTIFICATIONS) — `img/gd1-emulator-xin-quyen.png`. Cho phép ⇒ `dumpsys alarm` có **7 mốc** của `vn.edu.uit.becutit` (TimedNotificationPublisher), 19:00 từ 18/11 tới 24/11 — `img/gd1-emulator-da-bat-nhac.png`.
+- **Lỗi chỉ thấy trên máy:** lần đầu bấm “Bật nhắc” không có hộp thoại, logcat: `"LocalNotifications.then()" is not implemented on android` — trả proxy plugin từ hàm async (cùng lỗi đã gặp ở `speech.ts`). Sửa: bọc plugin trong object thường trước khi trả.
+- Chưa thử trên emulator: luồng một bài học đầy đủ bằng tay (đã có e2e trên Chrome mobile), thông báo hiện thật lúc 19:00.
 
 ## 6. Lỗi gặp và cách sửa
 - Từ tổng kết bấm “Học tiếp” sang bài khác vẫn thấy tổng kết cũ (React giữ instance khi chỉ đổi tham số route) ⇒ `key={lessonId}` / `key={unitId}`. Bắt được nhờ e2e “đi hết unit 1”.
 - “Lỗi gần đây” bị xóa ngay khi làm đúng lúc câu quay lại trong cùng phiên ⇒ chỉ xóa khi đúng ngay lần đầu ở phiên sau.
 - Thẻ SM-2 từ câu sai đến hạn **ngày mai** (đúng hành vi A4: `reviewCard(q=1)` ⇒ 1 ngày), nên “Ôn hôm nay” ngay sau bài đầu là 0; câu sai xuất hiện ngay ở “Lỗi gần đây”.
 - `mfe-speech-lab` không còn test sau khi chuyển ⇒ vitest báo lỗi “no test files” ⇒ thêm test M6 thật (tìm không dấu + lưu thẻ ôn).
+
+## 6b. Sửa sau rà soát
+- Nhắc học theo dõi bộ đếm giờ học: vừa đạt mục tiêu là bỏ mốc hôm nay (không cần mở lại lộ trình).
+- Bài chọn đại từ không còn lấy “tôi”, cách xưng của cặp khác cùng người nghe, hay “con” (khi đáp án “cháu”) làm nhiễu — vì đó cũng là câu trả lời chấp nhận được.
+- Ghi chú từ có bản tiếng Anh (`noteEn`). Chunk lộ trình chỉ tải trước khi mở app ở `/`.
 
 ## 7. Chưa làm / để sau
 - Dạng “nói lại câu” (A3) — chờ R5 (A3 thật) ở GĐ2.
