@@ -1,3 +1,4 @@
+import type { CSSProperties } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useT } from '../privacyI18n';
 
@@ -11,29 +12,38 @@ const SECTIONS: { title: Key; items: Key[] }[] = [
   { title: 'contactTitle', items: ['contact1'] }
 ];
 
+// Kiểu nằm trong chunk lazy của trang (không thêm vào CSS toàn app — ngân sách 7.5 kB)
+const S = {
+  h2: { margin: '20px 0 6px', fontSize: 18 },
+  ul: { margin: 0, paddingLeft: 20, lineHeight: 1.55, display: 'grid', gap: 6 },
+  draft: { padding: '10px 12px', borderRadius: 10, background: '#78350f', color: '#fef3c7', fontWeight: 700 },
+  updated: { marginTop: 20, fontSize: 14, opacity: 0.8 },
+  back: { minHeight: 48, marginTop: 8, padding: '0 20px', border: '1px solid currentColor', borderRadius: 12, background: 'transparent', color: 'inherit', fontWeight: 700, cursor: 'pointer' }
+} satisfies Record<string, CSSProperties>;
+
 /** Chính sách quyền riêng tư /quyen-rieng-tu (Host, chunk lazy). Link tới từ M12 bằng URL. */
 export default function PrivacyRoute() {
   const t = useT();
   const navigate = useNavigate();
   return (
-    <article className="home privacy">
+    <article className="home">
       <h1>{t('title')}</h1>
-      <p className="privacy-draft" role="note">
+      <p style={S.draft} role="note">
         {t('draft')}
       </p>
       <p className="lead">{t('intro')}</p>
       {SECTIONS.map((s) => (
         <section key={s.title} aria-labelledby={`pv-${s.title}`}>
-          <h2 id={`pv-${s.title}`}>{t(s.title)}</h2>
-          <ul>
+          <h2 id={`pv-${s.title}`} style={S.h2}>{t(s.title)}</h2>
+          <ul style={S.ul}>
             {s.items.map((k) => (
               <li key={k}>{t(k)}</li>
             ))}
           </ul>
         </section>
       ))}
-      <p className="privacy-updated">{t('updated')}</p>
-      <button type="button" className="privacy-back" onClick={() => (window.history.length > 1 ? navigate(-1) : navigate('/'))}>
+      <p style={S.updated}>{t('updated')}</p>
+      <button type="button" style={S.back} onClick={() => (window.history.length > 1 ? navigate(-1) : navigate('/'))}>
         {t('back')}
       </button>
     </article>
