@@ -18,6 +18,8 @@ export interface CallState {
   error: string | null;
   micError: string | null;
   reason: EndReason | null;
+  /** true = lượt đang gửi là gửi LẠI câu cũ sau lỗi (dùng session.retry, không thêm dòng mới) */
+  retry: boolean;
 }
 
 export type CallAction =
@@ -31,12 +33,14 @@ export type CallAction =
   | { type: 'USE_TEXT' }
   | { type: 'USE_VOICE' }
   | { type: 'RESUME' }
+  /** gửi lại câu đang chờ sau lỗi mạng */
+  | { type: 'RETRY' }
   /** đọc lại câu trả lời cuối (nút “nói chậm lại”) */
   | { type: 'REPLAY' }
   | { type: 'TURN_FAILED'; quota: boolean; message: string }
   | { type: 'HANG_UP' };
 
-export const initialCall: CallState = { phase: 'idle', input: 'voice', turns: 0, pendingText: null, error: null, micError: null, reason: null };
+export const initialCall: CallState = { phase: 'idle', input: 'voice', turns: 0, pendingText: null, error: null, micError: null, reason: null, retry: false };
 
 const waitForLearner = (s: CallState): CallState => ({ ...s, phase: s.input === 'voice' ? 'listening' : 'typing' });
 
@@ -50,9 +54,11 @@ export function callReducer(s: CallState, a: CallAction): CallState {
     case 'START':
       return s.phase === 'idle' ? waitForLearner({ ...s, error: null }) : s;
     case 'HEARD':
-      return s.phase === 'listening' ? { ...s, phase: 'thinking', pendingText: a.text, error: null } : s;
+      return s.phase === 'listening' ? { ...s, phase: 'thinking', pendingText: a.text, error: null, retry: false } : s;
     case 'SEND_TYPED':
-      return s.phase === 'typing' || s.phase === 'paused' || s.phase === 'listening' ? { ...s, phase: 'thinking', pendingText: a.text, error: null } : s;
+      return s.phase === 'typing' || s.phase === 'paused' || s.phase === 'listening' ? { ...s, phase: 'thinking', pendingText: a.text, error: null, retry: false } : s;
+    case 'RETRY':
+      return s.phase === 'paused' && s.pendingText ? { ...s, phase: 'thinking', error: null, retry: true } : s;
     case 'NO_SPEECH':
       return s.phase === 'listening' ? { ...s, phase: 'paused' } : s;
     case 'THOUGHT':

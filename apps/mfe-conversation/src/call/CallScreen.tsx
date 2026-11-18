@@ -160,7 +160,7 @@ function Call({ onAgain }: { onAgain: () => void }) {
         {phase === 'paused' && (
           <div className="flex w-full flex-col gap-2">
             {state.error && state.pendingText ? (
-              <button type="button" onClick={() => dispatch({ type: 'SEND_TYPED', text: state.pendingText! })} className="min-h-12 rounded-xl bg-accent px-4 font-extrabold text-accent-ink">
+              <button type="button" onClick={() => dispatch({ type: 'RETRY' })} className="min-h-12 rounded-xl bg-accent px-4 font-extrabold text-accent-ink">
                 {t('retry')}
               </button>
             ) : (

@@ -61,6 +61,13 @@ describe('callReducer — vòng gọi thoại', () => {
     expect(callReducer(run([{ type: 'START' }]), { type: 'REPLAY' }).phase).toBe('listening'); // chưa có câu nào để đọc lại
   });
 
+  it('thử lại sau lỗi mạng: gửi lại đúng câu cũ ở chế độ retry (không thêm dòng mới vào hội thoại)', () => {
+    const paused = run([{ type: 'START' }, { type: 'HEARD', text: 'a' }, { type: 'TURN_FAILED', quota: false, message: 'mất mạng' }]);
+    expect(callReducer(paused, { type: 'RETRY' })).toMatchObject({ phase: 'thinking', pendingText: 'a', retry: true, error: null });
+    expect(run([{ type: 'RETRY' }, { type: 'THOUGHT' }, { type: 'SPOKEN' }, { type: 'HEARD', text: 'b' }], paused)).toMatchObject({ phase: 'thinking', pendingText: 'b', retry: false });
+    expect(callReducer(run([{ type: 'START' }]), { type: 'RETRY' }).phase).toBe('listening'); // không có câu chờ => bỏ qua
+  });
+
   it('gác máy từ mọi pha => ended; sau ended không có gì đổi được nữa', () => {
     const ended = run([{ type: 'START' }, { type: 'HANG_UP' }]);
     expect(ended.phase).toBe('ended');

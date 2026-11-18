@@ -32,6 +32,19 @@ describe('speakReply — đọc câu trả lời của Bé Cu Tít', () => {
     expect(await speak('Chào bạn', { slow: false })).toBe('server');
     expect(await speak('Chào bạn', { slow: true })).toBe('server');
     expect(d.calls).toEqual(['synth', 'play:1', 'synth', 'play:0.75']);
+    // luôn xin giọng tốc độ chuẩn (một khóa cache), chỉ chậm lại lúc phát => không chậm hai lần (~0.56×)
+    expect(d.synth).toHaveBeenNthCalledWith(1, 'Chào bạn');
+    expect(d.synth).toHaveBeenNthCalledWith(2, 'Chào bạn');
+  });
+
+  it('âm thanh máy chủ treo => watchdog dừng phát (gác máy không còn tiếng)', async () => {
+    vi.useFakeTimers();
+    const stopPlayback = vi.fn();
+    const d = deps({ play: () => new Promise<void>(() => undefined), stopPlayback });
+    const p = createSpeaker(d)('Chào bạn', { slow: false });
+    await vi.advanceTimersByTimeAsync(speakTimeoutMs('Chào bạn', false) + 10);
+    await expect(p).resolves.toBe('none');
+    expect(stopPlayback).toHaveBeenCalled();
   });
 
   it('Gateway chưa có TTS (503) => TTS của máy, và không hỏi lại Gateway trong cả cuộc gọi', async () => {

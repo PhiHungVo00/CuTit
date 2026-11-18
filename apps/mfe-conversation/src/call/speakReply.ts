@@ -1,14 +1,16 @@
 /**
  * Đọc câu trả lời trong cuộc gọi (Nguyên tắc 4: gọi năng lực trừu tượng tts.synthesize qua Gateway, không gọi hãng).
- * 1. Gateway có TTS => phát audioUrl (nói chậm = playbackRate 0.75).
+ * 1. Gateway có TTS => phát audioUrl tốc độ chuẩn; nói chậm CHỈ bằng playbackRate 0.75 (không xin giọng chậm => không chậm hai lần).
  * 2. Gateway chưa có / lỗi / chậm quá 4 s => TTS của máy (nói chậm = rate thấp hơn). Gateway báo "chưa có" một lần
  *    thì cả cuộc gọi không hỏi lại.
  * 3. Luôn kết thúc trong watchdog (máy/headless có thể không bao giờ báo "đọc xong") => vòng gọi không bị treo.
  */
 export interface SpeakerDeps {
-  /** Trả audioUrl, null = không có; ném lỗi kind 'unavailable' khi Gateway chưa cấu hình TTS */
-  synth: (text: string, slow: boolean) => Promise<string | null>;
+  /** Trả audioUrl giọng tốc độ CHUẨN (một khóa cache), null = không có; ném lỗi kind 'unavailable' khi Gateway chưa có TTS */
+  synth: (text: string) => Promise<string | null>;
   play: (url: string, rate: number) => Promise<void>;
+  /** Dừng âm thanh máy chủ đang phát (watchdog, gác máy) */
+  stopPlayback?: () => void;
   device: { speak(text: string, o?: { rate?: number }): Promise<void>; stop(): Promise<void> };
   /** tốc độ đọc của máy theo tùy chỉnh người học (speechRate) */
   deviceRate: (base: number) => number;
@@ -38,7 +40,7 @@ export function createSpeaker(deps: SpeakerDeps) {
     const attempt = async (): Promise<SpokenBy> => {
       if (serverTts) {
         try {
-          const url = await within(deps.synth(text, slow), SYNTH_TIMEOUT_MS);
+          const url = await within(deps.synth(text), SYNTH_TIMEOUT_MS);
           if (url) {
             await deps.play(url, slow ? 0.75 : 1);
             return 'server';
@@ -53,6 +55,7 @@ export function createSpeaker(deps: SpeakerDeps) {
     let timer: ReturnType<typeof setTimeout> | undefined;
     const watchdog = new Promise<SpokenBy>((resolve) => {
       timer = setTimeout(() => {
+        deps.stopPlayback?.();
         void deps.device.stop().catch(() => undefined);
         resolve('none');
       }, deadline);

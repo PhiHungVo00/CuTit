@@ -139,5 +139,13 @@ describe('nhập bằng giọng nói', () => {
     vi.advanceTimersByTime(1000);
     await act(() => off.result.current.stop());
     expect(off.result.current.error).toBe('network');
+
+    // hết thời lượng nhận giọng nói hôm nay: báo đúng là hết lượt, không đổ cho micro/nhận dạng
+    request.mockRejectedValueOnce(Object.assign(new Error('x'), { kind: 'quota', code: 'quota_exceeded' }));
+    const quota = renderHook(() => useVoiceInput(vi.fn(), async () => fakeBridge()));
+    await act(() => quota.result.current.start());
+    vi.advanceTimersByTime(1000);
+    await act(() => quota.result.current.stop());
+    expect(quota.result.current.error).toBe('quota');
   });
 });
