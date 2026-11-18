@@ -97,6 +97,11 @@ export const SyncAttemptSchema = z.object({
 });
 export type SyncAttempt = z.infer<typeof SyncAttemptSchema>;
 
+/** Vượt unit (bài kiểm tra trong lộ trình) lưu ở lesson_progress với lessonId = `testout:<unitId>` */
+export const TESTOUT_PREFIX = 'testout:';
+export const MAX_FREEZES_HELD = 2;
+export const DailyGoalSchema = z.union([z.literal(5), z.literal(10), z.literal(15), z.literal(20)]);
+
 const base = {
   /** uuid client sinh cho MỖI sự kiện; gửi lại cùng id => server bỏ qua (idempotent) */
   clientEventId: z.string().uuid(),
@@ -129,7 +134,18 @@ export const SyncEventSchema = z.discriminatedUnion('type', [
     status: z.enum(['started', 'completed']),
     score: z.number().int().min(0).max(100).optional()
   }),
-  z.object({ ...base, type: z.literal('achievement.earn'), key: z.string().regex(/^[\w.:-]{1,60}$/) })
+  z.object({ ...base, type: z.literal('achievement.earn'), key: z.string().regex(/^[\w.:-]{1,60}$/) }),
+  // ---- Nối GĐ0 ↔ GĐ1: cờ ngày + trạng thái lộ trình ----
+  /** cờ của một ngày địa phương, chỉ BẬT (không tắt lại): đạt mục tiêu ngày / đã dùng đóng băng streak */
+  z.object({ ...base, type: z.literal('day.mark'), day: Day, goalMet: z.literal(true).optional(), freezeUsed: z.literal(true).optional() }),
+  /** trạng thái lộ trình không suy ra được từ sự kiện khác (bản mới hơn thắng — LWW) */
+  z.object({
+    ...base,
+    type: z.literal('progress.set'),
+    lessonsDone: z.number().int().min(0).max(100000),
+    freezes: z.number().int().min(0).max(MAX_FREEZES_HELD),
+    dailyGoal: DailyGoalSchema
+  })
 ]);
 export type SyncEvent = z.infer<typeof SyncEventSchema>;
 export type SyncEventType = SyncEvent['type'];
@@ -157,7 +173,14 @@ export const ProgressSnapshotSchema = z.object({
       completedAt: z.string().datetime().nullable()
     })
   ),
-  achievements: z.array(z.object({ key: z.string(), earnedAt: z.string().datetime() }))
+  achievements: z.array(z.object({ key: z.string(), earnedAt: z.string().datetime() })),
+  /** ngày đạt mục tiêu / ngày đã dùng đóng băng (tăng dần) */
+  dayFlags: z.object({ goalMet: z.array(Day), frozen: z.array(Day) }).default({ goalMet: [], frozen: [] }),
+  /** null = chưa từng nhận progress.set */
+  progressState: z
+    .object({ lessonsDone: z.number().int().min(0), freezes: z.number().int().min(0), dailyGoal: DailyGoalSchema })
+    .nullable()
+    .default(null)
 });
 export type ProgressSnapshot = z.infer<typeof ProgressSnapshotSchema>;
 
