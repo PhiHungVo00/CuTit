@@ -91,3 +91,12 @@ test('429: hết hạn mức ngày (quota_exceeded) khác với gửi quá nhanh
   assert.match(describeGatewayError(fast, 'vi'), /nhanh/);
   assert.match(describeGatewayError(fast, 'en'), /too fast/i);
 });
+
+test('GĐ4b: lỗi 403 của chế độ trẻ em có câu thân thiện vi/en', async () => {
+  const { describeGatewayError, GatewayRequestError } = await import('../dist/index.js');
+  const e = new GatewayRequestError('server', 'x', 403, 'parent_consent_required');
+  assert.match(describeGatewayError(e, 'vi'), /bố mẹ cho phép/);
+  assert.match(describeGatewayError(e, 'en'), /parent/);
+  assert.match(describeGatewayError(new GatewayRequestError('server', 'x', 403, 'child_free_chat_blocked'), 'vi'), /nhập vai/);
+  assert.match(describeGatewayError(new GatewayRequestError('server', 'x', 500, 'internal_error'), 'vi'), /máy chủ/);
+});
