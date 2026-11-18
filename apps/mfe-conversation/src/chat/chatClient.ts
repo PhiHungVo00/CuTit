@@ -18,6 +18,8 @@ export interface TurnRequest {
   scenarioId?: string;
   history: ChatHistoryItem[];
   explanationLanguage: 'vi' | 'en';
+  /** GĐ3: 'call' = gọi thoại (bản chép lời giọng nói, trả lời văn nói ngắn) */
+  mode?: 'chat' | 'call';
 }
 
 export type DoneEvent = Extract<ChatEvent, { type: 'done' }>;
