@@ -64,9 +64,17 @@ const EnvSchema = z
     GEMINI_MODEL: z.string().regex(/^[a-z0-9.-]+$/).default('gemini-3.5-flash-lite'),
     LLM_TIMEOUT_MS: z.coerce.number().int().positive().max(9000, "LLM_TIMEOUT_MS phải nhỏ hơn timeout 10 giây của client (ảnh, giọng nói)").default(8000),
     // GĐ2 — TTS theo miền (D9). Mặc định TẮT kể cả khi có khóa: chỉ bật rõ ràng (vd. lúc chạy script dựng sẵn)
-    TTS_PROVIDER: z.enum(['none', 'gemini']).default('none'),
+    // 'openai-compatible' = máy chủ kiểu OpenAI /v1/audio/speech (vd. tools/tts-local chạy VieNeu-TTS trên máy, miễn phí)
+    TTS_PROVIDER: z.enum(['none', 'gemini', 'openai-compatible']).default('none'),
     GEMINI_TTS_MODEL: z.string().regex(/^[a-z0-9.-]+$/).default('gemini-3.8-flash-tts'),
     GEMINI_TTS_VOICE: z.string().regex(/^[A-Za-z]{2,30}$/).default('Kore'),
+    /** Gốc API kiểu OpenAI (có /v1). Cùng máy chủ cung cấp /audio/transcriptions để script dựng sẵn kiểm lời đọc */
+    TTS_BASE_URL: z.string().url().default('http://127.0.0.1:8765/v1'),
+    TTS_MODEL: z.string().regex(/^[\w.-]{1,60}$/).default('vieneu-v3-turbo'),
+    /** Giọng theo miền (tên giọng mẫu có dấu tiếng Việt, vd. “Thùy Dung”) */
+    TTS_VOICE_NORTH: z.string().min(1).max(60).default('Trúc Ly'),
+    TTS_VOICE_CENTRAL: z.string().min(1).max(60).default('Ngọc Trân'),
+    TTS_VOICE_SOUTH: z.string().min(1).max(60).default('Thùy Dung'),
     /** Thư mục âm thanh dựng sẵn (<hash>.wav, packs/, state/) — gitignored */
     TTS_AUDIO_DIR: z.string().optional(),
     /** Gốc URL công khai của Gateway để trả audioUrl tuyệt đối (sau proxy). Không đặt => lấy từ Host của request */

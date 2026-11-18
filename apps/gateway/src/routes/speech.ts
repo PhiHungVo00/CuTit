@@ -50,7 +50,7 @@ export const speechRoutes: FastifyPluginAsync<RouteDeps> = async (server, { pipe
     // thay vì trả về một URL âm thanh giả không tồn tại như trước.
     // Có nhà cung cấp TTS (GĐ2): giọng do nhà cung cấp quyết định => khóa cache theo model/giọng/prompt, để trùng
     // với tệp script đã dựng sẵn (tệp có sẵn thì không gọi nhà cung cấp, không tốn hạn mức).
-    const params = tts ? { ...body, voiceId: ttsVoiceId(tts), speed: 1 } : body;
+    const params = tts ? { ...body, voiceId: ttsVoiceId(tts, body.dialect), speed: 1 } : body;
     const { audioUrl: url, cached } = await ttsCache.getAudio(params);
     const base = config.PUBLIC_BASE_URL ?? `${request.protocol}://${request.headers.host ?? 'localhost'}`;
     const audioUrl = url.startsWith('/') ? new URL(url, base).toString() : url;
