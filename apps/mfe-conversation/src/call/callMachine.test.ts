@@ -53,6 +53,14 @@ describe('callReducer — vòng gọi thoại', () => {
     expect(s).toMatchObject({ phase: 'ended', reason: 'max-turns', turns: MAX_CALL_TURNS });
   });
 
+  it('nói chậm lại: đọc lại câu cuối (không tính thêm lượt), micro đóng khi đang đọc', () => {
+    const listening = run([{ type: 'START' }, { type: 'HEARD', text: 'a' }, { type: 'THOUGHT' }, { type: 'SPOKEN' }]);
+    const replay = callReducer(listening, { type: 'REPLAY' });
+    expect(replay).toMatchObject({ phase: 'speaking', turns: 1 });
+    expect(callReducer(replay, { type: 'SPOKEN' })).toMatchObject({ phase: 'listening', turns: 1 });
+    expect(callReducer(run([{ type: 'START' }]), { type: 'REPLAY' }).phase).toBe('listening'); // chưa có câu nào để đọc lại
+  });
+
   it('gác máy từ mọi pha => ended; sau ended không có gì đổi được nữa', () => {
     const ended = run([{ type: 'START' }, { type: 'HANG_UP' }]);
     expect(ended.phase).toBe('ended');

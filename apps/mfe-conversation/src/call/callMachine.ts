@@ -31,6 +31,8 @@ export type CallAction =
   | { type: 'USE_TEXT' }
   | { type: 'USE_VOICE' }
   | { type: 'RESUME' }
+  /** đọc lại câu trả lời cuối (nút “nói chậm lại”) */
+  | { type: 'REPLAY' }
   | { type: 'TURN_FAILED'; quota: boolean; message: string }
   | { type: 'HANG_UP' };
 
@@ -64,6 +66,8 @@ export function callReducer(s: CallState, a: CallAction): CallState {
       return s.phase === 'thinking' ? s : { ...s, phase: 'typing', input: 'text' };
     case 'USE_VOICE':
       return s.phase === 'thinking' ? s : { ...s, phase: 'listening', input: 'voice', micError: null, error: null };
+    case 'REPLAY':
+      return s.turns > 0 && (s.phase === 'listening' || s.phase === 'typing' || s.phase === 'paused') ? { ...s, phase: 'speaking', error: null } : s;
     case 'RESUME':
       return s.phase === 'paused' ? waitForLearner({ ...s, error: null }) : s;
     case 'TURN_FAILED':

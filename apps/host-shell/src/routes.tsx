@@ -144,6 +144,8 @@ export const EXPLORE_ROUTE = pathRoute('/kham-pha', () => import('./screens/Expl
 export const PATH_ROUTES: PathRoute[] = [
   pathRoute('/bai-hoc/:lessonId', () => import('./screens/LessonRoute')),
   pathRoute('/kiem-tra/:unitId', () => import('./screens/TestOutRoute')),
+  // GĐ3: gọi thoại với Bé Cu Tít (mfe-conversation) — không nằm trong 12 công cụ của Khám phá, vào từ màn Trò chuyện
+  pathRoute('/goi-thoai', () => import('./screens/CallRoute')),
   REVIEW_ROUTE,
   EXPLORE_ROUTE
 ];

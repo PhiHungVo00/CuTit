@@ -57,6 +57,7 @@ export function useChatSession({ scenarioId, dialect, mode, onTurnDone }: UseCha
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [turnState, setTurnState] = useState<TurnState>('IDLE');
   const [error, setError] = useState<string | null>(null);
+  const [errorCode, setErrorCode] = useState<string | null>(null);
   const machine = useRef<TurnStateMachine>();
   machine.current ??= new TurnStateMachine(setTurnState);
   const sessionId = useRef(newSessionId());
@@ -76,6 +77,7 @@ export function useChatSession({ scenarioId, dialect, mode, onTurnDone }: UseCha
       const m = machine.current!;
       if (!text || m.isBusy()) return;
       setError(null);
+      setErrorCode(null);
       lastText.current = text;
 
       const prior = messagesRef.current.filter((x) => !x.pending && x.text);
@@ -148,6 +150,7 @@ export function useChatSession({ scenarioId, dialect, mode, onTurnDone }: UseCha
         setMessages((list) => list.filter((x) => x.id !== tutorId));
         if (controller.signal.aborted && !(err instanceof TurnError)) return; // người dùng hủy / rời màn hình
         setError(err instanceof TurnError ? err.message : tConv('errGeneric'));
+        setErrorCode(err instanceof TurnError ? (err.code ?? err.kind) : null);
       } finally {
         if (abortRef.current === controller) abortRef.current = null;
       }
@@ -161,5 +164,5 @@ export function useChatSession({ scenarioId, dialect, mode, onTurnDone }: UseCha
 
   const cancel = useCallback(() => abortRef.current?.abort(), []);
 
-  return { messages, turnState, busy: turnState !== 'IDLE', error, send, retry, cancel };
+  return { messages, turnState, busy: turnState !== 'IDLE', error, errorCode, send, retry, cancel };
 }

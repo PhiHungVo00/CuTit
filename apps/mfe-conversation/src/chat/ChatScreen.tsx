@@ -20,6 +20,9 @@ export function ChatScreen() {
             {t('roleplayLink')}
           </Link>
         </header>
+        <Link to="/goi-thoai" className="flex min-h-14 items-center justify-center gap-2 rounded-2xl bg-accent px-4 text-lg font-extrabold text-accent-ink no-underline shadow-card">
+          {t('callLink')}
+        </Link>
         <ChatPanel
           session={session}
           tutorName={tutorName}

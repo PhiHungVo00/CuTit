@@ -133,5 +133,17 @@ export function useVoiceInput(onText: (t: Transcript) => void, createBridge?: ()
     []
   );
 
-  return { status, error, level, start, stop, clearError: () => setError(null) };
+  /** Tắt micro, bỏ bản ghi và yêu cầu đang chạy (gác máy / đọc lại câu trả lời) — không gửi gì */
+  const cancel = useCallback(() => {
+    window.clearTimeout(timerRef.current);
+    bridgeRef.current?.cancel();
+    bridgeRef.current = null;
+    abortRef.current?.abort();
+    abortRef.current = null;
+    busyRef.current = false;
+    setLevel(0);
+    setStatus('idle');
+  }, []);
+
+  return { status, error, level, start, stop, cancel, clearError: () => setError(null) };
 }
