@@ -1,7 +1,7 @@
 # Nhật ký GĐ4c — Bạn học hợp tác (nhánh `claude/gd4-ban-be-78fb3c`)
 
 Kế hoạch tổng: `docs/KE_HOACH_PHAT_TRIEN_TOAN_DIEN.md`, GĐ4 mục 3. **D7 = không**: không bảng xếp hạng, không league.
-Mọi bước TDD: viết test đỏ trước rồi mới viết mã.
+TDD: test Gateway (11 test) và test sửa lỗi múi giờ được chạy ĐỎ trước khi viết mã. Test contract viết ngay sau schema (xanh ngay). Test UI viết trước component.
 
 ## 1. Thiết kế
 - **Kết bạn bằng mã mời.** Tài khoản khách không có email hay tên thật, nên mỗi người tự đặt **tên hiển thị**.
@@ -19,12 +19,14 @@ Mọi bước TDD: viết test đỏ trước rồi mới viết mã.
   - Chỉ tính từ tuần kết bạn, nhìn lại tối đa 104 tuần.
 - **Không lưu tiến độ hay streak.** Tất cả tính lúc đọc từ `daily_activity`. Xóa tài khoản (cascade) thì đóng góp mất theo, không còn bản sao nào.
   - Đánh đổi: đổi mục tiêu tuần thì streak cũ được tính lại theo mục tiêu mới.
+  - Tuần kết bạn lấy theo ngày UTC của `created_at`, kẹp không sau tuần của `today`. Lỗi đã sửa (có test): người ở múi giờ âm kết bạn tối Chủ nhật bị tính tổng tuần = 0.
 - **Riêng tư:** phản hồi không chứa userId của ai (chỉ có id quan hệ bạn bè), không có lỗi, điểm, XP hay chi tiết bài. Có test quét chuỗi phản hồi để chặn các trường này.
 - **Trẻ em (D4):** mọi route `/v1/friends*` gọi `assertSocialAllowed` (`apps/gateway/src/services/social/friends.ts`).
   - Hàm này đọc `users.account_type`, cột đã có từ GĐ0, nên **không cần đợi phiên chế độ trẻ em**.
   - Nếu là `child` thì trả 403 `social_not_allowed`.
   - Mã mời của tài khoản đã chuyển thành `child` cũng bị coi là `invite_invalid`.
-  - Phía UI: panel chỉ hiện "Hồ sơ trẻ em không dùng tính năng bạn học". **Điểm nối cho phiên trẻ em:** khi client biết `account_type` thì ẩn luôn thẻ "Học cùng bạn bè" trong `ProgressScreen.tsx` (một điều kiện quanh `<section aria-labelledby="ct-friends">`).
+  - Phía UI: nhận 403 (`social_not_allowed`, hoặc `adult_only` của nhánh trẻ em) ⇒ `FriendsPanel` gọi `onBlocked` ⇒ `ProgressScreen` **gỡ hẳn thẻ** “Học cùng bạn bè”. Hạn chế: trẻ vẫn thấy thẻ cho tới lần bấm mở đầu tiên, vì client của main chưa biết `account_type`.
+  - **Khi gộp với GĐ4b (`claude/gd4-tre-em-fc0faf`):** GĐ4b có `requireAdult(req)` (403 `adult_only`, đọc `principal.accountType` đã cache) và `useIsChild()` (`@vietlearning/state/family`). Nên thay `assertSocialAllowed` bằng `requireAdult` (bỏ một truy vấn DB mỗi request; UI đã nhận cả hai mã), và trong `ProgressScreen` thêm `!useIsChild()` vào điều kiện hiện thẻ để ẩn từ đầu. Nhớ sửa test Gateway (mã lỗi).
 
 ## 2. Contract (Nguyên tắc 5) — `packages/contracts/src/api/friends.ts`
 | Route | Ý nghĩa | Lỗi |
@@ -62,7 +64,7 @@ Mọi bước TDD: viết test đỏ trước rồi mới viết mã.
 
 ## 5. Kiểm tra (2026-11-18)
 - Contract: 3 test mới.
-- Gateway: 11 test mới ở `test/friends.test.mjs`; toàn Gateway 97/97. Các test bao phủ:
+- Gateway: 12 test mới ở `test/friends.test.mjs` (gồm test lệch múi giờ); toàn Gateway 98/98. Các test bao phủ:
   - Mã dùng một lần, thay mã cũ, mã của chính mình, đã là bạn, hết hạn.
   - Cộng dồn đúng tuần; mình đứng trước; không lộ userId, điểm hay XP.
   - Đổi mục tiêu; người ngoài cặp không đổi hay xóa được.
@@ -78,10 +80,11 @@ Mọi bước TDD: viết test đỏ trước rồi mới viết mã.
   - **Cả hai thấy "Chúng ta: 65/60 phút", 🎉, 🔥 1 tuần, đóng góp mình trước.**
   - Lan đổi mục tiêu thành 90, Tom thấy 65/90.
   - Hủy kết bạn: cả hai không còn thấy nhau.
-- Size: gói đầu 68,43/68,5 kB (+0,01 do 3 khóa i18n), M9 2,87/5 kB, **chunk mới `FriendsPanel` 4,52 kB** (ngân sách 5 kB, đã thêm vào `.size-limit.cjs`), CSS 7,63/7,8 kB.
+- Size: gói đầu 68,42–68,43/68,5 kB (+≤0,01 do 3 khóa i18n), M9 2,9/5 kB, **chunk mới `FriendsPanel` 4,56 kB** (ngân sách 5 kB, đã thêm vào `.size-limit.cjs`), CSS 7,63/7,8 kB.
 - `pnpm lint:boundaries`: 0 vi phạm. `pnpm test` 35/35 task. **e2e toàn bộ: 80 đạt, 7 bỏ qua, 0 lỗi** (cổng 4186/4013).
 - Bẫy e2e đã gặp: chạy cả bộ, màn Tùy chỉnh đôi khi mở trước khi bộ đồng bộ (khởi động lười) gắn trạng thái ⇒ không hiện “Đã sao lưu”. Lỗi có từ trước, không thuộc tính năng này. Test bạn học dùng `toPass` (tải lại + đồng bộ lại); chạy lặp 5/5 đạt.
 
 ## 6. Còn lại / ghi chú cho người gộp
 - Tệp dễ xung đột: `apps/gateway/src/app.ts` (đăng ký `friendsRoutes`), `src/config.ts`, `packages/contracts/src/db/schema.ts` (bảng 20–22 ở cuối), `packages/contracts/src/api/index.ts`, `drizzle/meta/_journal.json`, `apps/host-shell/.size-limit.cjs`, `apps/mfe-learner/src/i18n.ts`, `ProgressScreen.tsx`.
+- Giới hạn 5 bạn kiểm tra trong transaction nhưng không khóa hàng: trên Postgres thật, hai lượt nhập mã đồng thời có thể vượt 1 bạn. Schema phản hồi cố ý không có `.max(5)` để GET không lỗi 500 trong trường hợp đó. Muốn chặt hơn thì dùng `SELECT … FOR UPDATE` trên hai user.
 - Chưa làm: nhóm 3 người trở lên (nhiệm vụ hiện theo từng cặp), thông báo khi bạn góp phút, đổi tên hiển thị sau khi đã đặt (API có sẵn `PUT /v1/friends/profile`, UI chưa có nút).

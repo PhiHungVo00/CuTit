@@ -124,7 +124,8 @@ export const FriendsResponseSchema = z.object({
   displayName: z.string().nullable(),
   invite: FriendInviteResponseSchema.nullable(),
   maxFriends: z.number().int().positive(),
-  friends: z.array(FriendQuestSchema).max(MAX_FRIENDS)
+  /** không .max(MAX_FRIENDS): hai lượt nhập mã đồng thời có thể vượt 1 bạn, GET không được vì thế mà lỗi 500 */
+  friends: z.array(FriendQuestSchema)
 });
 export type FriendsResponse = z.infer<typeof FriendsResponseSchema>;
 
