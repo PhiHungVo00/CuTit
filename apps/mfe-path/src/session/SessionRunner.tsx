@@ -19,7 +19,9 @@ const SKILL: Record<ExerciseRef['type'], Skill> = {
   tone: 'pronunciation',
   pronoun: 'honorific',
   dialect: 'dialect',
-  speak: 'pronunciation'
+  speak: 'pronunciation',
+  situation: 'honorific',
+  story: 'drill'
 };
 
 /** seed xác định theo chuỗi (id bài) để dựng lại được cùng một bài */
@@ -78,7 +80,8 @@ export function SessionRunner({
       if (r.tone) weakTones.current.add(r.tone);
       progress.recordMistake(r.key);
       // mặt trước thẻ: câu có chỗ trống (nếu có) thay vì đề chung chung “Điền vào chỗ trống”
-      const front = item.kind === 'choice' && item.display ? item.display : item.prompt;
+      // truyện: câu hỏi bị sai (r.front) thay vì đề chung “Nghe truyện rồi trả lời”
+      const front = r.front ?? (item.kind === 'choice' && item.display ? item.display : item.prompt);
       learner.addCard({ itemRef, front, back: r.answer, source: SKILL[entry.ref.type] });
     } else if (entry.attempt === 1) {
       // đúng ngay lần đầu (ở bài sau hoặc khu Ôn tập) => không còn là “lỗi gần đây”;

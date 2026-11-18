@@ -49,6 +49,8 @@ module.exports = [
   { name: 'GĐ3 Tổng kết + thêm ôn tập (lazy)', path: 'dist/assets/SessionSummary-*.js', limit: '1.5 kB', gzip: true },
   { name: 'Worker phân tích cao độ A1/A2', path: 'dist/assets/pitch.worker-*.js', limit: '5 kB', gzip: true },
   // GĐ2 (đo 2026-11-18), mọi chunk đều lazy
+  { name: 'GĐ2b Dựng bài (build.ts) + dữ liệu tình huống/truyện, chỉ lộ trình tải (lazy)', path: 'dist/assets/build-*.js', limit: '5.5 kB', gzip: true },
+  { name: 'GĐ2b Truyện ngắn nghe + câu hỏi hiểu (lazy khi gặp)', path: 'dist/assets/StoryExercise-*.js', limit: '2 kB', gzip: true },
   { name: 'GĐ2 Nói lại câu A3 (lazy khi gặp)', path: 'dist/assets/SpeakExercise-*.js', limit: '3.9 kB', gzip: true },
   { name: 'GĐ2 Phòng tập thanh điệu (lazy)', path: 'dist/assets/ToneGymRoute-*.js', limit: '5.8 kB', gzip: true },
   { name: 'GĐ2 Thẻ miền (lazy khi mở)', path: 'dist/assets/DialectCard-*.js', limit: '1.5 kB', gzip: true },

@@ -21,6 +21,7 @@
         {"type": "fill", "sentence": "s16", "blank": 4},
         {"type": "build", "sentence": "cs8"},
         {"type": "dialect", "entry": "d28", "region": "south"},
+        {"type": "situation", "situation": "hs5"},
         {"type": "speak", "sentence": "s16"},
         {"type": "listen", "word": "w38"}
       ]
@@ -49,6 +50,7 @@
       "titleEn": "Where is it?",
       "exercises": [
         {"type": "meaning", "word": "w43", "dir": "vi-en"},
+        {"type": "situation", "situation": "hs6"},
         {"type": "build", "sentence": "s31"},
         {"type": "build", "sentence": "cs10"},
         {"type": "fill", "sentence": "s31", "blank": 3},
@@ -76,7 +78,8 @@
         {"type": "listen", "word": "w45"},
         {"type": "tone", "tone": "sac", "word": "trái"},
         {"type": "speak", "sentence": "cs11"},
-        {"type": "fill", "sentence": "cs11", "blank": 1}
+        {"type": "fill", "sentence": "cs11", "blank": 1},
+        {"type": "story", "story": "st3"}
       ]
     },
     {
