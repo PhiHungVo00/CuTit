@@ -1,11 +1,13 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { ROLEPLAY_SCENARIOS, type RoleplayScenario } from '@vietlearning/content';
-import type { ChatCorrection } from '@vietlearning/contracts/api';
-import { learnerStore, useLearner } from '@vietlearning/state';
+import { Link, useSearchParams } from 'react-router-dom';
+import { ROLEPLAY_SCENARIOS, findLesson, type RoleplayScenario } from '@vietlearning/content';
+import type { ChatCorrection, NewWord } from '@vietlearning/contracts/api';
+import { useLearner } from '@vietlearning/state';
 import { ChatPanel } from '../chat/ChatPanel';
 import { useChatSession } from '../chat/useChatSession';
 import { t as tConv, useT } from '../i18n';
+import { buildSummary } from '../summary/summaryItems';
+import { SessionSummary } from '../summary/SessionSummary';
 
 const btn = 'min-h-12 w-full rounded-xl px-4 font-extrabold';
 
@@ -34,39 +36,54 @@ function Frame({ title, children, action }: { title: string; children: React.Rea
   );
 }
 
-function Session({ scenario, onExit }: { scenario: RoleplayScenario; onExit: () => void }) {
+/**
+ * Một buổi nhập vai. `lessonId` (từ URL `?bai=`) = bài nhập vai cuối unit của lộ trình: kết thúc khi đã nói ≥ 1 lượt
+ * thì ghi tiến độ bài như bài thường (store tiến độ dùng chung qua subpath state, không import mfe-path).
+ */
+function Session({ scenario, lessonId, onExit }: { scenario: RoleplayScenario; lessonId?: string; onExit: () => void }) {
   const t = useT();
   const text = useScenarioText();
   const learnerDialect = useLearner((s) => s.preferences.dialect);
   const [done, setDone] = useState<number[]>([]);
   const [corrections, setCorrections] = useState<ChatCorrection[]>([]);
+  const [words, setWords] = useState<NewWord[]>([]);
+  const [turns, setTurns] = useState(0);
   const [ended, setEnded] = useState(false);
+  const [xp, setXp] = useState<number | null>(null);
   const session = useChatSession({
     scenarioId: scenario.id,
     // "all" = theo phương ngữ người học chọn
     dialect: scenario.targetDialect === 'all' ? learnerDialect : scenario.targetDialect,
-    onTurnDone: ({ completedTasks, correction }) => {
+    onTurnDone: ({ completedTasks, correction, newWords }) => {
       // Nhiệm vụ do Gateway chấm (contract: completedTasks), client chỉ hiển thị
       setDone((d) => Array.from(new Set([...d, ...completedTasks])).sort());
       if (correction) setCorrections((c) => [...c, correction]);
+      setWords((w) => [...w, ...newWords]);
+      setTurns((n) => n + 1);
     }
   });
   const tasks = text.tasks(scenario);
   const allDone = done.length === tasks.length;
 
-  const finish = () => {
+  const finish = async () => {
     session.cancel();
-    const store = learnerStore.getState();
-    for (const c of corrections) {
-      store.addCard({ itemRef: `roleplay:${c.corrected.toLowerCase()}`, front: c.corrected, back: `${tConv('youWrote', { text: c.original })} ${c.explanation}`, source: 'conversation' });
+    if (lessonId && turns > 0) {
+      // Store tiến độ ở subpath riêng (chunk lười): chỉ tải khi thật sự ghi bài
+      const { progressStore } = await import('@vietlearning/state/progress');
+      setXp(progressStore.getState().completeLesson(lessonId, { total: tasks.length, firstTryCorrect: done.length }).xp);
     }
     setEnded(true);
   };
 
   if (ended) {
+    const lesson = lessonId ? findLesson(lessonId)?.lesson : undefined;
     return (
-      <section role="status" className="flex flex-col gap-3 rounded-2xl border border-line-strong bg-surface p-4 shadow-card">
-        <h2 className="m-0 text-xl font-black text-ink">{t('summary', { done: done.length, total: tasks.length })}</h2>
+      <section role="status" aria-labelledby="ct-rp-sum" className="flex flex-col gap-3 rounded-2xl border border-line-strong bg-surface p-4 shadow-card">
+        <h2 id="ct-rp-sum" className="m-0 text-xl font-black text-ink">
+          {t('summary', { done: done.length, total: tasks.length })}
+        </h2>
+        {lesson && xp !== null && <p className="m-0 text-[15px] font-bold text-heading">{t('lessonDoneXp', { lesson: text.en ? lesson.titleEn : lesson.title, xp })}</p>}
+        {lessonId && xp === null && <p className="m-0 text-sm text-ink-soft">{t('lessonNotCounted')}</p>}
         <ul className="m-0 flex list-none flex-col gap-1 p-0">
           {tasks.map((task, i) => (
             <li key={task} className="text-[15px]">
@@ -74,27 +91,16 @@ function Session({ scenario, onExit }: { scenario: RoleplayScenario; onExit: () 
             </li>
           ))}
         </ul>
-        <h3 className="m-0 text-lg font-extrabold text-ink">{t('mistakes', { n: corrections.length })}</h3>
-        {corrections.length === 0 ? (
-          <p className="m-0 text-[15px] text-ink-soft">{t('noMistakes')}</p>
+        <SessionSummary items={buildSummary(corrections, words, (s) => tConv('youWrote', { text: s }))} />
+        {lessonId ? (
+          <Link to="/" className={`${btn} flex items-center justify-center bg-accent text-accent-ink no-underline`}>
+            {t('backToPath')}
+          </Link>
         ) : (
-          <>
-            <ul className="m-0 flex list-none flex-col gap-2 p-0">
-              {corrections.map((c, i) => (
-                <li key={i} className="rounded-xl bg-surface-2 p-2 text-[15px]">
-                  <s lang="vi" className="text-ink-muted">
-                    {c.original}
-                  </s>{' '}
-                  → <strong lang="vi">{c.corrected}</strong>
-                </li>
-              ))}
-            </ul>
-            <p className="m-0 text-sm text-ink-muted">{t('savedCards')}</p>
-          </>
+          <button type="button" className={`${btn} bg-accent text-accent-ink`} onClick={onExit}>
+            {t('otherScenario')}
+          </button>
         )}
-        <button type="button" className={`${btn} bg-accent text-accent-ink`} onClick={onExit}>
-          {t('otherScenario')}
-        </button>
       </section>
     );
   }
@@ -114,20 +120,28 @@ function Session({ scenario, onExit }: { scenario: RoleplayScenario; onExit: () 
             </li>
           ))}
         </ul>
+        {scenario.reviewed === false && <p className="m-0 text-xs italic text-ink-muted">{t('draftScenario')}</p>}
       </section>
       <ChatPanel session={session} tutorName={t('npc')} placeholder={t('npcPlaceholder')} emptyHint={t('rpEmpty', { place: text.place(scenario), task: tasks[0] })} />
-      <button type="button" className={`${btn} ${allDone ? 'bg-accent text-accent-ink' : 'border border-line-strong bg-surface-2 text-ink'}`} onClick={finish}>
+      <button type="button" className={`${btn} ${allDone ? 'bg-accent text-accent-ink' : 'border border-line-strong bg-surface-2 text-ink'}`} onClick={() => void finish()}>
         {allDone ? t('finishAll') : t('finish')}
       </button>
     </>
   );
 }
 
-/** Màn hình M7: chọn 1 trong 4 tình huống, nhập vai với nhân vật, theo dõi nhiệm vụ, tổng kết lỗi. */
+/**
+ * Màn hình M7: chọn kịch bản, nhập vai với nhân vật, theo dõi nhiệm vụ, tổng kết lỗi + từ mới.
+ * `?kb=<kịch bản>&bai=<bài lộ trình>`: mở thẳng bài nhập vai cuối unit (lộ trình chỉ liên kết qua URL).
+ */
 export function RoleplayScreen() {
   const t = useT();
   const text = useScenarioText();
-  const [scenario, setScenario] = useState<RoleplayScenario | null>(null);
+  const [params] = useSearchParams();
+  const bai = params.get('bai');
+  const [scenario, setScenario] = useState<RoleplayScenario | null>(() => ROLEPLAY_SCENARIOS.find((s) => s.id === params.get('kb')) ?? null);
+  // Chỉ ghi tiến độ khi bài trong URL đúng là bài nhập vai của kịch bản này (URL sửa tay không ghi nhầm bài khác)
+  const lessonId = bai && scenario && findLesson(bai)?.lesson.roleplay === scenario.id ? bai : undefined;
   return (
     <Frame
       title={t('roleplayTitle')}
@@ -138,7 +152,7 @@ export function RoleplayScreen() {
       }
     >
       {scenario ? (
-        <Session key={scenario.id} scenario={scenario} onExit={() => setScenario(null)} />
+        <Session key={scenario.id} scenario={scenario} lessonId={lessonId} onExit={() => setScenario(null)} />
       ) : (
         <ul className="m-0 flex list-none flex-col gap-3 p-0">
           {ROLEPLAY_SCENARIOS.map((s) => (

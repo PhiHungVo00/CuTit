@@ -75,3 +75,19 @@ test('streamEvents: đọc SSE bị cắt giữa chừng, kiểm tra từng sự
   assert.deepEqual(events.map((e) => e.type), ['token', 'token', 'done']);
   assert.equal(events.filter((e) => e.type === 'token').map((e) => e.text).join(''), 'Chào bạn');
 });
+
+test('429: hết hạn mức ngày (quota_exceeded) khác với gửi quá nhanh (rate-limit); giữ resetAt để báo giờ', async () => {
+  mockFetch(async () => new Response(JSON.stringify({ error: 'quota_exceeded', capability: 'turn', resetAt: '2026-11-19T00:00:00.000Z' }), { status: 429 }));
+  const day = await request('/x', { schema: Schema }).catch((e) => e);
+  assert.equal(day.code, 'quota_exceeded');
+  assert.deepEqual(day.details, { error: 'quota_exceeded', capability: 'turn', resetAt: '2026-11-19T00:00:00.000Z' });
+  assert.match(describeGatewayError(day, 'vi'), /hết lượt/);
+  assert.match(describeGatewayError(day, 'en'), /today/);
+
+  mockFetch(async () => new Response(JSON.stringify({ error: 'FST_ERR_RATE_LIMIT', statusCode: 429 }), { status: 429 }));
+  const fast = await request('/x', { schema: Schema }).catch((e) => e);
+  assert.equal(fast.kind, 'quota');
+  assert.doesNotMatch(describeGatewayError(fast, 'vi'), /hết lượt|ngày mai/);
+  assert.match(describeGatewayError(fast, 'vi'), /nhanh/);
+  assert.match(describeGatewayError(fast, 'en'), /too fast/i);
+});
