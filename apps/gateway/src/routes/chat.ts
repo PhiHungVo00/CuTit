@@ -5,6 +5,7 @@ import { ChatEventSchema, VoiceTurnRequestSchema, VoiceTurnResponseSchema, type 
 import { ROLEPLAY_SCENARIOS } from '@vietlearning/content';
 import type { RouteDeps } from '../app.js';
 import { parseOr400, respond } from '../lib/validate.js';
+import { isChild, requireMediaConsent, requireNotFreeChat } from '../pipeline/accountPolicy.js';
 
 const MB = 1024 * 1024;
 
@@ -25,16 +26,22 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
  * - Khác => JSON một lần (giữ tương thích bản cũ)
  * Kiểm tra request và trừ quota TRƯỚC khi mở luồng, để lỗi 400/429 vẫn là JSON bình thường.
  */
-export const chatRoutes: FastifyPluginAsync<RouteDeps> = async (server, { pipeline, config, tutor }) => {
+export const chatRoutes: FastifyPluginAsync<RouteDeps> = async (server, { pipeline, config, tutor, db }) => {
   server.post('/chat/turn', { bodyLimit: config.AUDIO_BODY_LIMIT_MB * MB }, async (request, reply) => {
     const body = parseOr400(VoiceTurnRequestSchema, request.body, reply);
     if (!body) return reply;
     const scenario = body.scenarioId ? ROLEPLAY_SCENARIOS.find((s) => s.id === body.scenarioId) : undefined;
     if (body.scenarioId && !scenario) return reply.status(404).send({ error: 'unknown_scenario' });
+    // GĐ4b (D4): hồ sơ trẻ chỉ nhập vai có kịch bản (không chat tự do, không gọi thoại tự do); âm thanh cần phụ huynh cho phép.
+    // Chặn TRƯỚC khi trừ hạn mức và trước khi mở luồng SSE (lỗi vẫn là JSON 403)
+    if (isChild(request)) {
+      if (!scenario || body.mode === 'call') requireNotFreeChat(request);
+      if (body.userAudioBase64) await requireMediaConsent(db, request);
+    }
 
     // GĐ3: một lượt hội thoại AI (đơn vị người học hiểu được, báo "hết lượt" rõ ràng); lưu DB theo ngày UTC
     const turnsUsed = await pipeline.consume(request, 'turn', 1);
-    const turnsLeft = Math.max(0, pipeline.limit('turn') - turnsUsed);
+    const turnsLeft = Math.max(0, pipeline.limitFor(request, 'turn') - turnsUsed);
     // Trừ quota theo ước lượng TRƯỚC khi gọi AI (chặn sớm khi hết hạn mức); sau đó bù phần chênh theo token thật
     const historyChars = body.history.reduce((a, h) => a + h.text.length, 0);
     const estimatedTokens = Math.ceil(((body.userText?.length ?? 200) + historyChars) / 3) + 300;

@@ -11,14 +11,16 @@ import { searchCulture } from '@vietlearning/content';
 import type { RouteDeps } from '../app.js';
 import { parseOr400, respond } from '../lib/validate.js';
 import { answerCulture, labelImage } from '../services/ai/tasks.js';
+import { requireMediaConsent, requireNotFreeChat } from '../pipeline/accountPolicy.js';
 
 const MB = 1024 * 1024;
 const ItemIdParams = z.object({ id: z.string().regex(/^[\w-]{1,64}$/) });
 
 /** Các route nội dung (ảnh, cao độ mẫu, văn hóa). Dữ liệu người học nằm ở routes/me.ts (DB). */
-export const contentRoutes: FastifyPluginAsync<RouteDeps> = async (server, { pipeline, config, llm }) => {
+export const contentRoutes: FastifyPluginAsync<RouteDeps> = async (server, { pipeline, config, llm, db }) => {
   // POST /v1/vision/label (ảnh base64 nên cần giới hạn body lớn hơn). Có AI => nhận diện thật; không => nhãn mẫu, mock: true
   server.post('/vision/label', { bodyLimit: config.AUDIO_BODY_LIMIT_MB * MB }, async (req, reply) => {
+    await requireMediaConsent(db, req); // GĐ4b: ảnh của trẻ chỉ lên server khi phụ huynh cho phép
     const body = parseOr400(VisionLabelRequestSchema, req.body, reply);
     if (!body) return reply;
     // Chỉ nhận ảnh thật (kiểm tra chữ ký tệp), không chuyển dữ liệu tùy ý sang nhà cung cấp Vision
@@ -54,6 +56,7 @@ export const contentRoutes: FastifyPluginAsync<RouteDeps> = async (server, { pip
 
   // POST /v1/culture/ask
   server.post('/culture/ask', async (req, reply) => {
+    requireNotFreeChat(req); // GĐ4b: hỏi đáp tự do với AI — hồ sơ trẻ chỉ đọc thẻ văn hóa đã duyệt
     const body = parseOr400(CultureAskRequestSchema, req.body, reply);
     if (!body) return reply;
     await pipeline.consume(req, 'llm', Math.ceil(body.question.length / 3) + 300);

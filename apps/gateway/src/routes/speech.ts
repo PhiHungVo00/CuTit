@@ -13,15 +13,17 @@ import { decodeWavPcm } from '@vietlearning/audio-dsp';
 import { GatewayError } from '../pipeline/RequestPipeline.js';
 import { assessPronunciation } from '../services/assessment/assess.js';
 import { ttsVoiceId } from '../providers/tts.js';
+import { requireMediaConsent } from '../pipeline/accountPolicy.js';
 
 const MB = 1024 * 1024;
 
-export const speechRoutes: FastifyPluginAsync<RouteDeps> = async (server, { pipeline, ttsCache, config, stt, tts }) => {
+export const speechRoutes: FastifyPluginAsync<RouteDeps> = async (server, { pipeline, ttsCache, config, stt, tts, db }) => {
   const audioLimit = { bodyLimit: config.AUDIO_BODY_LIMIT_MB * MB };
 
   // POST /v1/speech/transcribe (multipart: file "audio"). Có AI => chép lời thật (không có mốc thời gian từng từ);
   // không có AI => câu mẫu, mock: true
   server.post('/speech/transcribe', audioLimit, async (request) => {
+    await requireMediaConsent(db, request); // GĐ4b: ghi âm của trẻ chỉ lên server khi phụ huynh cho phép
     const upload = await readAudioUpload(request);
     await pipeline.consume(request, 'stt', Math.max(1, Math.ceil(upload.durationSec)));
     if (stt) {
@@ -74,6 +76,7 @@ export const speechRoutes: FastifyPluginAsync<RouteDeps> = async (server, { pipe
   // POST /v1/speech/assess (A3 + A2) — multipart: file "audio" + expectedText (bắt buộc).
   // STT chép lời KHÔNG được biết câu mẫu (tránh "nghe theo đáp án"); so khớp âm tiết + A2 làm ở Gateway.
   server.post('/speech/assess', audioLimit, async (request) => {
+    await requireMediaConsent(db, request);
     const upload = await readAudioUpload(request);
     const expectedText = upload.fields.expectedText;
     if (!expectedText) throw new GatewayError(400, 'missing_expected_text', 'Thiếu trường expectedText (câu cần đọc)');

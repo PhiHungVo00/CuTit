@@ -7,3 +7,4 @@ export * from './assessment.js';
 export * from './endpoints.js';
 export * from './account.js';
 export * from './speech.js';
+export * from './family.js';
