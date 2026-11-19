@@ -50,21 +50,22 @@ export function Home() {
         {t('homeLead')}
       </p>
 
+      {/* Banner nằm CÙNG khối Suspense với lộ trình: hiện cùng lúc, không bị lộ trình (cao hơn khung chờ) đẩy xuống
+          sau khi tải => không gây xê dịch bố cục (CLS 0,111 trên Lighthouse trước đây) */}
       <Suspense fallback={<PathSkeleton />}>
         <PathHome />
+        {/* Làm quen/xếp lớp là tùy chọn: người mới học được bài đầu tiên ngay, không cần đăng ký */}
+        {!profile.onboarded && onboarding && (
+          <Link className="onboard-banner" to="/bat-dau" onPointerDown={() => prefetchScreen(onboarding)} onFocus={() => prefetchScreen(onboarding)}>
+            <span aria-hidden="true">🌱</span>
+            <span>
+              <strong>{t('onboardTitle')}</strong>
+              <br />
+              {t('onboardBody')}
+            </span>
+          </Link>
+        )}
       </Suspense>
-
-      {/* Làm quen/xếp lớp là tùy chọn: người mới học được bài đầu tiên ngay, không cần đăng ký */}
-      {!profile.onboarded && onboarding && (
-        <Link className="onboard-banner" to="/bat-dau" onPointerDown={() => prefetchScreen(onboarding)} onFocus={() => prefetchScreen(onboarding)}>
-          <span aria-hidden="true">🌱</span>
-          <span>
-            <strong>{t('onboardTitle')}</strong>
-            <br />
-            {t('onboardBody')}
-          </span>
-        </Link>
-      )}
     </div>
   );
 }
