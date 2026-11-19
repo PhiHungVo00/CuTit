@@ -34,6 +34,18 @@ export async function issueTokens(app: FastifyInstance, db: Db, userId: string, 
   return { accessToken, refreshToken, expiresIn: ACCESS_TTL_S, userId };
 }
 
+/**
+ * Sau khi xoay vòng thất bại: token này TỪNG hợp lệ và đã bị thu hồi (đã dùng) => trả chủ token (để ghi audit
+ * “dùng lại refresh token”). Token lạ / chưa từng tồn tại => null.
+ */
+export async function refreshTokenOwnerIfReused(db: Db, refreshToken: string): Promise<string | null> {
+  const [row] = await db
+    .select({ userId: schema.refreshTokens.userId, revokedAt: schema.refreshTokens.revokedAt })
+    .from(schema.refreshTokens)
+    .where(eq(schema.refreshTokens.tokenHash, sha256(refreshToken)));
+  return row?.revokedAt ? row.userId : null;
+}
+
 /** Đổi refresh token hợp lệ lấy cặp token mới; token cũ bị thu hồi. null = không hợp lệ/hết hạn/đã dùng. */
 export async function rotateRefreshToken(app: FastifyInstance, db: Db, refreshToken: string, now = new Date()): Promise<AuthTokens | null> {
   const hash = sha256(refreshToken);

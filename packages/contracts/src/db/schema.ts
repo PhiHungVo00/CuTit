@@ -348,3 +348,32 @@ export const friendships = pgTable(
   },
   (t) => [uniqueIndex('friendships_pair_uq').on(t.userA, t.userB), index('friendships_user_b_idx').on(t.userB)]
 );
+
+/**
+ * 23. Nhật ký sự kiện bảo mật/quản trị (audit log) — CHỈ THÊM, không sửa/ghi đè dòng cũ.
+ * Mục đích: phát hiện và điều tra sự cố lộ dữ liệu (báo cơ quan chuyên trách trong 72 giờ — docs/van-hanh/SU-CO-LO-DU-LIEU.md).
+ * - Không lưu IP thô: `ip_hash` = HMAC-SHA256(AUDIT_IP_SALT, ip) rút gọn; user-agent rút gọn.
+ * - `metadata`: chỉ các trường trong danh sách trắng theo loại sự kiện (apps/gateway/src/services/audit/) — không dữ liệu học,
+ *   không bí mật (token, mã khôi phục, mã mời), không id người dùng khác.
+ * - Xóa tài khoản => `user_id` tự đặt NULL (ẩn danh hóa, FK ON DELETE SET NULL); dòng vẫn còn để điều tra.
+ * - Lưu tối đa 180 ngày (job dọn trong Gateway).
+ */
+export const auditEvents = pgTable(
+  'audit_events',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    type: text('type').notNull(),
+    /** 'success' | 'failure' | 'blocked' */
+    outcome: text('outcome').notNull(),
+    userId: uuid('user_id').references(() => users.id, { onDelete: 'set null' }),
+    ipHash: text('ip_hash'),
+    userAgent: text('user_agent'),
+    metadata: jsonb('metadata').$type<Record<string, string | number | boolean>>().notNull().default({}),
+    createdAt: ts('created_at').notNull().defaultNow()
+  },
+  (t) => [
+    index('audit_events_created_idx').on(t.createdAt),
+    index('audit_events_type_created_idx').on(t.type, t.createdAt),
+    index('audit_events_user_idx').on(t.userId)
+  ]
+);
