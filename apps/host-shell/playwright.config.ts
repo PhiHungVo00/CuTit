@@ -1,3 +1,5 @@
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { defineConfig, devices } from '@playwright/test';
 
 /**
@@ -65,6 +67,9 @@ export default defineConfig({
         CORS_ORIGIN: `http://localhost:${PORT}`,
         GEMINI_API_KEY: '',
         BECUTIT_ENV_FILE: 'e2e-khong-co-tep.env',
+        // Thư mục âm thanh dựng sẵn RIÊNG, trống: không dùng apps/gateway/.data/tts của máy dev (có gói thì app phát
+        // tệp dựng sẵn thay vì TTS của máy => test đếm lời đọc phụ thuộc máy)
+        TTS_AUDIO_DIR: join(tmpdir(), `becutit-e2e-audio-${GATEWAY_PORT}`),
         AUTH_RATE_LIMIT_PER_MINUTE: '1000',
         RATE_LIMIT_PER_MINUTE: '1000'
       }
