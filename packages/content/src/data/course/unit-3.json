@@ -4,7 +4,7 @@
   "title": "Gọi món & hỏi đường",
   "titleEn": "Ordering food & asking the way",
   "icon": "🍜",
-  "reviewed": false,
+  "reviewed": true,
   "dialectNotes": ["d20", "d21", "d5", "d13", "d9"],
   "lessons": [
     {

@@ -4,7 +4,7 @@
   "title": "Số đếm & mua bán",
   "titleEn": "Numbers & shopping",
   "icon": "🛒",
-  "reviewed": false,
+  "reviewed": true,
   "dialectNotes": ["d15", "d3", "d1", "d2", "d28"],
   "lessons": [
     {

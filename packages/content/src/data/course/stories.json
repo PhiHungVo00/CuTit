@@ -4,7 +4,7 @@
     "unit": "u1",
     "title": "Gặp bạn mới",
     "titleEn": "Meeting someone new",
-    "reviewed": false,
+    "reviewed": true,
     "lines": [
       { "speaker": "Lan", "text": "Xin chào! Tôi tên là Lan.", "en": "Hello! My name is Lan." },
       { "speaker": "Nam", "text": "Chào chị! Em tên là Nam.", "en": "Hello! My name is Nam." },
@@ -16,7 +16,7 @@
     "questions": [
       { "q": "Chị ấy tên là gì?", "qEn": "What is her name?", "answer": "Lan", "distractors": ["Nam", "Mai"] },
       { "q": "Nam gọi Lan là gì?", "qEn": "What does Nam call Lan?", "answer": "chị", "distractors": ["em", "bà"] },
-      { "q": "Nam có khỏe không?", "qEn": "Is Nam well?", "answer": "Nam khỏe.", "distractors": ["Nam không khỏe.", "Nam không nói."] }
+      { "q": "Nam có khỏe không?", "qEn": "Is Nam well?", "answer": "Nam khỏe.", "distractors": ["Nam không khỏe.", "Nam mệt."] }
     ]
   },
   {
@@ -24,7 +24,7 @@
     "unit": "u2",
     "title": "Đi chợ mua dứa",
     "titleEn": "Buying a pineapple at the market",
-    "reviewed": false,
+    "reviewed": true,
     "lines": [
       { "speaker": "Mai", "text": "Chị ơi, dứa bao nhiêu tiền một quả?", "en": "Excuse me, how much is one pineapple?" },
       { "speaker": "Người bán", "text": "Hai mươi nghìn một quả, em ạ.", "en": "Twenty thousand each." },
@@ -43,7 +43,7 @@
     "unit": "u3",
     "title": "Ăn phở rồi hỏi đường",
     "titleEn": "Eating phở, then asking the way",
-    "reviewed": false,
+    "reviewed": true,
     "lines": [
       { "speaker": "Nam", "text": "Em ơi, cho anh một phở bò và một trà đá.", "en": "Excuse me, one beef phở and one iced tea, please." },
       { "speaker": "Phục vụ", "text": "Dạ, anh đợi một chút ạ.", "en": "Yes, please wait a moment." },
@@ -55,7 +55,7 @@
     "questions": [
       { "q": "Nam ăn gì?", "qEn": "What does Nam eat?", "answer": "phở bò", "distractors": ["bánh mì", "cơm"] },
       { "q": "Nam trả bao nhiêu tiền?", "qEn": "How much does Nam pay?", "answer": "năm mươi nghìn", "distractors": ["mười lăm nghìn", "hai mươi nghìn"] },
-      { "q": "Đi chợ thế nào?", "qEn": "How do you get to the market?", "answer": "Đi thẳng, rồi rẽ trái.", "distractors": ["Đi thẳng, rồi rẽ phải.", "Rẽ phải, rồi đi thẳng."] }
+      { "q": "Muốn đến chợ thì đi thế nào?", "qEn": "How do you get to the market?", "answer": "Đi thẳng, rồi rẽ trái.", "distractors": ["Đi thẳng, rồi rẽ phải.", "Rẽ phải, rồi đi thẳng."] }
     ]
   }
 ]
