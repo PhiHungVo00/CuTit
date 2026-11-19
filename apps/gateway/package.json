@@ -9,7 +9,9 @@
     "start": "node dist/index.js",
     "test": "node --test \"test/**/*.test.mjs\"",
     "db:generate": "drizzle-kit generate",
-    "tts:prebuild": "tsx scripts/prebuild-tts.ts"
+    "tts:prebuild": "tsx scripts/prebuild-tts.ts",
+    "db:backup": "tsx scripts/backup-db.ts",
+    "db:restore-test": "tsx scripts/restore-test.ts"
   },
   "dependencies": {
     "@electric-sql/pglite": "^0.5.16",
