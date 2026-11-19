@@ -61,8 +61,12 @@ Từ 18/11, mọi lần push lên `main` đều đỏ, dù trên máy dev Window
 | 1 | `ci: green CI on Linux…` (run 44491302741) | ✅ 9 phút. e2e **97/97, 0 flaky** | ✅ 4,5 phút. Artifact `app-debug` 4,4 MB, đã tải về và `unzip -l` thấy `assets/public/index.html` | ❌ (xem mục 5) | audio-dsp trên CI: YIN 432 ms, McLeod 606 ms (ngân sách 2000 ms, CI). Tức là khi đo đúng cách, CI cũng dưới 1 s. |
 | 2 | `docs(ci): nhật ký…` (run 44492758262) | ✅ e2e **97/97, 0 flaky** | ✅ | ❌ cùng các mức vượt: CLS 0,111; LCP 2571 và 2583 ms | McLeod **1124 ms** dù đã lấy lần nhanh nhất trong 3 (YIN 525 ms). Runner dao động thật: chỉ lấy lần nhanh nhất thì chưa đủ, ngân sách ×2 trên CI là cần thiết. Máy dev vẫn đo theo ngân sách 1 s. |
 | 3 | `docs(ci): lượt 2 xanh` (run 44494113071) | ❌ **1 test**: e2e `@perf` “mở M3 < 1,5 s với CPU chậm 4×” đo được 1518 và 1636 ms (cả lần thử lại). 96 test còn lại qua | ✅ | ❌ | Cùng mã nguồn, ba lượt đo được 1495, 1166, 1518–1636 ms. Đây là nhiễu của runner (giả CPU chậm 4× chồng lên runner vốn đã chậm), không phải hồi quy. ⇒ xem mục 3b. |
+| 4 | `ci: move timing e2e (@perf)…` (run 44495937075) | ✅ e2e **96 qua, 10 bỏ qua có chủ đích, 0 flaky** | ✅ artifact tải được, có `assets/public/index.html` | ❌ chỉ Lighthouse (CLS 0,111; LCP 2566 và 2565 ms). e2e @perf qua (1466 ms) | audio-dsp: YIN 447 ms, McLeod 924 ms |
+| 5 | `docs(ci): lượt 4…` (commit cuối của nhánh) | xem PR | xem PR | | Lần xanh thứ hai liên tiếp trên cấu hình cuối cùng |
 
 ## 5. Lighthouse: kết quả thật trên runner (việc còn lại, không thuộc CI)
+
+Số đo ổn định qua 4 lượt: CLS 0,111 ở `/` và LCP 2,56–2,58 s ở `/xung-ho` và `/phat-am`. Đây là vượt ngân sách thật, không phải nhiễu.
 
 Lần đầu Lighthouse chạy trên GitHub (trước đây bước này chưa bao giờ chạy tới, vì các bước trước đã đỏ). Trung vị 3 lần:
 
@@ -74,3 +78,10 @@ Lần đầu Lighthouse chạy trên GitHub (trước đây bước này chưa b
 
 - Đây là hiệu năng của app, không phải lỗi hạ tầng CI. Job để không chặn merge, đúng R12.
 - Việc tiếp theo: tìm phần tử gây xê dịch bố cục ở trang chủ, sửa độ tương phản màu, và giảm LCP ở hai màn lazy.
+
+## 6. Còn lại / để sau
+
+- Sửa hiệu năng ở mục 5 (CLS trang chủ, độ tương phản màu, LCP hai màn lazy). Sửa xong thì job `performance` xanh.
+- Keystore và bản release ký phát hành; Gateway trên Internet (đổi `VITE_GATEWAY_URL` của job APK).
+- Nhật ký tổng `docs/NHAT_KY_CHUYEN_DOI_MOBILE.md` chưa có dòng cho việc này. Thêm khi gộp PR, để tránh xung đột số dòng với phiên đang sửa TTS.
+- Người dùng quyết định có merge PR #1 hay không.
