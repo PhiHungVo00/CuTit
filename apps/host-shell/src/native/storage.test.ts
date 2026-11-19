@@ -20,10 +20,11 @@ const fakePlugin = new Proxy(
 vi.mock('@capacitor/preferences', () => ({ Preferences: fakePlugin }));
 
 const withTimeout = <T>(p: Promise<T>) =>
-  Promise.race([p, new Promise<never>((_, rej) => setTimeout(() => rej(new Error('treo: plugin proxy bị dò .then')), 500))]);
+  Promise.race([p, new Promise<never>((_, rej) => setTimeout(() => rej(new Error('treo: plugin proxy bị dò .then')), 3000))]);
 
 describe('preferencesStore (phiên đăng nhập trên app native)', () => {
-  it('đọc/ghi/xóa không treo khi plugin là proxy trả lời mọi thuộc tính (kể cả then)', async () => {
+  // thời gian rộng để không chập chờn khi turbo chạy song song; treo thật thì không bao giờ xong
+  it('đọc/ghi/xóa không treo khi plugin là proxy trả lời mọi thuộc tính (kể cả then)', { timeout: 20_000 }, async () => {
     const { preferencesStore } = await import('./storage');
     await withTimeout(preferencesStore.set('k', 'v'));
     expect(await withTimeout(preferencesStore.get('k'))).toBe('v');
