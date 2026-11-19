@@ -25,7 +25,7 @@ Ký hiệu nguồn: **[NV]** = đã đọc nguyên văn trên bản sao trực t
 |---|---|---|
 | Hồ sơ ĐGTĐ **xử lý** DLCN (Luật Điều 21; NĐ Điều 19, Mẫu 10) | lập từ khi bắt đầu xử lý, nộp **01 bản chính trong 60 ngày** kể từ ngày đầu xử lý | **Có** (Luật Điều 38 k2; NĐ Điều 41 k1) |
 | Cập nhật hồ sơ (Luật Điều 22; NĐ Điều 20) | định kỳ **06 tháng** khi có thay đổi; trong **10 ngày** khi tổ chức lại/giải thể/đổi đơn vị dịch vụ BVDLCN/đổi ngành nghề | **Có** |
-| Nhân sự/bộ phận BVDLCN (Luật Điều 33 k2; NĐ Điều 13: cao đẳng + 2 năm kinh nghiệm + đã đào tạo BVDLCN) | — | **Có** (theo Điều 38 k2 Luật; NĐ Điều 13 không tự ghi miễn) |
+| Nhân sự/bộ phận BVDLCN (Luật Điều 33 k2 [NV]: “chỉ định bộ phận, nhân sự đủ điều kiện năng lực … hoặc thuê tổ chức, cá nhân cung cấp dịch vụ”; NĐ Điều 13: cao đẳng + 2 năm kinh nghiệm + đã đào tạo BVDLCN) | — | **Có** (theo Điều 38 k2 Luật; NĐ Điều 13 không tự ghi miễn) |
 | Hồ sơ ĐGTĐ **chuyển DLCN xuyên biên giới** (Luật Điều 20; NĐ Điều 17–18, Mẫu 09) | nộp **01 bản chính trong 60 ngày** kể từ ngày đầu chuyển; lập 01 lần, cập nhật như trên | **KHÔNG** — Điều 20 không nằm trong danh sách Điều 38 k2. Các trường hợp không phải lập (NĐ Điều 17 k3: báo chí, dữ liệu đã công khai, khẩn cấp, nhân sự nội bộ, ký hợp đồng/vận chuyển/thanh toán/thị thực/học bổng) **không bao gồm** việc gửi nội dung người dùng tới nhà cung cấp AI nước ngoài |
 
 **Ngoại lệ làm mất ân hạn** (Luật Điều 38 k2; NĐ Điều 41 k1 [NV]): doanh nghiệp kinh doanh dịch vụ xử lý DLCN, **trực tiếp xử lý DLCN nhạy cảm**, hoặc xử lý DLCN của từ **100.000 chủ thể** trở lên (tích lũy). Hộ kinh doanh, doanh nghiệp siêu nhỏ: không phải thực hiện Điều 21, 22, 33 k2 (không giới hạn 5 năm), cùng ngoại lệ.
@@ -63,18 +63,21 @@ Không thu thập: tên thật, email, số điện thoại, giấy tờ, vị t
 | 4 | Tên hiển thị tự đặt, mã mời (có hạn), quan hệ bạn học, mục tiêu chung | `social_profiles`, `friend_invites`, `friendships` | Tính năng bạn học (người dùng tự bật) | như trên | Tới khi hủy kết bạn/xóa tài khoản; mã mời tới khi hết hạn |
 | 5 | Bản ghi đồng ý: khóa, **phiên bản nội dung**, thời điểm | `consents` | Chứng minh sự đồng ý (Luật Điều 9 k3) | Nghĩa vụ pháp lý | Tới khi rút lại (bản ghi bị xóa) hoặc xóa tài khoản |
 | 6 | Bộ đếm lượt dùng AI theo ngày | `ai_usage` | Hạn mức công bằng, chống lạm dụng | Lợi ích chính đáng/cung cấp dịch vụ | Tới khi xóa tài khoản |
+| 7a | Trạng thái bài xếp lớp A5 (câu đã hỏi, lựa chọn đã trả lời, θ) | `placement_sessions` | Xếp trình độ, tiếp tục bài dở khi mất mạng | Cung cấp dịch vụ | Tới khi xóa tài khoản |
 | 7 | Băm thông tin đăng nhập của tài khoản đã xóa | `deleted_accounts` | Báo cho máy khác biết tài khoản đã xóa | như trên | 90 ngày |
 | 8 | Nhật ký máy chủ (thời gian, đường dẫn, IP) | log stdout của Fastify | Chống lạm dụng (giới hạn tần suất theo IP), sửa lỗi | Lợi ích chính đáng | `[CẦN ĐIỀN: theo cấu hình hosting]` |
-| 9 | Nội dung chat, câu hỏi văn hóa, yêu cầu giải thích | chỉ đi qua Gateway → Gemini, **không lưu** | Gia sư AI, giải thích | Cung cấp dịch vụ người dùng yêu cầu | Không lưu ở Gateway |
+| 9 | Nội dung chat, câu hỏi văn hóa, yêu cầu giải thích | chỉ đi qua Gateway → Gemini, **không lưu** (ngoại lệ: lời giải thích bài tập được giữ trong bộ nhớ đệm RAM tối đa 500 mục, khóa = băm của câu hỏi + đáp án + câu trả lời, **không gắn mã người dùng**, mất khi khởi động lại) | Gia sư AI, giải thích | Cung cấp dịch vụ người dùng yêu cầu | Không lưu bền ở Gateway |
 | 10 | Ảnh Camera từ vựng (JPEG ≤ 640 px) | chỉ đi qua Gateway → Gemini, **không lưu** | Nhận diện đồ vật | **Đồng ý** khóa `camera` | Không lưu ở Gateway |
 | 11 | Bản ghi giọng nói (WAV 16 kHz) | chỉ đi qua Gateway → Gemini, **không lưu** | Chuyển giọng nói thành chữ, chấm phát âm | **Đồng ý** khóa `voice` | Không lưu ở Gateway |
+
+Bảng có trong schema nhưng **Gateway hiện chưa ghi** (kiểm tra `insert(` ngày 19/11/2026): `sessions`, `messages`, `srs_reviews`, `usage_logs`, `audio_assets`, `content_items` (nội dung khóa học, không phải DLCN). Nếu sau này ghi `messages` (lịch sử chat) thì phải cập nhật hồ sơ, chính sách và Data safety.
 
 Luồng: Điện thoại (localStorage/Preferences) ⇄ HTTPS ⇄ Gateway (Fastify, JWT) ⇄ Postgres (dữ liệu 1–8); Gateway → Gemini API (dữ liệu 9–11, khóa API chỉ ở biến môi trường server — Nguyên tắc 2).
 
 ### A.d Cách xin đồng ý, lưu trữ, xóa
 - Hộp hỏi riêng cho từng mục đích (giọng nói; ảnh), hiện **trước** khi ghi âm/mở camera/chọn ảnh. Không có ô đánh dấu sẵn; nút “Để sau” không ghi gì. Đồng ý → sự kiện `consent.grant {key, version, at}` → bảng `consents (user_id, key, version, granted_at)`: lưu **ai** (user_id), **lúc nào** (granted_at = thời điểm trên máy), **đồng ý nội dung gì** (version, tra ở Sổ đồng ý dưới đây).
 - Rút lại: Tùy chỉnh → Quyền riêng tư → “Rút lại đồng ý” → `consent.revoke` → Gateway xóa bản ghi của khóa đó; ảnh chụp đồng bộ không còn khóa → máy khác cũng thôi coi là đã đồng ý.
-  **Hạn chế đã biết:** schema chưa có cột thu hồi nên lịch sử “đã từng đồng ý rồi rút lại” không còn trong DB. Khi bảng `audit_events` (phiên song song) có, cần ghi thêm sự kiện thu hồi vào đó.
+  **Hạn chế đã biết:** (1) schema chưa có cột thu hồi nên lịch sử “đã từng đồng ý rồi rút lại” không còn trong DB — khi bảng `audit_events` (phiên song song) có, cần ghi thêm sự kiện thu hồi vào đó; (2) không có “bia mộ” cho đồng ý: một máy khác đang offline mà đã bấm đồng ý *trước* lúc rút lại vẫn gửi `consent.grant` cũ lên khi có mạng ⇒ đồng ý bật lại. Hiếm (cần hai máy + offline), nhưng nên sửa khi được đổi schema (lưu `revoked_at` và so thời điểm).
 - Xóa tài khoản: `DELETE /v1/me` xóa ngay mọi bảng gắn `user_id` (cascade), máy hiện tại xóa dữ liệu cục bộ, máy khác tự xóa ở lần kết nối kế.
 
 **Sổ đồng ý** (phiên bản nội dung, `packages/state/src/sync.ts` → `CONSENT_VERSIONS`):
@@ -128,7 +131,7 @@ Người đã đồng ý `voice` v1 trên máy trước 19/11/2026 không bị h
 | Trường hợp chuyển (Luật Điều 20 k1) | (c) dùng nền tảng ngoài lãnh thổ để xử lý DLCN thu thập tại Việt Nam |
 | b. Nhân sự BVDLCN | như A.b `[CẦN ĐIỀN]` |
 | c. Mục đích | Chuyển giọng nói thành chữ và chấm phát âm; nhận diện đồ vật trong ảnh; trả lời hội thoại, giải thích bài tập, hỏi văn hóa |
-| Loại dữ liệu | Bản ghi giọng nói (≤ 15 s/lượt), ảnh JPEG ≤ 640 px, văn bản người dùng nhập (≤ 500 ký tự/lượt, kèm ≤ 6 lượt trước). **Không gửi** mã người dùng, IP người dùng, hồ sơ học |
+| Loại dữ liệu | Bản ghi giọng nói (≤ 15 s/lượt ở trò chuyện/gọi thoại, ≤ 8 s ở bài luyện nói), ảnh JPEG ≤ 640 px, văn bản người dùng nhập (≤ 500 ký tự/lượt, kèm ≤ 6 lượt trước). Gửi kèm để gia sư điều chỉnh: trình độ (1–6), phương ngữ đích, ngôn ngữ giải thích (vi/en), mức sửa lỗi, nhân vật, mã kịch bản. **Không gửi** mã người dùng, IP người dùng, tên hiển thị, thẻ ôn hay lịch sử học |
 | Có DLCN nhạy cảm không | Không chủ đích. Rủi ro gián tiếp: người dùng tự đưa thông tin nhạy cảm vào ảnh/lời nói; câu hỏi mở 1 (giọng nói) ở mục 0.1 |
 | Số chủ thể dự kiến | `[CẦN ĐIỀN]` (ngưỡng 100.000 ảnh hưởng ân hạn) |
 | d. Đồng ý | Khóa `voice` (v2), `camera` (v1) — như A.d. Văn bản chat: thông báo trong chính sách + màn hình chat `[CẦN QUYẾT ĐỊNH: có cần hộp đồng ý riêng cho chat văn bản không — hiện coi là cung cấp dịch vụ người dùng chủ động yêu cầu]` |
