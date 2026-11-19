@@ -1,4 +1,3 @@
-import { Link, useInRouterContext } from 'react-router-dom';
 import { useEffect, useRef, useState } from 'react';
 import { PitchReferenceFlyweight, type ToneId } from '@vietlearning/content';
 import type { AssessResponse, AssessWord } from '@vietlearning/contracts/api';
@@ -131,7 +130,6 @@ export default function SpeakExercise({ item, onDone, onSkip, assess }: { item: 
             {t('consentTitle')}
           </strong>
           <p className="m-0 text-sm text-ink-soft">{t('consentBody')}</p>
-          <PolicyLink label={t('privacyPolicy')} />
           <div className="grid grid-cols-2 gap-2">
             <button type="button" onClick={() => setAskConsent(false)} className="min-h-12 rounded-xl border border-line bg-surface text-sm font-bold text-ink">
               {t('consentNo')}
@@ -217,20 +215,5 @@ export default function SpeakExercise({ item, onDone, onSkip, assess }: { item: 
         )}
       </div>
     </div>
-  );
-}
-
-/** Link trang chính sách /quyen-rieng-tu (Host). Có Router => điều hướng SPA; chạy rời (test, dev riêng) => thẻ a thường */
-function PolicyLink({ label }: { label: string }) {
-  const inRouter = useInRouterContext();
-  const cls = 'self-start text-sm font-bold text-ink underline';
-  return inRouter ? (
-    <Link to="/quyen-rieng-tu" className={cls}>
-      {label}
-    </Link>
-  ) : (
-    <a href="/quyen-rieng-tu" className={cls}>
-      {label}
-    </a>
   );
 }

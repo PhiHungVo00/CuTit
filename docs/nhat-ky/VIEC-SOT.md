@@ -53,7 +53,9 @@ Test:
 
 GĐ3 **chưa** làm mục này. Có hai hộp đồng ý ghi âm:
 - `apps/mfe-conversation/src/chat/VoiceConsent.tsx`: dùng chung cho chat M1, nhập vai M7 và gọi thoại. Thêm `<Link to="/quyen-rieng-tu">` “Đọc chính sách quyền riêng tư / Read the privacy policy”. Test mới `VoiceConsent.test.tsx` (3 ca). e2e `conversation.spec.ts` kiểm tra link trong hộp của màn gọi thoại.
-- `packages/exercises/src/speak/SpeakExercise.tsx`: hộp đồng ý của bài Nói trong lộ trình. Gói `exercises` có thể chạy không có Router (test, dev riêng), nên thêm `PolicyLink`: dùng `useInRouterContext()`, có Router thì dùng `Link`, không có thì dùng thẻ `<a>` thường. Thêm phụ thuộc `react-router-dom` (cùng bản `^6.30.6` với các MFE). Thêm 1 ca test, chạy cả có lẫn không có Router.
+- `packages/exercises/src/speak/SpeakExercise.tsx` (hộp đồng ý của bài Nói trong lộ trình): **cố ý chưa thêm**. Bài học trong lộ trình chưa lưu được tiến độ dở dang (`LessonScreen` giữ trạng thái trong bộ nhớ). Bấm link giữa bài sẽ rời màn hình và mất cả bài đang làm. Đã thử thêm rồi bỏ lại. Việc này cần một trong hai cách:
+  - mở chính sách dạng lớp phủ ngay trong bài, không đổi route;
+  - cho bài học lưu và khôi phục được tiến độ dở dang.
 
 ## 4. Nút 🐢 đọc chậm cho các nút nghe riêng (GĐ4a mục 5)
 
@@ -74,12 +76,14 @@ GĐ3 **chưa** làm mục này. Có hai hộp đồng ý ghi âm:
 | Lệnh | Kết quả |
 |---|---|
 | `pnpm build` | 19/19 |
-| `pnpm test` | (điền sau) |
+| `pnpm test` | 35/35 task (gateway có thêm `friends-concurrency` bản PGlite) |
 | `pnpm lint:boundaries` | 0 vi phạm (410 module) |
-| `pnpm --filter @vietlearning/host-shell size` | gói đầu **64.17 / 64.5 kB** (+50 B so với 64.12, do hằng `SLOW_FACTOR` nằm trong chunk `state` dùng chung); mọi chunk khác trong ngân sách |
-| e2e (cổng 4190/4017) | (điền sau) |
+| `pnpm --filter @vietlearning/host-shell size` (sau `pnpm build` thường) | gói đầu **64.16 / 64.5 kB** (+40 B so với 64.12, do hằng `SLOW_FACTOR` nằm trong chunk `state` dùng chung); mọi chunk khác trong ngân sách |
+| e2e (cổng 4190/4017) | **97 đạt**, 10 bỏ qua (theo thiết bị). Lần chạy đầu `family.spec` (pixel-7) trượt vì hết giờ chờ mã khôi phục; luồng này không bị sửa ở đây. Chạy lại cả bộ thì đạt hết ⇒ test chập chờn |
+| Postgres thật (thủ công, Docker) | `friends-concurrency` 3/3, chạy 3 lần (trước khi sửa: 2/3 trượt) |
 
 ## 6. Còn lại
 
 - Chưa chạy thử trên emulator. Thay đổi lần này chỉ ở UI web và gateway, không đụng plugin native mới; nút 🐢 dùng lại `getDeviceSpeech().speak` đã chạy được.
-- Test Postgres không chạy trong `pnpm test` mặc định (cần Docker). Muốn chạy thì đặt `TEST_DATABASE_URL`.
+- Test Postgres không chạy trong `pnpm test` mặc định (cần Docker). Muốn chạy thì đặt `TEST_DATABASE_URL`. Bản PGlite đạt cả trước lẫn sau khi sửa, nên **không bắt được lỗi quay lại**. Chỉ lần chạy Postgres thủ công mới chứng minh được khóa có tác dụng.
+- Link chính sách trong hộp đồng ý của bài Nói (`SpeakExercise`): xem mục 3, cần lớp phủ hoặc cho bài học lưu được tiến độ dở dang.

@@ -57,5 +57,5 @@
 
 - Lịch sử tổng kết tuần chỉ có trên máy (G9). Trên máy mới, “tuần trước” của bài/từ/điểm thanh bắt đầu lại từ 0; phút học và XP thì vẫn đúng vì đã đồng bộ
 - Phòng tập thanh (`becutit.toneGym`, GĐ2) chưa cộng vào `toneStats`, nên chưa góp vào huy hiệu “Sáu thanh vững” hay “thanh tiến bộ nhất”
-- Nút nghe riêng của M5/M9/M4/chat chưa có 🐢
+- ~~Nút nghe riêng của M5/M9/M4/chat chưa có 🐢~~ (đã làm ở `VIEC-SOT.md` mục 4)
 - Khi merge cùng hai phiên GĐ4 khác: dễ xung đột ở `progress.ts`, `gamification.ts` (danh sách trường của `ProgressData`), `sync.ts` (`applyProgress`) và `.size-limit.cjs`. Xử lý bằng cách giữ cả hai bên, vì mọi thay đổi ở đây chỉ là thêm vào
