@@ -22,7 +22,7 @@
 | # | Việc | Tệp |
 |---|---|---|
 | A1 | Chính sách quyền riêng tư viết lại theo mã nguồn, song ngữ: căn cứ pháp lý mới; bảng dữ liệu (gì / để làm gì / giữ bao lâu) gồm cả **Bạn học, bộ đếm AI, bản ghi đồng ý** (bản cũ thiếu); chuyển ra nước ngoài (Gemini: chat, hỏi văn hóa, giải thích, ảnh, giọng); quyền (biết, rút lại, xem/sửa, xóa ngay trong app, khiếu nại – phản hồi 02 ngày làm việc); **không mua bán dữ liệu**, không quảng cáo/SDK thống kê; HTTPS; trẻ em. Giữ nguyên chỗ trống liên hệ; thêm `[Cần điền]` cho thời gian lưu log và gói Gemini | `apps/host-shell/src/privacyI18n.ts`, `screens/PrivacyRoute.tsx` |
-| A2 | Mọi chỗ nhắc NĐ 13/2023 trong `docs/`: **chỉ có 1 chỗ**, trong nhật ký cũ `docs/nhat-ky/GD4b.md` ⇒ không sửa nội dung, **thêm ghi chú** (NĐ 13 hết hiệu lực, ngưỡng 16 tuổi chưa xác nhận lại) | `docs/nhat-ky/GD4b.md` |
+| A2 | Mọi chỗ nhắc NĐ 13/2023 trong `docs/` (đã quét `.md`, `.html`, `.py`, 4 tệp `.docx`, PDF báo cáo TDD): **chỉ có 1 chỗ**, trong nhật ký cũ `docs/nhat-ky/GD4b.md` ⇒ không sửa nội dung, **thêm ghi chú** (NĐ 13 hết hiệu lực, ngưỡng 16 tuổi chưa xác nhận lại) | `docs/nhat-ky/GD4b.md` |
 | A3 | Nháp hồ sơ ĐGTĐ xử lý (Mẫu 10) + chuyển xuyên biên giới Gemini (Mẫu 09): thời hạn 60 ngày, cập nhật 6 tháng/10 ngày, ân hạn và ngoại lệ, mức phạt NĐ 330, sổ đồng ý, rủi ro | `docs/phap-ly/DANH-GIA-TAC-DONG.md` |
 | A4 | Nháp khai báo Google Play Data safety (thu thập/chia sẻ/xử lý tạm thời/mã hóa khi truyền/cho xóa; cần URL web xóa tài khoản) | `docs/phap-ly/DATA-SAFETY.md` |
 | A5 | Hộp đồng ý — xem mục 3 | |
@@ -38,7 +38,9 @@
 | **Rút lại đồng ý** | **THIẾU** (`giveConsent` chỉ bật; kéo về từ server còn bật lại) | Tùy chỉnh → Quyền riêng tư: trạng thái từng loại + nút “Rút lại đồng ý”. Sự kiện mới `consent.revoke` (contract trước) ⇒ Gateway xóa bản ghi; server là nguồn đúng cho đồng ý khi áp ảnh chụp ⇒ rút ở máy này thì máy khác cũng thôi |
 
 Lưu “ai / lúc nào / nội dung gì”: bảng `consents (user_id, key, version, granted_at)` — `version` nay theo từng khóa (`CONSENT_VERSIONS`), bảng tra nội dung từng phiên bản ở DANH-GIA-TAC-DONG.md mục A.d.
-**Hạn chế:** không sửa schema nên lịch sử “đã rút lại” không giữ trong DB; đã ghi chú cho phiên `audit_events` (thư mục ghi chú chung).
+**Hạn chế:** không sửa schema nên (1) lịch sử “đã rút lại” không giữ trong DB — đã ghi chú cho phiên `audit_events`; (2) không có bia mộ cho đồng ý: máy khác đang offline mà đã đồng ý *trước* lúc rút lại sẽ gửi grant cũ lên và bật lại đồng ý (hiếm).
+
+Đã kiểm thêm theo góp ý duyệt: Gateway chỉ ghi `placement_sessions` ngoài các bảng đã liệt kê (bổ sung vào chính sách + hồ sơ); bộ đệm giải thích chỉ ở RAM, không gắn người dùng; gia sư nhận kèm trình độ/phương ngữ/ngôn ngữ giải thích (đã sửa câu “không gửi hồ sơ học”); mã mời hết hạn 48 giờ; Điều 33 k2 Luật 91 đã đọc nguyên văn; định nghĩa Play đã đọc nguyên văn. Test mới: đồng ý có trên máy nhưng chưa lên server ⇒ vẫn gửi grant và giữ nguyên.
 
 ## 4. Rà UI/UX — khóa nút & chỉ báo (slide 21)
 

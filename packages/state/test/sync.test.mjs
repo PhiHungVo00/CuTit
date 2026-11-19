@@ -228,3 +228,25 @@ test('Đồng ý bị rút ở máy khác (ảnh chụp server không còn khóa
   assert.equal(s().consents.camera, undefined);
   assert.equal(engine.status().pending, 0, 'không sinh sự kiện vọng lại');
 });
+
+test('Đồng ý có trên máy nhưng chưa lên server (bóng chưa có) => vẫn được gửi consent.grant, không bị ảnh chụp rỗng xóa mất', async () => {
+  s().giveConsent('voice'); // trước khi engine chạy: chỉ có trong store, chưa trong bóng/hàng đợi
+  // server giả giống Gateway thật: áp lô rồi mới trả ảnh chụp (xem apps/gateway/test/sync.test.mjs)
+  const server = new Map();
+  const tr = {
+    batches: [],
+    async push(events) {
+      tr.batches.push(events);
+      for (const e of events) {
+        if (e.type === 'consent.grant') server.set(e.key, { key: e.key, version: e.version, grantedAt: e.at });
+        if (e.type === 'consent.revoke') server.delete(e.key);
+      }
+      return { accepted: events.map((e) => e.clientEventId), duplicates: [], snapshot: emptySnap({ consents: [...server.values()] }) };
+    }
+  };
+  const { engine } = start(tr, memStorage(), true);
+  await engine.flush({ pull: true });
+  assert.deepEqual(tr.batches.flat().filter((e) => e.type.startsWith('consent')).map((e) => [e.type, e.key]), [['consent.grant', 'voice']]);
+  assert.equal(s().consents.voice, true, 'ảnh chụp sau lô có voice => máy vẫn giữ đồng ý');
+  assert.equal(server.get('voice').version, '2');
+});
