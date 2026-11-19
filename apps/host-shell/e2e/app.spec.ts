@@ -458,7 +458,7 @@ test.describe('M4 Camera từ vựng', () => {
     await expect(consent).toContainText('Google Gemini');
     await consent.getByRole('button', { name: 'Để sau' }).click();
     await expect(page.getByLabel('Hình ảnh từ camera')).toHaveCount(0);
-    expect(await page.evaluate(() => JSON.parse(localStorage.getItem('becutit.learner')!).state.consents.camera)).toBeUndefined();
+    expect(await page.evaluate(() => JSON.parse(localStorage.getItem('becutit.learner') ?? '{"state":{}}').state.consents?.camera)).toBeUndefined();
     await page.getByRole('button', { name: /Mở camera/ }).click();
     await page.getByRole('button', { name: 'Đồng ý, tiếp tục' }).click();
     await expect(page.getByLabel('Hình ảnh từ camera')).toBeVisible();

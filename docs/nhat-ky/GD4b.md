@@ -102,6 +102,8 @@ Phạm vi theo kế hoạch tổng (mục 9, D4): hồ sơ trẻ do phụ huynh 
 - Lần chạy đầu e2e có 1 lỗi chập chờn: thoát hồ sơ trẻ báo “cần mạng”. Nguyên nhân khả dĩ: sự kiện đồng hồ học vào hàng đợi giữa lúc gửi. Đã sửa bằng cách gửi lại tới khi hàng đợi rỗng; sau đó 3 lần liên tiếp đều xanh.
 
 ## 6. ~~Chờ quyết định (pháp lý — KHÔNG tự chốt)~~ — không còn áp dụng (chế độ trẻ em đã gỡ 19/11)
+> **Ghi chú thêm 19/11/2026 (nhánh `claude/luat-moi-ux-3d9194`):** Nghị định 13/2023/NĐ-CP đã **hết hiệu lực từ 01/01/2026**, thay bằng Luật Bảo vệ dữ liệu cá nhân 91/2025/QH15 + Nghị định 356/2025/NĐ-CP. Dữ liệu trẻ em nay ở Điều 24 Luật 91 (người đại diện thực hiện quyền thay trẻ; trẻ từ đủ 7 tuổi phải cùng đồng ý khi công bố/tiết lộ đời tư). Ngưỡng “dưới 16 tuổi” nêu dưới đây là của NĐ 13, **chưa xác nhận lại** theo văn bản mới. Nội dung bên dưới giữ nguyên như đã ghi. Xem `docs/phap-ly/DANH-GIA-TAC-DONG.md`.
+
 - **Ngưỡng tuổi.** Nghị định 13/2023 coi trẻ em là dưới 16 tuổi (Điều 20: cần đồng ý của cha mẹ, và của trẻ nếu trẻ từ 7 tuổi). COPPA (Mỹ) là dưới 13. App chưa hỏi tuổi. Có cần cổng tuổi khi tạo tài khoản không?
 - **PIN trên máy có đủ là “đồng ý có thể kiểm chứng của cha mẹ”** (verifiable parental consent theo COPPA / Điều 20 NĐ13) không? Hiện chỉ ghi thời điểm đồng ý ở server và log `parent media consent changed`, chưa có bằng chứng danh tính phụ huynh.
 - **Ảnh/giọng nói của trẻ gửi Google Gemini** (máy chủ có thể ở ngoài Việt Nam). Cần quyết:
