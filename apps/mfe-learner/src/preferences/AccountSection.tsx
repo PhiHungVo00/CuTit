@@ -4,7 +4,7 @@ import type { SyncEngine, SyncStatus } from '@vietlearning/state/sync';
 import { learnerStore, useLearner } from '@vietlearning/state';
 import { progressStore } from '@vietlearning/state/progress';
 import { getLocalReminders } from '@vietlearning/native';
-import { card, secondaryBtn } from '../common/ui';
+import { BusyLabel, card, secondaryBtn } from '../common/ui';
 import { useT } from '../i18n';
 
 /** Phụ thuộc nạp lười (chunk riêng) — test tiêm bản giả */
@@ -42,6 +42,8 @@ export function AccountSection({ deps = defaultDeps }: { deps?: AccountDeps }) {
   const [copied, setCopied] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const mounted = useRef(true);
+  /** chặn đồng bộ: chạm hai lần trước khi kịp vẽ lại vẫn chỉ một yêu cầu (tạo/khôi phục/xóa tài khoản) */
+  const busyRef = useRef(false);
 
   const refresh = async () => {
     const s = await deps.session();
@@ -66,6 +68,8 @@ export function AccountSection({ deps = defaultDeps }: { deps?: AccountDeps }) {
   }, []);
 
   const run = async (kind: Exclude<Busy, null>, fn: () => Promise<Msg>, recovering = false) => {
+    if (busyRef.current) return;
+    busyRef.current = true;
     setBusy(kind);
     setMsg(null);
     try {
@@ -74,6 +78,7 @@ export function AccountSection({ deps = defaultDeps }: { deps?: AccountDeps }) {
     } catch (err) {
       if (mounted.current) setMsg({ kind: 'error', text: errorText(err, t, recovering) });
     } finally {
+      busyRef.current = false;
       if (mounted.current) setBusy(null);
       await refresh().catch(() => undefined);
     }
@@ -156,7 +161,7 @@ export function AccountSection({ deps = defaultDeps }: { deps?: AccountDeps }) {
           <>
             <p className="m-0 text-[15px] text-ink-soft">{t('accountNone')}</p>
             <button type="button" className={secondaryBtn} disabled={busy !== null} onClick={() => void createNow()}>
-              {t('accountCreate')}
+              <BusyLabel busy={busy === 'create'} label={t('accountCreate')} busyLabel={t('creating')} />
             </button>
           </>
         )}
@@ -185,7 +190,7 @@ export function AccountSection({ deps = defaultDeps }: { deps?: AccountDeps }) {
         )}
         {info && (
           <button type="button" className={secondaryBtn} disabled={busy !== null} onClick={() => void syncNow()}>
-            {busy === 'sync' ? t('syncing') : t('syncNow')}
+            <BusyLabel busy={busy === 'sync'} label={t('syncNow')} busyLabel={t('syncing')} />
           </button>
         )}
 
@@ -212,7 +217,7 @@ export function AccountSection({ deps = defaultDeps }: { deps?: AccountDeps }) {
           </label>
           <p className="m-0 text-sm text-ink-muted">{t('recoverWarn')}</p>
           <button type="submit" className={secondaryBtn} disabled={busy !== null || code.replace(/[\s-]/g, '').length < 16}>
-            {busy === 'recover' ? t('recovering') : t('recoverBtn')}
+            <BusyLabel busy={busy === 'recover'} label={t('recoverBtn')} busyLabel={t('recovering')} />
           </button>
         </form>
 
@@ -236,9 +241,9 @@ export function AccountSection({ deps = defaultDeps }: { deps?: AccountDeps }) {
           <div role="alert" className="flex flex-col gap-2 rounded-xl bg-danger-soft p-3 text-danger-ink">
             <p className="m-0 text-[15px] font-bold">{t('resetConfirm')}</p>
             <button type="button" disabled={busy !== null} className="min-h-12 w-full rounded-xl bg-danger px-4 font-extrabold text-white disabled:opacity-50" onClick={() => void remove()}>
-              {busy === 'delete' ? t('deleting') : t('resetYes')}
+              <BusyLabel busy={busy === 'delete'} label={t('resetYes')} busyLabel={t('deleting')} />
             </button>
-            <button type="button" className={secondaryBtn} onClick={() => setConfirmDelete(false)}>
+            <button type="button" className={secondaryBtn} disabled={busy === 'delete'} onClick={() => setConfirmDelete(false)}>
               {t('cancel')}
             </button>
           </div>

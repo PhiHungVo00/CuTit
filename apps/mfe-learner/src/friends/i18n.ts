@@ -7,6 +7,7 @@ import { defineMessages } from '@vietlearning/state';
 export const { useT } = defineMessages(
   {
     loading: 'Đang tải…',
+    working: 'Đang gửi…',
     offline: 'Phần bạn học cần mạng. Hãy thử lại khi có mạng.',
     failed: 'Chưa tải được, hãy thử lại.',
     retry: 'Thử lại',
@@ -55,6 +56,7 @@ export const { useT } = defineMessages(
   },
   {
     loading: 'Loading…',
+    working: 'Sending…',
     offline: 'Study buddies need the internet. Please try again when you are online.',
     failed: 'Couldn’t load, please try again.',
     retry: 'Try again',

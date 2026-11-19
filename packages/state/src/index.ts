@@ -80,6 +80,8 @@ export interface LearnerState {
   recordAttempt(skill: Skill, correct: boolean, score?: number, now?: Date): void;
   addStudyTime(seconds: number, now?: Date): void;
   giveConsent(key: string): void;
+  /** Rút lại đồng ý (đồng bộ thành `consent.revoke`) */
+  revokeConsent(key: string): void;
   reset(): void;
 }
 
@@ -172,6 +174,7 @@ export const learnerStore = createStore<LearnerState>()(
         }),
 
       giveConsent: (key) => set((s) => ({ consents: { ...s.consents, [key]: true } })),
+      revokeConsent: (key) => set((s) => ({ consents: Object.fromEntries(Object.entries(s.consents).filter(([k]) => k !== key)) })),
 
       reset: () => set(initialData())
     }),

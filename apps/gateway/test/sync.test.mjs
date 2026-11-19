@@ -157,3 +157,15 @@ test('Streak server tính cả ngày đã dùng đóng băng (khớp streakWithF
   const s = (await a.inject({ url: '/v1/analytics/summary?today=2026-11-18', headers })).json();
   assert.equal(s.streakDays, 3);
 });
+
+test('Đồng ý: lưu ai/lúc nào/phiên bản nội dung; rút lại => xóa khỏi ảnh chụp; đồng ý lại => có lại', async () => {
+  const { headers } = await guest(a);
+  const at = '2026-11-19T08:00:00.000Z';
+  let snap = (await sync(headers, [{ clientEventId: id(), at, type: 'consent.grant', key: 'camera', version: '1' }])).json().snapshot;
+  assert.deepEqual(snap.consents, [{ key: 'camera', version: '1', grantedAt: at }]);
+  snap = (await sync(headers, [{ clientEventId: id(), at, type: 'consent.revoke', key: 'camera' }])).json().snapshot;
+  assert.deepEqual(snap.consents, []);
+  const at2 = '2026-11-19T09:00:00.000Z';
+  snap = (await sync(headers, [{ clientEventId: id(), at: at2, type: 'consent.grant', key: 'camera', version: '1' }])).json().snapshot;
+  assert.deepEqual(snap.consents, [{ key: 'camera', version: '1', grantedAt: at2 }]);
+});

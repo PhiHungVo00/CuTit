@@ -17,7 +17,24 @@ export function ScreenFrame({ title, action, children }: { title: string; action
 
 export const card = 'flex flex-col gap-3 rounded-2xl border border-line-strong bg-surface p-4 shadow-card';
 export const primaryBtn = 'min-h-12 w-full rounded-xl bg-accent px-4 font-extrabold text-accent-ink disabled:opacity-50';
-export const secondaryBtn = 'min-h-12 w-full rounded-xl border border-line-strong bg-surface-2 px-4 font-bold text-ink';
+export const secondaryBtn = 'min-h-12 w-full rounded-xl border border-line-strong bg-surface-2 px-4 font-bold text-ink disabled:opacity-50';
+
+/** Vòng quay nhỏ cho nút đang chờ server (ẩn với trình đọc màn hình; chữ đi kèm nói “đang…”) */
+export function Spinner() {
+  return <span aria-hidden="true" className="inline-block size-4 shrink-0 animate-spin rounded-full border-2 border-current border-t-transparent align-[-2px] motion-reduce:animate-none" />;
+}
+
+/** Nội dung nút: khi `busy` thì hiện vòng quay + chữ đang xử lý */
+export function BusyLabel({ busy, label, busyLabel }: { busy: boolean; label: string; busyLabel: string }) {
+  return busy ? (
+    <span className="inline-flex items-center justify-center gap-2">
+      <Spinner />
+      {busyLabel}
+    </span>
+  ) : (
+    <>{label}</>
+  );
+}
 export const linkBtn = 'flex min-h-11 items-center rounded-xl border border-line-strong bg-surface px-3 text-sm font-bold text-ink no-underline';
 
 /** Nhóm lựa chọn một-trong-nhiều dạng thẻ lớn (radio thật, chạm cả nhãn). */
