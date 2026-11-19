@@ -8,7 +8,7 @@ import './styles/fonts.css';
 import './styles/app.css';
 
 import { App } from './App';
-import { SCREENS, prefetchScreen } from './routes';
+import { PATH_ROUTES, SCREENS, prefetchScreen } from './routes';
 import { isNativeApp } from './native/bootstrap';
 import { applySwapFontsForNativeApp } from './styles/nativeFonts';
 import { ThemeProvider } from './theme/ThemeContext';
@@ -30,10 +30,17 @@ if (isNativeApp) applySwapFontsForNativeApp();
 
 // Mở thẳng một màn hình (link, khôi phục tab, deep link): tải chunk của nó NGAY, song song với lúc React
 // khởi tạo, thay vì đợi Router render rồi lazy() mới bắt đầu tải (giảm LCP của các route lazy)
-const initialScreen = SCREENS.find((s) => s.path === window.location.pathname);
+const initialScreen = [...SCREENS, ...PATH_ROUTES].find((s) => s.path === window.location.pathname);
 if (initialScreen) prefetchScreen(initialScreen);
 
-ReactDOM.createRoot(document.getElementById('root')!).render(
+// Chờ chunk màn đầu (tối đa 1 s) rồi mới render: màn vẽ thẳng nội dung, không qua khung chờ Suspense — React 18
+// giữ nội dung thêm ~300–500 ms sau khi khung chờ đã hiện (xem lazyScreen trong routes.tsx). Mạng quá chậm/lỗi
+// => hết 1 s vẫn render như cũ (khung chờ + tải tiếp).
+const firstScreen = initialScreen
+  ? Promise.race([initialScreen.load().catch(() => undefined), new Promise((r) => setTimeout(r, 1000))])
+  : Promise.resolve();
+
+void firstScreen.then(() => ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <ThemeProvider>
       <BrowserRouter>
@@ -41,7 +48,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
       </BrowserRouter>
     </ThemeProvider>
   </React.StrictMode>
-);
+));
 
 // Hàng đợi đồng bộ local-first: bắt đầu sau khi trang tải xong (không tranh lần vẽ đầu)
 const startSyncLater = () => setTimeout(() => void account().then((m) => m.startAccountSync()));
