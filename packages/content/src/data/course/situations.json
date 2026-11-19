@@ -1,11 +1,11 @@
 [
   {
     "id": "hs1",
-    "scene": "Bạn (nữ, 20 tuổi) gặp anh Nam (26 tuổi) ở câu lạc bộ.",
+    "scene": "Bạn (nữ, 20 tuổi) gặp Nam (nam, 26 tuổi) ở câu lạc bộ.",
     "sceneEn": "You (female, 20) meet Nam (a man, 26) at a club.",
     "context": { "speakerAge": 20, "listenerAge": 26, "relation": "social", "speakerGender": "female", "listenerGender": "male" },
     "a6": { "speaker": "em", "listener": "anh", "pairId": "h10", "explanation": "Đối phương lớn hơn vài tuổi: xưng 'em', gọi 'anh'.", "explanationEn": "With a man 3–8 years older, call yourself 'em' and address him as 'anh' to show politeness and modesty." },
-    "reviewed": false
+    "reviewed": true
   },
   {
     "id": "hs2",
@@ -13,15 +13,15 @@
     "sceneEn": "You (male, 22) have just met Mai, a 22-year-old classmate.",
     "context": { "speakerAge": 22, "listenerAge": 22, "relation": "social", "formality": "polite", "speakerGender": "male", "listenerGender": "female" },
     "a6": { "speaker": "mình", "listener": "bạn", "pairId": "h14", "explanation": "Bạn bè đồng trang lứa lịch thiệp xã giao: xưng mình, gọi bạn.", "explanationEn": "'Mình – bạn' is the neutral, polite pair when two people of similar age meet for the first time." },
-    "reviewed": false
+    "reviewed": true
   },
   {
     "id": "hs3",
-    "scene": "Bạn (nam, 20 tuổi) mua dứa của chị bán hàng 30 tuổi.",
+    "scene": "Bạn (nam, 20 tuổi) mua dứa của một người bán hàng nữ 30 tuổi.",
     "sceneEn": "You (male, 20) buy a pineapple from a 30-year-old woman selling fruit.",
     "context": { "speakerAge": 20, "listenerAge": 30, "relation": "social", "speakerGender": "male", "listenerGender": "female" },
     "a6": { "speaker": "em", "listener": "chị", "pairId": "h11", "explanation": "Đối phương lớn hơn vài tuổi: xưng 'em', gọi 'chị'.", "explanationEn": "With a woman older than you but of your generation, Vietnamese say 'em' for themselves and 'chị' for her." },
-    "reviewed": false
+    "reviewed": true
   },
   {
     "id": "hs4",
@@ -29,15 +29,15 @@
     "sceneEn": "You (female, 20) ask the price at a stall run by a 55-year-old man.",
     "context": { "speakerAge": 20, "listenerAge": 55, "relation": "social", "speakerGender": "female", "listenerGender": "male" },
     "a6": { "speaker": "cháu", "listener": "bác", "pairId": "h3", "explanation": "Đối với người trạc tuổi cha mẹ mình: xưng 'cháu', gọi 'bác' bày tỏ lòng tôn kính.", "explanationEn": "In the North, the older siblings of your parents (male or female) are 'Bác'. In society, anyone around or above your parents' age is also respectfully called 'Bác'." },
-    "reviewed": false
+    "reviewed": true
   },
   {
     "id": "hs5",
-    "scene": "Bạn (nam, 30 tuổi) gọi món với cậu phục vụ 19 tuổi.",
+    "scene": "Bạn (nam, 30 tuổi) gọi món với một nam phục vụ 19 tuổi.",
     "sceneEn": "You (male, 30) order food from a 19-year-old waiter.",
     "context": { "speakerAge": 30, "listenerAge": 19, "relation": "social", "speakerGender": "male", "listenerGender": "male" },
     "a6": { "speaker": "anh", "listener": "em", "pairId": "h12", "explanation": "Đối phương nhỏ tuổi hơn: xưng 'anh', gọi 'em'.", "explanationEn": "An older man calls himself 'anh' and the younger person 'em', showing a composed, protective and respectful manner." },
-    "reviewed": false
+    "reviewed": true
   },
   {
     "id": "hs6",
@@ -45,6 +45,6 @@
     "sceneEn": "You (female, 20) visit your hometown and ask your grandfather (70) the way to the market.",
     "context": { "speakerAge": 20, "listenerAge": 70, "relation": "kin", "speakerGender": "female", "listenerGender": "male" },
     "a6": { "speaker": "cháu", "listener": "ông", "pairId": "h2", "explanation": "Bậc ông bà: con cháu xưng cháu, gọi ông hoặc bà tôn kính.", "explanationEn": "Within the family, grandchildren call themselves 'cháu' and address 'ông/bà' (grandfather/grandmother), always respectfully." },
-    "reviewed": false
+    "reviewed": true
   }
 ]

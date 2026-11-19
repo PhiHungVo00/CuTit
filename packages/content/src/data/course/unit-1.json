@@ -4,7 +4,7 @@
   "title": "Chào hỏi & xưng hô",
   "titleEn": "Greetings & forms of address",
   "icon": "👋",
-  "reviewed": false,
+  "reviewed": true,
   "dialectNotes": ["d19", "d22", "d23", "d26", "d27"],
   "lessons": [
     {

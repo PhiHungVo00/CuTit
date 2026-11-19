@@ -42,7 +42,7 @@
   {
     "id": "sc5",
     "unit": "u1",
-    "reviewed": false,
+    "reviewed": true,
     "title": "Gặp hàng xóm mới",
     "titleEn": "Meeting a new neighbour",
     "location": "Hành lang chung cư",
@@ -54,7 +54,7 @@
   {
     "id": "sc6",
     "unit": "u2",
-    "reviewed": false,
+    "reviewed": true,
     "title": "Mua trái cây ở chợ",
     "titleEn": "Buying fruit at the market",
     "location": "Sạp trái cây ở chợ",
@@ -66,7 +66,7 @@
   {
     "id": "sc7",
     "unit": "u3",
-    "reviewed": false,
+    "reviewed": true,
     "title": "Ăn trưa rồi hỏi đường",
     "titleEn": "Lunch, then asking the way",
     "location": "Quán cơm bình dân",

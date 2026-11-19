@@ -101,14 +101,14 @@ test('Bài đầu tiên không cần micro hay giọng đọc (người mới xo
   assert.ok(first.exercises.every((r) => r.type !== 'tone' && r.type !== 'listen'));
 });
 
-test('Nội dung mới là bản nháp (reviewed:false), chuỗi NFC, id câu mới không đụng câu cũ', () => {
-  for (const u of COURSE.units) assert.equal(u.reviewed, false);
+test('Nội dung có cờ reviewed (boolean), chuỗi NFC, id câu mới không đụng câu cũ', () => {
+  for (const u of COURSE.units) assert.equal(typeof u.reviewed, 'boolean');
   const wordIds = new Set();
   for (const w of COURSE_WORDS) {
     assert.match(w.id, /^w\d+$/);
     assert.ok(!wordIds.has(w.id), `trùng ${w.id}`);
     wordIds.add(w.id);
-    assert.equal(w.reviewed, false);
+    assert.equal(typeof w.reviewed, 'boolean');
     assert.ok(isNfc(w.vi) && isNfc(w.en), w.id);
     assert.equal(Boolean(w.note), Boolean(w.noteEn), `${w.id}: ghi chú cần cả vi và en`);
   }
@@ -116,7 +116,7 @@ test('Nội dung mới là bản nháp (reviewed:false), chuỗi NFC, id câu m�
   for (const s of COURSE_SENTENCES) {
     assert.match(s.id, /^cs\d+$/);
     assert.ok(!old.has(s.id));
-    assert.equal(s.reviewed, false);
+    assert.equal(typeof s.reviewed, 'boolean');
     for (const t of s.tokens) assert.ok(isNfc(t.text));
     for (const acc of s.accepted) assert.deepEqual([...acc].sort((a, b) => a - b), [...s.tokens.keys()], `${s.id}: thứ tự phải là hoán vị`);
   }
