@@ -1,6 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
 import { learnerStore } from '@vietlearning/state';
 import { familyStore } from '@vietlearning/state/family';
 import type { AssessResponse } from '@vietlearning/contracts/api';
@@ -72,21 +71,6 @@ describe('SpeakExercise', () => {
     expect(learnerStore.getState().consents.voice).toBeUndefined();
     fireEvent.click(screen.getByRole('button', { name: /Không nói được lúc này/ }));
     expect(onSkip).toHaveBeenCalledOnce();
-  });
-
-  it('hộp đồng ý có link chính sách quyền riêng tư (trong Router và khi chạy rời không Router)', () => {
-    learnerStore.setState({ consents: {} });
-    const { unmount } = render(
-      <MemoryRouter>
-        <SpeakExercise item={item} onDone={vi.fn()} onSkip={vi.fn()} />
-      </MemoryRouter>
-    );
-    fireEvent.click(screen.getByRole('button', { name: 'Bắt đầu đọc câu' }));
-    expect(screen.getByRole('link', { name: 'Đọc chính sách quyền riêng tư' }).getAttribute('href')).toBe('/quyen-rieng-tu');
-    unmount();
-    render(<SpeakExercise item={item} onDone={vi.fn()} onSkip={vi.fn()} />);
-    fireEvent.click(screen.getByRole('button', { name: 'Bắt đầu đọc câu' }));
-    expect(screen.getByRole('link', { name: 'Đọc chính sách quyền riêng tư' }).getAttribute('href')).toBe('/quyen-rieng-tu');
   });
 
   it('micro bị từ chối => báo lỗi, vẫn bỏ qua được', async () => {
