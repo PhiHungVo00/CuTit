@@ -117,13 +117,13 @@ test('runPrebuild: tạo + kiểm lại; câu đọc thêm từ bị loại; man
   assert.equal(pack.items['xin chào'], key);
   assert.ok(await store.has(key));
 
-  // Lần 2: câu đạt bỏ qua; câu bị loại được tổng hợp lại một lần (tries 2), vẫn sai => hết lượt => CHỜ NGƯỜI NGHE
-  const f2 = fakes({ misread: { 'Chào chị ạ': 'chào chị à' } });
+  // Lần 2: câu đạt bỏ qua; câu bị loại được tổng hợp lại một lần (tries 2), vẫn SAI CHỮ => hết lượt => loại hẳn
+  const f2 = fakes({ misread: { 'Chào chị ạ': 'chào chú ạ' } });
   const r2 = await runPrebuild({ pack: 'u1', dialect: 'south', texts, tts: f2.tts, stt: f2.stt, store, maxTries: 2 });
   assert.deepEqual(f2.calls.tts, ['Chào chị ạ']);
-  assert.equal(r2.rejected, 0);
-  assert.equal(r2.review, 1);
-  assert.ok(!('Chào chị ạ' in AudioPackSchema.parse(await store.readJson('packs/u1-south.json')).items), 'chờ nghe => chưa vào manifest');
+  assert.equal(r2.rejected, 1);
+  assert.equal(r2.review, 0);
+  assert.ok(!('Chào chị ạ' in AudioPackSchema.parse(await store.readJson('packs/u1-south.json')).items), 'loại => không vào manifest (client dùng TTS máy)');
   const f3 = fakes();
   await runPrebuild({ pack: 'u1', dialect: 'south', texts, tts: f3.tts, stt: f3.stt, store, maxTries: 2 });
   assert.deepEqual(f3.calls.tts, [], 'đã hết số lần thử => không gọi TTS nữa');
@@ -249,5 +249,31 @@ test('runPrebuild humanReview (giọng Trung): tệp chờ nghe, không vào man
   assert.deepEqual(f3.calls.tts, ['cảm ơn'], 'câu bị người nghe loại được tạo lại');
   assert.equal(r3.ok, 1);
   assert.deepEqual(Object.keys(AudioPackSchema.parse(await store.readJson('packs/u1-central.json')).items), ['xin chào']);
+  await rm(dir, { recursive: true, force: true });
+});
+
+test('autoVerdict: câu lệch THANH do STT => đạt; câu thiếu/đổi CHỮ => tạo lại; từ đơn => tin giọng mẫu', async () => {
+  const { autoVerdict, matchesIgnoringTones } = await import('../dist/services/tts/prebuild.js');
+  assert.equal(autoVerdict('Chào chị, hôm nay trời nóng quá', 'Chào chị, hôm nay trới nọng quà').ok, true, 'thanh Huế bị STT nghe lệch');
+  assert.equal(autoVerdict('Chị muốn uống gì không', 'Chị muộn chứ không').ok, false, 'thiếu/đổi chữ');
+  assert.equal(autoVerdict('Cho tôi hai ly cà phê', 'cho tôi 2 ly cà phê').ok, true);
+  assert.equal(autoVerdict('tôi', 'Ui!').ok, true, 'từ đơn: STT không đáng tin');
+  assert.equal(matchesIgnoringTones('ăn ơi', 'an oi'), false, 'giữ dấu chữ ă/ơ, chỉ bỏ dấu thanh');
+  assert.equal(matchesIgnoringTones('mẹ ơi', 'me ơi'), true);
+});
+
+test('runPrebuild: tệp "review" cũ (đã tắt humanReview) được kiểm lại theo luật tự động, không tổng hợp lại', async () => {
+  const dir = await tmp();
+  const store = new FileAudioStore(dir);
+  const texts = ['xin chào', 'cảm ơn'];
+  const f = fakes({ misread: { 'cảm ơn': 'cám ơn' } });
+  await runPrebuild({ pack: 'u1', dialect: 'central', texts, tts: f.tts, stt: f.stt, store, humanReview: true });
+  const f2 = fakes();
+  const heardQueue = ['xin chào', 'cám ơn'];
+  const stt = { name: 'queue-stt', async transcribe() { return { text: heardQueue.shift(), confidence: 1, tokens: 0 }; } };
+  const r = await runPrebuild({ pack: 'u1', dialect: 'central', texts, tts: f2.tts, stt, store });
+  assert.deepEqual(f2.calls.tts, [], 'không tổng hợp lại');
+  assert.equal(r.ok, 2, '"cám ơn" chỉ lệch thanh => đạt');
+  assert.equal(r.review, 0);
   await rm(dir, { recursive: true, force: true });
 });

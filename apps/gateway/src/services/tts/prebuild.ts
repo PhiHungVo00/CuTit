@@ -3,10 +3,14 @@
  *  - tệp đã `ok` => bỏ qua; `unverified` (đã tổng hợp nhưng chưa kiểm lại) => chỉ kiểm lại, KHÔNG tổng hợp lại;
  *  - `rejected` (STT nghe ra khác nguyên văn: model đọc sai/thêm từ) => tổng hợp lại tới `maxTries` lần rồi thôi;
  *  - TTS hết hạn mức (429) hoặc STT kiểm lại lỗi (vd. 503 llm_busy) => dừng êm, lưu trạng thái, lần sau chạy tiếp.
- * Kiểm lại = âm tiết (NFC, bỏ dấu câu, chữ thường) của lời STT chép phải TRÙNG HOÀN TOÀN câu gốc.
- * Manifest gói chỉ gồm tệp `ok` — client không bao giờ nhận tệp chưa kiểm hoặc đọc sai.
- * `humanReview` (giọng Trung: STT nghe thanh Huế kém, không làm trọng tài được): tệp tổng hợp xong ở trạng thái
- * `review` (lời STT chỉ để tham khảo), KHÔNG vào manifest cho tới khi người nghe duyệt (`approveReviewed`).
+ * Luật duyệt TỰ ĐỘNG (quyết định 19/11: giọng mẫu ba miền là giọng chuẩn, không cần người nghe):
+ *  - từ đơn (1 âm tiết) => tin giọng mẫu: STT chép âm tiết đứng riêng rất kém (đo F0: model đọc đúng thanh);
+ *  - câu => lời STT phải khớp nguyên văn, HOẶC khớp khi bỏ dấu thanh (STT nghe thanh Huế/giọng miền kém; lỗi cần
+ *    bắt ở câu là model đọc thiếu/thừa/đổi chữ). Không khớp => tạo lại tới `maxTries`; vẫn không khớp => loại hẳn
+ *    (không vào manifest, client đọc bằng TTS của máy).
+ * Manifest gói chỉ gồm tệp `ok`.
+ * `humanReview` (tùy chọn, `--human-review`): tệp tổng hợp xong ở trạng thái `review`, KHÔNG vào manifest cho tới khi
+ * người nghe duyệt (`approveReviewed`). Tắt chế độ này thì tệp `review` cũ được kiểm lại theo luật tự động.
  */
 import type { AudioPack } from '@vietlearning/contracts';
 import { ttsCacheKey } from '../../cache/TTSCacheProxy.js';
@@ -61,6 +65,20 @@ const DIGIT_WORDS = ['không', 'một', 'hai', 'ba', 'bốn', 'năm', 'sáu', 'b
 const spoken = (s: string) => syllables(s).map((w) => (/^\d+$/.test(w) && Number(w) <= 10 ? DIGIT_WORDS[Number(w)] : w));
 export const matchesVerbatim = (text: string, heard: string) => spoken(text).join(' ') === spoken(heard).join(' ');
 
+/** Bỏ dấu thanh (huyền, sắc, ngã, hỏi, nặng), GIỮ dấu chữ (â ă ê ô ơ ư đ) */
+const TONE_MARKS = /[\u0300\u0301\u0303\u0309\u0323]/g;
+const toneless = (w: string) => w.normalize('NFD').replace(TONE_MARKS, '').normalize('NFC');
+export const matchesIgnoringTones = (text: string, heard: string) =>
+  spoken(text).map(toneless).join(' ') === spoken(heard).map(toneless).join(' ');
+
+/** Luật duyệt tự động: 'ok' | 'retry' (tạo lại) */
+export function autoVerdict(text: string, heard: string): { ok: boolean; why: string } {
+  if (matchesVerbatim(text, heard)) return { ok: true, why: 'khớp nguyên văn' };
+  if (syllables(text).length <= 1) return { ok: true, why: 'từ đơn: tin giọng mẫu' };
+  if (matchesIgnoringTones(text, heard)) return { ok: true, why: 'khớp chữ, lệch thanh do STT' };
+  return { ok: false, why: 'sai chữ' };
+}
+
 export async function runPrebuild(o: PrebuildOptions): Promise<PrebuildSummary> {
   const log = o.log ?? (() => undefined);
   const maxTries = o.maxTries ?? 2;
@@ -79,11 +97,13 @@ export async function runPrebuild(o: PrebuildOptions): Promise<PrebuildSummary> 
     const key = keyOf(text);
     const st = state[key];
     const onDisk = await o.store.has(key);
-    if ((st?.status === 'ok' || st?.status === 'review') && onDisk) continue;
+    if (st?.status === 'ok' && onDisk) continue;
+    if (st?.status === 'review' && onDisk && o.humanReview) continue;
     if (st?.status === 'rejected' && st.tries >= maxTries) continue;
 
     let wav: Uint8Array | null = null;
-    if (!(st?.status === 'unverified' && onDisk)) {
+    // tệp `review` cũ (khi đã tắt humanReview) => chỉ kiểm lại, không tổng hợp lại
+    if (!((st?.status === 'unverified' || st?.status === 'review') && onDisk)) {
       if (o.limit !== undefined && synthesized >= o.limit) {
         stoppedBy = 'limit';
         break;
@@ -119,15 +139,9 @@ export async function runPrebuild(o: PrebuildOptions): Promise<PrebuildSummary> 
     try {
       const heard = (await o.stt.transcribe({ bytes: Buffer.from(wav!), mimetype: 'audio/wav' })).text;
       verified++;
-      const ok = matchesVerbatim(text, heard);
-      // Hết lượt tạo lại mà STT vẫn không khớp => để NGƯỜI nghe quyết (STT hay chép sai từ đơn/giọng miền),
-      // không vứt tệp; vẫn không vào manifest cho tới khi duyệt.
-      // Từ đơn: Whisper chép âm tiết đứng riêng rất kém (đo F0 cho thấy model đọc đúng thanh nhưng STT nghe
-      // ra từ khác) => không tạo lại vô ích, chuyển thẳng sang người nghe.
-      const exhausted = !ok && ((state[key]?.tries ?? 0) >= maxTries || syllables(text).length <= 1);
-      const status: EntryStatus = ok ? 'ok' : exhausted ? 'review' : 'rejected';
-      state[key] = { ...state[key], text, status, heard };
-      log(`${ok ? 'ĐẠT ' : exhausted ? 'CHỜ NGHE' : 'LOẠI'} “${text}”${ok ? '' : ` — nghe ra “${heard}”`}`);
+      const v = autoVerdict(text, heard);
+      state[key] = { ...state[key], text, status: v.ok ? 'ok' : 'rejected', heard };
+      log(`${v.ok ? 'ĐẠT ' : 'LOẠI'} “${text}” (${v.why})${v.ok ? '' : ` — nghe ra “${heard}”`}`);
     } catch (err) {
       stoppedBy = 'stt-error';
       log(`DỪNG (stt-error) khi kiểm “${text}”: ${(err as Error).message} — để lại unverified`);
