@@ -189,3 +189,42 @@ test('Khôi phục dở dang (đã đổi tài khoản nhưng kéo dữ liệu t
   assert.deepEqual(sent, [], `không được gửi dữ liệu máy cũ: ${sent.map((e) => e.type)}`);
   assert.deepEqual(Object.keys(s().srs), ['server:1']);
 });
+
+test('Rút lại đồng ý => consent.revoke; đồng ý lại => consent.grant mới (có phiên bản nội dung)', async () => {
+  let server = [];
+  const tr = fakeTransport(() => emptySnap({ consents: server }));
+  const { engine } = start(tr);
+  s().giveConsent('voice');
+  await engine.flush();
+  const grant = tr.batches.flat().find((e) => e.type === 'consent.grant');
+  assert.equal(grant.key, 'voice');
+  assert.equal(grant.version, '2');
+  server = [{ key: 'voice', version: '2', grantedAt: grant.at }];
+  await engine.flush({ pull: true });
+  assert.equal(s().consents.voice, true);
+
+  s().revokeConsent('voice');
+  assert.equal(s().consents.voice, undefined);
+  const before = tr.batches.length;
+  server = [];
+  await engine.flush();
+  assert.deepEqual(tr.batches.slice(before).flat().map((e) => [e.type, e.key]), [['consent.revoke', 'voice']]);
+  assert.equal(s().consents.voice, undefined, 'ảnh chụp sau khi rút lại không bật lại đồng ý');
+
+  s().giveConsent('voice');
+  const mid = tr.batches.length;
+  await engine.flush();
+  assert.deepEqual(tr.batches.slice(mid).flat().map((e) => e.type), ['consent.grant']);
+});
+
+test('Đồng ý bị rút ở máy khác (ảnh chụp server không còn khóa) => máy này cũng thôi coi là đã đồng ý', async () => {
+  let server = [{ key: 'camera', version: '1', grantedAt: new Date().toISOString() }];
+  const tr = fakeTransport(() => emptySnap({ consents: server }));
+  const { engine } = start(tr);
+  await engine.flush({ pull: true });
+  assert.equal(s().consents.camera, true);
+  server = [];
+  await engine.flush({ pull: true });
+  assert.equal(s().consents.camera, undefined);
+  assert.equal(engine.status().pending, 0, 'không sinh sự kiện vọng lại');
+});

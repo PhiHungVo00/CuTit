@@ -42,7 +42,12 @@ export function CameraScreen() {
   const streamRef = useRef<MediaStream | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const alive = useRef(true);
+  /** khóa đồng bộ (không chờ render): chạm “Chụp” hai lần nhanh không gửi hai ảnh */
+  const sending = useRef(false);
   const srs = useLearner((s) => s.srs);
+  const consent = useLearner((s) => s.consents.camera === true);
+  /** Hộp xin đồng ý đang mở cho thao tác nào (chưa đồng ý thì không mở camera, không gửi ảnh) */
+  const [ask, setAsk] = useState<null | 'camera' | 'pick'>(null);
 
   const stopCamera = () => {
     streamRef.current?.getTracks().forEach((t) => t.stop());
@@ -86,6 +91,8 @@ export function CameraScreen() {
   }, [phase.kind]);
 
   const analyze = async (image: { base64: string; previewUrl: string }) => {
+    // Lớp chặn cuối: không có đồng ý thì không gửi ảnh đi đâu cả
+    if (!learnerStore.getState().consents.camera) return setPhase({ kind: 'idle' });
     setPhase({ kind: 'analyzing', preview: image.previewUrl });
     try {
       const r = await labelImage(image.base64);
@@ -97,11 +104,19 @@ export function CameraScreen() {
 
   const capture = async () => {
     const v = videoRef.current;
-    if (!v || !v.videoWidth) return;
-    const image = await toJpegBase64(v, v.videoWidth, v.videoHeight);
-    stopCamera();
-    await analyze(image);
+    if (!v || !v.videoWidth || sending.current) return;
+    sending.current = true;
+    try {
+      const image = await toJpegBase64(v, v.videoWidth, v.videoHeight);
+      stopCamera();
+      await analyze(image);
+    } finally {
+      sending.current = false;
+    }
   };
+
+  const openCamera = () => (consent ? void startCamera() : setAsk('camera'));
+  const pickPhoto = () => (consent ? fileRef.current?.click() : setAsk('pick'));
 
   const onFile = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -156,20 +171,51 @@ export function CameraScreen() {
           </div>
         ) : (
           <div className="flex flex-col gap-2">
-            <button type="button" className={`${btn} bg-accent text-accent-ink`} disabled={phase.kind === 'starting' || phase.kind === 'analyzing'} onClick={() => void startCamera()}>
+            <button type="button" className={`${btn} bg-accent text-accent-ink`} disabled={phase.kind === 'starting' || phase.kind === 'analyzing'} onClick={openCamera}>
               {phase.kind === 'result' || phase.kind === 'error' ? t('another') : t('openCamera')}
             </button>
-            <button type="button" className={`${btn} border border-line-strong bg-surface-2 text-ink`} disabled={phase.kind === 'analyzing'} onClick={() => fileRef.current?.click()}>
+            <button type="button" className={`${btn} border border-line-strong bg-surface-2 text-ink`} disabled={phase.kind === 'analyzing'} onClick={pickPhoto}>
               {t('pick')}
             </button>
             <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={(e) => void onFile(e)} aria-hidden="true" tabIndex={-1} />
           </div>
         )}
 
+        {ask && (
+          <div role="dialog" aria-labelledby="ct-camera-consent" className="flex flex-col gap-2 rounded-xl border border-line-strong bg-surface-2 p-3">
+            <p id="ct-camera-consent" className="m-0 text-[15px] font-bold text-ink">
+              {t('consentTitle')}
+            </p>
+            <p className="m-0 text-sm text-ink-soft">{t('consentBody')}</p>
+            <Link to="/quyen-rieng-tu" className="self-start text-sm font-bold text-ink underline">
+              {t('privacyPolicy')}
+            </Link>
+            <div className="grid grid-cols-2 gap-2">
+              <button type="button" onClick={() => setAsk(null)} className="min-h-12 rounded-xl border border-line-strong bg-surface px-3 font-bold text-ink">
+                {t('consentNo')}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const next = ask;
+                  learnerStore.getState().giveConsent('camera');
+                  setAsk(null);
+                  if (next === 'camera') void startCamera();
+                  else fileRef.current?.click();
+                }}
+                className="min-h-12 rounded-xl bg-accent px-3 font-extrabold text-accent-ink"
+              >
+                {t('consentAgree')}
+              </button>
+            </div>
+          </div>
+        )}
+
         <p className="m-0 text-xs text-ink-muted">{t('privacy')}</p>
 
         {phase.kind === 'analyzing' && (
-          <p role="status" className="m-0 text-[15px] text-ink-muted">
+          <p role="status" className="m-0 flex items-center gap-2 text-[15px] text-ink-muted">
+            <span aria-hidden="true" className="inline-block size-4 animate-spin rounded-full border-2 border-current border-t-transparent motion-reduce:animate-none" />
             {t('analyzing')}
           </p>
         )}

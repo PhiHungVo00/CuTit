@@ -241,6 +241,11 @@ async function applyOne(tx: Tx, userId: string, e: SyncEvent): Promise<void> {
     case 'consent.grant':
       await tx.insert(consents).values({ userId, key: e.key, version: e.version, grantedAt: at }).onConflictDoNothing();
       return;
+    case 'consent.revoke':
+      // Schema chưa có cột thu hồi (không đổi DB ở bước này): xóa bản ghi => ảnh chụp không còn khóa này,
+      // máy khác thôi coi là đã đồng ý. Lịch sử thu hồi sẽ ghi ở audit_events khi bảng đó có.
+      await tx.delete(consents).where(and(eq(consents.userId, userId), eq(consents.key, e.key)));
+      return;
     case 'xp.add':
       await tx.insert(xpEvents).values({ userId, clientEventId: e.clientEventId, source: e.source, amount: e.amount, lessonId: e.lessonId ?? null, day: e.day, createdAt: at });
       await tx

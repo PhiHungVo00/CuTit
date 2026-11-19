@@ -69,6 +69,23 @@ describe('AccountSection (M12)', () => {
     await waitFor(() => expect(f.calls).toEqual(['delete', 'reset']));
   });
 
+  it('xóa tài khoản: chạm “Xóa vĩnh viễn” hai lần chỉ gửi MỘT DELETE; trong lúc chờ nút khóa + có chỉ báo', async () => {
+    let done!: () => void;
+    const f = fakes({ deleteAccount: () => new Promise<void>((ok) => (done = ok)) });
+    render(<AccountSection deps={f.deps} />);
+    fireEvent.click(await screen.findByRole('button', { name: /Xóa tài khoản và dữ liệu|Delete account and data/ }));
+    const yes = screen.getByRole('button', { name: /Xóa vĩnh viễn|Delete permanently/ });
+    fireEvent.click(yes);
+    fireEvent.click(yes);
+    await waitFor(() => expect(f.session.deleteAccount).toHaveBeenCalledTimes(1));
+    expect(yes).toHaveProperty('disabled', true);
+    expect(yes.textContent).toMatch(/Đang xóa|Deleting/);
+    expect(screen.getByRole('button', { name: /Thôi|Cancel/ })).toHaveProperty('disabled', true);
+    done();
+    await waitFor(() => expect(f.engine.resetLocal).toHaveBeenCalledTimes(1));
+    expect(f.session.deleteAccount).toHaveBeenCalledTimes(1);
+  });
+
   it('xóa khi mất mạng => báo cần mạng, không xóa dữ liệu máy', async () => {
     const f = fakes({ deleteAccount: async () => Promise.reject(Object.assign(new Error('offline'), { kind: 'offline' })) });
     render(<AccountSection deps={f.deps} />);

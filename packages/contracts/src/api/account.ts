@@ -116,7 +116,10 @@ export const SyncEventSchema = z.discriminatedUnion('type', [
   z.object({ ...base, type: z.literal('attempt.add'), attempt: SyncAttemptSchema }),
   /** tổng số giây đã học trong `day` (server giữ giá trị lớn nhất) */
   z.object({ ...base, type: z.literal('activity.set'), day: Day, seconds: z.number().int().min(0).max(86400) }),
+  /** `version` = phiên bản NỘI DUNG hộp đồng ý người học đã đọc (bảng tra: docs/phap-ly/DANH-GIA-TAC-DONG.md) */
   z.object({ ...base, type: z.literal('consent.grant'), key: z.string().regex(/^[\w.-]{1,40}$/), version: z.string().regex(/^[\w.-]{1,20}$/) }),
+  /** Rút lại đồng ý (Luật 91/2025 Điều 4, 10): server xóa bản ghi đồng ý của khóa này */
+  z.object({ ...base, type: z.literal('consent.revoke'), key: z.string().regex(/^[\w.-]{1,40}$/) }),
   // ---- GĐ1 (lộ trình, XP, huy hiệu): chỉ ghi/đọc tối thiểu ở GĐ0 ----
   z.object({
     ...base,

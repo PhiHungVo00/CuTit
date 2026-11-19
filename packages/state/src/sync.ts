@@ -24,7 +24,11 @@ import { initialProgress, progressStore, type LessonRecord, type ProgressData } 
 export const SYNC_STORAGE_KEY = 'becutit.sync';
 const BATCH = 200;
 const OUTBOX_MAX = 5000;
-const CONSENT_VERSION = '1';
+/**
+ * Phiên bản NỘI DUNG hộp đồng ý theo khóa (đổi chữ trong hộp => tăng số). Bảng tra nội dung từng phiên bản:
+ * docs/phap-ly/DANH-GIA-TAC-DONG.md mục “Sổ đồng ý”. voice 2 = nêu rõ Google Gemini, có thể ở ngoài Việt Nam.
+ */
+export const CONSENT_VERSIONS: Record<string, string> = { voice: '2', camera: '1' };
 /** = TESTOUT_PREFIX của contracts (không import giá trị từ contracts để chunk đồng bộ không kéo Zod) */
 const TESTOUT = 'testout:';
 const XP_EVENT_MAX = 1000;
@@ -318,8 +322,14 @@ export function startSync(opts: SyncOptions): SyncEngine {
     }
     for (const key of Object.keys(s.consents)) {
       if (!s.consents[key] || sh.consents.includes(key)) continue;
-      push(ev({ type: 'consent.grant', key, version: CONSENT_VERSION }));
+      push(ev({ type: 'consent.grant', key, version: CONSENT_VERSIONS[key] ?? '1' }));
       sh.consents.push(key);
+      changed = true;
+    }
+    for (const key of [...sh.consents]) {
+      if (s.consents[key]) continue;
+      push(ev({ type: 'consent.revoke', key }));
+      sh.consents = sh.consents.filter((k) => k !== key);
       changed = true;
     }
     const fresh = s.attempts.filter((a: Attempt) => !sh.attemptCursor || a.at > sh.attemptCursor);
@@ -459,7 +469,9 @@ export function startSync(opts: SyncOptions): SyncEngine {
       for (const c of snap.srs) srs[c.itemRef] = { ...c };
       const activity: Record<string, number> = replace ? {} : { ...s.activity };
       for (const [d, sec] of Object.entries(snap.activity)) activity[d] = Math.max(activity[d] ?? 0, sec);
-      const consents: Record<string, boolean> = replace ? {} : { ...s.consents };
+      // Đồng ý: server là nguồn đúng (ảnh chụp chỉ được áp khi hàng đợi đã trống, nên mọi đồng ý/rút lại
+      // của máy này đã lên server) => rút lại ở máy khác cũng có hiệu lực ở máy này.
+      const consents: Record<string, boolean> = {};
       for (const c of snap.consents) consents[c.key] = true;
       const attempts = replace || snap.attempts.length >= s.attempts.length ? snap.attempts.map((a) => ({ ...a })) : s.attempts;
       learnerStore.setState({

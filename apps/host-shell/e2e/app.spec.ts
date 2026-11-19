@@ -452,7 +452,15 @@ test.describe('M4 Camera từ vựng', () => {
     await page.goto('/camera');
     await expect(page.getByRole('heading', { name: 'Camera từ vựng' })).toBeVisible();
     await assertMobileLayout(page);
+    // Lần đầu: hộp đồng ý hiện TRƯỚC khi mở camera; “Để sau” => không mở camera, không gửi gì
     await page.getByRole('button', { name: /Mở camera/ }).click();
+    const consent = page.getByRole('dialog', { name: /Ảnh của bạn đi đâu/ });
+    await expect(consent).toContainText('Google Gemini');
+    await consent.getByRole('button', { name: 'Để sau' }).click();
+    await expect(page.getByLabel('Hình ảnh từ camera')).toHaveCount(0);
+    expect(await page.evaluate(() => JSON.parse(localStorage.getItem('becutit.learner')!).state.consents.camera)).toBeUndefined();
+    await page.getByRole('button', { name: /Mở camera/ }).click();
+    await page.getByRole('button', { name: 'Đồng ý, tiếp tục' }).click();
     await expect(page.getByLabel('Hình ảnh từ camera')).toBeVisible();
     await expect.poll(() => page.getByLabel('Hình ảnh từ camera').evaluate((v: HTMLVideoElement) => v.videoWidth)).toBeGreaterThan(0);
     await page.getByRole('button', { name: /Chụp/ }).first().click();
@@ -478,6 +486,7 @@ test.describe('M4 Camera từ vựng', () => {
     });
     await page.goto('/camera');
     await page.getByRole('button', { name: /Mở camera/ }).click();
+    await page.getByRole('button', { name: 'Đồng ý, tiếp tục' }).click();
     await expect(page.getByRole('alert')).toContainText('chưa được cấp quyền camera');
     await expect(page.getByRole('button', { name: /Chọn ảnh có sẵn/ })).toBeEnabled();
   });
