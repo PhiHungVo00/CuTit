@@ -42,7 +42,7 @@ Commit cuối là commit thường, không phải commit “Revert …”.
 ## 3. Dữ liệu
 - **Không sửa migration đã phát hành.** Migration mới `0005_drop_child_mode` (`pnpm --filter @vietlearning/gateway db:generate --name drop_child_mode`):
   `DROP INDEX "users_parent_idx"; ALTER TABLE "users" DROP COLUMN "parent_media_consent_at";`. `when` của 0005 lớn hơn mọi mục trước trong journal (DB cũ sẽ chạy nó).
-  Đã chạy thật trên PGlite cũ của Gateway emulator (không lỗi).
+  Gateway emulator chạy 0000 → 0005 trên PGlite mới tạo (không lỗi); chưa thử trên DB có sẵn dữ liệu 0004.
 - **Giữ** `users.account_type` (mặc định `adult`) và `users.parent_user_id` (FK cascade) từ GĐ0: schema nền, vô hại, không code nào đọc nữa (ghi chú trong `schema.ts`).
   Hàng `child` cũ trên DB dev (nếu có) giờ là tài khoản bình thường. Nếu sau này muốn bỏ hai cột: một migration nữa, không gấp.
 - Khóa cũ trên máy dev đã từng dùng chế độ trẻ (`becutit.family`, `becutit.auth.parent`) thành rác vô hại; không viết code dọn (chưa phát hành bản nào có chế độ trẻ).
@@ -54,7 +54,7 @@ Commit cuối là commit thường, không phải commit “Revert …”.
 | `pnpm test` | 35/35 task, 0 lỗi |
 | `pnpm lint:boundaries` | 0 vi phạm (400 module) |
 | `size` | đạt hết. Đo cùng máy với bản gốc `main` (`d5a6acf`): **gói đầu 64.16 → 64.11 kB**; Chat 1.28 kB → 743 B, Tùy chỉnh 4.13 → 3.77 kB, Tiến độ 3.09 → 3.04 kB, Văn hóa 2.54 → 2.50 kB; bớt 2 chunk, `dist/assets` 911.5 → 884.7 kB (chưa nén) |
-| e2e (cổng 4192/4019) | 95/95 đạt (một lần chạy trọn). Hai lần khác mỗi lần 1 lỗi ở `app.spec` “nhập giọng nói: thu âm → gửi WAV” (tiếng Anh): khi máy bận, bản ghi 900 ms ra < 10 000 byte. Chạy riêng tuần tự ×10 (2 biến thể): 20/20 đạt ⇒ chập chờn theo tải, không liên quan (đường micro chỉ bỏ một kiểm tra luôn đúng với người lớn). Không sửa test |
+| e2e (cổng 4192/4019) | 4 lượt trọn bộ: **một lượt 95/95**; ba lượt còn lại mỗi lượt 1 lỗi, đều là test chập chờn: (a) lượt 1: lỗi `toBeVisible` không ghi được tên test; (b) lượt 4: `app.spec:627` “nhập giọng nói: thu âm → gửi WAV” (tiếng Anh) — chạy lặp ×12 với 4 worker thì 1 lần trượt ở `upload.size > 10 000` (6 372 byte, bản ghi 900 ms khi máy bận), chạy tuần tự ×10 (2 biến thể) 20/20 đạt; (c) lượt 5: `sync.spec:42` “mất mạng → thêm thẻ” chờ “Đã sao lưu” quá 15 s — lỗi chập chờn đã ghi từ trước (nhật ký dòng 48, GĐ2), chạy lặp ×8 với 4 worker: 24/24 đạt. Không sửa test nào. Đường micro chỉ bỏ một kiểm tra vốn luôn đúng với người lớn; khởi động đồng bộ chỉ bớt một request `/v1/me/account` |
 | APK + emulator `BeCuTit_Pixel_API35` (cài mới, Gateway 4021, Gemini thật) | Tùy chỉnh không còn mục Gia đình; tạo tài khoản ⇒ hiện mã khôi phục; `POST /v1/auth/guest`, 16 lượt `/v1/sync`, không còn gọi `/v1/me/account`; `/hoi-thoai` không khóa, gửi “Cho toi mot bat pho” ⇒ sửa dấu + Cu Tít trả lời bằng Gemini (lượt đầu Gemini quá giờ ⇒ trả lời mẫu, lượt sau thật); `/camera` hiện nút mở camera/chọn ảnh, không màn khóa; 0 phản hồi 4xx/5xx. Đã tắt đúng PID emulator/Gateway đã mở |
 
 ## 5. Ghi chú gộp
