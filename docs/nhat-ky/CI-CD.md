@@ -51,6 +51,8 @@ Từ 18/11, mọi lần push lên `main` đều đỏ, dù trên máy dev Window
 | Lượt | Commit | verify | android-apk | lighthouse (không chặn) | Ghi chú |
 |---|---|---|---|---|---|
 | 1 | `ci: green CI on Linux…` (run 44491302741) | ✅ 9 phút. e2e **97/97, 0 flaky** | ✅ 4,5 phút. Artifact `app-debug` 4,4 MB, đã tải về và `unzip -l` thấy `assets/public/index.html` | ❌ (xem mục 5) | audio-dsp trên CI: YIN 432 ms, McLeod 606 ms (ngân sách 2000 ms, CI). Tức là khi đo đúng cách, CI cũng dưới 1 s. |
+| 2 | `docs(ci): nhật ký…` (run 44492758262) | ✅ e2e **97/97, 0 flaky** | ✅ | ❌ cùng các mức vượt: CLS 0,111; LCP 2571 và 2583 ms | McLeod **1124 ms** dù đã lấy lần nhanh nhất trong 3 (YIN 525 ms). Runner dao động thật: chỉ lấy lần nhanh nhất thì chưa đủ, ngân sách ×2 trên CI là cần thiết. Máy dev vẫn đo theo ngân sách 1 s. |
+| 3 | commit cập nhật nhật ký này | xem PR | xem PR | | Lượt kiểm trên SHA cuối cùng của nhánh |
 
 ## 5. Lighthouse: kết quả thật trên runner (việc còn lại, không thuộc CI)
 
