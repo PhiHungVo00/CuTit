@@ -16,14 +16,14 @@ import {
 const isNfc = (s) => s === s.normalize('NFC');
 const lessonRefs = (u) => u.lessons.flatMap((l) => l.exercises);
 
-test('GĐ2b xưng hô ngữ cảnh: mỗi tình huống là bản nháp, có cảnh vi + en, ngữ cảnh đủ giới tính', () => {
+test('GĐ2b xưng hô ngữ cảnh: mỗi tình huống có cờ reviewed, có cảnh vi + en, ngữ cảnh đủ giới tính', () => {
   assert.ok(SITUATIONS.length >= 6);
   const ids = new Set();
   for (const s of SITUATIONS) {
     assert.match(s.id, /^hs\d+$/);
     assert.ok(!ids.has(s.id), `trùng ${s.id}`);
     ids.add(s.id);
-    assert.equal(s.reviewed, false);
+    assert.equal(typeof s.reviewed, 'boolean');
     assert.ok(s.scene && s.sceneEn && isNfc(s.scene), s.id);
     const c = s.context;
     assert.ok(Number.isInteger(c.speakerAge) && Number.isInteger(c.listenerAge), s.id);
@@ -52,11 +52,11 @@ test('GĐ2b: đáp án lấy từ luật A6 (HonorificInterpreter), không có d
   assert.deepEqual([hs('hs6').speaker, hs('hs6').listener], ['cháu', 'ông']);
 });
 
-test('GĐ2b truyện: 1 truyện/unit, bản nháp, câu ngắn NFC, 3 câu hỏi có đáp án không trùng nhiễu', () => {
+test('GĐ2b truyện: 1 truyện/unit, có cờ reviewed, câu ngắn NFC, 3 câu hỏi có đáp án không trùng nhiễu', () => {
   assert.deepEqual(STORIES.map((s) => s.unit), ['u1', 'u2', 'u3']);
   for (const s of STORIES) {
     assert.match(s.id, /^st\d+$/);
-    assert.equal(s.reviewed, false);
+    assert.equal(typeof s.reviewed, 'boolean');
     assert.ok(s.title && s.titleEn, s.id);
     assert.ok(s.lines.length >= 4 && s.lines.length <= 8, `${s.id}: ${s.lines.length} câu`);
     for (const l of s.lines) {

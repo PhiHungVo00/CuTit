@@ -13,7 +13,7 @@ test('GĐ3: mỗi unit kết thúc bằng đúng một bài nhập vai, trỏ t�
     const sc = ROLEPLAY_SCENARIOS.find((s) => s.id === rp[0].roleplay);
     assert.ok(sc, `${rp[0].roleplay} không tồn tại`);
     assert.equal(sc.unit, u.id);
-    assert.equal(sc.reviewed, false, 'nội dung mới là bản nháp');
+    assert.equal(typeof sc.reviewed, 'boolean');
     assert.equal(scenarioForUnit(u.id), sc);
     assert.ok(sc.tasks.length >= 3 && sc.tasks.length <= 4);
     assert.equal(sc.tasks.length, sc.tasksEn.length);

@@ -1,7 +1,7 @@
 /**
  * Truyện ngắn / đoạn hội thoại nghe (GĐ2b, kế hoạch tổng mục 5 GĐ2 điểm 6): 1 truyện A1 mỗi unit, dùng từ của unit,
  * có câu hỏi hiểu. Mỗi câu thoại là một văn bản đọc riêng (gói âm thanh dựng sẵn theo miền tra theo từng câu).
- * Nội dung là bản nháp (reviewed=false) chờ người bản ngữ duyệt (D8).
+ * Cờ reviewed (D8): đã duyệt ở đợt DUYET-NOI-DUNG (docs/nhat-ky/DUYET-NOI-DUNG.md).
  */
 import storyData from '../data/course/stories.json' with { type: 'json' };
 
