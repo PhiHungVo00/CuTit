@@ -3,7 +3,7 @@
  * quan hệ). Đáp án và lời giải KHÔNG viết tay: là kết quả của luật A6 có sẵn (`HonorificInterpreter.interpret`).
  * Trường `a6` trong JSON là bản chụp kết quả đó (+ lời giải tiếng Anh của cặp), để chunk dữ liệu khóa học không kéo luật A6 và 20 cặp theo,
  * test `situations-stories.test.mjs` ép bản chụp luôn bằng `resolveSituation` (situationsA6.ts, gọi luật thật): đổi luật A6 mà
- * quên chụp lại thì test đỏ. Nội dung là bản nháp (reviewed=false) chờ người bản ngữ duyệt (D8).
+ * quên chụp lại thì test đỏ. Cờ reviewed (D8): đã duyệt ở đợt DUYET-NOI-DUNG (docs/nhat-ky/DUYET-NOI-DUNG.md).
  */
 import situationData from '../data/course/situations.json' with { type: 'json' };
 import type { ContextExpression } from '../honorifics/HonorificInterpreter.js';

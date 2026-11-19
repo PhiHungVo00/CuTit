@@ -46,7 +46,7 @@ test.describe('GĐ2b Xưng hô theo tình huống', () => {
     await page.goto('/bai-hoc/u1l2');
     const section = await goToKind(page, /^Xưng hô theo tình huống/);
     await expect(section.getByRole('heading', { name: /xưng là gì và gọi người kia là gì/ })).toBeVisible();
-    await expect(section.locator('p[lang="vi"]').first()).toContainText('anh Nam (26 tuổi)');
+    await expect(section.locator('p[lang="vi"]').first()).toContainText('Nam (nam, 26 tuổi)');
     await assertMobileLayout(page);
 
     const group = section.getByRole('group', { name: 'Lựa chọn' });
