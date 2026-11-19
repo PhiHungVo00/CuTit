@@ -84,7 +84,9 @@ async function writeReviewPage(): Promise<{ file: string; count: number }> {
   for (const d of DIALECTS)
     for (const pack of ALL_PACKS) {
       const state = (await store.readJson<Record<string, StateEntry>>(`state/${pack}-${d}.json`)) ?? {};
-      for (const [key, s] of Object.entries(state)) if (s.status === 'review') rows.push({ id: `${pack}-${d}`, key, s });
+      // chỉ câu còn trong khóa học (câu đã bỏ/sửa khi duyệt nội dung không cần nghe nữa)
+      const current = new Set(speakableTexts(pack, d).map((t) => t.normalize('NFC').trim()));
+      for (const [key, s] of Object.entries(state)) if (s.status === 'review' && current.has(s.text)) rows.push({ id: `${pack}-${d}`, key, s });
     }
   const groups = [...new Set(rows.map((r) => r.id))];
   const html = `<!doctype html><html lang="vi"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
