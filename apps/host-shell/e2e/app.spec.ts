@@ -174,6 +174,7 @@ test.describe('M5 Luyện tập', () => {
         }
         await page.getByRole('button', { name: 'Tiếp →' }).click();
       } else if (label.startsWith('Đọc lại')) {
+        await expect(page.getByRole('button', { name: 'Nghe chậm' })).toBeVisible(); // 🐢 cạnh “Nghe mẫu”
         await page.getByRole('button', { name: 'Được' }).click();
       } else {
         await page.getByRole('group', { name: 'Lựa chọn' }).getByRole('button').first().click();

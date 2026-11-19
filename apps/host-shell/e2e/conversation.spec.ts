@@ -101,6 +101,7 @@ test.describe('GĐ3 Hội thoại AI', () => {
     await page.getByRole('button', { name: '📞 Bắt đầu gọi' }).click();
     // lần đầu: thông báo quyền riêng tư riêng cho gọi thoại (gửi ngay khi ngừng nói)
     await expect(page.getByRole('dialog', { name: /Giọng nói của bạn đi đâu/ })).toContainText('gửi đi ngay khi bạn ngừng nói');
+    await expect(page.getByRole('dialog').getByRole('link', { name: 'Đọc chính sách quyền riêng tư' })).toHaveAttribute('href', '/quyen-rieng-tu');
     await page.getByRole('button', { name: 'Đồng ý, ghi âm' }).click();
 
     const subs = page.getByRole('log', { name: 'Phụ đề' });

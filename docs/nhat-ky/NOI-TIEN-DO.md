@@ -17,7 +17,7 @@ Plan: `docs/superpowers/plans/2026-11-18-noi-tien-do.md`.
 - e2e (Gateway thật PGlite, cổng 4020/4193): **62 passed, 6 skipped, 1 failed** — test đo hiệu năng `@perf` "mở M3 < 1.5 s" ra 3252 ms khi máy đang tải CPU 73% (phiên khác). Chạy lại riêng: nhánh 1225/1078/1062 ms (đạt 3/3); `main` (fa16cd9) cùng lúc 2396/1305 ms ⇒ nhiễu do máy, không phải hồi quy.
 
 ## Chưa làm / ghi chú
-- Link từ hộp đồng ý micro: nằm ở `apps/mfe-conversation/src/chat/ChatPanel.tsx` (vùng GĐ3) ⇒ không sửa; GĐ3 cần thêm `<Link to="/quyen-rieng-tu">`.
+- (ĐÃ LÀM ở `VIEC-SOT.md` mục 3) Link từ hộp đồng ý micro: nằm ở `apps/mfe-conversation/src/chat/ChatPanel.tsx` (vùng GĐ3) ⇒ không sửa; GĐ3 cần thêm `<Link to="/quyen-rieng-tu">`.
 - Không đồng bộ: `times` từng bài, giờ nhắc, lỗi gần đây, điểm thanh. `lessonsDone/freezes/dailyGoal` là LWW (hai máy cùng học có thể lệch số bài).
 - Ghi chú bàn giao cho GĐ3 (link chính sách trong hộp đồng ý micro): `side-session-notes/.../NOI-TIEN-DO-ghi-chu-cho-GD3.md`.
 - Thông tin liên hệ trong chính sách là chỗ trống cần điền; cần người phụ trách duyệt.

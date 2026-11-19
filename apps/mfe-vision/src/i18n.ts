@@ -25,6 +25,7 @@ export const { useT, t } = defineMessages(
     none: 'Chưa nhận ra đồ vật nào',
     mock: 'Nhãn mẫu: dịch vụ nhận diện ảnh chưa được nối, kết quả chưa phản ánh ảnh của bạn.',
     listenTo: 'Nghe “{word}”',
+    listenSlowTo: 'Nghe chậm “{word}”',
     saved: '✓ Đã lưu',
     save: '+ Lưu ôn',
     privacy: '🔒 Ảnh được thu nhỏ rồi gửi qua máy chủ Bé Cu Tít tới Google Gemini để nhận diện đồ vật; máy chủ không lưu ảnh. Tránh chụp mặt người hoặc giấy tờ cá nhân.'
@@ -52,6 +53,7 @@ export const { useT, t } = defineMessages(
     none: 'No objects recognised',
     mock: 'Sample labels: image recognition is not connected, so these don’t reflect your photo.',
     listenTo: 'Listen to “{word}”',
+    listenSlowTo: 'Listen slowly to “{word}”',
     saved: '✓ Saved',
     save: '+ Save',
     privacy: '🔒 Photos are shrunk, then sent through the Bé Cu Tít server to Google Gemini to recognise objects; the server does not keep them. Avoid photographing faces or personal documents.'
