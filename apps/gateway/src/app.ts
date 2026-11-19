@@ -24,6 +24,18 @@ import { meRoutes } from './routes/me.js';
 import { quotaRoutes } from './routes/quota.js';
 import { friendsRoutes } from './routes/friends.js';
 import { createDbProvider, type DbProvider } from './db/client.js';
+import { AuditLog, purgeAuditEvents } from './services/audit/audit.js';
+
+/** Dọn audit_events quá hạn: mỗi ngày một lần, lần đầu sau 1 phút (không mở DB lúc khởi động/test) */
+const AUDIT_PURGE_FIRST_MS = 60_000;
+const AUDIT_PURGE_EVERY_MS = 24 * 3600 * 1000;
+
+declare module 'fastify' {
+  interface FastifyInstance {
+    /** Nhật ký sự kiện bảo mật (test dùng `app.audit.flush()`) */
+    audit: AuditLog;
+  }
+}
 
 export interface RouteDeps {
   pipeline: RequestPipeline;
@@ -38,6 +50,8 @@ export interface RouteDeps {
   tutor: Tutor;
   /** DB mở lười: chỉ route cần dữ liệu người học mới mở */
   db: DbProvider;
+  /** Nhật ký sự kiện bảo mật (ghi bất đồng bộ, lỗi ghi không làm hỏng request) */
+  audit: AuditLog;
 }
 
 export interface BuildOptions {
@@ -82,15 +96,36 @@ export async function buildApp(config: GatewayConfig, opts: BuildOptions = {}): 
   if (config.jwtSecretGenerated) app.log.warn('JWT_SECRET chưa đặt: dùng khóa ngẫu nhiên cho phiên chạy này (chỉ dev/test)');
 
   const db = opts.db ?? createDbProvider(config);
-  if (!opts.db) app.addHook('onClose', () => db.close());
+  const audit = new AuditLog(db, { salt: config.AUDIT_IP_SALT ?? '', log: app.log });
+  app.decorate('audit', audit);
 
-  const pipeline = new RequestPipeline(config, opts.quotaStore ?? new DbQuotaStore(db), db);
+  const purge = () =>
+    db
+      .get()
+      .then((d) => purgeAuditEvents(d))
+      .then((n) => n && app.log.info({ deleted: n }, 'audit_events purged'))
+      .catch((err: unknown) => app.log.warn({ err }, 'audit purge failed'));
+  let purgeTimer: NodeJS.Timeout | undefined = setTimeout(() => {
+    void purge();
+    purgeTimer = setInterval(() => void purge(), AUDIT_PURGE_EVERY_MS).unref();
+  }, AUDIT_PURGE_FIRST_MS).unref();
+
+  // Ghi nốt nhật ký đang dở TRƯỚC khi đóng DB (DB tiêm từ test thì test tự đóng)
+  app.addHook('onClose', async () => {
+    clearTimeout(purgeTimer);
+    clearInterval(purgeTimer);
+    purgeTimer = undefined;
+    await audit.flush();
+    if (!opts.db) await db.close();
+  });
+
+  const pipeline = new RequestPipeline(config, opts.quotaStore ?? new DbQuotaStore(db), db, audit);
   const llm = opts.llm !== undefined ? opts.llm : createLlmProvider(config);
   const stt = opts.stt !== undefined ? opts.stt : createSttProvider(llm);
   const tts = opts.tts !== undefined ? opts.tts : createTtsProvider(config);
   const audioStore = new FileAudioStore(config.TTS_AUDIO_DIR);
   const ttsCache = opts.ttsCache ?? new TTSCacheProxy(fileSynthesizer(audioStore, tts), Boolean(tts));
-  const deps: RouteDeps = { pipeline, ttsCache, config, llm, stt, tts, tutor: createTutor(llm, app.log), db };
+  const deps: RouteDeps = { pipeline, ttsCache, config, llm, stt, tts, tutor: createTutor(llm, app.log), db, audit };
   app.log.info({ ai: llm ? `${llm.name}:${config.GEMINI_MODEL}` : 'mock' }, 'AI provider');
 
   // Phải đặt trước khi đăng ký các scope con để chúng thừa hưởng
@@ -114,7 +149,13 @@ export async function buildApp(config: GatewayConfig, opts: BuildOptions = {}): 
   // /v1/auth/*: nơi lấy token => không xác thực, nhưng giới hạn chặt theo IP
   await app.register(
     async (auth) => {
-      await auth.register(rateLimit, { max: config.AUTH_RATE_LIMIT_PER_MINUTE, timeWindow: '1 minute', keyGenerator: (req) => req.ip });
+      await auth.register(rateLimit, {
+        max: config.AUTH_RATE_LIMIT_PER_MINUTE,
+        timeWindow: '1 minute',
+        keyGenerator: (req) => req.ip,
+        // Gọi ở MỌI request vượt giới hạn => AuditLog gộp còn một dòng mỗi IP mỗi cửa sổ
+        onExceeded: (req) => audit.noteRateLimited(AuditLog.context(req), req.url.split('?')[0])
+      });
       await auth.register(authRoutes, deps);
     },
     { prefix: '/v1/auth' }
