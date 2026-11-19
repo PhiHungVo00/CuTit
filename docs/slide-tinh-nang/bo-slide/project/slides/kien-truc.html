@@ -1,0 +1,13 @@
+<section id="kien-truc">
+<p class="kicker">KIẾN TRÚC NGẮN</p>
+<h2>Client mỏng, mọi khóa AI nằm ở máy chủ</h2>
+<div class="flow">
+<div class="box"><h3>📱 Ứng dụng</h3><p>Android (Capacitor 7) và PWA. Giao diện ghép từ các MFE lúc build, chạy được offline.</p></div>
+<div class="arrow">⇄</div>
+<div class="box"><h3>🛡️ Gateway</h3><p>Fastify: STT/TTS/LLM/Vision qua adapter, giới hạn lượt theo người dùng, đồng bộ, xóa tài khoản.</p></div>
+<div class="arrow">⇄</div>
+<div class="box"><h3>☁️ Dữ liệu và AI</h3><p>Postgres khi triển khai (PGlite khi phát triển). Gemini cho chat, chấm và camera. Giọng đọc 3 miền dựng sẵn.</p></div>
+</div>
+<p class="note">CI/CD: GitHub Actions chạy build, kiểm thử đơn vị và E2E (~96 test), kiểm tra ranh giới MFE. Lighthouse 100 trên bản web.</p>
+<aside>Nguyên tắc: client không giữ API key; mọi nhà cung cấp AI gọi qua Gateway.</aside>
+</section>
