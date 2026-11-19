@@ -117,6 +117,7 @@ export function FriendsPanel({ api = gatewayApi, onBlocked }: { api?: FriendsApi
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<Msg>(null);
   const [copied, setCopied] = useState(false);
+  const [renaming, setRenaming] = useState(false);
   const alive = useRef(true);
   const today = () => dayKey(new Date());
 
@@ -177,6 +178,7 @@ export function FriendsPanel({ api = gatewayApi, onBlocked }: { api?: FriendsApi
     void run(async () => {
       try {
         await api.setName(name);
+        if (alive.current) setRenaming(false);
       } catch (err) {
         if ((err as { status?: number }).status === 400) return { kind: 'error', text: t('nameBad') };
         throw err;
@@ -201,29 +203,45 @@ export function FriendsPanel({ api = gatewayApi, onBlocked }: { api?: FriendsApi
     </p>
   );
 
-  if (!data.displayName)
-    return (
-      <form className="flex flex-col gap-2" onSubmit={saveName}>
-        <p className="m-0 text-sm text-ink-muted">{t('privacy')}</p>
-        <label htmlFor="friend-name" className="text-[15px] font-bold text-ink-soft">
-          {t('nameLabel')}
-        </label>
-        <input id="friend-name" className={input} value={name} maxLength={40} autoComplete="nickname" onChange={(e) => setName(e.target.value)} aria-describedby="friend-name-hint" />
-        <span id="friend-name-hint" className="text-sm text-ink-muted">
-          {t('nameHint')}
-        </span>
-        <button type="submit" className={primaryBtn} disabled={busy || name.trim().length < 2}>
-          {t('nameSave')}
+  /** Form tên hiển thị: lần đầu (bắt buộc) hoặc đổi tên sau này (có nút Thôi) */
+  const nameForm = (onCancel?: () => void) => (
+    <form className="flex flex-col gap-2" onSubmit={saveName}>
+      <p className="m-0 text-sm text-ink-muted">{t('privacy')}</p>
+      <label htmlFor="friend-name" className="text-[15px] font-bold text-ink-soft">
+        {t('nameLabel')}
+      </label>
+      <input id="friend-name" className={input} value={name} maxLength={40} autoComplete="nickname" onChange={(e) => setName(e.target.value)} aria-describedby="friend-name-hint" />
+      <span id="friend-name-hint" className="text-sm text-ink-muted">
+        {t('nameHint')}
+      </span>
+      <button type="submit" className={primaryBtn} disabled={busy || name.trim().length < 2}>
+        {t('nameSave')}
+      </button>
+      {onCancel && (
+        <button type="button" className={secondaryBtn} onClick={onCancel}>
+          {t('cancel')}
         </button>
-        {status}
-      </form>
-    );
+      )}
+      {status}
+    </form>
+  );
+
+  if (!data.displayName) return nameForm();
 
   return (
     <div className="flex flex-col gap-4">
-      <p className="m-0 text-sm text-ink-muted">
-        {t('youAre', { name: data.displayName })}. {t('privacy')}
-      </p>
+      {renaming ? (
+        nameForm(() => (setRenaming(false), setMsg(null)))
+      ) : (
+        <div className="flex flex-col gap-2">
+          <p className="m-0 text-sm text-ink-muted">
+            {t('youAre', { name: data.displayName })}. {t('privacy')}
+          </p>
+          <button type="button" className={`${secondaryBtn} self-start`} onClick={() => (setName(data.displayName ?? ''), setMsg(null), setRenaming(true))}>
+            {t('rename')}
+          </button>
+        </div>
+      )}
 
       {data.friends.length === 0 ? (
         <p className="m-0 text-[15px] text-ink-soft">{t('empty')}</p>
@@ -238,7 +256,7 @@ export function FriendsPanel({ api = gatewayApi, onBlocked }: { api?: FriendsApi
           />
         ))
       )}
-      {status}
+      {!renaming && status}
 
       {full ? (
         <p className="m-0 text-[15px] text-ink-soft">{t('full', { n: data.maxFriends })}</p>

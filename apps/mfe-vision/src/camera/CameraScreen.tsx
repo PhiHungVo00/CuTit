@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState, type ChangeEvent } from 'react';
 import { Link } from 'react-router-dom';
-import { canOpenAppSettings, getDeviceSpeech, openAppSettings } from '@vietlearning/native';
-import { learnerStore, speechRate, useLearner } from '@vietlearning/state';
+import { canOpenAppSettings, openAppSettings } from '@vietlearning/native';
+import { learnerStore, useLearner } from '@vietlearning/state';
+import { SlowListen, say as sayAt } from '../listen';
 import { fileToJpegBase64, toJpegBase64 } from './image';
 import { t as tCam, useT } from '../i18n';
 
@@ -19,7 +20,8 @@ type Phase =
   | { kind: 'error'; message: string; preview?: string; settings?: boolean };
 
 const btn = 'min-h-12 w-full rounded-xl px-4 font-extrabold';
-const say = (text: string) => getDeviceSpeech().speak(text, { rate: speechRate(0.85) }).catch(() => undefined);
+const BASE = 0.85;
+const say = (text: string) => sayAt(text, BASE);
 
 async function labelImage(imageBase64: string): Promise<{ labels: Label[]; mock: boolean }> {
   const [{ request }, { VisionLabelResponseSchema }] = await Promise.all([import('@vietlearning/api-client'), import('@vietlearning/contracts/api')]);
@@ -205,6 +207,7 @@ export function CameraScreen() {
                     <button type="button" onClick={() => say(l.vi)} aria-label={t('listenTo', { word: l.vi })} className="min-h-11 min-w-11 rounded-xl border border-line bg-surface px-3 font-bold text-ink">
                       🔈
                     </button>
+                    <SlowListen text={l.vi} base={BASE} className="min-h-11 min-w-11 rounded-xl border border-line bg-surface px-3 text-lg" />
                     <button type="button" disabled={saved} onClick={() => save(l)} className="min-h-11 rounded-xl border border-line bg-surface px-3 text-sm font-bold text-ink disabled:opacity-60">
                       {saved ? t('saved') : t('save')}
                     </button>

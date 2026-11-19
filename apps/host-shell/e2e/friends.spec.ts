@@ -80,6 +80,15 @@ test.describe('GĐ4c Bạn học hợp tác', () => {
     await openFriends(tom);
     await expect(tom.getByRole('region', { name: 'Bạn và Lan' }).getByText('Chúng ta: 65/90 phút tuần này')).toBeVisible({ timeout: 15_000 });
 
+    // Đổi tên hiển thị sau khi đã đặt (việc sót GĐ4c) => bạn thấy tên mới
+    await tom.getByRole('button', { name: 'Đổi tên' }).click();
+    await expect(tom.getByLabel('Tên hiển thị cho bạn bè')).toHaveValue('Tom');
+    await tom.getByLabel('Tên hiển thị cho bạn bè').fill('Tommy');
+    await tom.getByRole('button', { name: 'Lưu tên' }).click();
+    await expect(tom.getByText('Bạn bè thấy bạn là: Tommy')).toBeVisible({ timeout: 15_000 });
+    await openFriends(lan);
+    await expect(lan.getByRole('region', { name: 'Bạn và Tommy' })).toBeVisible({ timeout: 15_000 });
+
     // Hủy kết bạn (có xác nhận) => cả hai không còn thấy nhau
     await tom.getByRole('button', { name: 'Hủy kết bạn' }).click();
     await tom.getByRole('button', { name: 'Có, hủy kết bạn' }).click();

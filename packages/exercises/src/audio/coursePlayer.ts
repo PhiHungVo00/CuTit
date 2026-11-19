@@ -5,12 +5,12 @@
  * Không chặn bài học: mọi lỗi mạng/cache đều im lặng và rơi về TTS của máy.
  */
 import { getDeviceSpeech } from '@vietlearning/native';
-import { learnerStore, speechRate } from '@vietlearning/state';
+import { learnerStore, SLOW_FACTOR, speechRate } from '@vietlearning/state';
 
 export type Dialect = 'north' | 'central' | 'south';
 export const AUDIO_CACHE = 'becutit-audio-v1';
 /** Nút 🐢 đọc chậm (D9 mục 6): âm thanh dựng sẵn đọc ở tốc độ tự nhiên, hơi nhanh với người mới */
-export const SLOW_RATE = 0.75;
+export const SLOW_RATE = SLOW_FACTOR;
 
 export interface PlayOptions {
   slow?: boolean;

@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { getDeviceSpeech } from '@vietlearning/native';
-import { dueCards, learnerStore, speechRate, useLearner } from '@vietlearning/state';
+import { dueCards, learnerStore, useLearner } from '@vietlearning/state';
+import { SlowListen, say as sayAt } from '../listen';
 import { generateSession, type ChoiceDrill, type MatchDrill, type RepeatDrill } from './generateDrills';
 import { useT } from '../i18n';
 
-const say = (text: string) => getDeviceSpeech().speak(text, { rate: speechRate(0.85) }).catch(() => undefined);
+const BASE = 0.85;
+const say = (text: string) => sayAt(text, BASE);
 
 /** Kết quả một bài: quality 0–5 cho SM-2 */
 type Done = (quality: number, correct: boolean, reviewBack: string) => void;
@@ -20,9 +21,12 @@ function ChoiceView({ drill, onDone }: { drill: ChoiceDrill; onDone: Done }) {
   return (
     <div className="flex flex-col gap-3">
       {drill.speak && (
-        <button type="button" onClick={() => say(drill.speak!)} className="min-h-12 self-start rounded-xl border border-line bg-surface-2 px-4 font-bold text-ink">
-          {t('replay')}
-        </button>
+        <div className="flex gap-2 self-start">
+          <button type="button" onClick={() => say(drill.speak!)} className="min-h-12 rounded-xl border border-line bg-surface-2 px-4 font-bold text-ink">
+            {t('replay')}
+          </button>
+          <SlowListen text={drill.speak} base={BASE} />
+        </div>
       )}
       <div className="grid grid-cols-2 gap-2" role="group" aria-label={t('choices')}>
         {drill.options.map((o) => {
@@ -126,9 +130,12 @@ function RepeatView({ drill, onDone }: { drill: RepeatDrill; onDone: Done }) {
         “{drill.text}”
       </p>
       <p className="m-0 text-sm text-ink-soft">{drill.translation}</p>
-      <button type="button" onClick={() => say(drill.text)} className="min-h-12 self-start rounded-xl border border-line bg-surface-2 px-4 font-bold text-ink">
-        {t('playSample')}
-      </button>
+      <div className="flex gap-2 self-start">
+        <button type="button" onClick={() => say(drill.text)} className="min-h-12 rounded-xl border border-line bg-surface-2 px-4 font-bold text-ink">
+          {t('playSample')}
+        </button>
+        <SlowListen text={drill.text} base={BASE} />
+      </div>
       <p className="m-0 text-sm text-ink-muted">{t('repeatHint')}</p>
       <div className="grid grid-cols-3 gap-2" role="group" aria-label={t('selfRate')}>
         <button type="button" onClick={() => onDone(2, false, drill.text)} className="min-h-12 rounded-xl border border-line bg-danger-soft font-bold text-danger-ink">

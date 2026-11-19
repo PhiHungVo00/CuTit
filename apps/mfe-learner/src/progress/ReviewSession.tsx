@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { getDeviceSpeech } from '@vietlearning/native';
-import { learnerStore, speechRate, type SrsCard } from '@vietlearning/state';
+import { learnerStore, type SrsCard } from '@vietlearning/state';
+import { SlowListen, say as sayAt } from '../listen';
 import { card, primaryBtn, secondaryBtn } from '../common/ui';
 import { useT } from '../i18n';
 
@@ -13,7 +13,8 @@ const GRADES = [
 ] as const;
 
 /** Đọc theo tốc độ người học chọn ở M12 */
-const say = (text: string) => getDeviceSpeech().speak(text, { rate: speechRate(0.85) }).catch(() => undefined);
+const BASE = 0.85;
+const say = (text: string) => sayAt(text, BASE);
 
 /** Phiên ôn thẻ đến hạn: xem mặt trước → lật → tự chấm. Danh sách cố định lúc bắt đầu phiên. */
 export function ReviewSession({ cards, onClose }: { cards: SrsCard[]; onClose: () => void }) {
@@ -59,9 +60,12 @@ export function ReviewSession({ cards, onClose }: { cards: SrsCard[]; onClose: (
       <h2 id="ct-review-front" ref={headingRef} tabIndex={-1} lang="vi" className="m-0 text-center text-3xl font-black text-heading outline-none">
         {current.front}
       </h2>
-      <button type="button" className={secondaryBtn} onClick={() => say(current.front)}>
-        {t('listen')}
-      </button>
+      <div className="flex gap-2">
+        <button type="button" className={`${secondaryBtn} flex-1`} onClick={() => say(current.front)}>
+          {t('listen')}
+        </button>
+        <SlowListen text={current.front} base={BASE} className="min-h-12 min-w-12 shrink-0 rounded-xl border border-line bg-surface-2 px-3 text-lg" />
+      </div>
       {!flipped ? (
         <button type="button" className={primaryBtn} onClick={() => setFlipped(true)}>
           {t('flip')}

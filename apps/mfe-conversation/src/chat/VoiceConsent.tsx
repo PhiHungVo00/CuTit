@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import { learnerStore } from '@vietlearning/state';
 import { useT } from '../i18n';
 
@@ -13,6 +14,9 @@ export function VoiceConsent({ text, onAgree, onCancel }: { text: string; onAgre
         {t('voicePrivacyTitle')}
       </p>
       <p className="m-0 text-sm text-ink-soft">{text}</p>
+      <Link to="/quyen-rieng-tu" className="self-start text-sm font-bold text-ink underline">
+        {t('privacyPolicy')}
+      </Link>
       <div className="grid grid-cols-2 gap-2">
         <button type="button" onClick={onCancel} className="min-h-12 rounded-xl border border-line-strong bg-surface px-3 font-bold text-ink">
           {t('notNow')}
