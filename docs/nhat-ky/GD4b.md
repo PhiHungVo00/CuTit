@@ -1,5 +1,7 @@
 # Nhật ký GĐ4b — Chế độ trẻ em (D4) (nhánh `claude/gd4-tre-em-fc0faf`)
 
+> **⚠️ ĐÃ GỠ 19/11/2026.** Người dùng đổi D4: “đối tượng dùng app bao hàm trẻ em” nghĩa là trẻ dùng app như mọi người, không đặt luật hạn chế riêng. Toàn bộ tính năng dưới đây đã bị gỡ (nhánh `claude/go-che-do-tre-em-eaf07a`, nhật ký `docs/nhat-ky/GO-TRE-EM.md`). Migration `0003_child_mode` vẫn giữ (không sửa migration đã phát hành); `0005_drop_child_mode` bỏ cột `parent_media_consent_at` và index `users_parent_idx`. Mục 6 “Chờ quyết định (pháp lý)” **không còn áp dụng**. Tài liệu này chỉ còn giá trị lịch sử.
+
 Phạm vi theo kế hoạch tổng (mục 9, D4): hồ sơ trẻ do phụ huynh tạo, không bảng xếp hạng/so sánh xã hội, không chat AI tự do (chỉ nhập vai có kịch bản), không camera/ghi âm gửi lên server khi chưa có đồng ý của phụ huynh, nhắc học do phụ huynh đặt. Làm theo TDD: contract → test Gateway (đỏ) → Gateway → client → e2e.
 
 ## 1. Dữ liệu & contract (Nguyên tắc 5)
@@ -99,7 +101,7 @@ Phạm vi theo kế hoạch tổng (mục 9, D4): hồ sơ trẻ do phụ huynh 
   4. PIN sai bị từ chối, PIN đúng đưa máy về phụ huynh với đúng mã khôi phục cũ.
 - Lần chạy đầu e2e có 1 lỗi chập chờn: thoát hồ sơ trẻ báo “cần mạng”. Nguyên nhân khả dĩ: sự kiện đồng hồ học vào hàng đợi giữa lúc gửi. Đã sửa bằng cách gửi lại tới khi hàng đợi rỗng; sau đó 3 lần liên tiếp đều xanh.
 
-## 6. Chờ quyết định (pháp lý — KHÔNG tự chốt)
+## 6. ~~Chờ quyết định (pháp lý — KHÔNG tự chốt)~~ — không còn áp dụng (chế độ trẻ em đã gỡ 19/11)
 - **Ngưỡng tuổi.** Nghị định 13/2023 coi trẻ em là dưới 16 tuổi (Điều 20: cần đồng ý của cha mẹ, và của trẻ nếu trẻ từ 7 tuổi). COPPA (Mỹ) là dưới 13. App chưa hỏi tuổi. Có cần cổng tuổi khi tạo tài khoản không?
 - **PIN trên máy có đủ là “đồng ý có thể kiểm chứng của cha mẹ”** (verifiable parental consent theo COPPA / Điều 20 NĐ13) không? Hiện chỉ ghi thời điểm đồng ý ở server và log `parent media consent changed`, chưa có bằng chứng danh tính phụ huynh.
 - **Ảnh/giọng nói của trẻ gửi Google Gemini** (máy chủ có thể ở ngoài Việt Nam). Cần quyết:

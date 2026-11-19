@@ -175,7 +175,7 @@ Mục tiêu: có người dùng thật, dữ liệu không mất, phát hành kh
 1. **Huy hiệu theo thành thạo** (vd. “6 thanh đều ≥ 80 điểm”, “100 thẻ nhớ dài hạn”) — không theo số ngày cày.
 2. **Tổng kết tuần** (thời gian, thanh tiến bộ, từ đã thuộc).
 3. **Nhiệm vụ bạn bè hợp tác** (cùng đạt X phút/tuần), streak chung. League cạnh tranh chỉ làm nếu D7 = có, và phải **tự nguyện bật**.
-4. Nếu đối tượng có trẻ em (D4): chế độ phụ huynh, tắt mọi so sánh xã hội.
+4. ~~Nếu đối tượng có trẻ em (D4): chế độ phụ huynh, tắt mọi so sánh xã hội.~~ **Bỏ (19/11):** trẻ em dùng app như mọi người, không có chế độ riêng (xem D4). Không có bảng xếp hạng vẫn là vì D7, không vì trẻ em.
 
 ### GĐ5 — Phát hành có trách nhiệm (đã hoãn theo yêu cầu, giữ trong kế hoạch)
 CI chạy thật, staging/prod tách DB, host Gateway (Render/Fly), keystore ngoài repo, Google Play internal testing, Data safety, thử máy thật (TTS tiếng Việt, M2 giọng thật), iOS sau.
@@ -213,7 +213,8 @@ CI chạy thật, staging/prod tách DB, host Gateway (Render/Fly), keystore ngo
 
 **Đã chốt (2026-11-17):**
 - **D1 ✅** Merge vào `main`, tạo repo GitHub `CuTit` (private).
-- **D4 ✅** Người học chính là **người trưởng thành**, nhưng **có chế độ trẻ em**: hồ sơ trẻ do phụ huynh tạo, không bảng xếp hạng/so sánh xã hội, không chat AI tự do (chỉ nhập vai có kịch bản), không camera/ghi âm gửi lên server khi chưa có đồng ý của phụ huynh, nhắc học do phụ huynh đặt. Làm ở GĐ4; GĐ0 chỉ cần trường `account_type` (`adult` | `child`) và `parent_user_id` trong schema để không phải migrate lớn sau này.
+- **D4 ✅ (đổi 2026-11-19)** Đối tượng dùng app **bao hàm trẻ em**, nghĩa là trẻ dùng app **như mọi người**: không có hồ sơ trẻ, không cổng phụ huynh, không luật hạn chế riêng (chat AI, camera, ghi âm, hạn mức, bạn học đều như người lớn). Chế độ trẻ em làm ở GĐ4b đã **gỡ hẳn** (`docs/nhat-ky/GO-TRE-EM.md`). Hai cột `account_type`/`parent_user_id` từ GĐ0 vẫn còn trong schema (vô hại, luôn `adult`/null); cột `parent_media_consent_at` đã bỏ bằng migration 0005. Các câu hỏi pháp lý “chờ quyết định” của GĐ4b (ngưỡng tuổi, đồng ý của cha mẹ, gửi ảnh/giọng trẻ cho Gemini) không còn áp dụng cho tính năng nào.
+  - ~~Bản cũ (17/11):~~ D4: Người học chính là **người trưởng thành**, nhưng **có chế độ trẻ em**: hồ sơ trẻ do phụ huynh tạo, không bảng xếp hạng/so sánh xã hội, không chat AI tự do (chỉ nhập vai có kịch bản), không camera/ghi âm gửi lên server khi chưa có đồng ý của phụ huynh, nhắc học do phụ huynh đặt. Làm ở GĐ4; GĐ0 chỉ cần trường `account_type` (`adult` | `child`) và `parent_user_id` trong schema để không phải migrate lớn sau này.
 - **D9 — đã thử (2026-11-17), kết luận tạm:** Gemini TTS có làm được giọng theo miền, nhưng **không gọi trực tiếp lúc học**. Thay vào đó **dựng sẵn âm thanh cho nội dung khóa học** theo từng miền (script lúc build/soạn nội dung → cache bằng `TTSCacheProxy`/object storage → app tải theo unit và lưu offline). Câu động (chat AI) vẫn đọc bằng TTS của máy. Bằng chứng:
   - `gemini-3.8-flash-tts`, prompt dạng *director's notes* (chỉ dẫn giọng tách khỏi phần lời): đọc **đúng nguyên văn**. Một model nghe khác đoán mù ra **giọng Nam** (nhận ra “gi” đọc thành “d”).
   - Nếu ghép chỉ dẫn vào cùng câu thì model **đọc luôn cả lời chỉ dẫn** và **tự thêm hoặc đổi từ** (“muốn” → “mua”, thêm “à”, “hôn”). Không chấp nhận được cho nội dung học, nên bắt buộc dùng dạng director's notes và kiểm lại bản chép lời của mỗi tệp trước khi dùng.
@@ -236,7 +237,7 @@ CI chạy thật, staging/prod tách DB, host Gateway (Render/Fly), keystore ngo
 | D1 | Merge nhánh mobile vào `main` và tạo GitHub repo **private** để có backup + CI? | Có — đang có nguy cơ mất dữ liệu |
 | D2 | DB: **Neon** (Postgres thuần, Gateway giữ toàn quyền) hay **Supabase** (có sẵn auth/storage)? | Neon + Drizzle: hợp kiến trúc “mọi thứ qua Gateway”, không lộ anon key ở client |
 | D3 | Đăng nhập: khách trước, nối Google/email sau? | Có — đúng slide 19 “cho thấy giá trị trước, hỏi thông tin sau” |
-| D4 | Người học chính: người nước ngoài trưởng thành, hay có cả trẻ em Việt kiều? | Ảnh hưởng thông báo, xã hội, pháp lý — cần bạn chốt |
+| D4 | Người học chính: người nước ngoài trưởng thành, hay có cả trẻ em Việt kiều? | ✅ Chốt 19/11: có cả trẻ em, nhưng trẻ dùng như mọi người (không chế độ riêng) — xem mục 9 |
 | D5 | Lead Dev xác nhận XP/streak/mục tiêu ngày là luật nghiệp vụ, không tính vào A1–A8? | Có |
 | D6 | Lộ trình đặt trong MFE mới `mfe-path` (lệch TDD 6 MFE) hay trong `mfe-practice`? | MFE mới — trách nhiệm rõ, sở hữu riêng |
 | D7 | Có làm bảng xếp hạng cạnh tranh không? | Không ở bản đầu; làm nhiệm vụ bạn bè hợp tác |

@@ -35,14 +35,12 @@ export const users = pgTable('users', {
   id: uuid('id').primaryKey().defaultRandom(),
   email: text('email').unique(),
   isGuest: boolean('is_guest').notNull().default(true),
-  /** D4: 'adult' | 'child' — hồ sơ trẻ do phụ huynh (parent_user_id) tạo, làm ở GĐ4 */
+  /**
+   * Có từ GĐ0 (schema nền). Chế độ trẻ em (D4/GĐ4b) đã gỡ 19/11: trẻ dùng app như mọi người, không còn tài khoản
+   * 'child'. Giữ hai cột này (vô hại, luôn 'adult' / null) để không phải đổi bảng users; không code nào đọc nữa.
+   */
   accountType: text('account_type').notNull().default('adult'),
   parentUserId: uuid('parent_user_id').references((): AnyPgColumn => users.id, { onDelete: 'cascade' }),
-  /**
-   * GĐ4b: thời điểm PHỤ HUYNH cho phép hồ sơ trẻ gửi ảnh/ghi âm lên server (null = chưa/đã thu hồi).
-   * Chỉ token phụ huynh đổi được (PUT /v1/family/children/:id/consent) — không đi qua bảng consents/sync.
-   */
-  parentMediaConsentAt: ts('parent_media_consent_at'),
   /** sha256 của mã khôi phục (mã gốc chỉ hiện cho người học, server không giữ) */
   recoveryCodeHash: text('recovery_code_hash').unique(),
   locale: text('locale').default('en'),
@@ -54,7 +52,7 @@ export const users = pgTable('users', {
   profileUpdatedAt: ts('profile_updated_at'),
   createdAt: ts('created_at').notNull().defaultNow(),
   deletedAt: ts('deleted_at')
-}, (t) => [index('users_parent_idx').on(t.parentUserId)]);
+});
 
 /** 2. Tùy chỉnh (M12) — khớp Preferences của client */
 export const preferences = pgTable('preferences', {

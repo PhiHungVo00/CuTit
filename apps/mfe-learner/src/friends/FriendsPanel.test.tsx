@@ -104,14 +104,6 @@ describe('FriendsPanel (GĐ4c bạn học hợp tác)', () => {
     expect(await screen.findByText(/Chưa có bạn học/)).toBeTruthy();
   });
 
-  it('tài khoản trẻ em: chỉ hiện câu báo, không có form kết bạn', async () => {
-    const api = fakeApi({}, { list: vi.fn(async () => Promise.reject(err(403, 'social_not_allowed'))) });
-    const onBlocked = vi.fn();
-    render(<FriendsPanel api={api} onBlocked={onBlocked} />);
-    expect(await screen.findByText('Hồ sơ trẻ em không dùng tính năng bạn học.')).toBeTruthy();
-    expect(onBlocked).toHaveBeenCalledTimes(1);
-    expect(screen.queryByLabelText('Mã mời của bạn bè')).toBeNull();
-  });
 
   it('đổi tên hiển thị: mở form điền sẵn tên cũ, lưu => thấy tên mới; Thôi => giữ tên cũ', async () => {
     const api = fakeApi({ friends: [quest()] });

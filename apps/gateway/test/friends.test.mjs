@@ -5,7 +5,7 @@ import { eq } from 'drizzle-orm';
 import { createDbProvider, schema } from '../dist/db/client.js';
 import { makeApp, guest } from './helpers.mjs';
 
-/** GĐ4c — bạn học hợp tác: mã mời, nhiệm vụ tuần chung, streak chung, riêng tư, trẻ em, xóa tài khoản */
+/** GĐ4c — bạn học hợp tác: mã mời, nhiệm vụ tuần chung, streak chung, riêng tư, xóa tài khoản */
 const dbp = createDbProvider({ PGLITE_DIR: 'memory://' });
 let a;
 before(async () => {
@@ -201,19 +201,6 @@ test('Hủy kết bạn: cả hai không còn thấy nhau, kết bạn lại đ�
   assert.deepEqual((await list(tom)).json().friends, []);
   await befriend(tom, lan);
   assert.equal((await list(lan)).json().friends.length, 1);
-});
-
-test('Tài khoản trẻ em: mọi route bạn bè trả 403 social_not_allowed', async () => {
-  const kid = await person();
-  const lan = await person('Lan');
-  const db = await dbp.get();
-  await db.update(schema.users).set({ accountType: 'child' }).where(eq(schema.users.id, kid.userId));
-  const { code } = (await invite(lan)).json();
-  for (const r of [await list(kid), await setName(kid, 'Bé'), await invite(kid), await accept(kid, code)]) {
-    assert.equal(r.statusCode, 403);
-    assert.equal(r.json().error, 'social_not_allowed');
-  }
-  assert.deepEqual((await list(lan)).json().invite.code, code, 'mã của người lớn không bị tiêu');
 });
 
 test('Xóa tài khoản: quan hệ bạn bè, mã mời, tên hiển thị và đóng góp biến mất (cascade)', async () => {

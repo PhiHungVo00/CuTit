@@ -1,7 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { learnerStore } from '@vietlearning/state';
-import { familyStore } from '@vietlearning/state/family';
 import type { AssessResponse } from '@vietlearning/contracts/api';
 import SpeakExercise, { SpeakResult } from './SpeakExercise';
 import { gradeAssess } from './grade';
@@ -94,21 +93,3 @@ describe('SpeakExercise', () => {
     vi.doUnmock('@vietlearning/audio-dsp');
   });
 });
-
-describe('GĐ4b hồ sơ trẻ chưa được phụ huynh cho phép ghi âm', () => {
-  afterEach(() => familyStore.getState().resetFamily());
-  it('bấm micro: báo cần bố mẹ cho phép, KHÔNG ghi/gửi, vẫn bỏ qua được câu', () => {
-    familyStore.getState().setAccount({ mode: 'child', mediaConsent: false, activeChildId: 'c1' });
-    learnerStore.getState().giveConsent('voice');
-    const assess = vi.fn();
-    const onSkip = vi.fn();
-    render(<SpeakExercise item={item} onDone={vi.fn()} onSkip={onSkip} assess={assess} />);
-    fireEvent.click(screen.getByRole('button', { name: 'Bắt đầu đọc câu' }));
-    expect(screen.getByTestId('speak-need-parent').textContent).toMatch(/bố mẹ cho phép/);
-    expect(screen.getByRole('button', { name: 'Bắt đầu đọc câu' }).getAttribute('aria-pressed')).toBe('false');
-    expect(assess).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByRole('button', { name: /Không nói được lúc này/ }));
-    expect(onSkip).toHaveBeenCalled();
-  });
-});
-
