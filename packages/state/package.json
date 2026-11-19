@@ -16,10 +16,6 @@
     "./sync": {
       "types": "./dist/sync.d.ts",
       "default": "./dist/sync.js"
-    },
-    "./family": {
-      "types": "./dist/family.d.ts",
-      "default": "./dist/family.js"
     }
   },
   "scripts": {

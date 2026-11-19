@@ -21,12 +21,13 @@ TDD: test Gateway (11 test) và test sửa lỗi múi giờ được chạy Đ�
   - Đánh đổi: đổi mục tiêu tuần thì streak cũ được tính lại theo mục tiêu mới.
   - Tuần kết bạn lấy theo ngày UTC của `created_at`, kẹp không sau tuần của `today`. Lỗi đã sửa (có test): người ở múi giờ âm kết bạn tối Chủ nhật bị tính tổng tuần = 0.
 - **Riêng tư:** phản hồi không chứa userId của ai (chỉ có id quan hệ bạn bè), không có lỗi, điểm, XP hay chi tiết bài. Có test quét chuỗi phản hồi để chặn các trường này.
-- **Trẻ em (D4):** mọi route `/v1/friends*` gọi `assertSocialAllowed` (`apps/gateway/src/services/social/friends.ts`).
-  - Hàm này đọc `users.account_type`, cột đã có từ GĐ0, nên **không cần đợi phiên chế độ trẻ em**.
-  - Nếu là `child` thì trả 403 `social_not_allowed`.
-  - Mã mời của tài khoản đã chuyển thành `child` cũng bị coi là `invite_invalid`.
-  - Phía UI: nhận 403 (`social_not_allowed`, hoặc `adult_only` của nhánh trẻ em) ⇒ `FriendsPanel` gọi `onBlocked` ⇒ `ProgressScreen` **gỡ hẳn thẻ** “Học cùng bạn bè”. Hạn chế: trẻ vẫn thấy thẻ cho tới lần bấm mở đầu tiên, vì client của main chưa biết `account_type`.
-  - **Khi gộp với GĐ4b (`claude/gd4-tre-em-fc0faf`):** GĐ4b có `requireAdult(req)` (403 `adult_only`, đọc `principal.accountType` đã cache) và `useIsChild()` (`@vietlearning/state/family`). Nên thay `assertSocialAllowed` bằng `requireAdult` (bỏ một truy vấn DB mỗi request; UI đã nhận cả hai mã), và trong `ProgressScreen` thêm `!useIsChild()` vào điều kiện hiện thẻ để ẩn từ đầu. Nhớ sửa test Gateway (mã lỗi).
+> **Đã gỡ 19/11 (`docs/nhat-ky/GO-TRE-EM.md`):** trẻ em dùng bạn học như mọi người. Bỏ `assertSocialAllowed`, mã lỗi `social_not_allowed`, kiểm tra người mời là `child`, `onBlocked` của `FriendsPanel` và test tương ứng. Phần gạch dưới chỉ còn giá trị lịch sử.
+- ~~**Trẻ em (D4):** mọi route `/v1/friends*` gọi `assertSocialAllowed` (`apps/gateway/src/services/social/friends.ts`).~~
+  - ~~Hàm này đọc `users.account_type`, cột đã có từ GĐ0, nên **không cần đợi phiên chế độ trẻ em**.~~
+  - ~~Nếu là `child` thì trả 403 `social_not_allowed`.~~
+  - ~~Mã mời của tài khoản đã chuyển thành `child` cũng bị coi là `invite_invalid`.~~
+  - ~~Phía UI: nhận 403 (`social_not_allowed`, hoặc `adult_only` của nhánh trẻ em) ⇒ `FriendsPanel` gọi `onBlocked` ⇒ `ProgressScreen` **gỡ hẳn thẻ** “Học cùng bạn bè”. Hạn chế: trẻ vẫn thấy thẻ cho tới lần bấm mở đầu tiên, vì client của main chưa biết `account_type`.~~
+  - ~~**Khi gộp với GĐ4b (`claude/gd4-tre-em-fc0faf`):** GĐ4b có `requireAdult(req)` (403 `adult_only`, đọc `principal.accountType` đã cache) và `useIsChild()` (`@vietlearning/state/family`). Nên thay `assertSocialAllowed` bằng `requireAdult` (bỏ một truy vấn DB mỗi request; UI đã nhận cả hai mã), và trong `ProgressScreen` thêm `!useIsChild()` vào điều kiện hiện thẻ để ẩn từ đầu. Nhớ sửa test Gateway (mã lỗi).~~
 
 ## 2. Contract (Nguyên tắc 5) — `packages/contracts/src/api/friends.ts`
 | Route | Ý nghĩa | Lỗi |
@@ -70,10 +71,10 @@ TDD: test Gateway (11 test) và test sửa lỗi múi giờ được chạy Đ�
   - Đổi mục tiêu; người ngoài cặp không đổi hay xóa được.
   - Streak (tuần trước khi kết bạn không tính).
   - Giới hạn 5 bạn ở cả hai phía; hủy kết bạn.
-  - Trẻ em 403 ở mọi route.
+  - ~~Trẻ em 403 ở mọi route.~~ (đã gỡ 19/11)
   - **Xóa tài khoản ⇒ không còn bạn, mã, tên, quan hệ, hoạt động.**
   - Rate limit 429 riêng từng route.
-- mfe-learner: 6 test `FriendsPanel` (tên sai, tạo/nhập mã, lỗi mã, đạt mục tiêu + streak + đổi mục tiêu + hủy, trẻ em, tiếng Anh).
+- mfe-learner: 6 test `FriendsPanel` (tên sai, tạo/nhập mã, lỗi mã, đạt mục tiêu + streak + đổi mục tiêu + hủy, ~~trẻ em~~ (gỡ 19/11), tiếng Anh).
 - e2e `e2e/friends.spec.ts` (pixel-7, Gateway thật):
   - Hai hồ sơ trình duyệt riêng, mỗi máy có sẵn thời gian học hôm nay (20 và 45 phút), đồng bộ lên server.
   - Đặt tên, Lan tạo mã, Tom nhập mã viết thường có khoảng trắng.

@@ -11,7 +11,6 @@ import {
 import type { RouteDeps } from '../app.js';
 import { parseOr400, respond } from '../lib/validate.js';
 import { requireUserId } from '../pipeline/RequestPipeline.js';
-import { requireAdult } from '../pipeline/accountPolicy.js';
 import { applyEvents, deleteUser, dueCards, getPreferences, putPreferences, snapshot, summary } from '../services/learner/repo.js';
 
 /** Mặc định khi người học chưa từng lưu tùy chỉnh (khớp giá trị mặc định của client) */
@@ -89,10 +88,8 @@ export const meRoutes: FastifyPluginAsync<RouteDeps> = async (server, { db, pipe
   // DELETE /v1/me: xóa cứng tài khoản + mọi dữ liệu (kể cả xp_events, refresh token)
   server.delete('/me', async (req) => {
     const userId = requireUserId(req);
-    // GĐ4b: hồ sơ trẻ không tự xóa được — phụ huynh xóa (DELETE /v1/family/children/:id)
-    requireAdult(req);
-    const ids = await deleteUser(await db.get(), userId);
-    ids.forEach((id) => pipeline.forgetUser(id));
+    await deleteUser(await db.get(), userId);
+    pipeline.forgetUser(userId);
     req.log.info('account deleted');
     return respond(DeleteMeResponseSchema, { deleted: true });
   });

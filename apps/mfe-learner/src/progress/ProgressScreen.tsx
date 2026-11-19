@@ -28,8 +28,6 @@ export function ProgressScreen() {
   const srs = useLearner((s) => s.srs);
   const [reviewing, setReviewing] = useState<SrsCard[] | null>(null);
   const [friendsOpen, setFriendsOpen] = useState(false);
-  /** Tài khoản trẻ em (Gateway trả 403) => ẩn hẳn thẻ bạn học (D4: không so sánh xã hội) */
-  const [friendsBlocked, setFriendsBlocked] = useState(false);
 
   const week = useMemo(() => lastSevenDays(activity, new Date(), lang), [activity, lang]);
   const weekMinutes = week.reduce((a, d) => a + d.minutes, 0);
@@ -143,25 +141,23 @@ export function ProgressScreen() {
             )}
           </section>
 
-          {!friendsBlocked && (
-            <section className={card} aria-labelledby="ct-friends">
-              <h2 id="ct-friends" className="m-0 text-lg font-extrabold text-ink">
-                {t('friendsTitle')}
-              </h2>
-              {friendsOpen ? (
-                <Suspense fallback={null}>
-                  <FriendsPanel onBlocked={() => setFriendsBlocked(true)} />
-                </Suspense>
-              ) : (
-                <>
-                  <p className="m-0 text-[15px] text-ink-soft">{t('friendsHint')}</p>
-                  <button type="button" className={secondaryBtn} onClick={() => setFriendsOpen(true)}>
-                    {t('friendsOpen')}
-                  </button>
-                </>
-              )}
-            </section>
-          )}
+          <section className={card} aria-labelledby="ct-friends">
+            <h2 id="ct-friends" className="m-0 text-lg font-extrabold text-ink">
+              {t('friendsTitle')}
+            </h2>
+            {friendsOpen ? (
+              <Suspense fallback={null}>
+                <FriendsPanel />
+              </Suspense>
+            ) : (
+              <>
+                <p className="m-0 text-[15px] text-ink-soft">{t('friendsHint')}</p>
+                <button type="button" className={secondaryBtn} onClick={() => setFriendsOpen(true)}>
+                  {t('friendsOpen')}
+                </button>
+              </>
+            )}
+          </section>
 
           <Link to="/bat-dau" className={`${linkBtn} justify-center`}>
             🌱 {profile.onboarded ? t('redoPlacement') : t('doPlacement')}

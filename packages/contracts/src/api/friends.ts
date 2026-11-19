@@ -9,7 +9,6 @@ import { RECOVERY_ALPHABET } from './account.js';
  *   địa phương `today` của người hỏi). Số phút lấy từ thời gian học đã đồng bộ (`/v1/sync`, activity.set).
  * - Streak chung = số tuần liên tiếp cặp cùng đạt mục tiêu (tính từ tuần kết bạn).
  * - Riêng tư: bạn chỉ thấy tên hiển thị + số phút đóng góp vào nhiệm vụ chung. Không lộ userId, lỗi, điểm.
- * - Tài khoản trẻ em (account_type = child) không dùng được: 403 `social_not_allowed`.
  */
 
 export const MAX_FRIENDS = 5;
@@ -20,8 +19,6 @@ export const DEFAULT_QUEST_GOAL = 60;
 
 /** Mã lỗi máy đọc được (trường `error` của thân lỗi Gateway) */
 export const FriendErrorCode = {
-  /** 403: tài khoản trẻ em */
-  notAllowed: 'social_not_allowed',
   /** 409: chưa đặt tên hiển thị */
   nameRequired: 'display_name_required',
   /** 404: mã sai / hết hạn / đã dùng (cùng một lỗi để không dò được mã nào từng tồn tại) */

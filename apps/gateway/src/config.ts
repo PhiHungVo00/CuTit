@@ -55,9 +55,6 @@ const EnvSchema = z
     MAX_LLM_TOKENS_PER_DAY: z.coerce.number().int().positive().default(100000),
     /** GĐ3: số lượt hội thoại AI (chat, nhập vai, gọi thoại) mỗi tài khoản mỗi ngày UTC */
     MAX_CHAT_TURNS_PER_DAY: z.coerce.number().int().positive().default(60),
-    /** GĐ4b (D4): hồ sơ trẻ có hạn mức AI thấp hơn — số lượt nhập vai/ngày, và % hạn mức người lớn cho token/giây/ký tự/ảnh */
-    CHILD_MAX_CHAT_TURNS_PER_DAY: z.coerce.number().int().positive().default(15),
-    CHILD_AI_LIMIT_PERCENT: z.coerce.number().int().min(1).max(100).default(40),
     AUDIO_BODY_LIMIT_MB: z.coerce.number().positive().default(8),
     // LLM + Vision (Nguyên tắc 1, 2, 4): khóa chỉ nằm ở server. Không đặt => Gateway dùng bộ giả lập (mock: true)
     // Giá trị giữ chỗ trong .env cũ (vd. "AIzaSy...") hoặc quá ngắn => coi như CHƯA cấu hình (chạy bộ giả lập),
