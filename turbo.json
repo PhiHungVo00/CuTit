@@ -15,6 +15,9 @@
       "persistent": true
     },
     "test": {
+      "passThroughEnv": [
+        "CI"
+      ],
       "dependsOn": [
         "^build",
         "build"
