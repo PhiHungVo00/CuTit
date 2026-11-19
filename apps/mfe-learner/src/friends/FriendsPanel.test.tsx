@@ -97,6 +97,7 @@ describe('FriendsPanel (GĐ4c bạn học hợp tác)', () => {
     expect(screen.getByText('🔥 3 tuần liên tiếp cùng đạt')).toBeTruthy();
     fireEvent.change(screen.getByLabelText('Mục tiêu chung mỗi tuần'), { target: { value: '90' } });
     await waitFor(() => expect(api.setGoal).toHaveBeenCalledWith('11111111-1111-4111-8111-111111111111', 90, expect.any(String)));
+    await waitFor(() => expect((screen.getByRole('button', { name: 'Hủy kết bạn' }) as HTMLButtonElement).disabled).toBe(false));
     fireEvent.click(screen.getByRole('button', { name: 'Hủy kết bạn' }));
     expect(api.remove).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole('button', { name: 'Có, hủy kết bạn' }));
@@ -104,6 +105,35 @@ describe('FriendsPanel (GĐ4c bạn học hợp tác)', () => {
     expect(await screen.findByText(/Chưa có bạn học/)).toBeTruthy();
   });
 
+  it('đang hủy kết bạn: bấm hai lần chỉ gửi MỘT yêu cầu, mọi nút gây thay đổi bị khóa và có chỉ báo “Đang gửi…”', async () => {
+    let finish!: () => void;
+    const api = fakeApi({ friends: [quest()] });
+    const realRemove = api.remove;
+    api.remove = vi.fn((id: string) => new Promise<void>((ok) => (finish = () => void realRemove(id).then(ok))));
+    render(<FriendsPanel api={api} />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Hủy kết bạn' }));
+    const yes = screen.getByRole('button', { name: 'Có, hủy kết bạn' });
+    fireEvent.click(yes);
+    fireEvent.click(yes);
+    expect(api.remove).toHaveBeenCalledTimes(1);
+    expect(await screen.findByRole('button', { name: 'Đang gửi…' })).toHaveProperty('disabled', true);
+    expect(screen.getByRole('button', { name: 'Tạo mã mời' })).toHaveProperty('disabled', true);
+    expect(screen.getByLabelText('Mục tiêu chung mỗi tuần')).toHaveProperty('disabled', true);
+    finish();
+    expect(await screen.findByText(/Chưa có bạn học/)).toBeTruthy();
+    expect(api.remove).toHaveBeenCalledTimes(1);
+    expect(screen.getByRole('button', { name: 'Tạo mã mời' })).toHaveProperty('disabled', false);
+  });
+
+  it('tạo mã mời: chạm hai lần liên tiếp chỉ tạo một mã', async () => {
+    const api = fakeApi();
+    render(<FriendsPanel api={api} />);
+    const btn = await screen.findByRole('button', { name: 'Tạo mã mời' });
+    fireEvent.click(btn);
+    fireEvent.click(btn);
+    expect(await screen.findByTestId('friend-invite-code')).toBeTruthy();
+    expect(api.invite).toHaveBeenCalledTimes(1);
+  });
 
   it('đổi tên hiển thị: mở form điền sẵn tên cũ, lưu => thấy tên mới; Thôi => giữ tên cũ', async () => {
     const api = fakeApi({ friends: [quest()] });

@@ -5,10 +5,13 @@ import { useT } from '../privacyI18n';
 type Key = Parameters<ReturnType<typeof useT>>[0];
 
 const SECTIONS: { title: Key; items: Key[] }[] = [
-  { title: 'collectTitle', items: ['collect1', 'collect2', 'collect3', 'collect4'] },
+  { title: 'lawTitle', items: ['law1', 'law2', 'law3', 'law4'] },
+  { title: 'collectTitle', items: ['collect1', 'collect2', 'collect3', 'collect4', 'collect5', 'collect6'] },
   { title: 'aiTitle', items: ['ai1', 'ai2', 'ai3'] },
-  { title: 'keepTitle', items: ['keep1', 'keep2', 'keep3'] },
-  { title: 'deleteTitle', items: ['delete1', 'delete2'] },
+  { title: 'rightsTitle', items: ['rights1', 'rights2', 'rights3', 'rights4', 'rights5'] },
+  { title: 'sellTitle', items: ['sell1', 'sell2', 'sell3'] },
+  { title: 'childTitle', items: ['child1'] },
+  { title: 'deleteTitle', items: ['delete1', 'delete2', 'delete3'] },
   { title: 'contactTitle', items: ['contact1'] }
 ];
 

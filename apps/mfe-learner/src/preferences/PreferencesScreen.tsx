@@ -56,6 +56,7 @@ async function fetchVoices(): Promise<Voice[] | null> {
 export function PreferencesScreen() {
   const t = useT();
   const prefs = useLearner((s) => s.preferences);
+  const consents = useLearner((s) => s.consents);
   const [voices, setVoices] = useState<Voice[]>(() => OFFLINE_VOICES.map((v) => ({ ...v, name: prefs.uiLanguage === 'en' ? v.en : v.name })));
   const [sync, setSync] = useState<Sync>('idle');
   const [speakError, setSpeakError] = useState<string | null>(null);
@@ -187,6 +188,26 @@ export function PreferencesScreen() {
         </h2>
         <p className="m-0 text-[15px] text-ink-soft">{t('privacyAi')}</p>
         <p className="m-0 text-[15px] text-ink-soft">{t('privacyLocal')}</p>
+        {/* Rút lại đồng ý (Luật 91/2025 Điều 4, 10): có hiệu lực ngay trên máy, lên server ở lần đồng bộ kế */}
+        <h3 className="m-0 text-base font-extrabold text-ink">{t('consentHeading')}</h3>
+        <ul className="m-0 flex list-none flex-col gap-2 p-0">
+          {(['voice', 'camera'] as const).map((key) => (
+            <li key={key} className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-surface-2 p-3">
+              <span className="min-w-0 flex-1 text-[15px] text-ink">
+                <span className="block font-bold">{t(`consent.${key}`)}</span>
+                <span className="text-sm text-ink-muted" data-testid={`consent-${key}`}>
+                  {consents[key] ? t('consentOn') : t('consentOff')}
+                </span>
+              </span>
+              {consents[key] && (
+                <button type="button" className="min-h-11 rounded-xl border border-line-strong bg-surface px-3 text-sm font-bold text-ink" onClick={() => learnerStore.getState().revokeConsent(key)}>
+                  {t('consentRevoke')}
+                </button>
+              )}
+            </li>
+          ))}
+        </ul>
+        <p className="m-0 text-sm text-ink-muted">{t('consentRevokeHint')}</p>
         {/* Trang chính sách nằm ở Host: chỉ link bằng URL (không import chéo) */}
         <Link to="/quyen-rieng-tu" className={`${linkBtn} self-start`}>
           {t('privacyPolicy')}
