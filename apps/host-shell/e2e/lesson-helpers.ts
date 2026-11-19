@@ -45,6 +45,9 @@ export async function solveLesson(page: Page, s: Strings, memory = new Map<strin
     await expect(summary.or(q)).toBeVisible();
     if (await summary.isVisible()) return answered;
     const section = page.locator('section[aria-labelledby="ct-ex-q"]');
+    // Bài nói/thanh/truyện tải lười (Suspense, khung chờ aria-busy): chờ hiện xong rồi mới xem có nút nào —
+    // isVisible() không chờ, trên CI chunk tải chậm thì lỡ nút đọc câu hoặc bấm nhầm “Không nói được” (xem nhật ký CI-CD)
+    await expect(section.locator('[aria-busy="true"]')).toHaveCount(0);
     const key = (await section.locator('#ct-ex-q').textContent()) + '|' + ((await section.locator('p[lang="vi"]').first().textContent({ timeout: 50 }).catch(() => '')) ?? '');
     if (onItem) await onItem();
 

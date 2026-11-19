@@ -1,15 +1,27 @@
-# CI: chặn hồi quy về đúng chức năng, ranh giới module, kích thước bundle, trải nghiệm mobile, hiệu năng.
-# Chưa chạy thử trên GitHub (repo chưa có remote lúc viết) — xem docs/NHAT_KY_CHUYEN_DOI_MOBILE.md.
+# CI/CD: chặn hồi quy (chức năng, ranh giới module, kích thước bundle, trải nghiệm mobile) + tự build APK debug.
+# Nhật ký: docs/nhat-ky/CI-CD.md
+#   verify      — chặn merge: build, unit test, ranh giới, size, e2e (Gateway thật, PGlite, KHÔNG có khóa AI).
+#   lighthouse  — đo hiệu năng, KHÔNG chặn merge (R12): số đo trên runner dùng chung dao động; vẫn báo kết quả thật.
+#   android-apk — CD: APK debug (chưa ký phát hành; keystore để sau). Chạy khi push lên main, hoặc PR có nhãn `apk`.
 name: CI
 
 on:
   push:
     branches: [main]
   pull_request:
+    # `labeled`: gắn nhãn `apk` cho PR để build thử APK ngay trên PR
+    types: [opened, synchronize, reopened, labeled]
 
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  PNPM_VERSION: 12.9.1
+  NODE_VERSION: 24
 
 jobs:
   verify:
@@ -20,11 +32,11 @@ jobs:
 
       - uses: pnpm/action-setup@v4
         with:
-          version: 12.9.1
+          version: ${{ env.PNPM_VERSION }}
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 24
+          node-version: ${{ env.NODE_VERSION }}
           cache: pnpm
 
       - run: pnpm install --frozen-lockfile
@@ -32,6 +44,7 @@ jobs:
       - name: Build (typecheck + bundle)
         run: pnpm build
 
+      # GitHub đặt sẵn CI=true; turbo.json cho biến CI đi qua tới task test (passThroughEnv)
       - name: Unit tests (content, gateway, audio-dsp, host, M2, M3)
         run: pnpm test
 
@@ -44,13 +57,6 @@ jobs:
       # Runner ubuntu-latest có sẵn Google Chrome => Playwright dùng channel 'chrome', không cần tải trình duyệt
       - name: E2E trên cấu hình điện thoại (Pixel 7, Android 320px)
         run: pnpm --filter @vietlearning/host-shell e2e
-        env:
-          CI: 'true'
-
-      - name: Lighthouse mobile (trung vị 3 lần, ngân sách LCP ≤ 2.5 s)
-        run: pnpm --filter @vietlearning/host-shell perf
-        env:
-          CHROME_PATH: /usr/bin/google-chrome
 
       - name: Lưu trace Playwright khi lỗi
         if: failure()
@@ -59,3 +65,85 @@ jobs:
           name: playwright-traces
           path: apps/host-shell/test-results
           if-no-files-found: ignore
+
+  lighthouse:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    # Không chặn merge: job đỏ vẫn hiện đỏ trong tab Actions, nhưng không làm hỏng cả lượt CI
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Build host-shell (kèm các gói nó phụ thuộc)
+        run: pnpm exec turbo run build --filter=@vietlearning/host-shell...
+
+      - name: Lighthouse mobile (trung vị 3 lần, ngân sách LCP ≤ 2.5 s)
+        run: pnpm --filter @vietlearning/host-shell perf
+        env:
+          CHROME_PATH: /usr/bin/google-chrome
+
+  android-apk:
+    if: github.event_name == 'push' || contains(github.event.pull_request.labels.*.name, 'apk')
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      # Capacitor 7 / AGP 8 cần JDK 21. Android SDK có sẵn trên runner (ANDROID_HOME)
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: gradle
+          cache-dependency-path: |
+            apps/host-shell/android/*.gradle*
+            apps/host-shell/android/app/*.gradle*
+            apps/host-shell/android/gradle/wrapper/gradle-wrapper.properties
+
+      - run: pnpm install --frozen-lockfile
+
+      # Bản debug cho emulator: Gateway trên máy tính chạy emulator là 10.0.2.2:4000 (chưa có Gateway trên Internet)
+      - name: Build web (host-shell + các gói nó phụ thuộc)
+        run: pnpm exec turbo run build --filter=@vietlearning/host-shell...
+        env:
+          VITE_GATEWAY_URL: http://10.0.2.2:4000
+
+      - name: Đồng bộ web vào project Android (cap sync)
+        run: pnpm --filter @vietlearning/host-shell exec cap sync android
+
+      - name: Build APK debug
+        working-directory: apps/host-shell/android
+        run: ./gradlew assembleDebug --no-daemon --stacktrace
+
+      - name: Kiểm tra APK có web app bên trong
+        run: |
+          APK=apps/host-shell/android/app/build/outputs/apk/debug/app-debug.apk
+          ls -l "$APK"
+          unzip -l "$APK" | grep -q 'assets/public/index.html'
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: app-debug
+          path: apps/host-shell/android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 30
