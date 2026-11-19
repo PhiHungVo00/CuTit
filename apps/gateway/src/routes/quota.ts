@@ -11,9 +11,9 @@ export const quotaRoutes: FastifyPluginAsync<RouteDeps> = async (server, { pipel
     return respond(QuotaStatusSchema, {
       day: utcDay(),
       resetAt: quotaResetAt(),
-      turns: { used: turns, limit: pipeline.limitFor(req, 'turn') },
-      llmTokens: { used: llm, limit: pipeline.limitFor(req, 'llm') },
-      sttSeconds: { used: stt, limit: pipeline.limitFor(req, 'stt') }
+      turns: { used: turns, limit: pipeline.limit('turn') },
+      llmTokens: { used: llm, limit: pipeline.limit('llm') },
+      sttSeconds: { used: stt, limit: pipeline.limit('stt') }
     });
   });
 };

@@ -16,7 +16,6 @@ import { parseOr400, respond } from '../lib/validate.js';
 import { requireUserId } from '../pipeline/RequestPipeline.js';
 import {
   acceptInvite,
-  assertSocialAllowed,
   createInvite,
   listFriends,
   removeFriend,
@@ -37,13 +36,8 @@ const todayOf = (req: FastifyRequest): string => {
 export const friendsRoutes: FastifyPluginAsync<RouteDeps> = async (server, { db, config }) => {
   const inviteLimit = { rateLimit: { max: config.FRIEND_INVITE_RATE_LIMIT_PER_MINUTE, timeWindow: '1 minute' } };
 
-  /** Xác thực + chặn tài khoản trẻ em ở MỌI route bạn bè */
-  const guard = async (req: FastifyRequest) => {
-    const userId = requireUserId(req);
-    const d = await db.get();
-    await assertSocialAllowed(d, userId);
-    return { userId, d };
-  };
+  /** Xác thực ở MỌI route bạn bè */
+  const guard = async (req: FastifyRequest) => ({ userId: requireUserId(req), d: await db.get() });
 
   server.get('/friends', async (req, reply) => {
     const { userId, d } = await guard(req);

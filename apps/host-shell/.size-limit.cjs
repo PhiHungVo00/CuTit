@@ -32,7 +32,6 @@ module.exports = [
   // GĐ1 Lộ trình (mfe-path + packages/exercises), đo 2026-11-18, mọi chunk đều lazy
   // 3 → 3.3 kB (GĐ2): khung thẻ “miền khác nói thế nào” (nội dung thẻ là chunk DialectCard riêng)
   // 3.3 → 3.4 kB (GĐ4a, 2026-11-18): điểm nạp lười huy hiệu + tổng kết tuần (+33 B lúc đo); nội dung ở chunk Motivation
-  // 3.3 → 3.4 kB (GĐ4b, 2026-11-18): giờ nhắc học chỉ xem ở hồ sơ trẻ (đo 3.31 kB)
   // 3.4 → 3.45 kB (R10, 2026-11-18): đo 3.40 kB (+12 B) vì client api-client giờ là chunk lười riêng => thêm một câu
   // `import … from './index-*.js'`; gói đầu đổi lại giảm 4.37 kB. Mã của PathHome không đổi
   { name: 'GĐ1 Phần lộ trình của trang chủ (lazy)', path: 'dist/assets/PathHomeRoute-*.js', limit: '3.45 kB', gzip: true },

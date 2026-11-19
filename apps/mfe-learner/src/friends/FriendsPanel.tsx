@@ -103,14 +103,11 @@ function Quest({ f, t, onGoal, onRemove }: { f: FriendQuest; t: T; onGoal: (g: n
  * GĐ4c — Bạn học hợp tác (chunk lười, mở từ màn Tiến độ). Không có bảng xếp hạng (D7): mỗi cặp bạn một
  * nhiệm vụ tuần chung “chúng ta”, thành viên luôn theo thứ tự cố định (mình trước).
  */
-/** Mã 403 của tài khoản trẻ em: GĐ4c dùng social_not_allowed; nhánh trẻ em (GĐ4b) dùng adult_only */
-const CHILD_CODES = ['social_not_allowed', 'adult_only'];
-
-export function FriendsPanel({ api = gatewayApi, onBlocked }: { api?: FriendsApi; /** gọi khi là tài khoản trẻ em => nơi chứa ẩn cả thẻ */ onBlocked?: () => void }) {
+export function FriendsPanel({ api = gatewayApi }: { api?: FriendsApi }) {
   const t = useT();
   const lang = useLearner((s) => s.preferences.uiLanguage);
   const [data, setData] = useState<FriendsResponse | null>(null);
-  const [load, setLoad] = useState<'loading' | 'ok' | 'child' | 'error'>('loading');
+  const [load, setLoad] = useState<'loading' | 'ok' | 'error'>('loading');
   const [loadErr, setLoadErr] = useState('');
   const [name, setName] = useState('');
   const [code, setCode] = useState('');
@@ -129,10 +126,6 @@ export function FriendsPanel({ api = gatewayApi, onBlocked }: { api?: FriendsApi
       setLoad('ok');
     } catch (e) {
       if (!alive.current) return;
-      if (CHILD_CODES.includes((e as { code?: string })?.code ?? '')) {
-        onBlocked?.();
-        return setLoad('child');
-      }
       setLoadErr(errText(e, t) === t('err.other') ? t('failed') : errText(e, t));
       setLoad('error');
     }
@@ -162,7 +155,6 @@ export function FriendsPanel({ api = gatewayApi, onBlocked }: { api?: FriendsApi
   };
 
   if (load === 'loading') return <p className="m-0 text-[15px] text-ink-soft">{t('loading')}</p>;
-  if (load === 'child') return <p className="m-0 text-[15px] text-ink-soft">{t('childBlocked')}</p>;
   if (load === 'error' || !data)
     return (
       <div className="flex flex-col gap-2">

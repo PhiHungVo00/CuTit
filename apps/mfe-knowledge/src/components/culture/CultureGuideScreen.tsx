@@ -1,5 +1,4 @@
 import { useMemo, useRef, useState, type FormEvent } from 'react';
-import { useIsChild } from '@vietlearning/state/family';
 import { CULTURE_CARDS, foldVietnamese, searchCulture, type CultureCard } from '@vietlearning/content';
 import { learnerStore, useLearner, type UiLanguage } from '@vietlearning/state';
 import { t as tK, useT } from '../../i18n';
@@ -49,7 +48,6 @@ async function ask(question: string, lang: UiLanguage): Promise<AskState> {
 export function CultureGuideScreen() {
   const t = useT();
   const lang = useLearner((s) => s.preferences.uiLanguage);
-  const isChild = useIsChild();
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState(ALL);
   const [question, setQuestion] = useState('');
@@ -93,8 +91,6 @@ export function CultureGuideScreen() {
           <p className="m-0 text-[15px] text-ink-soft">{t('cultureIntro')}</p>
         </header>
 
-        {/* GĐ4b: hỏi đáp tự do với AI không mở cho hồ sơ trẻ (Gateway cũng chặn) — trẻ đọc thẻ đã duyệt bên dưới */}
-        {!isChild && (
         <section aria-labelledby="ct-ask" className="flex flex-col gap-3 rounded-2xl border border-line-strong bg-surface p-4 shadow-card">
           <h2 id="ct-ask" className="m-0 flex items-center gap-2 text-lg font-extrabold">
             <span aria-hidden="true">🏮</span> {t('askTitle')}
@@ -143,7 +139,6 @@ export function CultureGuideScreen() {
             </p>
           )}
         </section>
-        )}
 
         <section aria-labelledby="ct-cards" className="flex flex-col gap-3">
           <h2 id="ct-cards" className="sr-only">

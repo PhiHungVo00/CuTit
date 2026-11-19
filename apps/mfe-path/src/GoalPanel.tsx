@@ -3,7 +3,6 @@ import { getLocalReminders, type LocalReminders } from '@vietlearning/native';
 import { clampReminderHour, GOAL_OPTIONS, progressStore, useProgress } from '@vietlearning/state/progress';
 import { useT } from './i18n';
 import { enableReminders, syncReminders } from './reminders';
-import { useIsChild } from '@vietlearning/state/family';
 
 const pad = (n: number) => String(n).padStart(2, '0');
 
@@ -12,7 +11,6 @@ export function GoalPanel({ reminders = getLocalReminders() }: { reminders?: Loc
   const t = useT();
   const goal = useProgress((s) => s.dailyGoal);
   const reminder = useProgress((s) => s.reminder);
-  const isChild = useIsChild();
   const [denied, setDenied] = useState(false);
   const [busy, setBusy] = useState(false);
   const time = `${pad(reminder.hour)}:${pad(reminder.minute)}`;
@@ -43,10 +41,7 @@ export function GoalPanel({ reminders = getLocalReminders() }: { reminders?: Loc
           {GOAL_OPTIONS.map((g) => (
             <label
               key={g}
-              className={[
-                'flex min-h-12 cursor-pointer items-center justify-center rounded-xl border-2 text-sm font-bold',
-                goal === g ? 'border-accent bg-accent-soft text-heading' : 'border-line bg-surface-2 text-ink'
-              ].join(' ')}
+              className={['flex min-h-12 cursor-pointer items-center justify-center rounded-xl border-2 text-sm font-bold', goal === g ? 'border-accent bg-accent-soft text-heading' : 'border-line bg-surface-2 text-ink'].join(' ')}
             >
               <input
                 type="radio"
@@ -64,46 +59,34 @@ export function GoalPanel({ reminders = getLocalReminders() }: { reminders?: Loc
         </div>
       </fieldset>
 
-      {/* GĐ4b: nhắc học của hồ sơ trẻ do phụ huynh đặt (ở hồ sơ phụ huynh) — trẻ chỉ xem, không có nút đổi */}
       {reminders.supported() && (
         <section aria-labelledby="ct-reminder" className="mt-4 flex flex-col gap-2">
           <h3 id="ct-reminder" className="m-0 text-sm font-bold text-ink-soft">
             🔔 {t('reminderTitle')}
           </h3>
-          <p className="m-0 text-sm text-ink-soft">{t(isChild ? 'reminderByParent' : 'reminderHint')}</p>
+          <p className="m-0 text-sm text-ink-soft">{t('reminderHint')}</p>
           {reminder.enabled ? (
             <>
               <p className="m-0 text-sm font-bold text-heading">{t('reminderOn', { time })}</p>
-              {!isChild && (
-                <>
-                  <label className="flex min-h-12 items-center justify-between gap-3 text-sm text-ink">
-                    {t('reminderTime')}
-                    <input
-                      type="time"
-                      min="07:00"
-                      max="21:59"
-                      value={time}
-                      onChange={(e) => changeTime(e.target.value)}
-                      className="min-h-11 rounded-xl border border-line bg-surface-2 px-3 text-ink"
-                    />
-                  </label>
-                  <button type="button" onClick={turnOff} className="min-h-12 rounded-xl border border-line-strong bg-surface px-4 font-bold text-ink">
-                    {t('reminderDisable')}
-                  </button>
-                </>
-              )}
+              <label className="flex min-h-12 items-center justify-between gap-3 text-sm text-ink">
+                {t('reminderTime')}
+                <input
+                  type="time"
+                  min="07:00"
+                  max="21:59"
+                  value={time}
+                  onChange={(e) => changeTime(e.target.value)}
+                  className="min-h-11 rounded-xl border border-line bg-surface-2 px-3 text-ink"
+                />
+              </label>
+              <button type="button" onClick={turnOff} className="min-h-12 rounded-xl border border-line-strong bg-surface px-4 font-bold text-ink">
+                {t('reminderDisable')}
+              </button>
             </>
           ) : (
-            !isChild && (
-              <button
-                type="button"
-                disabled={busy}
-                onClick={() => void turnOn()}
-                className="min-h-12 rounded-xl bg-accent px-4 font-extrabold text-accent-ink disabled:opacity-50"
-              >
-                {t('reminderEnable')}
-              </button>
-            )
+            <button type="button" disabled={busy} onClick={() => void turnOn()} className="min-h-12 rounded-xl bg-accent px-4 font-extrabold text-accent-ink disabled:opacity-50">
+              {t('reminderEnable')}
+            </button>
           )}
           {denied && (
             <p role="alert" className="m-0 text-sm text-danger-ink">
