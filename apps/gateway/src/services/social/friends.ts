@@ -37,14 +37,6 @@ export const weekStartOf = (day: string): string => addDays(day, -((new Date(`${
 
 // ---------- Quyền ----------
 
-/** D4: tài khoản trẻ em không dùng tính năng xã hội. Điểm kiểm tra DUY NHẤT (mọi route bạn bè gọi) */
-export async function assertSocialAllowed(db: Db, userId: string): Promise<void> {
-  const [u] = await db.select({ accountType: users.accountType }).from(users).where(eq(users.id, userId));
-  if (!u || u.accountType === 'child') {
-    throw new GatewayError(403, FriendErrorCode.notAllowed, 'Tài khoản trẻ em không dùng được tính năng bạn học');
-  }
-}
-
 async function displayNameOf(db: Db | Tx, userId: string): Promise<string | null> {
   const [p] = await db.select({ n: socialProfiles.displayName }).from(socialProfiles).where(eq(socialProfiles.userId, userId));
   return p?.n ?? null;
@@ -101,8 +93,6 @@ export async function acceptInvite(db: Db, userId: string, code: string, today: 
       .returning({ inviter: friendInvites.userId });
     if (!inv) throw new GatewayError(404, FriendErrorCode.inviteInvalid, 'Mã mời không đúng hoặc đã hết hạn');
     if (inv.inviter === userId) throw new GatewayError(400, FriendErrorCode.selfInvite, 'Đây là mã của chính bạn');
-    const [inviter] = await tx.select({ t: users.accountType }).from(users).where(eq(users.id, inv.inviter));
-    if (!inviter || inviter.t === 'child') throw new GatewayError(404, FriendErrorCode.inviteInvalid, 'Mã mời không đúng hoặc đã hết hạn');
     const [a, b] = pair(userId, inv.inviter);
     // Khóa hai hàng user theo thứ tự id (chống deadlock) trước khi đếm: hai lượt nhập mã đồng thời chạm cùng một người
     // phải chờ nhau, lượt sau đếm lại thấy bạn mới của lượt trước (READ COMMITTED) => không vượt MAX_FRIENDS.

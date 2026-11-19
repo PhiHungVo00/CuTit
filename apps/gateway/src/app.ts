@@ -22,7 +22,6 @@ import { contentRoutes } from './routes/content.js';
 import { authRoutes } from './routes/auth.js';
 import { meRoutes } from './routes/me.js';
 import { quotaRoutes } from './routes/quota.js';
-import { familyRoutes } from './routes/family.js';
 import { friendsRoutes } from './routes/friends.js';
 import { createDbProvider, type DbProvider } from './db/client.js';
 
@@ -137,7 +136,6 @@ export async function buildApp(config: GatewayConfig, opts: BuildOptions = {}): 
       await v1.register(contentRoutes, deps);
       await v1.register(meRoutes, deps);
       await v1.register(quotaRoutes, deps);
-      await v1.register(familyRoutes, deps);
       await v1.register(friendsRoutes, deps);
     },
     { prefix: '/v1' }
