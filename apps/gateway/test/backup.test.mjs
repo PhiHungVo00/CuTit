@@ -7,6 +7,7 @@ import {
   pgConnectionEnv,
   pgDumpArgs,
   pgRestoreArgs,
+  isPooledHost,
   redactUrl
 } from '../dist/services/backup/backup.js';
 
@@ -34,6 +35,12 @@ test('pgDumpArgs / pgRestoreArgs: định dạng custom, không owner/quyền, k
 test('redactUrl: ẩn mật khẩu khi in log', () => {
   assert.equal(redactUrl(URL_A), 'postgres://app:***@db.example.com:5433/becutit?sslmode=require');
   assert.equal(redactUrl('khong phai url'), '<url không hợp lệ>');
+});
+
+test('isPooledHost: nhận host pooled của Neon (-pooler) — pg_dump phải dùng kết nối trực tiếp', () => {
+  assert.equal(isPooledHost('postgres://u:p@ep-cool-name-123456-pooler.ap-southeast-1.aws.neon.tech/db?sslmode=require'), true);
+  assert.equal(isPooledHost('postgres://u:p@ep-cool-name-123456.ap-southeast-1.aws.neon.tech/db?sslmode=require'), false);
+  assert.equal(isPooledHost('postgres://u@localhost/db'), false);
 });
 
 test('backupFileName: theo giờ UTC, sắp xếp được theo tên', () => {

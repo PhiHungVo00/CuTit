@@ -37,6 +37,11 @@ export function pgConnectionEnv(url: string): PgEnv {
   return Object.fromEntries(Object.entries(env).filter(([, v]) => v !== undefined)) as unknown as PgEnv;
 }
 
+/** Neon: host pooled có hậu tố `-pooler` (PgBouncer chế độ transaction) — pg_dump cần kết nối trực tiếp */
+export function isPooledHost(url: string): boolean {
+  return /-pooler(\.|$)/i.test(parsePgUrl(url).hostname);
+}
+
 /** In log an toàn */
 export function redactUrl(url: string): string {
   try {

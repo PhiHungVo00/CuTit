@@ -89,9 +89,11 @@ Mục tiêu: chặn rò rỉ đang diễn ra, giữ bằng chứng.
   - Nếu điều tra cho thấy có lộ loại dữ liệu này, áp dụng thêm Nghị định 356 Điều 29 (xem bước 5).
 - **Chặn:**
   - Tạm tắt route bị khai thác, chặn IP hoặc dải IP ở tầng proxy, siết `AUTH_RATE_LIMIT_PER_MINUTE`.
-  - Nếu cần, bật chế độ bảo trì.
+  - Nếu cần, dừng hẳn tiến trình Gateway. App vẫn chạy offline (local-first). Chế độ bảo trì riêng `[CẦN ĐIỀN: chưa có — việc sau]`.
 
 ## 3. Thu hồi khóa (giờ 0–24, song song bước 2)
+
+> **Ghi giờ (UTC) của mỗi lần xoay hoặc thu hồi vào hồ sơ, và lọc các truy vấn ở bước 1 đến TRƯỚC mốc đó.** Sau khi thu hồi hàng loạt refresh token, lần làm mới kế tiếp của mọi client hợp lệ sẽ bị ghi `auth.refresh_reuse`. Sau khi xoay `JWT_SECRET`, access token cũ còn hạn bị coi là token sai và cộng vào `auth.failure_burst`. Đây là nhiễu do chính ta tạo ra, không phải dấu hiệu tấn công mới.
 
 | Bí mật | Cách thu hồi | Hệ quả |
 |---|---|---|
@@ -193,7 +195,7 @@ Truy cập ngày 19/11/2026. Không có quyền truy cập trực tiếp Công b
 - Nghị định 356/2025/NĐ-CP:
   - Điều 28: https://lawplayer.com/vn/article/vn-vbpl-187276/e0028
   - Điều 29: https://lawplayer.com/vn/article/vn-vbpl-187276/e0029
-  - Bản .doc trên vbpl: https://vbpl.moj.gov.vn/TW/Lists/vbpq/Attachments/187276/ND.356.2025.doc
+- **Bản chính thức cần đối chiếu** (chưa mở trong lần soạn này): bản .doc của NĐ 356 trên vbpl, https://vbpl.moj.gov.vn/TW/Lists/vbpq/Attachments/187276/ND.356.2025.doc; Công báo.
 - Đối chiếu thứ cấp (Mẫu số 08, ngày ban hành/hiệu lực):
   - https://luatvietnam.vn/bieu-mau/mau-thong-bao-vi-pham-quy-dinh-ve-bao-ve-du-lieu-ca-nhan-moi-nhat-571-106398-article.html
   - https://www.ey.com/vi_vn/technical/tax/tax-and-law-updates/nghi-dinh-so-356-2025-nd-cp-quy-dinh-chi-tiet-mot-so-dieu-va-bien-phap-thi-hanh-luat-bao-ve-du-lieu-ca-nhan

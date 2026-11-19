@@ -215,12 +215,13 @@ test('shortUserAgent: rút gọn, bỏ ký tự điều khiển; rỗng => null'
   assert.equal(shortUserAgent('x'.repeat(500)).length, 120);
 });
 
-test('Cấu hình: production bắt buộc AUDIT_IP_SALT (≥ 32 ký tự); dev/test có muối mặc định', () => {
+test('Cấu hình: production bắt buộc AUDIT_IP_SALT (≥ 32 ký tự); dev/test thiếu thì sinh ngẫu nhiên mỗi lần chạy', () => {
   const secret = 'prod-secret-that-is-at-least-32-characters-long';
   assert.throws(() => loadConfig({ NODE_ENV: 'production', JWT_SECRET: secret }), /AUDIT_IP_SALT/);
   assert.throws(() => loadConfig({ NODE_ENV: 'test', AUDIT_IP_SALT: 'ngan' }), /AUDIT_IP_SALT/);
   assert.ok(loadConfig({ NODE_ENV: 'production', JWT_SECRET: secret, AUDIT_IP_SALT: SALT }));
   assert.ok(loadConfig({ NODE_ENV: 'test' }).AUDIT_IP_SALT.length >= 32);
+  assert.notEqual(loadConfig({ NODE_ENV: 'test' }).AUDIT_IP_SALT, loadConfig({ NODE_ENV: 'test' }).AUDIT_IP_SALT);
 });
 
 test('Ghi muộn sau khi tài khoản đã xóa (vi phạm FK) => vẫn lưu, ẩn danh (user_id = null)', async () => {
