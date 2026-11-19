@@ -1,4 +1,4 @@
-import { lazy, type ComponentType, type LazyExoticComponent } from 'react';
+import { createElement, lazy, type ComponentType } from 'react';
 
 /**
  * Registry màn hình của Host Shell (ghép lúc build).
@@ -9,6 +9,21 @@ import { lazy, type ComponentType, type LazyExoticComponent } from 'react';
  * và đóng gói Capacitor bình thường.
  */
 type Loader = () => Promise<{ default: ComponentType }>;
+
+/**
+ * lazy() nhưng NHỚ module đã tải: lần render sau khi chunk đã về thì vẽ thẳng component, KHÔNG suspend.
+ * Vì sao: React 18 “throttle” việc hiện nội dung Suspense — khung chờ đã vẽ thì nội dung thật bị giữ thêm
+ * ~300–500 ms (chống nhấp nháy). Mở thẳng một màn (deep link) vì thế luôn trễ cố định ~325 ms (Lighthouse:
+ * “element render delay”), đẩy LCP /xung-ho, /phat-am quá 2,5 s. main.tsx chờ chunk màn đầu rồi mới render
+ * => không vẽ khung chờ => không bị throttle. Chuyển màn trong app vẫn như cũ (chưa tải thì suspend).
+ */
+export function lazyScreen(load: Loader): { load: Loader; Component: ComponentType } {
+  let mod: { default: ComponentType } | undefined;
+  const loadAndKeep: Loader = () => load().then((m) => (mod = m));
+  const Lazy = lazy(loadAndKeep);
+  const Component: ComponentType = () => (mod ? createElement(mod.default) : createElement(Lazy));
+  return { load: loadAndKeep, Component };
+}
 
 /** Nhãn ngắn (thanh tab) theo khóa `<đường dẫn>.short` (src/i18n.ts); tên + mô tả ở src/exploreI18n.ts (màn Khám phá) */
 export type ScreenId = 'xung-ho' | 'van-hoa' | 'hoi-thoai' | 'nhap-vai' | 'phat-am' | 'phuong-ngu' | 'luyen-tap' | 'ghep-cau' | 'camera' | 'ho-so' | 'tuy-chinh' | 'bat-dau';
@@ -22,11 +37,11 @@ export interface ScreenRoute {
   ready: boolean;
   inTabBar: boolean;
   load: Loader;
-  Component: LazyExoticComponent<ComponentType>;
+  Component: ComponentType;
 }
 
 function screen(def: Omit<ScreenRoute, 'Component'> & { path: `/${ScreenId}` }): ScreenRoute {
-  return { ...def, Component: lazy(def.load) };
+  return { ...def, ...lazyScreen(def.load) };
 }
 
 export const SCREENS: ScreenRoute[] = [
@@ -135,9 +150,9 @@ export const SCREENS: ScreenRoute[] = [
 export interface PathRoute {
   path: string;
   load: Loader;
-  Component: LazyExoticComponent<ComponentType>;
+  Component: ComponentType;
 }
-const pathRoute = (path: string, load: Loader): PathRoute => ({ path, load, Component: lazy(load) });
+const pathRoute = (path: string, load: Loader): PathRoute => ({ path, ...lazyScreen(load) });
 
 export const REVIEW_ROUTE = pathRoute('/on-tap', () => import('./screens/ReviewRoute'));
 export const EXPLORE_ROUTE = pathRoute('/kham-pha', () => import('./screens/Explore'));
