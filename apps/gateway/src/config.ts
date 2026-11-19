@@ -25,6 +25,9 @@ const DEFAULT_PGLITE_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', '
 /** apps/gateway/.data/tts: âm thanh dựng sẵn (GĐ2), không commit */
 const DEFAULT_TTS_AUDIO_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', '.data', 'tts');
 
+/** Muối dev/test (công khai, chỉ để băm ổn định giữa các lần chạy máy dev) */
+const DEV_AUDIT_IP_SALT = 'becutit-dev-audit-ip-salt-not-for-production';
+
 const boolFromEnv = z
   .enum(['true', 'false', '1', '0'])
   .transform((v) => v === 'true' || v === '1');
@@ -41,6 +44,11 @@ const EnvSchema = z
     CORS_ORIGIN: z.string().default('http://localhost:3000,http://localhost:5173'),
     JWT_SECRET: z.string().min(32, 'JWT_SECRET phải dài tối thiểu 32 ký tự').optional(),
     AUTH_REQUIRED: boolFromEnv.optional(),
+    /**
+     * Muối HMAC băm IP trong nhật ký bảo mật `audit_events` (không lưu IP thô). Production bắt buộc; KHÔNG đổi khi
+     * xoay JWT_SECRET lúc xử lý sự cố (đổi muối => không đối chiếu được IP trước/sau). Dev/test: muối cố định công khai.
+     */
+    AUDIT_IP_SALT: z.string().min(32, 'AUDIT_IP_SALT phải dài tối thiểu 32 ký tự').optional(),
     RATE_LIMIT_PER_MINUTE: z.coerce.number().int().positive().default(60),
     /** Giới hạn theo IP cho /v1/auth/* (tạo khách = một hạn mức AI mới => phải chặt) */
     AUTH_RATE_LIMIT_PER_MINUTE: z.coerce.number().int().positive().default(10),
@@ -91,6 +99,7 @@ const EnvSchema = z
     // client tự làm mới bằng refresh token lưu trong DB). Production thiếu => lỗi ở superRefine.
     JWT_SECRET: env.JWT_SECRET ?? (env.NODE_ENV === 'production' ? undefined : randomBytes(32).toString('hex')),
     jwtSecretGenerated: !env.JWT_SECRET && env.NODE_ENV !== 'production',
+    AUDIT_IP_SALT: env.AUDIT_IP_SALT ?? (env.NODE_ENV === 'production' ? undefined : DEV_AUDIT_IP_SALT),
     PGLITE_DIR: env.PGLITE_DIR ?? (env.NODE_ENV === 'test' ? 'memory://' : DEFAULT_PGLITE_DIR),
     TTS_AUDIO_DIR: env.TTS_AUDIO_DIR ?? DEFAULT_TTS_AUDIO_DIR,
     corsOrigins: env.CORS_ORIGIN.split(',')
@@ -103,6 +112,13 @@ const EnvSchema = z
         code: z.ZodIssueCode.custom,
         path: ['JWT_SECRET'],
         message: 'Production bắt buộc cấu hình JWT_SECRET (≥ 32 ký tự)'
+      });
+    }
+    if (!env.AUDIT_IP_SALT) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['AUDIT_IP_SALT'],
+        message: 'Production bắt buộc cấu hình AUDIT_IP_SALT (≥ 32 ký tự, khác JWT_SECRET)'
       });
     }
     if (env.corsOrigins.includes('*')) {
