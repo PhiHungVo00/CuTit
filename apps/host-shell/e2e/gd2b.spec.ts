@@ -22,6 +22,9 @@ async function goToKind(page: Page, kind: RegExp, s = { skip: /Không (nghe|nói
   const section = page.locator('section[aria-labelledby="ct-ex-q"]');
   for (let guard = 0; guard < 20; guard++) {
     await expect(section.locator('#ct-ex-q')).toBeVisible();
+    // Bài nói/thanh/truyện tải lười (Suspense, khung chờ aria-busy): chờ hiện xong rồi mới xem có nút nào —
+    // isVisible() không chờ, trên CI chunk tải chậm thì lỡ nút đọc câu hoặc bấm nhầm “Không nói được” (xem nhật ký CI-CD)
+    await expect(section.locator('[aria-busy="true"]')).toHaveCount(0);
     if (kind.test((await section.locator('p').first().textContent()) ?? '')) return section;
     const skip = section.getByRole('button', { name: s.skip });
     const bank = section.getByRole('group', { name: s.bank });
@@ -84,11 +87,31 @@ test.describe('GĐ2b Xưng hô theo tình huống', () => {
 
 test.describe('GĐ2b Truyện ngắn', () => {
   test('nghe cả truyện (TTS máy), hiện bản dịch, 3 câu hỏi hiểu có phản hồi, điểm cuối truyện', async ({ page }) => {
-    // đếm câu được đọc bằng TTS của máy (chưa có gói dựng sẵn trong e2e)
+    // đếm câu được đọc bằng TTS của máy (chưa có gói dựng sẵn trong e2e). Giả cả danh sách giọng: Chrome trên
+    // Ubuntu (CI) không có giọng vi-VN => app đi nhánh Gateway thay vì speechSynthesis, đếm ra 0. Giả luôn
+    // SpeechSynthesisUtterance vì setter `voice` của Chrome chỉ nhận SpeechSynthesisVoice thật (đối tượng giả => TypeError).
     await page.addInitScript(() => {
       const spoken: string[] = [];
       (window as unknown as { __spoken: string[] }).__spoken = spoken;
       if (!('speechSynthesis' in window)) return;
+      class FakeUtterance extends EventTarget {
+        lang = '';
+        voice: unknown = null;
+        rate = 1;
+        pitch = 1;
+        volume = 1;
+        onend: ((e: Event) => void) | null = null;
+        onerror: ((e: Event) => void) | null = null;
+        text: string;
+        constructor(text = '') {
+          super();
+          this.text = text;
+        }
+      }
+      (window as unknown as { SpeechSynthesisUtterance: unknown }).SpeechSynthesisUtterance = FakeUtterance;
+      const viVoice = { lang: 'vi-VN', name: 'Giọng giả e2e', voiceURI: 'e2e-vi-VN', localService: true, default: true };
+      window.speechSynthesis.getVoices = () => [viVoice as unknown as SpeechSynthesisVoice];
+      window.speechSynthesis.cancel = () => undefined;
       window.speechSynthesis.speak = (u: SpeechSynthesisUtterance) => {
         spoken.push(u.text);
         setTimeout(() => u.onend?.(new Event('end') as SpeechSynthesisEvent), 10);

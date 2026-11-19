@@ -50,7 +50,10 @@ async function goToSpeakItem(page: Page) {
   const section = page.locator('section[aria-labelledby="ct-ex-q"]');
   for (let guard = 0; guard < 20; guard++) {
     await expect(section.locator('#ct-ex-q')).toBeVisible();
-    if (await section.getByRole('button', { name: 'Bắt đầu đọc câu' }).isVisible({ timeout: 300 }).catch(() => false)) return section;
+    // Bài nói/thanh/truyện tải lười (Suspense, khung chờ aria-busy): chờ hiện xong rồi mới xem có nút nào —
+    // isVisible() không chờ, trên CI chunk tải chậm thì lỡ nút đọc câu hoặc bấm nhầm “Không nói được” (xem nhật ký CI-CD)
+    await expect(section.locator('[aria-busy="true"]')).toHaveCount(0);
+    if (await section.getByRole('button', { name: 'Bắt đầu đọc câu' }).isVisible()) return section;
     const skip = section.getByRole('button', { name: /Không (nghe|nói) được lúc này/ });
     const bank = section.getByRole('group', { name: 'Các từ để ghép' });
     if (await skip.isVisible()) {
