@@ -104,6 +104,10 @@ export async function acceptInvite(db: Db, userId: string, code: string, today: 
     const [inviter] = await tx.select({ t: users.accountType }).from(users).where(eq(users.id, inv.inviter));
     if (!inviter || inviter.t === 'child') throw new GatewayError(404, FriendErrorCode.inviteInvalid, 'Mã mời không đúng hoặc đã hết hạn');
     const [a, b] = pair(userId, inv.inviter);
+    // Khóa hai hàng user theo thứ tự id (chống deadlock) trước khi đếm: hai lượt nhập mã đồng thời chạm cùng một người
+    // phải chờ nhau, lượt sau đếm lại thấy bạn mới của lượt trước (READ COMMITTED) => không vượt MAX_FRIENDS.
+    // NO KEY UPDATE: vẫn tự loại trừ nhau nhưng không chặn insert có khóa ngoại tới users (sync, daily_activity…).
+    await tx.select({ id: users.id }).from(users).where(inArray(users.id, [a, b])).orderBy(users.id).for('no key update');
     const [existing] = await tx.select({ id: friendships.id }).from(friendships).where(and(eq(friendships.userA, a), eq(friendships.userB, b)));
     if (existing) throw new GatewayError(409, FriendErrorCode.alreadyFriends, 'Hai bạn đã là bạn học');
     if ((await friendCount(tx, userId)) >= MAX_FRIENDS || (await friendCount(tx, inv.inviter)) >= MAX_FRIENDS) {

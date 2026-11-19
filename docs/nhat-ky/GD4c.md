@@ -86,5 +86,5 @@ TDD: test Gateway (11 test) và test sửa lỗi múi giờ được chạy Đ�
 
 ## 6. Còn lại / ghi chú cho người gộp
 - Tệp dễ xung đột: `apps/gateway/src/app.ts` (đăng ký `friendsRoutes`), `src/config.ts`, `packages/contracts/src/db/schema.ts` (bảng 20–22 ở cuối), `packages/contracts/src/api/index.ts`, `drizzle/meta/_journal.json`, `apps/host-shell/.size-limit.cjs`, `apps/mfe-learner/src/i18n.ts`, `ProgressScreen.tsx`.
-- Giới hạn 5 bạn kiểm tra trong transaction nhưng không khóa hàng: trên Postgres thật, hai lượt nhập mã đồng thời có thể vượt 1 bạn. Schema phản hồi cố ý không có `.max(5)` để GET không lỗi 500 trong trường hợp đó. Muốn chặt hơn thì dùng `SELECT … FOR UPDATE` trên hai user.
+- (ĐÃ SỬA ở VIEC-SOT: khóa hàng user) Giới hạn 5 bạn kiểm tra trong transaction nhưng không khóa hàng: trên Postgres thật, hai lượt nhập mã đồng thời có thể vượt 1 bạn. Schema phản hồi cố ý không có `.max(5)` để GET không lỗi 500 trong trường hợp đó. Muốn chặt hơn thì dùng `SELECT … FOR UPDATE` trên hai user.
 - Chưa làm: nhóm 3 người trở lên (nhiệm vụ hiện theo từng cặp), thông báo khi bạn góp phút, đổi tên hiển thị sau khi đã đặt (API có sẵn `PUT /v1/friends/profile`, UI chưa có nút).

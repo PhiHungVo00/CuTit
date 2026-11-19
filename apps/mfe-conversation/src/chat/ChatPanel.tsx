@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
-import { canOpenAppSettings, getDeviceSpeech, openAppSettings } from '@vietlearning/native';
-import { speechRate, useLearner } from '@vietlearning/state';
+import { canOpenAppSettings, openAppSettings } from '@vietlearning/native';
+import { useLearner } from '@vietlearning/state';
+import { SlowListen, say as sayAt } from '../listen';
 import { VoiceConsent } from './VoiceConsent';
 import { AgentBlockView } from './AgentBlockView';
 import type { useChatSession } from './useChatSession';
@@ -10,7 +11,8 @@ import { useT } from '../i18n';
 
 type Session = ReturnType<typeof useChatSession>;
 
-const say = (text: string) => getDeviceSpeech().speak(text, { rate: speechRate(0.95) }).catch(() => undefined);
+const BASE = 0.95;
+const say = (text: string) => sayAt(text, BASE);
 
 const BUSY_STATES = new Set(['UPLOADING', 'STREAMING', 'PLAYING']);
 
@@ -92,9 +94,12 @@ export function ChatPanel({ session, placeholder, emptyHint, tutorName }: { sess
                 </p>
               </div>
               {!m.pending && m.text && (
-                <button type="button" onClick={() => say(m.text)} className="min-h-11 self-start rounded-xl border border-line bg-surface-2 px-3 text-sm font-bold text-ink">
-                  {t('listen')}
-                </button>
+                <div className="flex gap-2 self-start">
+                  <button type="button" onClick={() => say(m.text)} className="min-h-11 rounded-xl border border-line bg-surface-2 px-3 text-sm font-bold text-ink">
+                    {t('listen')}
+                  </button>
+                  <SlowListen text={m.text} base={BASE} className="min-h-11 min-w-11 rounded-xl border border-line bg-surface-2 px-3 text-base" />
+                </div>
               )}
               {m.blocks?.map((b) => <AgentBlockView key={b.id} block={b} />)}
             </div>

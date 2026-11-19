@@ -113,9 +113,40 @@ describe('FriendsPanel (GĐ4c bạn học hợp tác)', () => {
     expect(screen.queryByLabelText('Mã mời của bạn bè')).toBeNull();
   });
 
+  it('đổi tên hiển thị: mở form điền sẵn tên cũ, lưu => thấy tên mới; Thôi => giữ tên cũ', async () => {
+    const api = fakeApi({ friends: [quest()] });
+    render(<FriendsPanel api={api} />);
+    expect(await screen.findByText(/Bạn bè thấy bạn là: Lan/)).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Đổi tên' }));
+    const input = screen.getByLabelText('Tên hiển thị cho bạn bè') as HTMLInputElement;
+    expect(input.value).toBe('Lan');
+    fireEvent.click(screen.getByRole('button', { name: 'Thôi' }));
+    expect(screen.queryByLabelText('Tên hiển thị cho bạn bè')).toBeNull();
+    expect(api.setName).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Đổi tên' }));
+    fireEvent.change(screen.getByLabelText('Tên hiển thị cho bạn bè'), { target: { value: 'Lan Anh' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Lưu tên' }));
+    expect(await screen.findByText(/Bạn bè thấy bạn là: Lan Anh/)).toBeTruthy();
+    expect(api.setName).toHaveBeenCalledWith('Lan Anh');
+    expect(screen.queryByLabelText('Tên hiển thị cho bạn bè')).toBeNull();
+    expect(screen.getByText('Chúng ta: 35/60 phút tuần này')).toBeTruthy();
+  });
+
+  it('đổi tên sai => báo lỗi, form vẫn mở', async () => {
+    const api = fakeApi({}, { setName: vi.fn(async () => Promise.reject(err(400, 'invalid_request'))) });
+    render(<FriendsPanel api={api} />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Đổi tên' }));
+    fireEvent.change(screen.getByLabelText('Tên hiển thị cho bạn bè'), { target: { value: 'http://x.y' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Lưu tên' }));
+    expect(await screen.findByText(/Tên chưa hợp lệ/)).toBeTruthy();
+    expect(screen.getByLabelText('Tên hiển thị cho bạn bè')).toBeTruthy();
+  });
+
   it('tiếng Anh', async () => {
     learnerStore.getState().setPreferences({ uiLanguage: 'en' });
     render(<FriendsPanel api={fakeApi({ friends: [quest()] })} />);
     expect(await screen.findByText('Together: 35/60 minutes this week')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Change name' })).toBeTruthy();
   });
 });
