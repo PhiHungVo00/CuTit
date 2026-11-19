@@ -160,7 +160,10 @@ export function PathHome() {
                           {st === 'done' ? '✓' : l.roleplay ? '🎭' : i + 1}
                         </span>
                         <span className="flex-1 font-bold">{en ? l.titleEn : l.title}</span>
-                        <span className="text-xs text-ink-muted">{t(st === 'done' ? 'lessonDone' : st === 'next' ? 'lessonNext' : 'lessonOpen')}</span>
+                        {/* dòng “tiếp theo” có nền cam: chữ muted chỉ đạt 3,85:1 (Lighthouse) => dùng ink-soft */}
+                        <span className={['text-xs', st === 'next' ? 'text-ink-soft' : 'text-ink-muted'].join(' ')}>
+                          {t(st === 'done' ? 'lessonDone' : st === 'next' ? 'lessonNext' : 'lessonOpen')}
+                        </span>
                       </Link>
                     </li>
                   );
