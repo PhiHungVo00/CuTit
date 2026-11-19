@@ -3,6 +3,7 @@ import type { GatewayConfig } from '../config.js';
 import { quotaResetAt, type Capability, type QuotaStore } from './QuotaStore.js';
 import { and, eq, isNull } from 'drizzle-orm';
 import { schema, type DbProvider } from '../db/client.js';
+import { AuditLog } from '../services/audit/audit.js';
 
 /** Nhớ “user còn tồn tại” trong thời gian ngắn để không truy vấn DB ở mọi request */
 const USER_CACHE_MS = 60_000;
@@ -43,7 +44,7 @@ export class RequestPipeline {
 
   private knownUsers = new Map<string, number>();
 
-  constructor(private config: GatewayConfig, private quota: QuotaStore, private db: DbProvider) {
+  constructor(private config: GatewayConfig, private quota: QuotaStore, private db: DbProvider, private audit?: AuditLog) {
     this.limits = {
       tts: config.MAX_TTS_CHARS_PER_DAY,
       stt: config.MAX_STT_SECONDS_PER_DAY,
@@ -63,8 +64,12 @@ export class RequestPipeline {
         const payload = await request.jwtVerify<{ sub?: string; typ?: string }>();
         if (!payload.sub || payload.typ !== 'access') throw new Error('not an access token');
         sub = payload.sub;
-      } catch {
-        // Token có gửi nhưng sai/hết hạn: luôn từ chối, kể cả ở dev
+      } catch (err) {
+        // Token có gửi nhưng sai/hết hạn: luôn từ chối, kể cả ở dev.
+        // Token SAI (không phải chỉ hết hạn — chuyện thường, client tự làm mới) lặp nhiều lần từ một IP => audit (gộp)
+        if ((err as { code?: string }).code !== 'FST_JWT_AUTHORIZATION_TOKEN_EXPIRED') {
+          this.audit?.noteAuthFailure(AuditLog.context(request), 'invalid_token');
+        }
         reply.status(401).send({ error: 'invalid_token' });
         return;
       }

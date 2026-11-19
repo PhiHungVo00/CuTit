@@ -13,6 +13,7 @@ import {
 } from '@vietlearning/contracts/api';
 import type { RouteDeps } from '../app.js';
 import { parseOr400, respond } from '../lib/validate.js';
+import { AuditLog } from '../services/audit/audit.js';
 import { requireUserId } from '../pipeline/RequestPipeline.js';
 import {
   acceptInvite,
@@ -33,7 +34,7 @@ const todayOf = (req: FastifyRequest): string => {
  * GĐ4c — /v1/friends: bạn học hợp tác (không xếp hạng, D7). userId luôn lấy từ token.
  * Tạo/nhập mã mời có rate limit riêng mỗi route (chống dò mã), ngoài giới hạn chung của /v1.
  */
-export const friendsRoutes: FastifyPluginAsync<RouteDeps> = async (server, { db, config }) => {
+export const friendsRoutes: FastifyPluginAsync<RouteDeps> = async (server, { db, config, audit }) => {
   const inviteLimit = { rateLimit: { max: config.FRIEND_INVITE_RATE_LIMIT_PER_MINUTE, timeWindow: '1 minute' } };
 
   /** Xác thực ở MỌI route bạn bè */
@@ -54,14 +55,26 @@ export const friendsRoutes: FastifyPluginAsync<RouteDeps> = async (server, { db,
 
   server.post('/friends/invite', { config: inviteLimit }, async (req) => {
     const { userId, d } = await guard(req);
-    return respond(FriendInviteResponseSchema, await createInvite(d, userId));
+    const invite = await createInvite(d, userId);
+    audit.record('friends.invite_created', { outcome: 'success', userId, ctx: AuditLog.context(req) });
+    return respond(FriendInviteResponseSchema, invite);
   });
 
   server.post('/friends/accept', { config: inviteLimit }, async (req, reply) => {
     const { userId, d } = await guard(req);
     const body = parseOr400(FriendAcceptRequestSchema, req.body, reply);
     if (!body) return reply;
-    return respond(FriendQuestSchema, await acceptInvite(d, userId, body.code, todayOf(req)));
+    const ctx = AuditLog.context(req);
+    try {
+      const quest = await acceptInvite(d, userId, body.code, todayOf(req));
+      audit.record('friends.invite_accepted', { outcome: 'success', userId, ctx });
+      return respond(FriendQuestSchema, quest);
+    } catch (err) {
+      // Chỉ lưu mã lỗi (vd. invite_invalid) — không lưu mã đã nhập, không lưu id người mời
+      const code = (err as { code?: unknown }).code;
+      audit.record('friends.invite_accepted', { outcome: 'failure', userId, ctx, metadata: { reason: typeof code === 'string' ? code : 'error' } });
+      throw err;
+    }
   });
 
   server.put('/friends/:id/goal', async (req, reply) => {

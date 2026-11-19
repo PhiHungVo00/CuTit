@@ -10,6 +10,7 @@ import {
 } from '@vietlearning/contracts/api';
 import type { RouteDeps } from '../app.js';
 import { parseOr400, respond } from '../lib/validate.js';
+import { AuditLog } from '../services/audit/audit.js';
 import { requireUserId } from '../pipeline/RequestPipeline.js';
 import { applyEvents, deleteUser, dueCards, getPreferences, putPreferences, snapshot, summary } from '../services/learner/repo.js';
 
@@ -29,7 +30,7 @@ const SummaryQuery = z.object({ today: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).o
  * Dữ liệu của CHÍNH người đang đăng nhập (userId lấy từ token, không bao giờ từ request)
  * => không có đường nào đọc/ghi dữ liệu người khác.
  */
-export const meRoutes: FastifyPluginAsync<RouteDeps> = async (server, { db, pipeline }) => {
+export const meRoutes: FastifyPluginAsync<RouteDeps> = async (server, { db, pipeline, audit }) => {
   // GET /v1/srs/due
   server.get('/srs/due', async (req) => {
     const userId = requireUserId(req);
@@ -90,6 +91,8 @@ export const meRoutes: FastifyPluginAsync<RouteDeps> = async (server, { db, pipe
     const userId = requireUserId(req);
     await deleteUser(await db.get(), userId);
     pipeline.forgetUser(userId);
+    // Các dòng audit cũ của user đã tự ẩn danh (FK ON DELETE SET NULL); dòng này cũng KHÔNG gắn user_id
+    audit.record('account.deleted', { outcome: 'success', userId: null, ctx: AuditLog.context(req) });
     req.log.info('account deleted');
     return respond(DeleteMeResponseSchema, { deleted: true });
   });
