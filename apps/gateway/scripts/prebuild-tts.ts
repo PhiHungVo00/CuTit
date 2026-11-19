@@ -138,7 +138,8 @@ for (const pack of packs) {
       console.error(`Gói "${pack}" không có văn bản nào.`);
       continue;
     }
-    const humanReview = dialect === 'central';
+    // mặc định duyệt tự động (quyết định 19/11); --human-review để bắt người nghe duyệt (cũ: miền Trung)
+    const humanReview = flag('human-review');
     console.log(`\n== ${pack} · ${dialect} · ${texts.length} văn bản · TTS ${tts.model}/${tts.voiceFor?.(dialect) ?? tts.voice} · STT ${stt.name}${humanReview ? ' · chờ người nghe duyệt' : ''}`);
     const r = await runPrebuild({ pack, dialect, texts, tts, stt, store, maxTries, limit, humanReview, log: (l) => console.log('  ' + l) });
     console.log(

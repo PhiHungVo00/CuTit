@@ -73,3 +73,11 @@
 - **Người nghe duyệt 252 tệp**, ưu tiên miền Trung và gói thanh điệu (phòng tập thanh cần đúng thanh).
 - Tốc độ đọc là tốc độ tự nhiên (khoảng 4,5 âm tiết/giây), hơi nhanh với người mới. Hướng xử lý rẻ: nút đọc chậm phía client (`playbackRate` 0,8, trình duyệt giữ cao độ). Không cần tạo lại âm thanh.
 - Lưu trữ âm thanh khi deploy (GĐ5).
+
+## 7. Quyết định 19/11: bỏ bước người nghe, duyệt hoàn toàn tự động
+Bạn quyết: giọng mẫu ba miền là giọng chuẩn, không cần người duyệt. Luật mới (`autoVerdict` trong `prebuild.ts`):
+- **Từ đơn:** tin giọng mẫu. STT chép âm tiết đứng riêng rất kém; đo F0 bộ ma/má/mà… cho thấy model đọc đúng thanh.
+- **Câu:** lời STT phải khớp nguyên văn **hoặc** khớp khi bỏ dấu thanh, vì STT nghe thanh Huế và giọng miền kém. Lỗi cần bắt ở câu là model đọc thiếu, thừa hoặc đổi chữ (đã gặp thật, vd. “Tôi tên là Lan”). Không khớp ⇒ tạo lại tối đa 4 lần ⇒ vẫn sai thì loại, client đọc câu đó bằng TTS của máy.
+- `--human-review` vẫn còn nếu sau này muốn người nghe duyệt.
+
+**Kết quả:** **347/387 tệp đạt** (Bắc 121, Trung 108, Nam 118; cả 3 gói thanh điệu 37/37). 40 câu bị loại, chủ yếu do Whisper không biết từ địa phương (“ở mô”, “món ni”, “quẹo”) hoặc model thêm chữ (“năm mươi nghìn ạ” ⇒ “50 nghìn nha”). Các câu này dùng TTS của máy.
