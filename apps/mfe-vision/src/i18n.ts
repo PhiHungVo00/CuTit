@@ -28,7 +28,12 @@ export const { useT, t } = defineMessages(
     listenSlowTo: 'Nghe chậm “{word}”',
     saved: '✓ Đã lưu',
     save: '+ Lưu ôn',
-    privacy: '🔒 Ảnh được thu nhỏ rồi gửi qua máy chủ Bé Cu Tít tới Google Gemini để nhận diện đồ vật; máy chủ không lưu ảnh. Tránh chụp mặt người hoặc giấy tờ cá nhân.'
+    privacy: '🔒 Ảnh được thu nhỏ rồi gửi qua máy chủ Bé Cu Tít tới Google Gemini để nhận diện đồ vật; máy chủ không lưu ảnh. Tránh chụp mặt người hoặc giấy tờ cá nhân.',
+    consentTitle: '🔒 Ảnh của bạn đi đâu?',
+    consentBody: 'Ảnh bạn chụp hoặc chọn được thu nhỏ rồi gửi qua máy chủ Bé Cu Tít tới dịch vụ AI Google Gemini để nhận diện đồ vật. Máy chủ Bé Cu Tít không lưu ảnh; máy chủ của Google có thể đặt ở ngoài Việt Nam. Tránh chụp mặt người hoặc giấy tờ cá nhân. Bạn rút lại đồng ý được bất cứ lúc nào trong Tùy chỉnh.',
+    consentAgree: 'Đồng ý, tiếp tục',
+    consentNo: 'Để sau',
+    privacyPolicy: 'Đọc chính sách quyền riêng tư'
   },
   {
     title: 'Camera vocabulary',
@@ -56,6 +61,11 @@ export const { useT, t } = defineMessages(
     listenSlowTo: 'Listen slowly to “{word}”',
     saved: '✓ Saved',
     save: '+ Save',
-    privacy: '🔒 Photos are shrunk, then sent through the Bé Cu Tít server to Google Gemini to recognise objects; the server does not keep them. Avoid photographing faces or personal documents.'
+    privacy: '🔒 Photos are shrunk, then sent through the Bé Cu Tít server to Google Gemini to recognise objects; the server does not keep them. Avoid photographing faces or personal documents.',
+    consentTitle: '🔒 Where do your photos go?',
+    consentBody: 'The photo you take or choose is shrunk, then sent through the Bé Cu Tít server to Google’s Gemini AI service to recognise objects. The Bé Cu Tít server does not keep it; Google’s servers may be outside Vietnam. Avoid photographing faces or personal documents. You can withdraw consent at any time in Settings.',
+    consentAgree: 'Agree and continue',
+    consentNo: 'Not now',
+    privacyPolicy: 'Read the privacy policy'
   }
 );

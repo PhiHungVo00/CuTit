@@ -107,13 +107,35 @@ test.describe('Nối tiến độ GĐ0 ↔ GĐ1', () => {
     await expect(page).toHaveURL(/\/quyen-rieng-tu$/);
     await expect(page.getByRole('heading', { level: 1, name: 'Chính sách quyền riêng tư' })).toBeVisible();
     await expect(page.getByRole('note')).toContainText('BẢN NHÁP');
-    await expect(page.getByText(/Google Gemini/)).toBeVisible();
+    await expect(page.getByText(/Google Gemini/).first()).toBeVisible();
+    // căn cứ pháp lý mới (không còn Nghị định 13/2023 làm căn cứ chính), quyền rút lại đồng ý, không mua bán dữ liệu
+    await expect(page.getByRole('heading', { name: 'Căn cứ pháp lý' })).toBeVisible();
+    await expect(page.getByText(/91\/2025\/QH15/)).toBeVisible();
+    await expect(page.getByText(/Rút lại đồng ý bất cứ lúc nào/)).toBeVisible();
+    await expect(page.getByText(/Không mua, bán dữ liệu cá nhân/)).toBeVisible();
     await page.goto('/');
     await page.getByRole('button', { name: 'Switch the app to English' }).click();
     await page.goto('/quyen-rieng-tu');
     await expect(page.getByRole('heading', { level: 1, name: 'Privacy policy' })).toBeVisible();
     await expect(page.getByRole('note')).toContainText('DRAFT');
+    await expect(page.getByRole('heading', { name: 'Your rights' })).toBeVisible();
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth);
     expect(overflow).toBe(false);
+  });
+
+  test('rút lại đồng ý ở Tùy chỉnh: có hiệu lực ngay, lần sau dùng micro app hỏi lại', async ({ page }) => {
+    await page.addInitScript(() => {
+      if (sessionStorage.getItem('seeded')) return;
+      sessionStorage.setItem('seeded', '1');
+      localStorage.setItem('becutit.learner', JSON.stringify({ state: { consents: { voice: true, camera: true } }, version: 1 }));
+    });
+    await page.goto('/tuy-chinh');
+    await expect(page.getByTestId('consent-voice')).toHaveText('Đã đồng ý');
+    await expect(page.getByTestId('consent-camera')).toHaveText('Đã đồng ý');
+    await page.getByRole('button', { name: 'Rút lại đồng ý' }).first().click();
+    await expect(page.getByTestId('consent-voice')).toHaveText(/Chưa đồng ý/);
+    await expect(page.getByTestId('consent-camera')).toHaveText('Đã đồng ý');
+    const stored = await page.evaluate(() => JSON.parse(localStorage.getItem('becutit.learner')!).state.consents);
+    expect(stored).toEqual({ camera: true });
   });
 });

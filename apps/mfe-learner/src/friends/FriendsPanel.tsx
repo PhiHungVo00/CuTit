@@ -12,7 +12,7 @@ import {
   type FriendsResponse
 } from '@vietlearning/contracts/api';
 import { dayKey, useLearner } from '@vietlearning/state';
-import { primaryBtn, secondaryBtn } from '../common/ui';
+import { BusyLabel, Spinner, primaryBtn, secondaryBtn } from '../common/ui';
 import { useT } from './i18n';
 
 /** Gọi Gateway /v1/friends (test tiêm bản giả). `today` = ngày địa phương để tính tuần của nhiệm vụ chung */
@@ -47,7 +47,8 @@ function errText(e: unknown, t: T): string {
   return x?.code && known.includes(x.code) ? t(`err.${x.code}` as Parameters<T>[0]) : t('err.other');
 }
 
-function Quest({ f, t, onGoal, onRemove }: { f: FriendQuest; t: T; onGoal: (g: number) => void; onRemove: () => void }) {
+/** `busy` = đang có yêu cầu bất kỳ (khóa mọi nút gây thay đổi); `pending` = yêu cầu đang chạy là của thẻ này */
+function Quest({ f, t, busy, pending, onGoal, onRemove }: { f: FriendQuest; t: T; busy: boolean; pending: 'goal' | 'remove' | null; onGoal: (g: number) => void; onRemove: () => void }) {
   const [confirm, setConfirm] = useState(false);
   const q = f.quest;
   const pct = Math.min(100, Math.round((q.totalMinutes / q.goalMinutes) * 100));
@@ -73,25 +74,31 @@ function Quest({ f, t, onGoal, onRemove }: { f: FriendQuest; t: T; onGoal: (g: n
       <label htmlFor={goalId} className="text-sm font-bold text-ink-soft">
         {t('goalLabel')}
       </label>
-      <select id={goalId} className={input} value={q.goalMinutes} onChange={(e) => onGoal(Number(e.target.value))}>
+      <select id={goalId} className={`${input} disabled:opacity-60`} value={q.goalMinutes} disabled={busy} aria-busy={pending === 'goal'} onChange={(e) => onGoal(Number(e.target.value))}>
         {QUEST_GOAL_OPTIONS.map((n) => (
           <option key={n} value={n}>
             {t('goalOpt', { n })}
           </option>
         ))}
       </select>
+      {pending === 'goal' && (
+        <p role="status" className="m-0 flex items-center gap-2 text-sm text-ink-muted">
+          <Spinner />
+          {t('working')}
+        </p>
+      )}
       {confirm ? (
         <div className="flex flex-col gap-2" role="group">
           <p className="m-0 text-[15px] text-ink">{t('removeConfirm', { name: f.displayName })}</p>
-          <button type="button" className={primaryBtn} onClick={onRemove}>
-            {t('removeYes')}
+          <button type="button" className={primaryBtn} disabled={busy} onClick={onRemove}>
+            <BusyLabel busy={pending === 'remove'} label={t('removeYes')} busyLabel={t('working')} />
           </button>
-          <button type="button" className={secondaryBtn} onClick={() => setConfirm(false)}>
+          <button type="button" className={secondaryBtn} disabled={busy} onClick={() => setConfirm(false)}>
             {t('cancel')}
           </button>
         </div>
       ) : (
-        <button type="button" className={secondaryBtn} onClick={() => setConfirm(true)}>
+        <button type="button" className={secondaryBtn} disabled={busy} onClick={() => setConfirm(true)}>
           {t('remove')}
         </button>
       )}
@@ -111,7 +118,9 @@ export function FriendsPanel({ api = gatewayApi }: { api?: FriendsApi }) {
   const [loadErr, setLoadErr] = useState('');
   const [name, setName] = useState('');
   const [code, setCode] = useState('');
-  const [busy, setBusy] = useState(false);
+  /** Thao tác đang chờ server (null = rảnh). Ref chặn đồng bộ: hai lần chạm trước khi kịp vẽ lại vẫn chỉ gửi một yêu cầu */
+  const [busy, setBusyState] = useState<string | null>(null);
+  const busyRef = useRef(false);
   const [msg, setMsg] = useState<Msg>(null);
   const [copied, setCopied] = useState(false);
   const [renaming, setRenaming] = useState(false);
@@ -140,8 +149,10 @@ export function FriendsPanel({ api = gatewayApi }: { api?: FriendsApi }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const run = async (fn: () => Promise<Msg>) => {
-    setBusy(true);
+  const run = async (what: string, fn: () => Promise<Msg>) => {
+    if (busyRef.current) return;
+    busyRef.current = true;
+    setBusyState(what);
     setMsg(null);
     try {
       const m = await fn();
@@ -149,12 +160,20 @@ export function FriendsPanel({ api = gatewayApi }: { api?: FriendsApi }) {
     } catch (e) {
       if (alive.current) setMsg({ kind: 'error', text: errText(e, t) });
     } finally {
-      if (alive.current) setBusy(false);
+      // giữ khóa tới khi danh sách mới về, để nút không bật lại trên dữ liệu cũ
       await refresh();
+      busyRef.current = false;
+      if (alive.current) setBusyState(null);
     }
   };
 
-  if (load === 'loading') return <p className="m-0 text-[15px] text-ink-soft">{t('loading')}</p>;
+  if (load === 'loading')
+    return (
+      <p role="status" className="m-0 flex items-center gap-2 text-[15px] text-ink-soft">
+        <Spinner />
+        {t('loading')}
+      </p>
+    );
   if (load === 'error' || !data)
     return (
       <div className="flex flex-col gap-2">
@@ -167,7 +186,7 @@ export function FriendsPanel({ api = gatewayApi }: { api?: FriendsApi }) {
 
   const saveName = (e: FormEvent) => {
     e.preventDefault();
-    void run(async () => {
+    void run('name', async () => {
       try {
         await api.setName(name);
         if (alive.current) setRenaming(false);
@@ -181,7 +200,7 @@ export function FriendsPanel({ api = gatewayApi }: { api?: FriendsApi }) {
 
   const acceptCode = (e: FormEvent) => {
     e.preventDefault();
-    void run(async () => {
+    void run('accept', async () => {
       const f = await api.accept(code.trim(), today());
       setCode('');
       return { kind: 'ok', text: t('acceptOk', { name: f.displayName }) };
@@ -206,11 +225,11 @@ export function FriendsPanel({ api = gatewayApi }: { api?: FriendsApi }) {
       <span id="friend-name-hint" className="text-sm text-ink-muted">
         {t('nameHint')}
       </span>
-      <button type="submit" className={primaryBtn} disabled={busy || name.trim().length < 2}>
-        {t('nameSave')}
+      <button type="submit" className={primaryBtn} disabled={busy !== null || name.trim().length < 2}>
+        <BusyLabel busy={busy === 'name'} label={t('nameSave')} busyLabel={t('working')} />
       </button>
       {onCancel && (
-        <button type="button" className={secondaryBtn} onClick={onCancel}>
+        <button type="button" className={secondaryBtn} disabled={busy !== null} onClick={onCancel}>
           {t('cancel')}
         </button>
       )}
@@ -229,7 +248,7 @@ export function FriendsPanel({ api = gatewayApi }: { api?: FriendsApi }) {
           <p className="m-0 text-sm text-ink-muted">
             {t('youAre', { name: data.displayName })}. {t('privacy')}
           </p>
-          <button type="button" className={`${secondaryBtn} self-start`} onClick={() => (setName(data.displayName ?? ''), setMsg(null), setRenaming(true))}>
+          <button type="button" className={`${secondaryBtn} self-start`} disabled={busy !== null} onClick={() => (setName(data.displayName ?? ''), setMsg(null), setRenaming(true))}>
             {t('rename')}
           </button>
         </div>
@@ -243,8 +262,10 @@ export function FriendsPanel({ api = gatewayApi }: { api?: FriendsApi }) {
             key={f.id}
             f={f}
             t={t}
-            onGoal={(g) => void run(async () => (await api.setGoal(f.id, g, today()), null))}
-            onRemove={() => void run(async () => (await api.remove(f.id), null))}
+            busy={busy !== null}
+            pending={busy === `goal:${f.id}` ? 'goal' : busy === `remove:${f.id}` ? 'remove' : null}
+            onGoal={(g) => void run(`goal:${f.id}`, async () => (await api.setGoal(f.id, g, today()), null))}
+            onRemove={() => void run(`remove:${f.id}`, async () => (await api.remove(f.id), null))}
           />
         ))
       )}
@@ -275,8 +296,8 @@ export function FriendsPanel({ api = gatewayApi }: { api?: FriendsApi }) {
                 </button>
               </div>
             )}
-            <button type="button" className={data.invite ? secondaryBtn : primaryBtn} disabled={busy} onClick={() => void run(async () => (setCopied(false), await api.invite(), null))}>
-              {data.invite ? t('inviteNew') : t('inviteCreate')}
+            <button type="button" className={data.invite ? secondaryBtn : primaryBtn} disabled={busy !== null} onClick={() => void run('invite', async () => (setCopied(false), await api.invite(), null))}>
+              <BusyLabel busy={busy === 'invite'} label={data.invite ? t('inviteNew') : t('inviteCreate')} busyLabel={t('working')} />
             </button>
           </div>
 
@@ -285,8 +306,8 @@ export function FriendsPanel({ api = gatewayApi }: { api?: FriendsApi }) {
               {t('acceptLabel')}
             </label>
             <input id="friend-code" className={`${input} font-mono uppercase`} value={code} maxLength={20} autoComplete="off" autoCapitalize="characters" spellCheck={false} placeholder="XXXX-XXXX" onChange={(e) => setCode(e.target.value)} />
-            <button type="submit" className={primaryBtn} disabled={busy || code.trim().length < 8}>
-              {t('acceptBtn')}
+            <button type="submit" className={primaryBtn} disabled={busy !== null || code.trim().length < 8}>
+              <BusyLabel busy={busy === 'accept'} label={t('acceptBtn')} busyLabel={t('working')} />
             </button>
           </form>
         </>
