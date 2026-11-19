@@ -65,7 +65,7 @@ Làm theo TDD: viết test đỏ trước, rồi mới viết mã.
 **Cấu hình mới `AUDIT_IP_SALT`:**
 
 - Production **bắt buộc**, ≥ 32 ký tự.
-- Dev/test dùng muối cố định công khai.
+- Dev/test thiếu thì sinh ngẫu nhiên mỗi lần chạy (giống `JWT_SECRET`): lỡ chạy server thật mà quên `NODE_ENV=production` thì hash vẫn không dò ngược được bằng muối công khai.
 - Tách khỏi `JWT_SECRET` có chủ đích: quy trình sự cố có bước xoay `JWT_SECRET`. Nếu muối gắn với nó thì xoay xong sẽ mất khả năng đối chiếu IP.
 - Đã ghi vào `.env.example`.
 
@@ -91,7 +91,7 @@ Làm theo TDD: viết test đỏ trước, rồi mới viết mã.
   - `scripts/restore-test.ts` (`db:restore-test`).
 - URL và mật khẩu đi qua biến `PG*`, không nằm trong argv hay log. Lệnh chạy không qua shell.
 - Thử khôi phục bắt buộc DB đích riêng; trùng host+cổng+tên với `DATABASE_URL` thì từ chối.
-- Test: `apps/gateway/test/backup.test.mjs` (6 ca).
+- Test: `apps/gateway/test/backup.test.mjs` (7 ca).
 - **Chạy thật** bằng Docker `postgres:16-alpine` (pg_dump 16.14; máy dev không cài pg_dump, nên đóng gói script bằng esbuild rồi chạy trong container có node):
   - Gateway chạy migration 0000–0006 trên Postgres thật. Các dòng audit của tài khoản đã xóa có `user_id` = null, đúng trên cả Postgres lẫn PGlite.
   - Backup 45 KiB, sha256 khớp.
@@ -120,7 +120,7 @@ Các bước: phát hiện (truy vấn `audit_events` + dấu hiệu) → khoanh
 ## 4. Kiểm tra
 
 - `pnpm build`: 19/19.
-- `pnpm test`: 35/35 task. Gateway 122/122, gồm 14 audit + 6 backup.
+- `pnpm test`: 35/35 task. Gateway 123/123, gồm 14 audit + 7 backup (chạy lại sau khi sửa theo rà soát).
 - `pnpm lint:boundaries`: 0 vi phạm.
 - e2e (host build `VITE_GATEWAY_URL=http://localhost:4022`, `E2E_PORT=4193 E2E_GATEWAY_PORT=4022`): 95 đạt, 8 bỏ qua, 0 lỗi.
 

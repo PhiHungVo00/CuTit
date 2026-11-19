@@ -2,7 +2,8 @@
  * Backup Postgres bằng pg_dump (định dạng custom) — docs/van-hanh/BACKUP.md.
  *   DATABASE_URL=postgres://... pnpm --filter @vietlearning/gateway db:backup
  * Biến môi trường:
- *   DATABASE_URL       bắt buộc (dev PGlite không có pg_dump: script báo rồi thoát)
+ *   BACKUP_DATABASE_URL | DATABASE_URL_UNPOOLED | DATABASE_URL   (lấy cái đầu tiên có giá trị; Neon: phải là chuỗi
+ *                      TRỰC TIẾP, không phải host `-pooler`). Không có (dev PGlite) => báo rồi thoát
  *   BACKUP_DIR         thư mục ghi tệp (mặc định apps/gateway/.data/backups — gitignored)
  *   BACKUP_KEEP_DAYS   số ngày giữ tệp CỤC BỘ (mặc định 30; luôn giữ 7 bản mới nhất)
  * Kết quả: becutit-<UTC>.dump + .sha256. Đẩy tệp sang object storage là bước riêng (cron, xem BACKUP.md),
@@ -14,7 +15,7 @@ import { createReadStream } from 'node:fs';
 import { mkdir, readdir, rm, stat, writeFile } from 'node:fs/promises';
 import { dirname, join, basename } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { backupFileName, expiredBackups, pgConnectionEnv, pgDumpArgs, redactUrl, run } from '../src/services/backup/backup.js';
+import { backupFileName, expiredBackups, isPooledHost, pgConnectionEnv, pgDumpArgs, redactUrl, run } from '../src/services/backup/backup.js';
 import 'dotenv/config';
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -26,9 +27,13 @@ async function sha256File(file: string): Promise<string> {
 }
 
 async function main() {
-  const url = process.env.DATABASE_URL;
+  const url = process.env.BACKUP_DATABASE_URL ?? process.env.DATABASE_URL_UNPOOLED ?? process.env.DATABASE_URL;
   if (!url) {
     console.error('Thiếu DATABASE_URL. Dev dùng PGlite (apps/gateway/.data/pglite): sao chép cả thư mục khi Gateway đã tắt.');
+    process.exit(2);
+  }
+  if (isPooledHost(url)) {
+    console.error('Chuỗi kết nối là host pooled (-pooler): pg_dump cần kết nối trực tiếp. Đặt BACKUP_DATABASE_URL hoặc DATABASE_URL_UNPOOLED.');
     process.exit(2);
   }
   const dir = process.env.BACKUP_DIR ?? join(here, '..', '.data', 'backups');
