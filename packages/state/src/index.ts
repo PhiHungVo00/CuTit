@@ -229,6 +229,8 @@ export const CEFR = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'] as const;
 export const cefrLabel = (level: number): string => CEFR[Math.max(1, Math.min(6, Math.round(level))) - 1];
 
 /** Tốc độ đọc theo tùy chỉnh M12, nhân với tốc độ gốc mỗi màn hình chọn (vd. 0.85 cho từ đơn) */
+/** Nút 🐢 đọc chậm (D9 mục 6): hệ số nhân thêm vào tốc độ đọc — dùng chung cho tệp dựng sẵn (coursePlayer) và TTS của máy */
+export const SLOW_FACTOR = 0.75;
 export const speechRate = (base = 1): number => Math.max(0.3, Math.min(2.5, learnerStore.getState().preferences.speed * base));
 
 export * from './i18n.js';

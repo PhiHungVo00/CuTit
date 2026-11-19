@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { SENTENCE_ITEMS, type SentenceBank } from '@vietlearning/content';
-import { getDeviceSpeech } from '@vietlearning/native';
-import { dueCards, learnerStore, speechRate, useLearner } from '@vietlearning/state';
+import { dueCards, learnerStore, useLearner } from '@vietlearning/state';
+import { SlowListen, say } from '../listen';
 import { useSentenceBuilder } from '@vietlearning/exercises';
 import { useT } from '../i18n';
 
@@ -133,11 +133,12 @@ function Exercise({ item, seed, onNext }: { item: SentenceBank; seed: number; on
             <button
               type="button"
               aria-label={t('listenSentence')}
-              onClick={() => getDeviceSpeech().speak(sentence, { rate: speechRate(0.9) }).catch(() => undefined)}
+              onClick={() => void say(sentence, 0.9)}
               className="min-h-11 min-w-11 rounded-xl bg-surface text-lg"
             >
               🔈
             </button>
+            <SlowListen text={sentence} base={0.9} className="min-h-11 min-w-11 rounded-xl bg-surface text-lg" />
           </div>
         )}
         {b.result && !b.result.valid && (
