@@ -14,67 +14,50 @@ export type SfxName =
 
 export const AUDIO_BASE = '/audio';
 
-let ctx: AudioContext | null = null;
-const buffers = new Map<SfxName, Promise<AudioBuffer | null>>();
+/**
+ * Âm hiệu ứng phát bằng phần tử <audio> (KHÔNG dùng AudioContext): `new AudioContext()` lần đầu chặn luồng
+ * chính ~220 ms trên máy yếu (đo CPU chậm 4×) ngay ở lần chạm đầu, còn `new Audio()` chỉ ~1 ms. Âm ngắn,
+ * không cần trộn phức tạp; lần phát đầu có thể trễ nhẹ tới khi tệp tải xong.
+ */
+const elements = new Map<SfxName, HTMLAudioElement>();
 
-function context(): AudioContext | null {
-  if (ctx) return ctx;
-  const Ctor = (globalThis as { AudioContext?: typeof AudioContext; webkitAudioContext?: typeof AudioContext }).AudioContext ?? (globalThis as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+function element(name: SfxName): HTMLAudioElement | null {
+  const Ctor = (globalThis as { Audio?: typeof Audio }).Audio;
   if (!Ctor) return null;
-  try {
-    ctx = new Ctor();
-  } catch {
-    ctx = null;
+  let el = elements.get(name);
+  if (!el) {
+    el = new Ctor(`${AUDIO_BASE}/sfx/${name}.ogg`);
+    el.preload = 'auto';
+    // trình duyệt cũ không có Opus ⇒ mp3 dự phòng
+    el.addEventListener?.('error', () => {
+      if (el && el.src.endsWith('.ogg')) el.src = `${AUDIO_BASE}/sfx/${name}.mp3`;
+    });
+    elements.set(name, el);
   }
-  return ctx;
+  return el;
 }
 
-/** Nạp lười lần đầu: thử .ogg (Opus) rồi .mp3 dự phòng cho trình duyệt cũ. */
-function load(name: SfxName, c: AudioContext): Promise<AudioBuffer | null> {
-  let p = buffers.get(name);
-  if (!p) {
-    p = (async () => {
-      for (const ext of ['ogg', 'mp3']) {
-        try {
-          const res = await fetch(`${AUDIO_BASE}/sfx/${name}.${ext}`);
-          if (!res.ok) continue;
-          return await c.decodeAudioData(await res.arrayBuffer());
-        } catch {
-          /* thử định dạng kế tiếp */
-        }
-      }
-      return null;
-    })();
-    buffers.set(name, p);
-  }
-  return p;
-}
-
-/** Phát một âm hiệu ứng ngắn. No-op khi tắt hiệu ứng, đang thu âm, hoặc chưa có cử chỉ người dùng. */
+/** Phát một âm hiệu ứng ngắn. No-op khi tắt hiệu ứng hoặc đang thu âm. Không chờ tải/giải mã trong handler cử chỉ. */
 export function playSfx(name: SfxName): void {
   if (!getAudioSettings().sfx || isRecording()) return;
-  const c = context();
-  if (!c) return;
-  if (c.state === 'suspended') {
-    // chưa có cử chỉ: thử đánh thức, KHÔNG xếp hàng phát bù
-    void c.resume().catch(() => undefined);
-    return;
-  }
-  void load(name, c).then((buf) => {
-    // kiểm lại lúc phát: trong lúc nạp có thể đã bắt đầu thu âm hoặc tắt hiệu ứng
-    if (!buf || !getAudioSettings().sfx || isRecording()) return;
-    const src = c.createBufferSource();
-    src.buffer = buf;
-    src.connect(c.destination);
-    src.start();
-  });
+  const el = element(name);
+  if (!el) return;
+  const go = () => {
+    // kiểm lại lúc phát: trong lúc tải có thể đã bắt đầu thu âm hoặc tắt hiệu ứng
+    if (!getAudioSettings().sfx || isRecording()) return;
+    try {
+      el.currentTime = 0;
+    } catch {
+      /* chưa có metadata */
+    }
+    void Promise.resolve(el.play()).catch(() => undefined); // chưa có cử chỉ ⇒ im lặng
+  };
+  if (el.readyState >= 2) go();
+  else el.addEventListener?.('canplay', go, { once: true });
 }
 
-/** Mở khóa AudioContext ở cử chỉ đầu tiên. */
-export function unlockSfx(): void {
-  const c = context();
-  if (c && c.state === 'suspended') void c.resume().catch(() => undefined);
-}
+/** Giữ để tương thích: âm hiệu ứng dùng <audio> nên không cần mở khóa AudioContext. */
+export function unlockSfx(): void {}
 
 export function haptic(kind: 'nhe' | 'thanh-cong' | 'loi'): void {
   if (!getAudioSettings().haptics) return;
