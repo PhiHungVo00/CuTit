@@ -6,3 +6,4 @@ export * from './components/SegmentedControl.js';
 export * from './components/ListRow.js';
 export * from './icons/Icon.js';
 export * from './icons/paths.js';
+export * from './mascot/CuTit.js';
