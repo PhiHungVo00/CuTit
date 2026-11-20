@@ -10,6 +10,7 @@
  * - Không "giả vờ đọc 1.2 giây" khi mọi đường đều hỏng: gọi onError để UI thông báo.
  */
 import { getDeviceSpeech, SpeechError } from '@vietlearning/native';
+import { acquireAudio } from '@vietlearning/shared/audio/focus';
 
 export type SpeechFailure = 'no-voice-available' | 'network' | 'playback';
 
@@ -40,6 +41,13 @@ class SpeechService {
   private turn = 0;
   private audio: HTMLAudioElement | null = null;
   private speaking = false;
+  /** Giữ "đang phát" với điều phối âm thanh khi phát tệp giọng Gateway (giọng thiết bị tự báo trong @vietlearning/native). */
+  private release: (() => void) | null = null;
+
+  private endHold(): void {
+    this.release?.();
+    this.release = null;
+  }
 
   public isSpeaking(): boolean {
     return this.speaking;
@@ -51,6 +59,7 @@ class SpeechService {
   public stop(): void {
     this.turn++;
     this.speaking = false;
+    this.endHold();
     const notify = this.notifyInterrupted;
     this.notifyInterrupted = null;
     notify?.();
@@ -73,12 +82,14 @@ class SpeechService {
 
     const finish = () => {
       if (!isCurrent()) return;
+      this.endHold();
       this.speaking = false;
       this.notifyInterrupted = null;
       options.onEnd?.();
     };
     const fail = (code: SpeechFailure, message: string) => {
       if (!isCurrent()) return;
+      this.endHold();
       this.speaking = false;
       this.notifyInterrupted = null;
       console.warn(`[SpeechService] ${code}: ${message}`);
@@ -111,6 +122,7 @@ class SpeechService {
     if (!isCurrent()) return;
 
     try {
+      this.release = acquireAudio('speech');
       const audio = new Audio(audioUrl);
       this.audio = audio;
       audio.onended = finish;
