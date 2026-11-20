@@ -1,10 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const speak = vi.fn(async () => undefined);
-vi.mock('@vietlearning/native', () => ({ getDeviceSpeech: () => ({ speak }) }));
+vi.mock('@vietlearning/native', () => ({ getDeviceSpeech: () => ({ speak, stop: async () => undefined }) }));
 vi.mock('@vietlearning/api-client', () => ({ gatewayBaseUrl: () => 'http://gw.test' }));
 
-import { _resetPacks, findAudioKey, playText, prefetchPack, SLOW_RATE } from './coursePlayer';
+import { isAudioBusy } from '@vietlearning/shared/audio/focus';
+import { _resetPacks, findAudioKey, playText, prefetchPack, SLOW_RATE, stopPlayback } from './coursePlayer';
 
 const KEY = 'a'.repeat(64);
 
@@ -90,5 +91,57 @@ describe('coursePlayer', () => {
       [1, true]
     ]);
     expect(speak).not.toHaveBeenCalled();
+  });
+});
+
+describe('coursePlayer báo điều phối âm thanh (nhạc nền phải dừng)', () => {
+  async function ready() {
+    fakeCaches();
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({ items: { 'Xin chào': KEY } }))));
+    await prefetchPack('u1', 'north');
+    vi.stubGlobal('URL', Object.assign(URL, { createObjectURL: () => 'blob:x', revokeObjectURL: () => undefined }));
+  }
+  const fakeAudio = (end: 'ended' | 'error' | 'never') => {
+    const seenBusy: boolean[] = [];
+    class A {
+      playbackRate = 1;
+      preservesPitch = false;
+      onended: (() => void) | null = null;
+      onerror: (() => void) | null = null;
+      play() {
+        seenBusy.push(isAudioBusy());
+        if (end === 'ended') setTimeout(() => this.onended?.(), 0);
+        if (end === 'error') setTimeout(() => this.onerror?.(), 0);
+        return Promise.resolve();
+      }
+      pause() {}
+    }
+    vi.stubGlobal('Audio', A);
+    return seenBusy;
+  };
+
+  it('tệp dựng sẵn: bận khi đang phát, hết bận khi phát xong', async () => {
+    await ready();
+    const seen = fakeAudio('ended');
+    await playText('Xin chào', 'north');
+    expect(seen).toEqual([true]);
+    expect(isAudioBusy()).toBe(false);
+  });
+
+  it('tệp lỗi giữa chừng => hết bận (rơi về TTS của máy)', async () => {
+    await ready();
+    fakeAudio('error');
+    await playText('Xin chào', 'north');
+    expect(isAudioBusy()).toBe(false);
+  });
+
+  it('stopPlayback() khi đang phát => hết bận', async () => {
+    await ready();
+    fakeAudio('never');
+    void playText('Xin chào', 'north');
+    await new Promise((r) => setTimeout(r, 30));
+    expect(isAudioBusy()).toBe(true);
+    stopPlayback();
+    expect(isAudioBusy()).toBe(false);
   });
 });
