@@ -237,3 +237,4 @@ export const SLOW_FACTOR = 0.75;
 export const speechRate = (base = 1): number => Math.max(0.3, Math.min(2.5, learnerStore.getState().preferences.speed * base));
 
 export * from './i18n.js';
+export * from './deviceSettings.js';
