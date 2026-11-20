@@ -33,7 +33,8 @@ module.exports = [
   { name: 'M8 Ghép câu (lazy)', path: 'dist/assets/SentenceRoute-*.js', limit: '6 kB', gzip: true },
   { name: 'M11 Làm quen & xếp lớp (lazy)', path: 'dist/assets/OnboardingRoute-*.js', limit: '5 kB', gzip: true },
   // Dự án 1 đợt 2 (2026-11-20): tab Hồ sơ (phương án B) thay màn Tiến độ; Cài đặt mục lục + 7 trang con thay M12;
-  // Bạn bè là màn thật (FriendsPanel chuyển từ Tiến độ sang). Kế hoạch cho phép ≤ 6 kB mỗi màn. Đo: Cài đặt 5,3 kB, Bạn bè 4,97 kB.
+  // Bạn bè là màn thật (FriendsPanel chuyển từ Tiến độ sang, nằm trong chunk FriendsRoute nên không còn mục riêng). Kế hoạch cho phép ≤ 6 kB mỗi màn. Đo: Cài đặt 5,3 kB, Bạn bè 4,97 kB.
+  { name: 'M9 Tiến độ chi tiết: ôn SM-2, 7 ngày, độ chính xác (lazy; đo 2,8 kB)', path: 'dist/assets/ProgressRoute-*.js', limit: '3.5 kB', gzip: true },
   { name: 'M9 Hồ sơ (lazy)', path: 'dist/assets/ProfileRoute-*.js', limit: '5 kB', gzip: true },
   { name: 'M12 Cài đặt mục lục + trang con (lazy)', path: 'dist/assets/SettingsRoute-*.js', limit: '6 kB', gzip: true },
   { name: 'M1 Trò chuyện (lazy)', path: 'dist/assets/ChatRoute-*.js', limit: '6 kB', gzip: true },
@@ -67,7 +68,5 @@ module.exports = [
   { name: 'GĐ2 Phát âm thanh dựng sẵn theo miền', path: 'dist/assets/coursePlayer-*.js', limit: '1.5 kB', gzip: true },
   // GĐ4a (đo 2026-11-18): huy hiệu theo thành thạo + tổng kết tuần + thông báo nhẹ, lazy
   { name: 'GĐ4 Huy hiệu + tổng kết tuần (lazy)', path: 'dist/assets/Motivation-*.js', limit: '3.5 kB', gzip: true },
-  { name: 'GĐ2 A7 đổi từ theo miền', path: 'dist/assets/dialectMap-*.js', limit: '2 kB', gzip: true },
-  // GĐ4c Bạn học hợp tác (đo 2026-11-18: 4.52 kB, gồm contract Zod /v1/friends + chuỗi vi/en), lazy khi bấm mở ở M9
-  { name: 'GĐ4c Bạn học: mã mời + nhiệm vụ tuần chung (lazy)', path: 'dist/assets/FriendsPanel-*.js', limit: '5 kB', gzip: true }
+  { name: 'GĐ2 A7 đổi từ theo miền', path: 'dist/assets/dialectMap-*.js', limit: '2 kB', gzip: true }
 ];
