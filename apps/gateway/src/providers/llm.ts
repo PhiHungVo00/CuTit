@@ -112,7 +112,7 @@ export class GeminiProvider implements LlmProvider {
         method: 'POST',
         headers: { 'content-type': 'application/json', 'x-goog-api-key': this.apiKey },
         body: JSON.stringify(body),
-        signal: AbortSignal.timeout(req.timeoutMs ?? this.timeoutMs)
+        signal: AbortSignal.timeout(Math.min(req.timeoutMs ?? this.timeoutMs, this.timeoutMs))
       });
     } catch (err) {
       const timeout = (err as Error).name === 'TimeoutError' || (err as Error).name === 'AbortError';

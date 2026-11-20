@@ -84,6 +84,11 @@ export interface ChainOptions {
   budgetMs: number;
   /** không bắt đầu thêm nguồn khi còn dưới ngần này (ms) */
   minAttemptMs?: number;
+  /**
+   * Thời gian chừa lại cho MỖI nguồn còn lại phía sau (ms, mặc định 3000): nguồn đầu chậm không được ăn hết ngân sách
+   * khiến nguồn dự phòng không còn thời gian (Gemini chậm ~9 s là ca thật).
+   */
+  reserveMs?: number;
   now?: () => number;
   log?: ChainLog;
 }
@@ -109,7 +114,8 @@ async function runChain<T, R>(
   const failed: string[] = [];
   let retryAfterMs: number | undefined;
 
-  for (const s of sources) {
+  const reserve = opts.reserveMs ?? 3000;
+  for (const [idx, s] of sources.entries()) {
     if (!usable(s.item)) continue; // thiếu năng lực (vd. không nhận ảnh): bỏ qua, không phải lỗi
     if (opts.breaker.isOpen(s.id)) {
       failed.push(`${s.id}:open`);
@@ -122,9 +128,12 @@ async function runChain<T, R>(
       failed.push(`${s.id}:no_time`);
       break;
     }
+    // nguồn còn dùng được phía sau => chừa thời gian cho chúng
+    const later = sources.slice(idx + 1).filter((x) => usable(x.item) && !opts.breaker.isOpen(x.id)).length;
+    const attemptMs = Math.max(minAttempt, remaining - later * reserve);
     const t0 = now();
     try {
-      const { result, ok } = await call(s.item, remaining);
+      const { result, ok } = await call(s.item, attemptMs);
       if (!ok) {
         failed.push(`${s.id}:llm_bad_output`);
         opts.log?.warn({ chain: label, source: s.id, code: 'llm_bad_output' }, 'AI source returned invalid output, trying next');
