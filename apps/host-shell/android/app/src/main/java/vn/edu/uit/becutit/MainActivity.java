@@ -10,6 +10,7 @@ public class MainActivity extends BridgeActivity {
         // Plugin nội bộ của app phải đăng ký TRƯỚC super.onCreate
         registerPlugin(SystemBarsPlugin.class);
         registerPlugin(AppSettingsPlugin.class);
+        registerPlugin(AudioEnvPlugin.class);
         super.onCreate(savedInstanceState);
     }
 }
