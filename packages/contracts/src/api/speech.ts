@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { RemainingSchema } from './chat.js';
 
 /**
  * Hợp đồng GĐ2 — kỹ năng nói tiếng Việt:
@@ -43,6 +44,7 @@ export const AssessResponseSchema = z.object({
   toneChecked: z.boolean(),
   /** true = Gateway chưa nối nhận dạng giọng nói: không chấm chữ, client coi như bỏ qua */
   mock: z.boolean(),
+  remaining: RemainingSchema.optional(),
   hints: z.array(z.string())
 });
 export type AssessResponse = z.infer<typeof AssessResponseSchema>;
@@ -76,6 +78,7 @@ export const ExplainResponseSchema = z.object({
   tip: z.string().max(300).optional(),
   /** true = lời giải theo mẫu, chưa qua LLM */
   mock: z.boolean(),
+  remaining: RemainingSchema.optional(),
   cached: z.boolean()
 });
 export type ExplainResponse = z.infer<typeof ExplainResponseSchema>;
