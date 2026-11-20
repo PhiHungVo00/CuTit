@@ -15,7 +15,9 @@ module.exports = [
     limit: '64.5 kB', gzip: true
   },
   // 7.5 → 7.8 kB (GĐ2, 2026-11-18): lớp Tailwind mới của nói lại câu / phòng tập thanh / thẻ miền (+13 B lúc đo)
-  { name: 'CSS toàn app (Tailwind + tokens)', path: 'dist/assets/*.css', limit: '7.8 kB', gzip: true },
+  // 7.8 → 8.1 kB (dự án 1 đợt 1, 2026-11-20): token Cu Tít sáng/tối, bán kính/bóng/thời lượng chuyển động,
+  // CSS của CuTit (chuyển động theo trạng thái). Đo sau gộp: 7.83 kB; chừa ~0.3 kB cho đợt 2 (thanh tab, bong bóng).
+  { name: 'CSS toàn app (Tailwind + tokens)', path: 'dist/assets/*.css', limit: '8.1 kB', gzip: true },
   { name: 'M3 Ma trận xưng hô (lazy)', path: 'dist/assets/HonorificScreen-*.js', limit: '15 kB', gzip: true },
   { name: 'M3 Bảng 20 cặp + Radix Dialog (lazy khi mở)', path: 'dist/assets/HonorificExplorerDrawer-*.js', limit: '18 kB', gzip: true },
   { name: 'M2 Luyện thanh điệu (lazy)', path: 'dist/assets/ToneLabRoute-*.js', limit: '9 kB', gzip: true },
