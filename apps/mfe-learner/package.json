@@ -15,6 +15,7 @@
     "@vietlearning/native": "workspace:*",
     "@vietlearning/shared": "workspace:*",
     "@vietlearning/state": "workspace:*",
+    "@vietlearning/ui": "workspace:*",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-router-dom": "^6.30.6"
