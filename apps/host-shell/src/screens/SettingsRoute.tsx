@@ -1,7 +1,10 @@
-// VỎ TẠM — Task 11 thay (SettingsIndex / SettingsGroup của mfe-learner)
-import { PreferencesScreen } from '@vietlearning/mfe-learner';
+import { useParams } from 'react-router-dom';
+import { SETTINGS_GROUPS, SettingsGroup, SettingsIndex, type SettingsGroupId } from '@vietlearning/mfe-learner';
 
-/** Phục vụ `/cai-dat` và `/cai-dat/:nhom` (tham số `nhom` tạm bỏ qua). Tạm hiện màn Tùy chỉnh cũ. */
+const isGroup = (v: string | undefined): v is SettingsGroupId => !!v && (SETTINGS_GROUPS as readonly string[]).includes(v);
+
+/** `/cai-dat` = mục lục; `/cai-dat/:nhom` = trang con. Nhóm không hợp lệ ⇒ về mục lục, không trắng màn. */
 export default function SettingsRoute() {
-  return <PreferencesScreen />;
+  const { nhom } = useParams();
+  return isGroup(nhom) ? <SettingsGroup id={nhom} /> : <SettingsIndex />;
 }

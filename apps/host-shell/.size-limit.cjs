@@ -32,8 +32,10 @@ module.exports = [
   { name: 'M5 Luyện tập (lazy)', path: 'dist/assets/DrillRoute-*.js', limit: '8 kB', gzip: true },
   { name: 'M8 Ghép câu (lazy)', path: 'dist/assets/SentenceRoute-*.js', limit: '6 kB', gzip: true },
   { name: 'M11 Làm quen & xếp lớp (lazy)', path: 'dist/assets/OnboardingRoute-*.js', limit: '5 kB', gzip: true },
-  { name: 'M9 Tiến độ + ôn thẻ (lazy)', path: 'dist/assets/ProfileRoute-*.js', limit: '5 kB', gzip: true },
-  { name: 'M12 Tùy chỉnh (lazy)', path: 'dist/assets/SettingsRoute-*.js', limit: '5 kB', gzip: true },
+  // Dự án 1 đợt 2 (2026-11-20): tab Hồ sơ (phương án B) thay màn Tiến độ; Cài đặt mục lục + 7 trang con thay M12;
+  // Bạn bè là màn thật (FriendsPanel chuyển từ Tiến độ sang). Kế hoạch cho phép ≤ 6 kB mỗi màn. Đo: Cài đặt 5,3 kB, Bạn bè 4,97 kB.
+  { name: 'M9 Hồ sơ (lazy)', path: 'dist/assets/ProfileRoute-*.js', limit: '5 kB', gzip: true },
+  { name: 'M12 Cài đặt mục lục + trang con (lazy)', path: 'dist/assets/SettingsRoute-*.js', limit: '6 kB', gzip: true },
   { name: 'M1 Trò chuyện (lazy)', path: 'dist/assets/ChatRoute-*.js', limit: '6 kB', gzip: true },
   { name: 'M7 Nhập vai (lazy)', path: 'dist/assets/RoleplayRoute-*.js', limit: '6 kB', gzip: true },
   { name: 'M4 Camera từ vựng (lazy)', path: 'dist/assets/CameraRoute-*.js', limit: '5 kB', gzip: true },
@@ -47,7 +49,7 @@ module.exports = [
   { name: 'GĐ1 Ôn tập (lazy)', path: 'dist/assets/ReviewRoute-*.js', limit: '3 kB', gzip: true },
   { name: 'GĐ1 Kiểm tra vượt unit (lazy)', path: 'dist/assets/TestOutRoute-*.js', limit: '2 kB', gzip: true },
   { name: 'Dự án 1 Tab Luyện tập: lối vào 5 cách luyện (lazy)', path: 'dist/assets/PracticeHub-*.js', limit: '2.5 kB', gzip: true },
-  { name: 'Dự án 1 Tab Bạn bè (vỏ tạm, lazy)', path: 'dist/assets/FriendsRoute-*.js', limit: '1.5 kB', gzip: true },
+  { name: 'Dự án 1 Tab Bạn bè (lazy)', path: 'dist/assets/FriendsRoute-*.js', limit: '5.5 kB', gzip: true },
   { name: 'GĐ1 Trình chạy bài + dạng bài dùng chung (lazy)', path: 'dist/assets/SessionRunner-*.js', limit: '6.5 kB', gzip: true },
   { name: 'GĐ1 Dữ liệu khóa A1 (lazy)', path: 'dist/assets/course-*.js', limit: '8.5 kB', gzip: true },
   { name: 'GĐ1 Bài luyện thanh trong phiên học (lazy khi gặp)', path: 'dist/assets/ToneExercise-*.js', limit: '2.5 kB', gzip: true },
