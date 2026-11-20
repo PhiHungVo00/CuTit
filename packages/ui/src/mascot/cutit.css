@@ -1,0 +1,31 @@
+/*
+ * Chuyển động của <CuTit>. Nạp một lần ở khung app: @import "@vietlearning/ui/mascot.css";
+ * Tắt hẳn khi hệ điều hành bật "giảm chuyển động" HOẶC công tắc của app (html[data-reduced-motion="true"]).
+ */
+.ct-cutit {
+  display: inline-block;
+  line-height: 0;
+  flex: none;
+}
+.ct-cutit > img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.ct-cutit--anim { transform-origin: 50% 90%; }
+.ct-cutit--nhun { animation: ct-nhun 1.6s ease-in-out infinite; }
+.ct-cutit--nay { animation: ct-nay 0.9s ease-in-out infinite; }
+.ct-cutit--lac { animation: ct-lac 2.4s ease-in-out infinite; }
+.ct-cutit--tho { animation: ct-tho 4s ease-in-out infinite; }
+.ct-cutit--nghieng { animation: ct-nghieng 2.8s ease-in-out infinite; }
+
+@keyframes ct-nhun { 50% { transform: scale(1.06, 0.95); } }
+@keyframes ct-nay { 50% { transform: translateY(-12%); } }
+@keyframes ct-lac { 25% { transform: rotate(-3deg); } 75% { transform: rotate(3deg); } }
+@keyframes ct-tho { 50% { transform: scale(1.03); } }
+@keyframes ct-nghieng { 50% { transform: rotate(5deg); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .ct-cutit--anim { animation: none !important; }
+}
+html[data-reduced-motion='true'] .ct-cutit--anim { animation: none !important; }
