@@ -1,0 +1,23 @@
+---
+name: kiem-truoc-khi-gop
+description: Quy trình kiểm bắt buộc trước khi gộp một nhánh/PR vào main của dự án Bé Cu Tít — build, test, ranh giới MFE, ngân sách bundle, e2e, CI, emulator khi đụng native, nhật ký. Dùng mỗi khi sắp merge, đẩy lên main, hoặc khi người dùng hỏi "gộp được chưa".
+---
+
+# Kiểm trước khi gộp
+
+Chỉ gộp khi **mọi bước** đạt. Bước nào đỏ thì phân biệt nhiễu (chạy lại 2–3 lần, so với main) và lỗi thật. Không nới ngân sách hay timeout để cho qua.
+
+1. **Cập nhật nhánh theo main** (`git fetch && git merge origin/main`). Gỡ xung đột:
+   - Nhật ký `docs/NHAT_KY_CHUYEN_DOI_MOBILE.md`: giữ cả hai dòng, đánh số lại, dòng mới nhất ở trên.
+   - Migration trùng số (`apps/gateway/drizzle/`): xóa migration và snapshot của nhánh vào sau, lấy journal của main, chạy `pnpm --filter @vietlearning/gateway db:generate --name <ten>`, so SQL với bản gốc.
+   - `.size-limit.cjs`, `app.ts`, `contracts/api/index.ts`: giữ mục của cả hai bên.
+2. `pnpm install`, rồi `pnpm build` (19/19). Ngay sau đó chạy **`git checkout -- AGENTS.md`**: turbo tự sửa tệp này (R13), không commit thay đổi đó.
+3. `pnpm test` (35/35 task), `pnpm lint:boundaries` (0 vi phạm).
+4. `VITE_GATEWAY_URL=http://localhost:<cổng GW> pnpm --filter @vietlearning/host-shell build`, rồi `pnpm --filter @vietlearning/host-shell size`. Không mục nào "exceeded".
+5. e2e trong `apps/host-shell`: `E2E_PORT=<cổng UI> E2E_GATEWAY_PORT=<cổng GW> npx playwright test --reporter=line`. Mỗi phiên dùng **cổng riêng** để không đụng phiên khác.
+6. **Đụng native/khởi động/tài khoản/đồng bộ/camera/micro** ⇒ chạy skill `thu-tren-emulator`.
+7. Đẩy nhánh, mở draft PR, chờ CI: `verify` phải xanh; `performance` không chặn merge, nhưng đỏ thì phải biết là nhiễu hay thật.
+8. Ghi một dòng vào đầu bảng nhật ký: việc gì, xung đột gì, số đo từng bước.
+9. Gộp (`gh pr ready` + `gh pr merge --merge`), rồi fast-forward nhánh làm việc và checkout gốc (`git merge --ff-only origin/main`).
+
+**Không bao giờ** gộp nhánh của phiên khác khi người dùng chưa đồng ý rõ ràng.
