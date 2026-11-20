@@ -91,3 +91,17 @@ test('429: hết hạn mức ngày (quota_exceeded) khác với gửi quá nhanh
   assert.match(describeGatewayError(fast, 'vi'), /nhanh/);
   assert.match(describeGatewayError(fast, 'en'), /too fast/i);
 });
+
+test('llm_busy (503) và trần toàn cục (429 scope=global) có câu riêng, không lẫn với "hết lượt hôm nay"', async () => {
+  mockFetch(async () => new Response(JSON.stringify({ error: 'llm_busy', retryAfterSec: 30 }), { status: 503 }));
+  const busy = await request('/x', { schema: Schema }).catch((e) => e);
+  assert.equal(busy.code, 'llm_busy');
+  assert.match(describeGatewayError(busy, 'vi'), /bận/);
+  assert.doesNotMatch(describeGatewayError(busy, 'vi'), /hết lượt/);
+  assert.match(describeGatewayError(busy, 'en'), /busy/i);
+
+  mockFetch(async () => new Response(JSON.stringify({ error: 'quota_exceeded', capability: 'turn', resetAt: '2026-11-19T17:00:00.000Z', scope: 'global' }), { status: 429 }));
+  const global = await request('/x', { schema: Schema }).catch((e) => e);
+  assert.match(describeGatewayError(global, 'vi'), /rất nhiều bạn/);
+  assert.doesNotMatch(describeGatewayError(global, 'vi'), /Bạn đã dùng hết/);
+});
