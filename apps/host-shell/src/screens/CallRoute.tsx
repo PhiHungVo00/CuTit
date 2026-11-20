@@ -1,6 +1,12 @@
 import { CallScreen } from '@vietlearning/mfe-conversation';
+import { CuTitModeBar } from '../shell/CuTitModeBar';
 
-/** Gọi thoại /goi-thoai (GĐ3) — bọc mỏng để chunk lazy có tên ổn định "CallRoute" (ngân sách .size-limit.cjs). */
+/** Route bọc mỏng để chunk lazy có tên ổn định "CallRoute". Host thêm thanh đổi chế độ Cu Tít. */
 export default function CallRoute() {
-  return <CallScreen />;
+  return (
+    <>
+      <CuTitModeBar />
+      <CallScreen />
+    </>
+  );
 }

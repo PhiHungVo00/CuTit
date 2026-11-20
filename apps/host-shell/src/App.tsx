@@ -1,15 +1,29 @@
 import { Suspense, lazy, useEffect, useState } from 'react';
-import { NavLink, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
+import { Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import { bootstrapNative } from './native/bootstrap';
-import { EXPLORE_ROUTE, PATH_ROUTES, REVIEW_ROUTE, SCREENS, prefetchScreen, screenId } from './routes';
+import { PATH_ROUTES, SCREENS } from './routes';
 import { t as tShell, useT } from './i18n';
 import { useUiLanguage } from '@vietlearning/state';
 import { Home } from './screens/Home';
+import { legacyRoutes } from './screens/LegacyRedirects';
+import { TabBar } from './shell/TabBar';
+import { isFocusRoute } from './shell/navMap';
 import { ScreenErrorBoundary } from './components/ScreenErrorBoundary';
 import { useStudyTimer } from './useStudyTimer';
 import { onNotice, readNotice } from './notice';
 
 const NoticeBanner = lazy(() => import('./NoticeBanner'));
+// Bong bóng Cu Tít: chunk lười, gắn sau lần vẽ đầu để không tranh LCP/gói đầu
+const CuTitBubble = lazy(() => import('./shell/CuTitBubble'));
+
+function useAfterFirstPaint(): boolean {
+  const [ready, setReady] = useState(false);
+  useEffect(() => {
+    const id = window.setTimeout(() => setReady(true), 1200);
+    return () => window.clearTimeout(id);
+  }, []);
+  return ready;
+}
 
 function useOnline(): boolean {
   const [online, setOnline] = useState(() => navigator.onLine);
@@ -62,7 +76,8 @@ export function App() {
     window.scrollTo(0, 0);
   }, [pathname]);
 
-  const tabs = SCREENS.filter((s) => s.inTabBar);
+  const focus = isFocusRoute(pathname);
+  const bubbleReady = useAfterFirstPaint();
 
   return (
     <div className="shell">
@@ -78,7 +93,7 @@ export function App() {
         </Suspense>
       )}
 
-      <main className="shell-main">
+      <main className={focus ? 'shell-main focus' : 'shell-main'}>
         <ScreenErrorBoundary resetKey={pathname}>
           <Suspense fallback={<ScreenLoading />}>
             <Routes>
@@ -86,45 +101,19 @@ export function App() {
               {[...SCREENS, ...PATH_ROUTES].map(({ path, Component }) => (
                 <Route key={path} path={path} element={<Component />} />
               ))}
+              {legacyRoutes}
               <Route path="*" element={<Home />} />
             </Routes>
           </Suspense>
         </ScreenErrorBoundary>
       </main>
 
-      <nav className="tabbar" aria-label={t('mainNav')}>
-        <NavLink to="/" end>
-          <span className="tab-icon" aria-hidden="true">
-            🏠
-          </span>
-          <span>{t('learn')}</span>
-        </NavLink>
-        <NavLink to={REVIEW_ROUTE.path} onPointerDown={() => prefetchScreen(REVIEW_ROUTE)} onFocus={() => prefetchScreen(REVIEW_ROUTE)}>
-          <span className="tab-icon" aria-hidden="true">
-            🔁
-          </span>
-          <span>{t('review')}</span>
-        </NavLink>
-        {tabs.map((s) => (
-          <NavLink
-            key={s.path}
-            to={s.path}
-            onPointerDown={() => prefetchScreen(s)}
-            onFocus={() => prefetchScreen(s)}
-          >
-            <span className="tab-icon" aria-hidden="true">
-              {s.icon}
-            </span>
-            <span>{t(`${screenId(s)}.short`)}</span>
-          </NavLink>
-        ))}
-        <NavLink to={EXPLORE_ROUTE.path} onPointerDown={() => prefetchScreen(EXPLORE_ROUTE)} onFocus={() => prefetchScreen(EXPLORE_ROUTE)}>
-          <span className="tab-icon" aria-hidden="true">
-            🧭
-          </span>
-          <span>{t('explore')}</span>
-        </NavLink>
-      </nav>
+      {!focus && <TabBar />}
+      {bubbleReady && !focus && (
+        <Suspense fallback={null}>
+          <CuTitBubble />
+        </Suspense>
+      )}
     </div>
   );
 }

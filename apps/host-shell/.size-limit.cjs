@@ -12,12 +12,18 @@ module.exports = [
     // 68.5 → 64.5 kB (R10, 2026-11-18): đo 68.49 → 64.12 kB. @capacitor/core ra khỏi gói đầu (nhận biết nền tảng
     // bằng native/platform.ts) và client api-client (request/SSE/lỗi) thành chunk lười; gói đầu chỉ giữ
     // `@vietlearning/api-client/config`. Dư ~0.4 kB. Đo lại theo module: pnpm --filter @vietlearning/host-shell analyze
-    limit: '64.5 kB', gzip: true
+    // 64.5 → 67.5 kB (dự án 1 đợt 2, 2026-11-20; trần tối đa spec mục 8.1): thanh 4 tab + bản đồ route (navMap),
+    // deviceSettings + ràng buộc giao diện/nhạc, bộ icon (paths), bong bóng Cu Tít (khung), chuyển cảnh. Đã giữ ngoài gói đầu:
+    // điều phối âm thanh (nạp lười ở lần chạm đầu), CuTit/ListRow ở chunk riêng, "Tra cứu" của tab Học (lazy);
+    // thêm "sideEffects": false cho @vietlearning/ui để Rollup bỏ phần không dùng.
+    limit: '67.5 kB', gzip: true
   },
   // 7.5 → 7.8 kB (GĐ2, 2026-11-18): lớp Tailwind mới của nói lại câu / phòng tập thanh / thẻ miền (+13 B lúc đo)
   // 7.8 → 8.1 kB (dự án 1 đợt 1, 2026-11-20): token Cu Tít sáng/tối, bán kính/bóng/thời lượng chuyển động,
   // CSS của CuTit (chuyển động theo trạng thái). Đo sau gộp: 7.83 kB; chừa ~0.3 kB cho đợt 2 (thanh tab, bong bóng).
-  { name: 'CSS toàn app (Tailwind + tokens)', path: 'dist/assets/*.css', limit: '8.1 kB', gzip: true },
+  // 8.1 → 8.4 kB (dự án 1 đợt 2, 2026-11-20): bong bóng Cu Tít + lời giới thiệu, thanh đổi chế độ màn Cu Tít, danh sách hàng,
+  // chuyển cảnh/fade và luật giảm chuyển động (đo 8.35 kB)
+  { name: 'CSS toàn app (Tailwind + tokens)', path: 'dist/assets/*.css', limit: '8.4 kB', gzip: true },
   { name: 'M3 Ma trận xưng hô (lazy)', path: 'dist/assets/HonorificScreen-*.js', limit: '15 kB', gzip: true },
   { name: 'M3 Bảng 20 cặp + Radix Dialog (lazy khi mở)', path: 'dist/assets/HonorificExplorerDrawer-*.js', limit: '18 kB', gzip: true },
   { name: 'M2 Luyện thanh điệu (lazy)', path: 'dist/assets/ToneLabRoute-*.js', limit: '9 kB', gzip: true },
@@ -26,8 +32,8 @@ module.exports = [
   { name: 'M5 Luyện tập (lazy)', path: 'dist/assets/DrillRoute-*.js', limit: '8 kB', gzip: true },
   { name: 'M8 Ghép câu (lazy)', path: 'dist/assets/SentenceRoute-*.js', limit: '6 kB', gzip: true },
   { name: 'M11 Làm quen & xếp lớp (lazy)', path: 'dist/assets/OnboardingRoute-*.js', limit: '5 kB', gzip: true },
-  { name: 'M9 Tiến độ + ôn thẻ (lazy)', path: 'dist/assets/ProgressRoute-*.js', limit: '5 kB', gzip: true },
-  { name: 'M12 Tùy chỉnh (lazy)', path: 'dist/assets/PreferencesRoute-*.js', limit: '5 kB', gzip: true },
+  { name: 'M9 Tiến độ + ôn thẻ (lazy)', path: 'dist/assets/ProfileRoute-*.js', limit: '5 kB', gzip: true },
+  { name: 'M12 Tùy chỉnh (lazy)', path: 'dist/assets/SettingsRoute-*.js', limit: '5 kB', gzip: true },
   { name: 'M1 Trò chuyện (lazy)', path: 'dist/assets/ChatRoute-*.js', limit: '6 kB', gzip: true },
   { name: 'M7 Nhập vai (lazy)', path: 'dist/assets/RoleplayRoute-*.js', limit: '6 kB', gzip: true },
   { name: 'M4 Camera từ vựng (lazy)', path: 'dist/assets/CameraRoute-*.js', limit: '5 kB', gzip: true },
@@ -40,7 +46,8 @@ module.exports = [
   { name: 'GĐ1 Phiên bài học (lazy)', path: 'dist/assets/LessonRoute-*.js', limit: '2.5 kB', gzip: true },
   { name: 'GĐ1 Ôn tập (lazy)', path: 'dist/assets/ReviewRoute-*.js', limit: '3 kB', gzip: true },
   { name: 'GĐ1 Kiểm tra vượt unit (lazy)', path: 'dist/assets/TestOutRoute-*.js', limit: '2 kB', gzip: true },
-  { name: 'GĐ1 Khám phá: 12 công cụ (lazy)', path: 'dist/assets/Explore-*.js', limit: '2.5 kB', gzip: true },
+  { name: 'Dự án 1 Tab Luyện tập: lối vào 5 cách luyện (lazy)', path: 'dist/assets/PracticeHub-*.js', limit: '2.5 kB', gzip: true },
+  { name: 'Dự án 1 Tab Bạn bè (vỏ tạm, lazy)', path: 'dist/assets/FriendsRoute-*.js', limit: '1.5 kB', gzip: true },
   { name: 'GĐ1 Trình chạy bài + dạng bài dùng chung (lazy)', path: 'dist/assets/SessionRunner-*.js', limit: '6.5 kB', gzip: true },
   { name: 'GĐ1 Dữ liệu khóa A1 (lazy)', path: 'dist/assets/course-*.js', limit: '8.5 kB', gzip: true },
   { name: 'GĐ1 Bài luyện thanh trong phiên học (lazy khi gặp)', path: 'dist/assets/ToneExercise-*.js', limit: '2.5 kB', gzip: true },

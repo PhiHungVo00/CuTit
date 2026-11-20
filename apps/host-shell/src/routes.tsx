@@ -26,7 +26,7 @@ export function lazyScreen(load: Loader): { load: Loader; Component: ComponentTy
 }
 
 /** Nhãn ngắn (thanh tab) theo khóa `<đường dẫn>.short` (src/i18n.ts); tên + mô tả ở src/exploreI18n.ts (màn Khám phá) */
-export type ScreenId = 'xung-ho' | 'van-hoa' | 'hoi-thoai' | 'nhap-vai' | 'phat-am' | 'phuong-ngu' | 'luyen-tap' | 'ghep-cau' | 'camera' | 'ho-so' | 'tuy-chinh' | 'bat-dau';
+export type ScreenId = 'xung-ho' | 'van-hoa' | 'hoi-thoai' | 'nhap-vai' | 'phat-am' | 'phuong-ngu' | 'luyen-tap' | 'ghep-cau' | 'camera' | 'ho-so' | 'bat-dau';
 
 export const screenId = (r: ScreenRoute) => r.path.slice(1) as ScreenId;
 
@@ -35,7 +35,6 @@ export interface ScreenRoute {
   icon: string;
   owner: string;
   ready: boolean;
-  inTabBar: boolean;
   load: Loader;
   Component: ComponentType;
 }
@@ -50,7 +49,6 @@ export const SCREENS: ScreenRoute[] = [
     icon: '🏮',
     owner: 'mfe-knowledge',
     ready: true,
-    inTabBar: true,
     load: () => import('./screens/HonorificScreen')
   }),
   screen({
@@ -58,7 +56,6 @@ export const SCREENS: ScreenRoute[] = [
     icon: '📜',
     owner: 'mfe-knowledge',
     ready: true,
-    inTabBar: false,
     load: () => import('./screens/CultureRoute')
   }),
   screen({
@@ -66,7 +63,6 @@ export const SCREENS: ScreenRoute[] = [
     icon: '💬',
     owner: 'mfe-conversation',
     ready: true,
-    inTabBar: false,
     load: () => import('./screens/ChatRoute')
   }),
   screen({
@@ -74,7 +70,6 @@ export const SCREENS: ScreenRoute[] = [
     icon: '🎭',
     owner: 'mfe-conversation',
     ready: true,
-    inTabBar: false,
     load: () => import('./screens/RoleplayRoute')
   }),
   screen({
@@ -82,7 +77,6 @@ export const SCREENS: ScreenRoute[] = [
     icon: '🎙️',
     owner: 'mfe-speech-lab',
     ready: true,
-    inTabBar: true,
     load: () => import('./screens/ToneLabRoute')
   }),
   screen({
@@ -90,7 +84,6 @@ export const SCREENS: ScreenRoute[] = [
     icon: '🗺️',
     owner: 'mfe-speech-lab',
     ready: true,
-    inTabBar: false,
     load: () => import('./screens/DialectRoute')
   }),
   screen({
@@ -98,7 +91,6 @@ export const SCREENS: ScreenRoute[] = [
     icon: '🧩',
     owner: 'mfe-practice',
     ready: true,
-    inTabBar: false,
     load: () => import('./screens/DrillRoute')
   }),
   screen({
@@ -106,7 +98,6 @@ export const SCREENS: ScreenRoute[] = [
     icon: '🧱',
     owner: 'mfe-practice',
     ready: true,
-    inTabBar: false,
     load: () => import('./screens/SentenceRoute')
   }),
   screen({
@@ -114,7 +105,6 @@ export const SCREENS: ScreenRoute[] = [
     icon: '📷',
     owner: 'mfe-vision',
     ready: true,
-    inTabBar: false,
     load: () => import('./screens/CameraRoute')
   }),
   screen({
@@ -122,23 +112,13 @@ export const SCREENS: ScreenRoute[] = [
     icon: '📈',
     owner: 'mfe-learner',
     ready: true,
-    inTabBar: false,
-    load: () => import('./screens/ProgressRoute')
-  }),
-  screen({
-    path: '/tuy-chinh',
-    icon: '⚙️',
-    owner: 'mfe-learner',
-    ready: true,
-    inTabBar: false,
-    load: () => import('./screens/PreferencesRoute')
+    load: () => import('./screens/ProfileRoute')
   }),
   screen({
     path: '/bat-dau',
     icon: '🌱',
     owner: 'mfe-learner',
     ready: true,
-    inTabBar: false,
     load: () => import('./screens/OnboardingRoute')
   })
 ];
@@ -155,7 +135,8 @@ export interface PathRoute {
 const pathRoute = (path: string, load: Loader): PathRoute => ({ path, ...lazyScreen(load) });
 
 export const REVIEW_ROUTE = pathRoute('/on-tap', () => import('./screens/ReviewRoute'));
-export const EXPLORE_ROUTE = pathRoute('/kham-pha', () => import('./screens/Explore'));
+/** Tab Luyện tập (lối vào ôn tập, phát âm, phòng thanh, luyện tập, ghép câu) — thay màn Khám phá */
+export const PRACTICE_HUB_ROUTE = pathRoute('/luyen-tap-chung', () => import('./screens/PracticeHub'));
 /** Chính sách quyền riêng tư (bản nháp) — M12 và các hộp đồng ý link tới bằng URL */
 export const PRIVACY_ROUTE = pathRoute('/quyen-rieng-tu', () => import('./screens/PrivacyRoute'));
 /** GĐ2: phòng tập thanh điệu (mfe-speech-lab), mở từ Khám phá — không tính vào 12 công cụ M1–M12 */
@@ -166,12 +147,26 @@ export const PATH_ROUTES: PathRoute[] = [
   // GĐ3: gọi thoại với Bé Cu Tít (mfe-conversation) — không nằm trong 12 công cụ của Khám phá, vào từ màn Trò chuyện
   pathRoute('/goi-thoai', () => import('./screens/CallRoute')),
   REVIEW_ROUTE,
-  EXPLORE_ROUTE,
+  PRACTICE_HUB_ROUTE,
+  pathRoute('/ban-be', () => import('./screens/FriendsRoute')),
+  pathRoute('/cai-dat', () => import('./screens/SettingsRoute')),
+  pathRoute('/cai-dat/:nhom', () => import('./screens/SettingsRoute')),
   PRIVACY_ROUTE,
   TONE_GYM_ROUTE
 ];
 
 const prefetched = new Set<string>();
+
+/** Tải trước chunk của một đường dẫn (thanh tab, lối vào chính); đường không có chunk riêng (vd. "/") bỏ qua. */
+export function prefetchPath(path: string): void {
+  const r = [...SCREENS, ...PATH_ROUTES].find((x) => x.path === path);
+  if (r) prefetchScreen(r);
+}
+
+/** Tải (và nhớ) chunk của một đường dẫn; đường không có chunk riêng ⇒ undefined (chuyển cảnh không phải chờ). */
+export function loaderOf(path: string): (() => Promise<unknown>) | undefined {
+  return [...SCREENS, ...PATH_ROUTES].find((x) => x.path === path)?.load;
+}
 
 /** Tải trước chunk khi người dùng vừa chạm vào link (trước khi nhả tay ~100ms). */
 export function prefetchScreen(route: Pick<ScreenRoute, 'path' | 'load'>): void {

@@ -142,9 +142,9 @@ test.describe('GĐ2 Nói lại câu (A3)', () => {
 });
 
 test.describe('GĐ2 Phòng tập thanh điệu', () => {
-  test('nghe phân biệt → bắt thanh 10 câu → biểu đồ tiến bộ 6 thanh; mở được từ Khám phá', async ({ page }) => {
+  test('nghe phân biệt → bắt thanh 10 câu → biểu đồ tiến bộ 6 thanh; mở được từ tab Luyện tập', async ({ page }) => {
     test.setTimeout(60_000);
-    await page.goto('/kham-pha');
+    await page.goto('/luyen-tap-chung');
     await page.getByRole('link', { name: /Phòng tập thanh điệu/ }).click();
     await expect(page).toHaveURL(/\/phong-thanh$/);
     await page.goto('/phong-thanh?seed=5');
