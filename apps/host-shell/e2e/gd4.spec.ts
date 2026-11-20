@@ -84,7 +84,7 @@ test.describe('GĐ4a Huy hiệu + tổng kết tuần', () => {
     await noOverflow(page);
 
     // song ngữ
-    await page.goto('/tuy-chinh');
+    await page.goto('/cai-dat/ngon-ngu');
     await page.getByRole('radio', { name: /English/ }).check();
     await page.goto('/');
     await expect(page.getByRole('region', { name: 'Weekly summary' })).toContainText('last week 3 lessons');
@@ -107,7 +107,7 @@ test.describe('GĐ4a Huy hiệu + tổng kết tuần', () => {
     await passTestOut(page, 'u2');
     await page.getByRole('status').filter({ hasText: 'Huy hiệu mới' }).getByRole('button', { name: 'Đã xem' }).click();
     // tạo tài khoản + mã khôi phục (đồng bộ chạy sau đó)
-    await page.goto('/tuy-chinh');
+    await page.goto('/cai-dat/tai-khoan');
     const create = page.getByRole('button', { name: 'Tạo tài khoản và mã khôi phục ngay' });
     const codeEl = page.getByTestId('recovery-code');
     await expect(create.or(codeEl)).toBeVisible();
@@ -125,7 +125,7 @@ test.describe('GĐ4a Huy hiệu + tổng kết tuần', () => {
 
     const ctx = await browser.newContext({ locale: 'vi-VN' });
     const b = await ctx.newPage();
-    await b.goto('/tuy-chinh');
+    await b.goto('/cai-dat/tai-khoan');
     await b.getByLabel('Mã khôi phục từ máy khác').fill(code);
     await b.getByRole('button', { name: 'Khôi phục trên máy này' }).click();
     await expect(b.getByText(/✓ Đã khôi phục/)).toBeVisible({ timeout: 15_000 });
