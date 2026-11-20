@@ -131,6 +131,8 @@ Effort chọn theo **rủi ro và mức mơ hồ**, không theo độ dài. Bố
 **Cách làm việc với người dùng:**
 - Có ý hay hơn đề xuất của người dùng thì phải nói ra kèm lý do trước khi làm.
 - Cần plugin, hook, skill, MCP, subagent hay phiên mới thì hỏi người dùng, đừng cố làm thiếu công cụ.
+- **Giao việc bằng phiên con, không bằng subagent chạy ngầm** (người dùng chốt 20/11/2026). Phiên chính mở phiên con từ chính nó (hiện thành các dòng lồng dưới phiên chính, người dùng mở xem và nhắn chỉnh được), chọn model theo bảng trên. Việc nào độc lập thì mở nhiều phiên con chạy đồng thời. Subagent chỉ dùng cho việc rất nhỏ cần kết quả ngay trong lượt.
+- **Làm gì cũng ghi nhật ký** (`docs/NHAT_KY_CHUYEN_DOI_MOBILE.md`, mỗi việc một dòng: làm gì, tệp nào, đã kiểm thế nào / chưa kiểm gì), kể cả việc chỉ đọc, bàn thiết kế, tạo tài nguyên. Mỗi phiên con tự ghi dòng của mình; phiên chính kiểm số dòng không trùng.
 
 > `turbo.json` đặt `"agentGuidance": false` để `pnpm build` không tự sửa tệp này (R13). Khối turbo bên dưới được giữ nguyên có chủ đích.
 
