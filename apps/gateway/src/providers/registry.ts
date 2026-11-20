@@ -103,7 +103,7 @@ export function createAiProviders(config: GatewayConfig, deps: RegistryDeps = {}
     transientOpenMs: config.AI_BREAKER_TRANSIENT_MS,
     now: deps.now
   });
-  const chainOpts: ChainOptions = { breaker, budgetMs: config.LLM_CHAIN_BUDGET_MS, now: deps.now, log: deps.log };
+  const chainOpts: ChainOptions = { breaker, budgetMs: config.LLM_CHAIN_BUDGET_MS, reserveMs: config.AI_CHAIN_RESERVE_MS, now: deps.now, log: deps.log };
   const skip = (capability: string, e: ChainEntry, why: string) => {
     skipped.push(`${capability}:${e.id} (${why})`);
     deps.log?.warn({ capability, source: e.id, why }, 'AI chain entry skipped');

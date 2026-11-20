@@ -155,7 +155,7 @@ export class OpenAiCompatLlmProvider implements LlmProvider {
       max_tokens: req.maxOutputTokens ?? 1024,
       temperature: req.temperature ?? 0.6
     };
-    const timeoutMs = req.timeoutMs ?? this.cfg.timeoutMs;
+    const timeoutMs = Math.min(req.timeoutMs ?? this.cfg.timeoutMs, this.cfg.timeoutMs);
     const mode = this.jsonModeRejected ? 'none' : (this.cfg.jsonMode ?? 'json_object');
     const withFormat = (m: JsonMode) =>
       m === 'json_schema'
@@ -216,7 +216,7 @@ export class OpenAiCompatSttClient implements SttProvider {
         method: 'POST',
         headers: this.cfg.apiKey ? { authorization: `Bearer ${this.cfg.apiKey}` } : undefined,
         body: form,
-        signal: AbortSignal.timeout(audio.timeoutMs ?? this.cfg.timeoutMs)
+        signal: AbortSignal.timeout(Math.min(audio.timeoutMs ?? this.cfg.timeoutMs, this.cfg.timeoutMs))
       });
     } catch (err) {
       throw networkError(err);

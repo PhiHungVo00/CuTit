@@ -98,6 +98,8 @@ const EnvSchema = z
     AI_BREAKER_MS: z.coerce.number().int().min(1000).default(180_000),
     AI_BREAKER_FAILURES: z.coerce.number().int().min(1).default(3),
     AI_BREAKER_TRANSIENT_MS: z.coerce.number().int().min(1000).default(60_000),
+    /** Thời gian chừa cho MỖI nguồn dự phòng phía sau khi gọi một nguồn (nguồn đầu chậm không ăn hết LLM_CHAIN_BUDGET_MS) */
+    AI_CHAIN_RESERVE_MS: z.coerce.number().int().min(0).max(5000).default(3000),
     /** Ngôn ngữ gợi ý cho STT kiểu Whisper */
     STT_LANGUAGE: z.string().regex(/^[a-z]{2,3}$/).default('vi'),
     // GĐ2 — TTS theo miền (D9). Mặc định TẮT kể cả khi có khóa: chỉ bật rõ ràng (vd. lúc chạy script dựng sẵn)

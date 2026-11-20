@@ -117,10 +117,25 @@ test('chuỗi: ngân sách thời gian chung — không bắt đầu nguồn m�
   const seen = [];
   const slow = { name: 'slow', async generateJson(req) { seen.push(req.timeoutMs); c.advance(8800); throw new LlmProviderError(504, 'llm_timeout', 'chậm'); } };
   const next = fake('next', [{ ok: 1 }]);
-  const { llm } = chain([slow, next], c);
+  const { llm } = chain([slow, next], c, { reserveMs: 0 });
   await assert.rejects(llm.generateJson(REQ), (e) => e.code === 'llm_busy');
   assert.equal(seen[0], 9000);
   assert.equal(next.calls, 0, 'chỉ còn 200 ms < ngưỡng tối thiểu');
+});
+
+test('chuỗi: nguồn đầu chậm không ăn hết ngân sách — chừa thời gian cho nguồn dự phòng (ca Gemini ~9 s thật)', async () => {
+  const c = clock();
+  const seen = [];
+  const slow = { name: 'slow', async generateJson(req) { seen.push(req.timeoutMs); c.advance(req.timeoutMs); throw new LlmProviderError(504, 'llm_timeout', 'chậm'); } };
+  const next = { name: 'next', async generateJson(req) { seen.push(req.timeoutMs); return { json: { ok: 1 }, tokens: 1 }; } };
+  const { llm } = chain([slow, next], c);
+  const r = await llm.generateJson(REQ);
+  assert.equal(r.provider, 'next', 'nguồn dự phòng vẫn được gọi sau khi nguồn đầu quá hạn');
+  assert.deepEqual(seen, [6000, 3000], 'nguồn đầu 6 s (chừa 3 s), nguồn sau nhận phần còn lại');
+  // nguồn cuối cùng được dùng hết ngân sách còn lại
+  const solo = { name: 'solo', async generateJson(req) { seen.push(req.timeoutMs); return { json: {}, tokens: 0 }; } };
+  await chain([solo], clock()).llm.generateJson(REQ);
+  assert.equal(seen.at(-1), 9000);
 });
 
 // ---------- bộ điều hợp OpenAI-compatible ----------
