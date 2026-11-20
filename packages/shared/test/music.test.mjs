@@ -11,7 +11,13 @@ class FakeAudio {
     this.loop = false;
     this.paused = true;
     this.playCalls = 0;
+    this.readyState = 4;
+    this.currentTime = 0;
+    this.listeners = {};
     audios.push(this);
+  }
+  addEventListener(type, cb) {
+    this.listeners[type] = cb;
   }
   play() {
     this.playCalls++;
@@ -28,8 +34,10 @@ globalThis.Audio = FakeAudio;
 
 const sources = [];
 let decodeCalls = 0;
+let ctxCount = 0;
 class FakeAudioContext {
   constructor() {
+    ctxCount++;
     this.state = 'running';
     this.destination = {};
   }
@@ -217,29 +225,56 @@ test('setVolume kẹp 0..1 và áp lên nguồn đang phát', async (t) => {
   music.stop();
 });
 
-test('sfx=false ⇒ playSfx không tải, không tạo nguồn phát', async (t) => {
-  setup(t, { sfx: false });
-  const before = decodeCalls;
+const sfxAudios = () => audios.filter((a) => a.src.includes('/sfx/'));
+
+test('sfx=false ⇒ playSfx không tạo phần tử, không phát', async (t) => {
+  setup(t, { sfx: false, music: false });
   playSfx('cham-nut');
   await flush();
-  assert.equal(sources.length, 0);
-  assert.equal(decodeCalls, before);
+  assert.equal(sfxAudios().length, 0);
 });
 
-test('sfx=true ⇒ playSfx phát đúng một nguồn; đang thu âm ⇒ im', async (t) => {
-  setup(t);
+test('sfx=true ⇒ playSfx phát đúng một lần; đang thu âm ⇒ im', async (t) => {
+  setup(t, { music: false });
   playSfx('dung');
   await flush();
-  await flush();
-  assert.equal(sources.length, 1);
-  assert.equal(sources[0].started, true);
+  assert.equal(sfxAudios().length, 1);
+  assert.equal(sfxAudios()[0].playCalls, 1);
 
   const release = acquireAudio('record');
   playSfx('dung');
   await flush();
-  await flush();
-  assert.equal(sources.length, 1, 'không phát hiệu ứng khi đang thu âm');
+  assert.equal(sfxAudios()[0].playCalls, 1, 'không phát hiệu ứng khi đang thu âm');
   release();
+});
+
+test('đường nóng: playSfx/unlockAudio không tạo AudioContext và không chờ tải (tệp chưa sẵn ⇒ đăng ký canplay, không chặn)', async (t) => {
+  setup(t, { music: false });
+  const ctxBefore = ctxCount;
+  const orig = FakeAudio.prototype.play;
+  // tệp chưa tải xong: handler trả về ngay, chưa phát
+  const Real = globalThis.Audio;
+  globalThis.Audio = class extends FakeAudio {
+    constructor(src) {
+      super(src);
+      this.readyState = 0;
+    }
+  };
+  playSfx('sai');
+  unlockAudio();
+  assert.equal(ctxCount, ctxBefore, 'không tạo AudioContext (tốn ~220 ms ở lần đầu trên máy yếu)');
+  const el = audios.find((a) => a.src.includes('/sai.'));
+  assert.equal(el.playCalls, 0, 'chưa tải xong ⇒ chưa phát, handler không chờ');
+  assert.ok(el.listeners.canplay, 'phát sau khi tải xong');
+  // tải xong lúc đang thu âm ⇒ không phát
+  const release = acquireAudio('record');
+  el.listeners.canplay();
+  assert.equal(el.playCalls, 0);
+  release();
+  el.listeners.canplay();
+  assert.equal(el.playCalls, 1);
+  globalThis.Audio = Real;
+  void orig;
 });
 
 test('haptic: rung đúng mẫu; tắt cài đặt hoặc không hỗ trợ ⇒ no-op', (t) => {
