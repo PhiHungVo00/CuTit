@@ -50,11 +50,18 @@ Khi một nguồn gặp **429 / 5xx / timeout / lỗi mạng / JSON không qua Z
 - **Trần toàn cục (cả app, mỗi ngày giờ VN):** `GLOBAL_MAX_TURNS_PER_DAY` (2000), `GLOBAL_MAX_LLM_TOKENS_PER_DAY` (4 000 000), `GLOBAL_MAX_STT_SECONDS_PER_DAY` (28 800 = 8 giờ, trần Whisper của Groq), `GLOBAL_MAX_VISION_PER_DAY` (500); `0` = tắt. Lưu bảng `ai_global_usage` (migration `0007`), cộng nguyên tử như `ai_usage`. Hết trần ⇒ `429 quota_exceeded` + `scope: "global"`, phần đã trừ của người dùng được hoàn. **Lỗi AI hoàn lượt NGƯỜI DÙNG nhưng chỉ hoàn trần chung khi chưa gọi nhà cung cấp nào** (mọi nguồn đang ngắt mạch/bỏ qua); lần gọi đã chạm nhà cung cấp (kể cả lỗi, JSON sai, `llm_blocked`) vẫn tính vào trần chung vì trần này bảo vệ hạn mức của nhà cung cấp. Token chỉ đếm theo **ước lượng trước khi gọi** ở trần chung (phần chênh token thật chỉ cộng vào hạn mức người dùng). Đặt các trần theo hạn mức free thật của nguồn **rẻ nhất** trong chuỗi.
 - Chưa làm: trần theo **từng nhà cung cấp** (hiện ngắt mạch sau 429 thay thế một phần); quota gọi thoại theo giây nói; gói trả phí/free.
 
-## 4. Chạy thử thật
+## 4. Số đo thật ngày 20/11/2026 và thứ tự chuỗi khuyến nghị
+
+- **Groq** `qwen/qwen3.8-27b`: `/v1/chat/turn` thật (prompt gia sư, JSON qua Zod) trả lời 0,7–0,9 s. STT `whisper-large-v3-turbo` với `docs/d9-tts-mau/cau-theo-mien/north.wav` ra đúng câu trong ~1 s.
+- **Gemini** `gemini-3.5-flash-lite`: với prompt chỉ ~20 token vẫn mất 1–7 s (thường 4–6 s), thỉnh thoảng 503 "high demand", và STT/chat thật có lúc chạm timeout 8 s. Đo bật/tắt `thinkingLevel: minimal` (12 lượt): không khác biệt có ý nghĩa; `thinkingBudget: 0` bị từ chối (400). Thinking không được tính token ⇒ **không phải do độ dài prompt hay thinking mà do độ trễ phía dịch vụ**, nên không rút gọn prompt. Cách xử lý đúng: **đặt nguồn nhanh trước, Gemini sau** (khi Gemini là nguồn cuối nó nhận toàn bộ ngân sách còn lại, ≈ 8,5 s sau hai lần 429 nhanh; đã có test).
+- **Groq free chỉ 8 000 token/phút** (header `x-ratelimit-limit-tokens`): prompt gia sư ≈ 3 000 token ⇒ cả app chỉ vài lượt chat/phút trên Groq; 429 thì ngắt mạch rồi sang nguồn kế. `gpt-oss-120b` cũng là model suy luận (có thể trả `content` rỗng nếu `max_tokens` thấp).
+- Thứ tự đề xuất đã ghi trong `.env.example`: `LLM_CHAIN=groq:qwen/qwen3.8-27b,groq:openai/gpt-oss-120b,gemini`, `STT_CHAIN=groq:whisper-large-v3-turbo,gemini`, `VISION_CHAIN=gemini,openrouter:<model vision :free>`.
+
+## 5. Chạy thử thật
 
 ```powershell
 pnpm --filter @vietlearning/gateway build
 $env:LLM_CHAIN='gemini,openrouter:google/gemma-4-31b-it:free'; node apps/gateway/scripts/ai-chain-smoke.mjs
 ```
 
-Đọc khóa từ `%USERPROFILE%\.becutit\gateway.env`, in nguồn đã trả lời, độ trễ và token; không in khóa. Thử dự phòng: `LLM_CHAIN='gemini:ten-model-khong-ton-tai,openrouter:...'` (nguồn đầu 404 ⇒ nguồn sau trả lời). Danh sách model free của OpenRouter đổi theo thời gian: `curl https://openrouter.ai/api/v1/models` rồi lọc `:free`.
+Đọc khóa từ `%USERPROFILE%\.becutit\gateway.env`, in nguồn đã trả lời, độ trễ và token; không in khóa. Thêm `ai-chat-smoke.mjs` (một lượt `/v1/chat/turn` qua `app.inject`, in `x-ai-provider` và `remaining`) và `ai-stt-smoke.mjs [tệp.wav]` (STT thật). Thử dự phòng: `LLM_CHAIN='gemini:ten-model-khong-ton-tai,openrouter:...'` (nguồn đầu 404 ⇒ nguồn sau trả lời). Danh sách model free của OpenRouter đổi theo thời gian: `curl https://openrouter.ai/api/v1/models` rồi lọc `:free`.
