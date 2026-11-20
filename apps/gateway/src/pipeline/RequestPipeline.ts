@@ -40,6 +40,17 @@ export function requireUserId(request: FastifyRequest): string {
   return p.id;
 }
 
+/**
+ * Lỗi này có nghĩa là đã gọi tới nhà cung cấp AI chưa? Hết chuỗi: theo `providerCalls`; lỗi AI khác (mã `llm_*`, vd. nội dung
+ * bị chặn, JSON sai): coi là đã gọi; lỗi khác (kiểm tra đầu vào…): chưa gọi.
+ */
+function providerWasCalled(cause: unknown): boolean {
+  if (!cause || typeof cause !== 'object') return false;
+  const calls = (cause as { providerCalls?: unknown }).providerCalls;
+  if (typeof calls === 'number') return calls > 0;
+  return typeof (cause as { code?: unknown }).code === 'string' && (cause as { code: string }).code.startsWith('llm_');
+}
+
 export class RequestPipeline {
   private readonly limits: Record<Capability, number>;
   /** trần dùng chung toàn app (0 = không giới hạn); tts không có trần chung (không tốn hạn mức nhà cung cấp AI) */
@@ -141,18 +152,22 @@ export class RequestPipeline {
     return r.used;
   }
 
-  /** Hoàn trả hạn mức đã trừ (người dùng + trần chung). Không ném lỗi. */
-  async refund(request: FastifyRequest, capability: Capability, units: number): Promise<void> {
+  /**
+   * Hoàn trả hạn mức đã trừ. Không ném lỗi. Hạn mức NGƯỜI DÙNG luôn được hoàn (AI lỗi không trừ lượt). Trần DÙNG CHUNG chỉ
+   * hoàn khi `includeGlobal`: trần này bảo vệ hạn mức của nhà cung cấp nên lần gọi đã chạm nhà cung cấp (kể cả khi lỗi/JSON sai)
+   * vẫn được tính; chỉ hoàn khi chưa gọi nhà cung cấp nào.
+   */
+  async refund(request: FastifyRequest, capability: Capability, units: number, includeGlobal = true): Promise<void> {
     if (units <= 0) return;
     await this.quota.refund(this.principalId(request), capability, units).catch(() => undefined);
-    if (this.globalQuota && (this.globalLimits[capability] ?? 0) > 0) await this.globalQuota.refund(capability, units).catch(() => undefined);
+    if (includeGlobal && this.globalQuota && (this.globalLimits[capability] ?? 0) > 0) await this.globalQuota.refund(capability, units).catch(() => undefined);
   }
 
   /**
    * Trừ nhiều khoản cùng lúc; khoản sau thất bại thì hoàn các khoản trước. Trả `hold.refund()` (chạy một lần):
    * AI lỗi / hết chuỗi dự phòng => gọi refund => KHÔNG trừ lượt của người dùng.
    */
-  async reserve(request: FastifyRequest, charges: [Capability, number][]): Promise<{ refund: () => Promise<void> }> {
+  async reserve(request: FastifyRequest, charges: [Capability, number][]): Promise<{ refund: (cause?: unknown) => Promise<void> }> {
     const done: [Capability, number][] = [];
     try {
       for (const [cap, units] of charges) {
@@ -165,10 +180,11 @@ export class RequestPipeline {
     }
     let refunded = false;
     return {
-      refund: async () => {
+      refund: async (cause?: unknown) => {
         if (refunded) return;
         refunded = true;
-        await Promise.all(done.map(([c, u]) => this.refund(request, c, u)));
+        const includeGlobal = !providerWasCalled(cause);
+        await Promise.all(done.map(([c, u]) => this.refund(request, c, u, includeGlobal)));
       }
     };
   }
@@ -179,7 +195,7 @@ export class RequestPipeline {
     try {
       return await fn();
     } catch (err) {
-      await hold.refund();
+      await hold.refund(err);
       throw err;
     }
   }

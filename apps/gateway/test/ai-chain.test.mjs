@@ -189,6 +189,36 @@ test('OpenAI-compatible LLM: json_schema khi cấu hình; response_format bị t
   assert.deepEqual(extractJsonObject('lời dẫn {"a":{"b":"}"}} đuôi'), { a: { b: '}' } });
 });
 
+test('OpenAI-compatible LLM: 400 vì lý do khác (cả hai lần) KHÔNG làm nhà cung cấp bị coi là "không hỗ trợ JSON mode"; lần thử lại chỉ dùng phần thời gian còn lại', async () => {
+  const sent = [];
+  const timeouts = [];
+  let mode = 'bad-model';
+  const p = compat(async (_u, init) => {
+    const b = JSON.parse(init.body);
+    sent.push(b.response_format);
+    timeouts.push(init.signal);
+    if (mode === 'bad-model') return new Response('{"error":"model không tồn tại"}', { status: 400 });
+    return okBody('{"a":1}');
+  });
+  await assert.rejects(p.generateJson(REQ), (e) => e.code === 'llm_unavailable');
+  assert.deepEqual(sent, [{ type: 'json_object' }, undefined], 'đã thử lại không có response_format');
+  mode = 'ok';
+  await p.generateJson(REQ);
+  assert.deepEqual(sent[2], { type: 'json_object' }, 'vẫn gửi response_format ở lần sau');
+  // hết thời gian ngay sau lần đầu => không thử lại lần hai (không nhân đôi thời gian)
+  const tiny = compat(async (_u, init) => { sent.push('tiny'); await new Promise((r) => setTimeout(r, 40)); return new Response('{}', { status: 400 }); }, { timeoutMs: 400 });
+  sent.length = 0;
+  await assert.rejects(tiny.generateJson({ ...REQ, timeoutMs: 450 }), (e) => e.code === 'llm_unavailable');
+  assert.equal(sent.length, 1, 'còn < 500 ms => không thử lại');
+});
+
+test('chuỗi: hết chuỗi mang providerCalls (0 khi mọi nguồn đang ngắt mạch)', async () => {
+  const a = fake('a', [busy()]);
+  const { llm } = chain([a]);
+  await assert.rejects(llm.generateJson(REQ), (e) => e.providerCalls === 1);
+  await assert.rejects(llm.generateJson(REQ), (e) => e.providerCalls === 0);
+});
+
 test('OpenAI-compatible LLM (vision): ảnh => message image_url data URI; nguồn không bật vision từ chối ảnh; âm thanh luôn từ chối', async () => {
   let body;
   const v = compat(async (_u, init) => { body = JSON.parse(init.body); return okBody('{"items":[]}'); }, { vision: true });

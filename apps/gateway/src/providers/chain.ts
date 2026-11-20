@@ -113,6 +113,7 @@ async function runChain<T, R>(
   const minAttempt = opts.minAttemptMs ?? 500;
   const failed: string[] = [];
   let retryAfterMs: number | undefined;
+  let providerCalls = 0;
 
   const reserve = opts.reserveMs ?? 3000;
   for (const [idx, s] of sources.entries()) {
@@ -129,9 +130,11 @@ async function runChain<T, R>(
       break;
     }
     // nguồn còn dùng được phía sau => chừa thời gian cho chúng
-    const later = sources.slice(idx + 1).filter((x) => usable(x.item) && !opts.breaker.isOpen(x.id)).length;
-    const attemptMs = Math.max(minAttempt, remaining - later * reserve);
+    // (chừa cho MỘT nguồn kế tiếp, không nhân theo số nguồn: nguồn chính không bị chia nhỏ ngân sách khi chuỗi dài)
+    const hasLater = sources.slice(idx + 1).some((x) => usable(x.item) && !opts.breaker.isOpen(x.id));
+    const attemptMs = Math.max(minAttempt, remaining - (hasLater ? reserve : 0));
     const t0 = now();
+    providerCalls++;
     try {
       const { result, ok } = await call(s.item, attemptMs);
       if (!ok) {
@@ -153,7 +156,17 @@ async function runChain<T, R>(
 
   opts.log?.warn({ chain: label, tried: failed }, 'AI chain exhausted');
   const retryAfterSec = retryAfterMs && retryAfterMs > 0 ? Math.min(Math.ceil(retryAfterMs / 1000), 300) : undefined;
-  throw new GatewayError(503, 'llm_busy', 'Cu Tít đang bận, thử lại sau ít giây', retryAfterSec ? { retryAfterSec } : undefined);
+  throw new ChainExhaustedError(providerCalls, retryAfterSec);
+}
+
+/**
+ * Hết chuỗi => 503 llm_busy. `providerCalls` = số lần THỰC SỰ gọi nhà cung cấp (0 = mọi nguồn đang ngắt mạch/bị bỏ qua):
+ * quyết định có hoàn trần dùng chung cả app hay không (gọi thật thì đã đốt hạn mức nhà cung cấp, xem RequestPipeline).
+ */
+export class ChainExhaustedError extends GatewayError {
+  constructor(public readonly providerCalls: number, retryAfterSec?: number) {
+    super(503, 'llm_busy', 'Cu Tít đang bận, thử lại sau ít giây', retryAfterSec ? { retryAfterSec } : undefined);
+  }
 }
 
 export interface LlmChainSource {

@@ -61,11 +61,12 @@ export const chatRoutes: FastifyPluginAsync<RouteDeps> = async (server, { pipeli
           mode: body.mode
         });
       } catch (err) {
-        await hold.refund();
+        await hold.refund(err);
         throw err;
       }
-      const remaining = await pipeline.remaining(request).catch(() => undefined);
       if (turn.tokens > estimatedTokens) await pipeline.addUsage(request, 'llm', turn.tokens - estimatedTokens).catch(() => undefined);
+      // Đọc SAU khi bù token thật để llmTokens còn lại không bị ước cao
+      const remaining = await pipeline.remaining(request).catch(() => undefined);
       // GĐ3: KHÔNG tổng hợp giọng ở đây — chờ TTS làm chậm cả lượt (dưới watchdog 15 s của client) và đốt hạn mức
       // TTS cho cả chat gõ. Màn gọi thoại tự gọi /v1/speech/synthesize sau `done`, lỗi thì dùng TTS của máy.
       const audioUrl: string | undefined = undefined;
