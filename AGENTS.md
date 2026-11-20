@@ -122,6 +122,8 @@ Effort chọn theo **rủi ro và mức mơ hồ**, không theo độ dài. Bố
 - `dung-am-thanh`
 - `chup-man-hinh-app`
 
+**Plugin đã cài:** code-review, Axe Accessibility, Android Emulator QA, Playwright MCP, security review, TypeScript LSP (cách dùng trong skill `kiem-truoc-khi-gop`).
+
 **Hook** (`.claude/settings.json`):
 - chặn sửa migration đã phát hành;
 - chặn commit `AGENTS.md` khi turbo tự sửa.
