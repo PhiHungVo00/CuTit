@@ -329,3 +329,14 @@ test('registry: cloudflare cần CLOUDFLARE_ACCOUNT_ID; nhà cung cấp tùy ý 
   // chuỗi LLM mặc định KHÔNG nhận ảnh (nguồn chưa khai báo vision) => ảnh bị bỏ qua => llm_busy
   await assert.rejects(r.llm.generateJson(IMG), (e) => e.code === 'llm_busy');
 });
+
+test('chuỗi thực tế groq,groq,gemini: hai nguồn nhanh 429 xong thì Gemini chậm (7 s) vẫn được dùng gần hết ngân sách còn lại', async () => {
+  const c = clock();
+  const fast = (n) => ({ name: n, async generateJson() { c.advance(400); throw new LlmProviderError(503, 'llm_busy', '429', 429); } });
+  const seen = [];
+  const gemini = { name: 'gemini', async generateJson(req) { seen.push(req.timeoutMs); c.advance(7000); return { json: { ok: 1 }, tokens: 1 }; } };
+  const { llm } = chain([fast('g1'), fast('g2'), gemini], c);
+  const r = await llm.generateJson(REQ);
+  assert.equal(r.provider, 'gemini');
+  assert.equal(seen[0], 9000 - 800, 'nguồn cuối nhận toàn bộ ngân sách còn lại, không bị trừ phần chừa');
+});
