@@ -1,6 +1,7 @@
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import type { GatewayConfig } from '../config.js';
-import { quotaResetAt, type Capability, type QuotaStore } from './QuotaStore.js';
+import { quotaResetAt, type Capability, type GlobalQuotaStore, type QuotaStore } from './QuotaStore.js';
+import type { Remaining } from '@vietlearning/contracts';
 import { and, eq, isNull } from 'drizzle-orm';
 import { schema, type DbProvider } from '../db/client.js';
 import { AuditLog } from '../services/audit/audit.js';
@@ -41,16 +42,24 @@ export function requireUserId(request: FastifyRequest): string {
 
 export class RequestPipeline {
   private readonly limits: Record<Capability, number>;
+  /** trần dùng chung toàn app (0 = không giới hạn); tts không có trần chung (không tốn hạn mức nhà cung cấp AI) */
+  private readonly globalLimits: Partial<Record<Capability, number>>;
 
   private knownUsers = new Map<string, number>();
 
-  constructor(private config: GatewayConfig, private quota: QuotaStore, private db: DbProvider, private audit?: AuditLog) {
+  constructor(private config: GatewayConfig, private quota: QuotaStore, private db: DbProvider, private audit?: AuditLog, private globalQuota?: GlobalQuotaStore) {
     this.limits = {
       tts: config.MAX_TTS_CHARS_PER_DAY,
       stt: config.MAX_STT_SECONDS_PER_DAY,
       llm: config.MAX_LLM_TOKENS_PER_DAY,
       vision: 200,
       turn: config.MAX_CHAT_TURNS_PER_DAY
+    };
+    this.globalLimits = {
+      turn: config.GLOBAL_MAX_TURNS_PER_DAY,
+      llm: config.GLOBAL_MAX_LLM_TOKENS_PER_DAY,
+      stt: config.GLOBAL_MAX_STT_SECONDS_PER_DAY,
+      vision: config.GLOBAL_MAX_VISION_PER_DAY
     };
   }
 
@@ -111,7 +120,9 @@ export class RequestPipeline {
 
   /**
    * Mắt xích 2: trừ hạn mức theo năng lực (nguyên tử, lưu DB). Gọi trong handler trước khi gọi Provider trả phí.
-   * Hết hạn mức => 429 { error: 'quota_exceeded', capability, resetAt }. Trả tổng đã dùng hôm nay.
+   * Hết hạn mức người dùng => 429 { error: 'quota_exceeded', capability, resetAt }.
+   * Hết TRẦN DÙNG CHUNG cả app => cùng mã, thêm scope: 'global' (phần đã trừ của người dùng được hoàn lại).
+   * Trả tổng đã dùng hôm nay của người dùng.
    */
   async consume(request: FastifyRequest, capability: Capability, units: number): Promise<number> {
     const id = this.principalId(request);
@@ -119,7 +130,65 @@ export class RequestPipeline {
     if (!r.ok) {
       throw new GatewayError(429, 'quota_exceeded', `Đã hết hạn mức ${capability} hôm nay`, { capability, resetAt: quotaResetAt() });
     }
+    const globalLimit = this.globalLimits[capability] ?? 0;
+    if (this.globalQuota && globalLimit > 0) {
+      const g = await this.globalQuota.tryConsume(capability, units, globalLimit);
+      if (!g.ok) {
+        await this.quota.refund(id, capability, units).catch(() => undefined);
+        throw new GatewayError(429, 'quota_exceeded', 'Cu Tít hôm nay đã học rất nhiều, mai quay lại nhé', { capability, resetAt: quotaResetAt(), scope: 'global' });
+      }
+    }
     return r.used;
+  }
+
+  /** Hoàn trả hạn mức đã trừ (người dùng + trần chung). Không ném lỗi. */
+  async refund(request: FastifyRequest, capability: Capability, units: number): Promise<void> {
+    if (units <= 0) return;
+    await this.quota.refund(this.principalId(request), capability, units).catch(() => undefined);
+    if (this.globalQuota && (this.globalLimits[capability] ?? 0) > 0) await this.globalQuota.refund(capability, units).catch(() => undefined);
+  }
+
+  /**
+   * Trừ nhiều khoản cùng lúc; khoản sau thất bại thì hoàn các khoản trước. Trả `hold.refund()` (chạy một lần):
+   * AI lỗi / hết chuỗi dự phòng => gọi refund => KHÔNG trừ lượt của người dùng.
+   */
+  async reserve(request: FastifyRequest, charges: [Capability, number][]): Promise<{ refund: () => Promise<void> }> {
+    const done: [Capability, number][] = [];
+    try {
+      for (const [cap, units] of charges) {
+        await this.consume(request, cap, units);
+        done.push([cap, units]);
+      }
+    } catch (err) {
+      await Promise.all(done.map(([c, u]) => this.refund(request, c, u)));
+      throw err;
+    }
+    let refunded = false;
+    return {
+      refund: async () => {
+        if (refunded) return;
+        refunded = true;
+        await Promise.all(done.map(([c, u]) => this.refund(request, c, u)));
+      }
+    };
+  }
+
+  /** reserve + chạy `fn`; `fn` ném lỗi => hoàn lại rồi ném tiếp */
+  async run<T>(request: FastifyRequest, charges: [Capability, number][], fn: () => Promise<T>): Promise<T> {
+    const hold = await this.reserve(request, charges);
+    try {
+      return await fn();
+    } catch (err) {
+      await hold.refund();
+      throw err;
+    }
+  }
+
+  /** Hạn mức còn lại hôm nay (đính vào kết quả mọi route AI để giao diện hiện "Còn N lượt") */
+  async remaining(request: FastifyRequest): Promise<Remaining> {
+    const used = await this.quota.getAll(this.principalId(request));
+    const left = (cap: Capability) => Math.max(0, this.limits[cap] - used[cap]);
+    return { turns: left('turn'), llmTokens: left('llm'), sttSeconds: left('stt'), visionImages: left('vision') };
   }
 
   /** Cộng phần chênh lệch sau khi biết chi phí thật (không chặn, không ném lỗi hạn mức) */

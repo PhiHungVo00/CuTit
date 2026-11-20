@@ -33,6 +33,12 @@ const boolFromEnv = z
 const blankToUndefined = (source: NodeJS.ProcessEnv): NodeJS.ProcessEnv =>
   Object.fromEntries(Object.entries(source).filter(([, v]) => v !== undefined && v.trim() !== ''));
 
+/** `a,b:model,c:org/model:free` — ký tự cho tên + model (có `/`, `:`, `.`, `-`, `_`, `@`) */
+const CHAIN_RE = /^[\w.@/-]+(:[\w.@/:+-]+)?(,[\w.@/-]+(:[\w.@/:+-]+)?)*$/;
+
+/** Biến môi trường của các nhà cung cấp AI kiểu OpenAI-compatible (khóa, URL, chế độ JSON): đọc trực tiếp ở providers/registry.ts */
+const AI_ENV_RE = /^[A-Z][A-Z0-9_]*_(API_KEY|API_TOKEN|BASE_URL|JSON_MODE|ACCOUNT_ID)$/;
+
 const EnvSchema = z
   .object({
     NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
@@ -61,6 +67,15 @@ const EnvSchema = z
     MAX_LLM_TOKENS_PER_DAY: z.coerce.number().int().positive().default(100000),
     /** GĐ3: số lượt hội thoại AI (chat, nhập vai, gọi thoại) mỗi tài khoản mỗi ngày UTC */
     MAX_CHAT_TURNS_PER_DAY: z.coerce.number().int().positive().default(60),
+    /**
+     * TRẦN DÙNG CHUNG CẢ APP mỗi ngày (giờ Việt Nam), tách khỏi hạn mức từng người: chặn cả app đốt hết hạn mức miễn phí
+     * của nhà cung cấp AI. 0 = không giới hạn. Mặc định ≈ hạn mức hàng ngày của tầng miễn phí hay gặp (Groq: 1 000 yêu cầu,
+     * 8 giờ âm thanh). Hết trần => 429 quota_exceeded kèm scope: "global" (không trừ gì của người dùng).
+     */
+    GLOBAL_MAX_TURNS_PER_DAY: z.coerce.number().int().min(0).default(2000),
+    GLOBAL_MAX_LLM_TOKENS_PER_DAY: z.coerce.number().int().min(0).default(4_000_000),
+    GLOBAL_MAX_STT_SECONDS_PER_DAY: z.coerce.number().int().min(0).default(28_800),
+    GLOBAL_MAX_VISION_PER_DAY: z.coerce.number().int().min(0).default(500),
     AUDIO_BODY_LIMIT_MB: z.coerce.number().positive().default(8),
     // LLM + Vision (Nguyên tắc 1, 2, 4): khóa chỉ nằm ở server. Không đặt => Gateway dùng bộ giả lập (mock: true)
     // Giá trị giữ chỗ trong .env cũ (vd. "AIzaSy...") hoặc quá ngắn => coi như CHƯA cấu hình (chạy bộ giả lập),
@@ -71,6 +86,20 @@ const EnvSchema = z
       .transform((v) => (v && v.length >= 20 && !v.includes('...') ? v : undefined)),
     GEMINI_MODEL: z.string().regex(/^[a-z0-9.-]+$/).default('gemini-3.5-flash-lite'),
     LLM_TIMEOUT_MS: z.coerce.number().int().positive().max(9000, "LLM_TIMEOUT_MS phải nhỏ hơn timeout 10 giây của client (ảnh, giọng nói)").default(8000),
+    // Chuỗi dự phòng theo năng lực: `nhà_cung_cấp[:model]` cách nhau bằng dấu phẩy, thử từ trái sang phải.
+    // Vd. LLM_CHAIN=gemini,openrouter:google/gemma-3-27b-it:free,groq:openai/gpt-oss-120b (xem docs/van-hanh/AI-CHUOI-DU-PHONG.md)
+    // Không đặt: LLM_CHAIN/STT_CHAIN/VISION_CHAIN = "gemini" nếu có GEMINI_API_KEY (hành vi cũ), không có => bộ giả lập.
+    LLM_CHAIN: z.string().regex(CHAIN_RE, 'LLM_CHAIN: danh sách nhà_cung_cấp[:model] cách nhau bằng dấu phẩy').optional(),
+    STT_CHAIN: z.string().regex(CHAIN_RE, 'STT_CHAIN: danh sách nhà_cung_cấp[:model] cách nhau bằng dấu phẩy').optional(),
+    VISION_CHAIN: z.string().regex(CHAIN_RE, 'VISION_CHAIN: danh sách nhà_cung_cấp[:model] cách nhau bằng dấu phẩy').optional(),
+    /** Tổng thời gian cho cả chuỗi (client chờ ~10 s): các nguồn chia nhau ngân sách này */
+    LLM_CHAIN_BUDGET_MS: z.coerce.number().int().min(1000).max(9500).default(9000),
+    /** Ngắt mạch: nghỉ bao lâu sau 429/lỗi cấu hình (ms), số lỗi tạm thời liên tiếp, thời gian nghỉ sau chuỗi lỗi đó */
+    AI_BREAKER_MS: z.coerce.number().int().min(1000).default(180_000),
+    AI_BREAKER_FAILURES: z.coerce.number().int().min(1).default(3),
+    AI_BREAKER_TRANSIENT_MS: z.coerce.number().int().min(1000).default(60_000),
+    /** Ngôn ngữ gợi ý cho STT kiểu Whisper */
+    STT_LANGUAGE: z.string().regex(/^[a-z]{2,3}$/).default('vi'),
     // GĐ2 — TTS theo miền (D9). Mặc định TẮT kể cả khi có khóa: chỉ bật rõ ràng (vd. lúc chạy script dựng sẵn)
     // 'openai-compatible' = máy chủ kiểu OpenAI /v1/audio/speech (vd. tools/tts-local chạy VieNeu-TTS trên máy, miễn phí)
     TTS_PROVIDER: z.enum(['none', 'gemini', 'openai-compatible']).default('none'),
@@ -128,7 +157,10 @@ const EnvSchema = z
     }
   });
 
-export type GatewayConfig = z.infer<typeof EnvSchema>;
+export type GatewayConfig = z.infer<typeof EnvSchema> & {
+  /** `<ID>_API_KEY` / `_BASE_URL` / `_JSON_MODE` / `CLOUDFLARE_ACCOUNT_ID`… (không dùng để log) */
+  aiEnv: Record<string, string>;
+};
 
 export function loadConfig(source: NodeJS.ProcessEnv = process.env): GatewayConfig {
   const parsed = EnvSchema.safeParse(blankToUndefined(source));
@@ -136,5 +168,6 @@ export function loadConfig(source: NodeJS.ProcessEnv = process.env): GatewayConf
     const detail = parsed.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`).join('\n  ');
     throw new Error(`Cấu hình Gateway không hợp lệ:\n  ${detail}`);
   }
-  return parsed.data;
+  const aiEnv = Object.fromEntries(Object.entries(blankToUndefined(source)).filter(([k]) => AI_ENV_RE.test(k))) as Record<string, string>;
+  return { ...parsed.data, aiEnv };
 }

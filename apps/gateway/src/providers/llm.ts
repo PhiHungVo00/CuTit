@@ -20,17 +20,54 @@ export interface JsonRequest {
   schema: Record<string, unknown>;
   maxOutputTokens?: number;
   temperature?: number;
+  /**
+   * Bộ kiểm đầu ra của nơi gọi (thường là `schema.safeParse(json).success`, Nguyên tắc 6). Dùng trong chuỗi dự phòng:
+   * JSON sai => thử nguồn kế thay vì trả lỗi. Không đặt => chuỗi chỉ kiểm "là JSON".
+   */
+  accept?: (json: unknown) => boolean;
+  /** Giới hạn thời gian riêng cho lần gọi này (chuỗi dự phòng chia ngân sách thời gian giữa các nguồn) */
+  timeoutMs?: number;
 }
 
 export interface JsonResult {
   json: unknown;
   /** tổng token thật nhà cung cấp tính (để đối soát quota) */
   tokens: number;
+  /** nguồn đã trả lời (vd. "openrouter:google/gemma-3-27b-it:free"); chỉ tên, không bao giờ chứa khóa */
+  provider?: string;
 }
 
 export interface LlmProvider {
   readonly name: string;
+  /** Nhận ảnh (`inline` image/*) trong lượt hội thoại. Vắng = coi như CÓ (tương thích bản cũ). */
+  readonly supportsImage?: boolean;
+  /** Nhận âm thanh (`inline` audio/*) trong lượt hội thoại. Vắng = coi như CÓ. */
+  readonly supportsAudio?: boolean;
   generateJson(req: JsonRequest): Promise<JsonResult>;
+}
+
+/** Lỗi từ nhà cung cấp AI, kèm thông tin để chuỗi dự phòng/ngắt mạch quyết định (không xuống client) */
+export class LlmProviderError extends GatewayError {
+  constructor(
+    statusCode: number,
+    code: string,
+    message: string,
+    /** mã HTTP của nhà cung cấp (nếu có) */
+    public readonly upstreamStatus?: number,
+    /** nhà cung cấp gợi ý chờ (Retry-After), ms */
+    public readonly retryAfterMs?: number
+  ) {
+    super(statusCode, code, message);
+  }
+}
+
+/** Retry-After (giây hoặc ngày HTTP) -> ms; không hợp lệ => undefined */
+export function parseRetryAfter(value: string | null): number | undefined {
+  if (!value) return undefined;
+  const sec = Number(value);
+  if (Number.isFinite(sec) && sec > 0) return Math.min(sec, 3600) * 1000;
+  const at = Date.parse(value);
+  return Number.isNaN(at) ? undefined : Math.min(Math.max(at - Date.now(), 0), 3600_000) || undefined;
 }
 
 interface GeminiResponse {
@@ -44,6 +81,8 @@ const ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/models';
 /** Bộ điều hợp Gemini (REST generateContent). Khóa gửi qua header, không bao giờ nằm trong URL hay log. */
 export class GeminiProvider implements LlmProvider {
   readonly name = 'gemini';
+  readonly supportsImage = true;
+  readonly supportsAudio = true;
 
   constructor(
     private readonly apiKey: string,
@@ -73,17 +112,17 @@ export class GeminiProvider implements LlmProvider {
         method: 'POST',
         headers: { 'content-type': 'application/json', 'x-goog-api-key': this.apiKey },
         body: JSON.stringify(body),
-        signal: AbortSignal.timeout(this.timeoutMs)
+        signal: AbortSignal.timeout(req.timeoutMs ?? this.timeoutMs)
       });
     } catch (err) {
       const timeout = (err as Error).name === 'TimeoutError' || (err as Error).name === 'AbortError';
-      throw new GatewayError(timeout ? 504 : 502, timeout ? 'llm_timeout' : 'llm_unavailable', timeout ? 'Dịch vụ AI phản hồi quá lâu' : 'Không kết nối được dịch vụ AI');
+      throw new LlmProviderError(timeout ? 504 : 502, timeout ? 'llm_timeout' : 'llm_unavailable', timeout ? 'Dịch vụ AI phản hồi quá lâu' : 'Không kết nối được dịch vụ AI');
     }
 
     if (!res.ok) {
       // Không chuyển nguyên văn lỗi nhà cung cấp xuống client (có thể lộ chi tiết cấu hình)
       const status = res.status === 429 ? 503 : 502;
-      throw new GatewayError(status, res.status === 429 ? 'llm_busy' : 'llm_unavailable', `Dịch vụ AI lỗi (${res.status})`);
+      throw new LlmProviderError(status, res.status === 429 ? 'llm_busy' : 'llm_unavailable', `Dịch vụ AI lỗi (${res.status})`, res.status, parseRetryAfter(res.headers.get('retry-after')));
     }
 
     const data = (await res.json()) as GeminiResponse;
@@ -93,14 +132,8 @@ export class GeminiProvider implements LlmProvider {
     try {
       json = JSON.parse(text);
     } catch {
-      throw new GatewayError(502, 'llm_bad_output', 'Dịch vụ AI trả về dữ liệu không đúng định dạng');
+      throw new LlmProviderError(502, 'llm_bad_output', 'Dịch vụ AI trả về dữ liệu không đúng định dạng');
     }
-    return { json, tokens: data.usageMetadata?.totalTokenCount ?? 0 };
+    return { json, tokens: data.usageMetadata?.totalTokenCount ?? 0, provider: `gemini:${this.model}` };
   }
-}
-
-/** Có khóa => nhà cung cấp thật; không có => null (nơi gọi dùng bộ giả lập và gắn mock: true) */
-export function createLlmProvider(config: GatewayConfig): LlmProvider | null {
-  if (!config.GEMINI_API_KEY) return null;
-  return new GeminiProvider(config.GEMINI_API_KEY, config.GEMINI_MODEL, config.LLM_TIMEOUT_MS);
 }

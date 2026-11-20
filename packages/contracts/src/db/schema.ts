@@ -294,7 +294,9 @@ export const deletedAccounts = pgTable('deleted_accounts', {
 });
 
 /**
- * 19. Hạn mức AI theo ngày (GĐ3): bộ đếm theo người dùng × năng lực × ngày UTC CỦA SERVER.
+ * 19. Hạn mức AI theo ngày (GĐ3): bộ đếm theo người dùng × năng lực × ngày CỦA SERVER.
+ * Từ migration 0007 "ngày" là ngày theo GIỜ VIỆT NAM (UTC+7, 'YYYY-MM-DD'); tên cột `usage_day_utc` giữ nguyên vì
+ * đổi tên cột là migration phá vỡ không cần thiết (giá trị chuỗi vẫn cùng dạng, không cần chuyển dữ liệu cũ).
  * Khác quy ước `day` (ngày địa phương do client gửi) ở các bảng khác: hạn mức không được để client tự chọn ngày.
  * capability: 'turn' (lượt hội thoại) | 'llm' (token) | 'stt' (giây) | 'tts' (ký tự) | 'vision' (ảnh)
  */
@@ -308,6 +310,21 @@ export const aiUsage = pgTable(
     updatedAt: ts('updated_at').notNull().defaultNow()
   },
   (t) => [primaryKey({ columns: [t.userId, t.usageDayUtc, t.capability] })]
+);
+
+/**
+ * 19b. Trần dùng chung CẢ APP theo ngày giờ Việt Nam × năng lực (không theo người dùng): chặn việc cả app đốt hết
+ * hạn mức miễn phí của nhà cung cấp AI. Cùng quy ước đếm nguyên tử với `ai_usage`.
+ */
+export const aiGlobalUsage = pgTable(
+  'ai_global_usage',
+  {
+    usageDay: text('usage_day').notNull(),
+    capability: text('capability').notNull(),
+    units: integer('units').notNull().default(0),
+    updatedAt: ts('updated_at').notNull().defaultNow()
+  },
+  (t) => [primaryKey({ columns: [t.usageDay, t.capability] })]
 );
 
 /**

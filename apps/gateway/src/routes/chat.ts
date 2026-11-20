@@ -32,46 +32,58 @@ export const chatRoutes: FastifyPluginAsync<RouteDeps> = async (server, { pipeli
     const scenario = body.scenarioId ? ROLEPLAY_SCENARIOS.find((s) => s.id === body.scenarioId) : undefined;
     if (body.scenarioId && !scenario) return reply.status(404).send({ error: 'unknown_scenario' });
 
-    // GĐ3: một lượt hội thoại AI (đơn vị người học hiểu được, báo "hết lượt" rõ ràng); lưu DB theo ngày UTC
-    const turnsUsed = await pipeline.consume(request, 'turn', 1);
-    const turnsLeft = Math.max(0, pipeline.limit('turn') - turnsUsed);
-    // Trừ quota theo ước lượng TRƯỚC khi gọi AI (chặn sớm khi hết hạn mức); sau đó bù phần chênh theo token thật
+    // GĐ3: một lượt hội thoại AI (đơn vị người học hiểu được, báo "hết lượt" rõ ràng); lưu DB theo ngày giờ Việt Nam.
+    // Trừ theo ước lượng TRƯỚC khi gọi AI (chặn sớm khi hết hạn mức); sau đó bù phần chênh theo token thật.
+    // AI lỗi / hết chuỗi dự phòng (llm_busy) => hold.refund(): KHÔNG trừ lượt của người dùng.
     const historyChars = body.history.reduce((a, h) => a + h.text.length, 0);
     const estimatedTokens = Math.ceil(((body.userText?.length ?? 200) + historyChars) / 3) + 300;
-    await pipeline.consume(request, 'llm', estimatedTokens);
+    const hold = await pipeline.reserve(request, [
+      ['turn', 1],
+      ['llm', estimatedTokens]
+    ]);
 
     const userText = body.userText ?? 'Xin chào Cu Tít';
     const turnId = randomUUID();
 
     /** Gọi gia sư (AI hoặc bộ giả lập) rồi TTS nếu có; tutor.turn không ném lỗi (lỗi AI => bộ giả lập) */
     const produce = async () => {
-      const turn = await tutor.turn({
-        userText,
-        history: body.history,
-        scenario,
-        correctionLevel: body.correctionLevel,
-        persona: body.persona,
-        dialect: body.targetDialect,
-        level: body.learnerLevel,
-        explanationLanguage: body.explanationLanguage,
-        mode: body.mode
-      });
+      let turn: Awaited<ReturnType<typeof tutor.turn>>;
+      try {
+        turn = await tutor.turn({
+          userText,
+          history: body.history,
+          scenario,
+          correctionLevel: body.correctionLevel,
+          persona: body.persona,
+          dialect: body.targetDialect,
+          level: body.learnerLevel,
+          explanationLanguage: body.explanationLanguage,
+          mode: body.mode
+        });
+      } catch (err) {
+        await hold.refund();
+        throw err;
+      }
+      const remaining = await pipeline.remaining(request).catch(() => undefined);
       if (turn.tokens > estimatedTokens) await pipeline.addUsage(request, 'llm', turn.tokens - estimatedTokens).catch(() => undefined);
       // GĐ3: KHÔNG tổng hợp giọng ở đây — chờ TTS làm chậm cả lượt (dưới watchdog 15 s của client) và đốt hạn mức
       // TTS cho cả chat gõ. Màn gọi thoại tự gọi /v1/speech/synthesize sau `done`, lỗi thì dùng TTS của máy.
       const audioUrl: string | undefined = undefined;
-      return { turn, audioUrl };
+      return { turn, audioUrl, remaining };
     };
 
     if (!String(request.headers.accept ?? '').includes('text/event-stream')) {
-      const { turn, audioUrl } = await produce();
+      const { turn, audioUrl, remaining } = await produce();
+      // Nguồn AI đã trả lời (tên nguồn, không có khóa) — chỉ để vận hành/gỡ lỗi; SSE không đặt được vì header đã gửi trước khi gọi AI
+      if (turn.provider) reply.header('x-ai-provider', turn.provider);
       return respond(VoiceTurnResponseSchema, {
         turnId,
         transcript: userText,
         correctedText: turn.correction?.corrected,
         explanation: turn.correction?.explanation,
         audioUrl,
-        uiBlocks: turn.blocks
+        uiBlocks: turn.blocks,
+        remaining
       });
     }
 
@@ -85,7 +97,7 @@ export const chatRoutes: FastifyPluginAsync<RouteDeps> = async (server, { pipeli
         yield sse({ type: 'error', code: (err as { code?: string }).code ?? 'internal_error', message: (err as Error).message });
         return;
       }
-      const { turn, audioUrl } = produced;
+      const { turn, audioUrl, remaining } = produced;
       // AI thật đã sinh xong cả câu (cần JSON hoàn chỉnh để xác thực bằng Zod) => phát chữ nhanh hơn bộ giả lập
       const tokenDelay = config.NODE_ENV === 'test' ? 0 : turn.mock ? 35 : 12;
       for (const w of turn.reply.split(/(?<=\s)/)) {
@@ -94,7 +106,7 @@ export const chatRoutes: FastifyPluginAsync<RouteDeps> = async (server, { pipeli
       }
       if (turn.correction) yield sse({ type: 'correction', correction: turn.correction });
       if (turn.blocks.length) yield sse({ type: 'blocks', blocks: turn.blocks });
-      yield sse({ type: 'done', turnId, reply: turn.reply, audioUrl, completedTasks: turn.completedTasks, mock: turn.mock, newWords: turn.newWords, turnsLeft });
+      yield sse({ type: 'done', turnId, reply: turn.reply, audioUrl, completedTasks: turn.completedTasks, mock: turn.mock, newWords: turn.newWords, turnsLeft: remaining?.turns, remaining });
     }
 
     // Không dùng reply.raw/hijack: giữ nguyên header CORS, helmet, rate-limit của Fastify

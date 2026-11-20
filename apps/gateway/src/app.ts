@@ -6,13 +6,14 @@ import multipart from '@fastify/multipart';
 import rateLimit from '@fastify/rate-limit';
 import type { GatewayConfig } from './config.js';
 import { RequestPipeline } from './pipeline/RequestPipeline.js';
-import type { QuotaStore } from './pipeline/QuotaStore.js';
-import { DbQuotaStore } from './pipeline/DbQuotaStore.js';
+import type { GlobalQuotaStore, QuotaStore } from './pipeline/QuotaStore.js';
+import { DbGlobalQuotaStore, DbQuotaStore } from './pipeline/DbQuotaStore.js';
 import { TTSCacheProxy, fileSynthesizer } from './cache/TTSCacheProxy.js';
 import { createTtsProvider, type TtsProvider } from './providers/tts.js';
 import { FileAudioStore } from './services/tts/audioStore.js';
 import { audioRoutes } from './routes/audio.js';
-import { createLlmProvider, type LlmProvider } from './providers/llm.js';
+import type { LlmProvider } from './providers/llm.js';
+import { createAiProviders } from './providers/registry.js';
 import { createSttProvider, type SttProvider } from './providers/stt.js';
 import { createTutor, type Tutor } from './services/chat/tutor.js';
 import { chatRoutes } from './routes/chat.js';
@@ -43,6 +44,8 @@ export interface RouteDeps {
   config: GatewayConfig;
   /** null = chưa cấu hình nhà cung cấp AI => các route dùng bộ giả lập, gắn mock: true */
   llm: LlmProvider | null;
+  /** Chuỗi dự phòng cho ảnh (VISION_CHAIN). null = chưa cấu hình => nhãn mẫu, mock: true */
+  vision: LlmProvider | null;
   /** null = chưa có nhà cung cấp STT => route giọng nói trả mock: true (GĐ2) */
   stt: SttProvider | null;
   /** null = TTS tắt (mặc định; bật bằng TTS_PROVIDER=gemini) — tệp dựng sẵn vẫn phục vụ được */
@@ -57,9 +60,13 @@ export interface RouteDeps {
 export interface BuildOptions {
   logger?: boolean;
   quotaStore?: QuotaStore;
+  /** Test tiêm kho trần toàn cục; bỏ trống = DB */
+  globalQuotaStore?: GlobalQuotaStore;
   ttsCache?: TTSCacheProxy;
   /** Test tiêm nhà cung cấp giả; bỏ trống = theo cấu hình (GEMINI_API_KEY) */
   llm?: LlmProvider | null;
+  /** Test tiêm vision giả; bỏ trống = theo `llm` nếu có tiêm, ngược lại theo VISION_CHAIN */
+  vision?: LlmProvider | null;
   /** Test tiêm STT giả; bỏ trống = STT qua LLM (nếu có) */
   stt?: SttProvider | null;
   /** Test tiêm TTS giả; bỏ trống = theo cấu hình TTS_PROVIDER */
@@ -119,14 +126,18 @@ export async function buildApp(config: GatewayConfig, opts: BuildOptions = {}): 
     if (!opts.db) await db.close();
   });
 
-  const pipeline = new RequestPipeline(config, opts.quotaStore ?? new DbQuotaStore(db), db, audit);
-  const llm = opts.llm !== undefined ? opts.llm : createLlmProvider(config);
-  const stt = opts.stt !== undefined ? opts.stt : createSttProvider(llm);
+  const pipeline = new RequestPipeline(config, opts.quotaStore ?? new DbQuotaStore(db), db, audit, opts.globalQuotaStore ?? new DbGlobalQuotaStore(db));
+  // Chuỗi dự phòng dựng từ LLM_CHAIN / VISION_CHAIN / STT_CHAIN (providers/registry.ts); test tiêm bản giả thì dùng bản giả
+  const needChains = opts.llm === undefined || opts.stt === undefined || opts.vision === undefined;
+  const chains = needChains ? createAiProviders(config, { log: app.log }) : null;
+  const llm = opts.llm !== undefined ? opts.llm : (chains?.llm ?? null);
+  const vision = opts.vision !== undefined ? opts.vision : opts.llm !== undefined ? opts.llm : (chains?.vision ?? null);
+  const stt = opts.stt !== undefined ? opts.stt : opts.llm !== undefined ? createSttProvider(opts.llm) : (chains?.stt ?? null);
   const tts = opts.tts !== undefined ? opts.tts : createTtsProvider(config);
   const audioStore = new FileAudioStore(config.TTS_AUDIO_DIR);
   const ttsCache = opts.ttsCache ?? new TTSCacheProxy(fileSynthesizer(audioStore, tts), Boolean(tts));
-  const deps: RouteDeps = { pipeline, ttsCache, config, llm, stt, tts, tutor: createTutor(llm, app.log), db, audit };
-  app.log.info({ ai: llm ? `${llm.name}:${config.GEMINI_MODEL}` : 'mock' }, 'AI provider');
+  const deps: RouteDeps = { pipeline, ttsCache, config, llm, vision, stt, tts, tutor: createTutor(llm, app.log), db, audit };
+  app.log.info({ llm: llm?.name ?? 'mock', vision: vision?.name ?? 'mock', stt: stt?.name ?? 'mock' }, 'AI providers');
 
   // Phải đặt trước khi đăng ký các scope con để chúng thừa hưởng
   app.setErrorHandler((error, request, reply) => {
