@@ -171,7 +171,7 @@ test('trần toàn cục: hết trần chung => 429 quota_exceeded scope=global,
   await a.close();
 });
 
-test('trần toàn cục = 0 nghĩa là tắt; lượt lỗi AI hoàn cả trần chung', async () => {
+test('trần toàn cục = 0 là tắt; lỗi AI hoàn lượt người dùng, nhưng lần gọi đã chạm nhà cung cấp vẫn tính vào trần chung', async () => {
   const globalQuotaStore = new InMemoryGlobalQuotaStore();
   const off = await makeApp({ JWT_SECRET: SECRET, GLOBAL_MAX_TURNS_PER_DAY: '0' }, { llm: okLlm(), globalQuotaStore });
   const g = await guest(off);
@@ -180,11 +180,14 @@ test('trần toàn cục = 0 nghĩa là tắt; lượt lỗi AI hoàn cả trầ
   await off.close();
 
   const store2 = new InMemoryGlobalQuotaStore();
-  const dead = await makeApp({ JWT_SECRET: SECRET, GLOBAL_MAX_TURNS_PER_DAY: '1' }, { llm: deadChain(), globalQuotaStore: store2 });
+  const dead = await makeApp({ JWT_SECRET: SECRET, GLOBAL_MAX_TURNS_PER_DAY: '50' }, { llm: deadChain(), globalQuotaStore: store2 });
   const g2 = await guest(dead);
-  for (let i = 0; i < 3; i++) await turn(dead, g2.headers);
-  assert.equal(await store2.get('turn'), 0, 'AI lỗi không đốt trần chung');
-  assert.equal((await turn(dead, g2.headers, 'application/json')).json().error, 'llm_busy', 'vẫn llm_busy chứ không phải trần chung');
+  await turn(dead, g2.headers); // lần đầu chạm nhà cung cấp (429) => đã đốt hạn mức nhà cung cấp => vẫn tính vào trần chung
+  assert.equal(await store2.get('turn'), 1, 'lần gọi thật chạm nhà cung cấp không được hoàn trần chung');
+  for (let i = 0; i < 5; i++) await turn(dead, g2.headers); // nguồn đã ngắt mạch: không chạm nhà cung cấp => hoàn trần chung
+  assert.equal(await store2.get('turn'), 1, 'ngắt mạch: không gọi nhà cung cấp nên không đốt trần chung');
+  assert.equal((await quota(dead, g2.headers)).turns.used, 0, 'người dùng luôn được hoàn lượt');
+  assert.equal((await turn(dead, g2.headers, 'application/json')).json().error, 'llm_busy');
   await dead.close();
 });
 

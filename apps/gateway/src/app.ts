@@ -142,7 +142,9 @@ export async function buildApp(config: GatewayConfig, opts: BuildOptions = {}): 
   // Phải đặt trước khi đăng ký các scope con để chúng thừa hưởng
   app.setErrorHandler((error, request, reply) => {
     const status = (error as { statusCode?: number }).statusCode ?? 500;
-    if (status >= 500) request.log.error({ err: error }, 'gateway error');
+    // AI bận (hết chuỗi dự phòng) là tình huống vận hành bình thường: cảnh báo gọn, không in stack như lỗi chương trình
+    if ((error as { code?: string }).code === 'llm_busy') request.log.warn({ code: 'llm_busy', providerCalls: (error as { providerCalls?: number }).providerCalls }, 'AI busy');
+    else if (status >= 500) request.log.error({ err: error }, 'gateway error');
     const code = (error as { code?: string }).code;
     reply.status(status).send({
       error: status >= 500 && !code ? 'internal_error' : code ?? 'error',

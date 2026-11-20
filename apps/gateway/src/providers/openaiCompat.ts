@@ -164,11 +164,16 @@ export class OpenAiCompatLlmProvider implements LlmProvider {
           ? { ...base, response_format: { type: 'json_object' } }
           : base;
 
+    const t0 = Date.now();
     let res = await this.post(withFormat(mode), timeoutMs);
     if (!res.ok && (res.status === 400 || res.status === 422) && mode !== 'none') {
-      // Model/nhà cung cấp không hỗ trợ response_format: nhớ lại và thử một lần chỉ với lời dặn trong prompt
-      this.jsonModeRejected = true;
-      res = await this.post(base, timeoutMs);
+      // Có thể do response_format không được hỗ trợ: thử lại MỘT lần chỉ với lời dặn trong prompt, trong phần thời gian còn lại
+      // của lượt này. Chỉ NHỚ "không hỗ trợ" khi lần thử lại thành công (400 vì lý do khác — model sai, ảnh quá lớn… — không tắt JSON mode).
+      const left = timeoutMs - (Date.now() - t0);
+      if (left < 500) throw httpError(res);
+      const retry = await this.post(base, left);
+      if (retry.ok) this.jsonModeRejected = true;
+      res = retry;
     }
     if (!res.ok) throw httpError(res);
 
