@@ -63,9 +63,6 @@ export const { useT, t } = defineMessages(
 
     // M9
     progressTitle: 'Tiến độ học',
-    friendsTitle: 'Học cùng bạn bè',
-    friendsHint: 'Cùng một người bạn đặt mục tiêu phút học mỗi tuần và giữ chuỗi tuần chung. Không có bảng xếp hạng.',
-    friendsOpen: 'Mở bạn học',
     settingsLink: '⚙️ Tùy chỉnh',
     'skill.pronunciation': 'Phát âm',
     'skill.honorific': 'Xưng hô',
@@ -242,9 +239,6 @@ export const { useT, t } = defineMessages(
     back: '← Back',
 
     progressTitle: 'My progress',
-    friendsTitle: 'Learn with friends',
-    friendsHint: 'Set a weekly minutes goal with a friend and keep a shared weekly streak. No leaderboards.',
-    friendsOpen: 'Open study buddies',
     settingsLink: '⚙️ Settings',
     'skill.pronunciation': 'Pronunciation',
     'skill.honorific': 'Pronouns',

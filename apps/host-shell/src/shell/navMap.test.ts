@@ -17,6 +17,7 @@ describe('tabOf', () => {
     ['/on-tap', 'luyen-tap'],
     ['/ban-be', 'ban-be'],
     ['/ho-so', 'ho-so'],
+    ['/tien-do', 'ho-so'],
     ['/cai-dat', 'ho-so'],
     ['/cai-dat/am-thanh', 'ho-so'],
     ['/bat-dau', 'ho-so'],

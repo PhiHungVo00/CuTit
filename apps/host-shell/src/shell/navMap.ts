@@ -27,6 +27,7 @@ const TAB_BY_SEGMENT: Record<string, TabId> = {
   '/ghep-cau': 'luyen-tap',
   '/ban-be': 'ban-be',
   '/ho-so': 'ho-so',
+  '/tien-do': 'ho-so',
   '/cai-dat': 'ho-so',
   '/bat-dau': 'ho-so',
   '/quyen-rieng-tu': 'ho-so'
