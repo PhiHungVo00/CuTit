@@ -148,6 +148,8 @@ export const PATH_ROUTES: PathRoute[] = [
   pathRoute('/goi-thoai', () => import('./screens/CallRoute')),
   REVIEW_ROUTE,
   PRACTICE_HUB_ROUTE,
+  // Tiến độ chi tiết (M9: thống kê, ôn thẻ SM-2, 7 ngày, độ chính xác) — mở từ một dòng của tab Hồ sơ
+  pathRoute('/tien-do', () => import('./screens/ProgressRoute')),
   pathRoute('/ban-be', () => import('./screens/FriendsRoute')),
   pathRoute('/cai-dat', () => import('./screens/SettingsRoute')),
   pathRoute('/cai-dat/:nhom', () => import('./screens/SettingsRoute')),
