@@ -1,47 +1,56 @@
 import React from 'react';
 
 export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'secondary' | 'accent' | 'outline';
+  variant?: 'primary' | 'secondary' | 'ghost' | 'danger';
   size?: 'sm' | 'md' | 'lg';
+  /** Đang xử lý: khóa nút và báo `aria-busy`. */
+  busy?: boolean;
 }
 
-export const Button: React.FC<ButtonProps> = ({
+const variants: Record<NonNullable<ButtonProps['variant']>, React.CSSProperties> = {
+  primary: { background: 'var(--ct-accent)', color: 'var(--ct-accent-ink)', border: '1px solid transparent' },
+  secondary: { background: 'var(--ct-surface-2)', color: 'var(--ct-ink)', border: '1px solid var(--ct-line-strong)' },
+  ghost: { background: 'transparent', color: 'var(--ct-ink)', border: '1px solid transparent' },
+  danger: { background: 'var(--ct-danger)', color: '#ffffff', border: '1px solid transparent' },
+};
+
+const sizes: Record<NonNullable<ButtonProps['size']>, React.CSSProperties> = {
+  sm: { minHeight: 40, padding: '0 14px', fontSize: '0.9rem' },
+  md: { minHeight: 48, padding: '0 20px', fontSize: '1rem' },
+  lg: { minHeight: 56, padding: '0 28px', fontSize: '1.1rem' },
+};
+
+export const Button = ({
   children,
   variant = 'primary',
   size = 'md',
+  busy = false,
+  disabled,
   style,
+  type = 'button',
   ...props
-}) => {
-  const baseStyle: React.CSSProperties = {
-    fontFamily: '"Be Vietnam Pro", system-ui, sans-serif',
-    borderRadius: '8px',
-    border: 'none',
-    cursor: 'pointer',
-    fontWeight: 600,
-    transition: 'all 0.15s ease',
-    display: 'inline-flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: '0.5rem',
-    ...style
-  };
-
-  const variantStyles: Record<string, React.CSSProperties> = {
-    primary: { backgroundColor: '#6366F1', color: '#FFFFFF' },
-    secondary: { backgroundColor: '#F1F5F9', color: '#0F172A' },
-    accent: { backgroundColor: '#10B981', color: '#FFFFFF' },
-    outline: { backgroundColor: 'transparent', border: '1px solid #CBD5E1', color: '#334155' }
-  };
-
-  const sizeStyles: Record<string, React.CSSProperties> = {
-    sm: { padding: '0.35rem 0.75rem', fontSize: '0.85rem' },
-    md: { padding: '0.5rem 1rem', fontSize: '0.95rem' },
-    lg: { padding: '0.75rem 1.5rem', fontSize: '1.05rem' }
-  };
-
-  return (
-    <button style={{ ...baseStyle, ...variantStyles[variant], ...sizeStyles[size] }} {...props}>
-      {children}
-    </button>
-  );
-};
+}: ButtonProps) => (
+  <button
+    type={type}
+    {...props}
+    disabled={busy || disabled}
+    aria-busy={busy ? true : undefined}
+    style={{
+      fontFamily: 'inherit',
+      fontWeight: 700,
+      borderRadius: 'var(--ct-radius-md)',
+      cursor: busy || disabled ? 'not-allowed' : 'pointer',
+      opacity: busy || disabled ? 0.65 : 1,
+      transition: 'opacity var(--ct-motion-fast) ease, transform var(--ct-motion-fast) ease',
+      display: 'inline-flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: '0.5rem',
+      ...variants[variant],
+      ...sizes[size],
+      ...style,
+    }}
+  >
+    {children}
+  </button>
+);
