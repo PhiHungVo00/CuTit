@@ -1,0 +1,177 @@
+<h2>Bong bóng Cu Tít — chạm vào thì hiện gì?</h2>
+<p class="subtitle">Bấm chọn một phương án (ảnh dưới là lúc đã chạm). Bên dưới là 4 trạng thái của bong bóng, dùng chung cho cả 3 phương án.</p>
+
+<style>
+  .ph-cards { display: flex; flex-wrap: wrap; gap: 1.25rem; justify-content: center; align-items: stretch; }
+  .ph-cards .card { flex: 1 1 330px; max-width: 420px; }
+  .ph-cards .card.ph-wide { flex: 2 1 700px; max-width: 760px; }
+  .ph-cards .card-image.ph-stage { aspect-ratio: auto; padding: 22px 0; background: #E7DCC4; gap: 14px; flex-wrap: wrap; }
+  .ph-phone {
+    --ph-kem:#FBF3E4; --ph-surface:#FFFDF8; --ph-earth:#5A3E28; --ph-text:#3B2A1E; --ph-straw:#E9B949; --ph-green:#6FA544; --ph-sky:#CFE8F3; --ph-line:#EADFCB; --ph-muted:#9A8672; --ph-red:#C0553A;
+    position: relative; width: 300px; height: 620px; flex-shrink: 0; background: var(--ph-kem); color: var(--ph-text);
+    border: 8px solid #2B211A; border-radius: 40px; box-shadow: 0 10px 28px rgba(60,40,20,.28); overflow: hidden;
+    display: flex; flex-direction: column; font-family: 'Be Vietnam Pro', system-ui, -apple-system, 'Segoe UI', sans-serif; line-height: 1.35; text-align: left;
+  }
+  .ph-phone.ph-short { height: 340px; }
+  .ph-phone *, .ph-phone *::before, .ph-phone *::after { box-sizing: border-box; }
+  .ph-status { height: 32px; flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; padding: 0 20px 0 24px; font-size: 12px; font-weight: 700; }
+  .ph-status-icons { display: flex; align-items: center; gap: 4px; }
+  .ph-signal { width: 14px; height: 9px; background: var(--ph-text); clip-path: polygon(0 100%, 0 70%, 100% 0, 100% 100%); }
+  .ph-battery { width: 20px; height: 10px; border: 1.5px solid var(--ph-text); border-radius: 3px; padding: 1px; }
+  .ph-battery::before { content:''; display:block; height:100%; width:75%; background: var(--ph-text); border-radius: 1px; }
+  .ph-body { flex: 1; min-height: 0; padding: 4px 14px 14px; display: flex; flex-direction: column; gap: 10px; overflow-y: auto; scrollbar-width: thin; scrollbar-color: #D8C9AA transparent; }
+  .ph-body > * { flex-shrink: 0; }
+  .ph-ic { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
+  .ph-ava { width: 56px; height: 56px; border-radius: 50%; object-fit: cover; background: #F6E3C0; border: 3px solid #fff; box-shadow: 0 0 0 2px var(--ph-straw), 0 2px 8px rgba(90,62,40,.25); flex-shrink: 0; }
+  .ph-title { margin: 0; font-size: 18px; font-weight: 800; color: var(--ph-earth); }
+  .ph-topbar { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 36px; }
+  .ph-iconbtn { width: 36px; height: 36px; border-radius: 50%; background: var(--ph-surface); border: 1px solid var(--ph-line); color: var(--ph-earth); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .ph-surface { background: var(--ph-surface); border: 1px solid var(--ph-line); border-radius: 20px; box-shadow: 0 2px 0 var(--ph-line); }
+  .ph-name { font-size: 17px; font-weight: 800; color: var(--ph-earth); }
+  .ph-pillv { display: inline-block; font-size: 11px; font-weight: 700; background: rgba(233,185,73,.25); color: #8A6410; border-radius: 999px; padding: 2px 10px; }
+  .ph-sub { font-size: 11.5px; color: var(--ph-muted); }
+  .ph-eyebrow { font-size: 10.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: #B8892A; margin: 4px 2px 0; }
+  .ph-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .ph-tile { padding: 10px 12px; display: flex; align-items: center; gap: 10px; }
+  .ph-tile .ph-ico { width: 34px; height: 34px; border-radius: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .ph-tile b { display: block; font-size: 16px; font-weight: 800; color: var(--ph-earth); line-height: 1.1; }
+  .ph-tile span { font-size: 11px; color: var(--ph-muted); }
+  .ph-c-straw { background: rgba(233,185,73,.28); color: #8A6410; } .ph-c-green { background: rgba(111,165,68,.2); color: #4E8A2B; }
+  .ph-c-sky { background: var(--ph-sky); color: #2F6F8F; } .ph-c-earth { background: rgba(90,62,40,.12); color: var(--ph-earth); } .ph-c-red { background: rgba(192,85,58,.14); color: var(--ph-red); }
+  .ph-row { display: flex; align-items: center; gap: 12px; padding: 11px 12px; border-bottom: 1px solid var(--ph-line); font-size: 13.5px; font-weight: 600; }
+  .ph-row:last-child { border-bottom: 0; }
+  .ph-row .ph-ico { width: 32px; height: 32px; border-radius: 11px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .ph-row .ph-grow { flex: 1; min-width: 0; } .ph-row small { display: block; font-size: 11px; font-weight: 500; color: var(--ph-muted); }
+  .ph-row .ph-val { font-size: 12px; font-weight: 600; color: var(--ph-muted); white-space: nowrap; }
+  .ph-row .ph-chev { width: 16px; height: 16px; color: var(--ph-muted); }
+  .ph-row.ph-danger { color: var(--ph-red); }
+  .ph-friends { display: flex; align-items: center; gap: 8px; padding: 10px 12px; }
+  .ph-fr { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; color: #fff; border: 2px solid var(--ph-surface); margin-left: -10px; }
+  .ph-fr:first-child { margin-left: 0; }
+  .ph-link { font-size: 12.5px; font-weight: 700; color: #4E8A2B; text-align: center; padding: 4px; }
+  .ph-btn { display: block; text-align: center; background: var(--ph-green); color: #fff; font-weight: 700; font-size: 13.5px; padding: 9px 0; border-radius: 16px; box-shadow: 0 3px 0 #54802F; }
+  .ph-btn.ph-ghost { background: var(--ph-surface); color: var(--ph-earth); border: 1px solid var(--ph-line); box-shadow: 0 3px 0 var(--ph-line); }
+  .ph-seg { display: flex; background: #F1E6D0; border-radius: 12px; padding: 3px; gap: 2px; }
+  .ph-seg span { flex: 1; text-align: center; font-size: 11.5px; font-weight: 700; padding: 6px 2px; border-radius: 9px; color: var(--ph-muted); white-space: nowrap; }
+  .ph-seg span.ph-on { background: var(--ph-surface); color: var(--ph-earth); box-shadow: 0 1px 3px rgba(90,62,40,.18); }
+  .ph-sw { width: 40px; height: 24px; border-radius: 12px; background: #D9CBB0; position: relative; flex-shrink: 0; }
+  .ph-sw::after { content:''; position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.25); }
+  .ph-sw.ph-on { background: var(--ph-green); } .ph-sw.ph-on::after { left: 19px; }
+  .ph-slide { height: 6px; border-radius: 6px; background: #F1E6D0; position: relative; margin: 10px 4px 4px; }
+  .ph-slide i { position: absolute; left: 0; top: 0; bottom: 0; width: 50%; background: var(--ph-straw); border-radius: 6px; }
+  .ph-slide i::after { content:''; position: absolute; right: -8px; top: -6px; width: 18px; height: 18px; border-radius: 50%; background: #fff; border: 3px solid var(--ph-straw); }
+  .ph-setrow { padding: 11px 12px; border-bottom: 1px solid var(--ph-line); font-size: 13px; font-weight: 600; }
+  .ph-setrow:last-child { border-bottom: 0; }
+  .ph-setrow .ph-line { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  .ph-setrow .ph-seg, .ph-setrow .ph-slide { margin-top: 8px; }
+  .ph-setrow small { display: block; font-size: 11px; font-weight: 500; color: var(--ph-muted); }
+  .ph-code { font-family: ui-monospace, Consolas, monospace; letter-spacing: .12em; font-weight: 700; background: #F6EBD3; border: 1px dashed #D8C196; border-radius: 10px; padding: 7px 10px; text-align: center; font-size: 13px; color: var(--ph-earth); margin-top: 8px; }
+  .ph-sync { display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; font-weight: 700; color: #4E8A2B; background: rgba(111,165,68,.15); border-radius: 999px; padding: 4px 10px; align-self: flex-start; }
+  .ph-sync::before { content:''; width: 7px; height: 7px; border-radius: 50%; background: var(--ph-green); }
+  .ph-tabbar { position: relative; z-index: 3; flex-shrink: 0; height: 62px; background: var(--ph-surface); border-top: 1px solid var(--ph-line); display: flex; align-items: stretch; padding: 0 2px 4px; }
+  .ph-tab { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; color: var(--ph-muted); font-size: 10.5px; font-weight: 600; white-space: nowrap; }
+  .ph-tab svg { width: 22px; height: 22px; }
+  .ph-pill { display: flex; align-items: center; justify-content: center; padding: 3px 14px; border-radius: 14px; }
+  .ph-tab.ph-on { color: var(--ph-green); font-weight: 700; } .ph-tab.ph-on .ph-pill { background: rgba(111,165,68,.18); }
+  .ph-fab { position: absolute; right: 12px; bottom: 74px; z-index: 5; display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+  .ph-fab-btn { width: 52px; height: 52px; border-radius: 50%; object-fit: cover; background: #F6E3C0; border: 3px solid #fff; box-shadow: 0 0 0 3px var(--ph-straw), 0 6px 14px rgba(90,62,40,.35); display: block; }
+  .ph-fab-btn.ph-mini { width: 34px; height: 34px; border-width: 2px; box-shadow: 0 0 0 2px var(--ph-straw), 0 3px 8px rgba(90,62,40,.3); opacity: .8; }
+  .ph-say { background: var(--ph-surface); border: 1px solid var(--ph-line); border-radius: 14px 14px 4px 14px; padding: 5px 10px; font-size: 11.5px; font-weight: 700; color: var(--ph-earth); box-shadow: 0 3px 8px rgba(90,62,40,.18); white-space: nowrap; }
+  .ph-dim { position: absolute; inset: 0; z-index: 4; background: rgba(59,42,30,.45); }
+  .ph-lesson { padding: 12px; } .ph-lesson b { display: block; color: var(--ph-earth); font-size: 15px; margin: 2px 0 8px; }
+  .ph-progress { height: 8px; border-radius: 8px; background: #F1E6D0; overflow: hidden; margin-bottom: 10px; } .ph-progress i { display: block; height: 100%; width: 55%; background: var(--ph-straw); border-radius: 8px; }
+  .ph-review { display: flex; align-items: center; gap: 10px; background: var(--ph-sky); border-radius: 18px; padding: 10px 12px; font-size: 12px; } .ph-review b { display: block; font-size: 13.5px; color: var(--ph-earth); }
+  .ph-badge { width: 36px; height: 36px; border-radius: 50%; background: var(--ph-straw); color: var(--ph-earth); font-weight: 800; display: flex; align-items: center; justify-content: center; }
+  .ph-msg { max-width: 82%; padding: 8px 11px; border-radius: 16px 16px 16px 5px; background: var(--ph-surface); border: 1px solid var(--ph-line); font-size: 12.5px; }
+  .ph-msg.ph-me { align-self: flex-end; background: var(--ph-green); color: #fff; border-color: var(--ph-green); border-radius: 16px 16px 5px 16px; }
+  .ph-input { display: flex; align-items: center; gap: 8px; background: var(--ph-surface); border: 1px solid var(--ph-line); border-radius: 22px; padding: 6px 6px 6px 14px; font-size: 12.5px; color: var(--ph-muted); }
+  .ph-input span { flex: 1; } .ph-input .ph-iconbtn { width: 32px; height: 32px; background: var(--ph-green); color: #fff; border: 0; }
+  .ph-sheet { position: absolute; left: 0; right: 0; bottom: 0; z-index: 6; background: var(--ph-kem); border-radius: 26px 26px 0 0; padding: 8px 14px 14px; box-shadow: 0 -8px 24px rgba(60,40,20,.28); display: flex; flex-direction: column; gap: 10px; height: 74%; }
+  .ph-handle { width: 40px; height: 4px; border-radius: 4px; background: #D8C9AA; align-self: center; }
+  .ph-modes { display: flex; background: #F1E6D0; border-radius: 16px; padding: 3px; gap: 2px; }
+  .ph-modes div { flex: 1; display: flex; align-items: center; justify-content: center; gap: 5px; padding: 8px 2px; border-radius: 13px; font-size: 11.5px; font-weight: 700; color: var(--ph-muted); }
+  .ph-modes div.ph-on { background: var(--ph-surface); color: var(--ph-earth); box-shadow: 0 1px 3px rgba(90,62,40,.2); } .ph-modes .ph-ic { width: 16px; height: 16px; }
+  .ph-fan { position: absolute; z-index: 6; right: 12px; bottom: 74px; width: 52px; height: 52px; }
+  .ph-sat { position: absolute; width: 44px; height: 44px; border-radius: 50%; background: var(--ph-surface); border: 2px solid var(--ph-straw); color: var(--ph-earth); display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(0,0,0,.3); }
+  .ph-sat em { position: absolute; right: 52px; top: 12px; font-style: normal; font-size: 10.5px; font-weight: 700; color: #fff; white-space: nowrap; text-shadow: 0 1px 3px rgba(0,0,0,.6); }
+  .ph-x { position: absolute; right: 12px; bottom: 74px; z-index: 7; width: 52px; height: 52px; border-radius: 50%; background: var(--ph-earth); color: #fff; display: flex; align-items: center; justify-content: center; border: 3px solid #fff; }
+  .ph-chathead { display: flex; align-items: center; gap: 8px; }
+  .ph-chathead .ph-ava { width: 36px; height: 36px; border-width: 2px; box-shadow: 0 0 0 2px var(--ph-straw); }
+  .ph-chathead b { font-size: 14px; color: var(--ph-earth); display: block; line-height: 1.1; } .ph-chathead small { font-size: 10.5px; color: var(--ph-muted); }
+  .ph-think { position: relative; }
+  .ph-think .ph-fab-btn { animation: ph-ring 1.4s ease-in-out infinite; }
+  @keyframes ph-ring { 0%,100% { box-shadow: 0 0 0 3px var(--ph-straw), 0 0 0 3px rgba(233,185,73,.6), 0 6px 14px rgba(90,62,40,.35); } 50% { box-shadow: 0 0 0 3px var(--ph-straw), 0 0 0 12px rgba(233,185,73,0), 0 6px 14px rgba(90,62,40,.35); } }
+  .ph-dots { display: inline-flex; gap: 3px; margin-left: 4px; vertical-align: middle; } .ph-dots i { width: 5px; height: 5px; border-radius: 50%; background: var(--ph-earth); animation: ph-bounce 1s infinite; } .ph-dots i:nth-child(2) { animation-delay: .15s; } .ph-dots i:nth-child(3) { animation-delay: .3s; }
+  @keyframes ph-bounce { 0%,60%,100% { transform: translateY(0); opacity: .5; } 30% { transform: translateY(-4px); opacity: 1; } }
+  @media (prefers-reduced-motion: reduce) { .ph-think .ph-fab-btn, .ph-dots i { animation: none; } }
+  .ph-kb { height: 120px; background: #D9D4CA; flex-shrink: 0; display: grid; grid-template-columns: repeat(10,1fr); gap: 4px; padding: 8px; align-content: start; } .ph-kb i { height: 22px; border-radius: 5px; background: #F4F1EA; display: block; }
+  .ph-state-wrap { margin-top: 1.5rem; } .ph-state-wrap h3 { margin: 0 0 .25rem; }
+  .ph-states { display: flex; flex-wrap: wrap; gap: 1.25rem; justify-content: center; margin-top: 1rem; }
+  .ph-state { width: 316px; } .ph-state .ph-stage2 { background: #E7DCC4; border-radius: 12px; padding: 16px 0; display: flex; justify-content: center; }
+  .ph-state p { font-size: .85rem; margin: .5rem .25rem 0; } .ph-state h4 { margin: .6rem .25rem 0; font-size: .95rem; }
+  .ph-rules { background: var(--bg-secondary); border-radius: 8px; padding: 1rem 1.25rem; margin-top: 1.25rem; font-size: .88rem; } .ph-rules li { margin: .3rem 0; }
+  .ph-note { font-size: .85rem; margin-top: .35rem; } .ph-note b { font-weight: 700; } .ph-note.ph-pro b { color: #4E8A2B; } .ph-note.ph-con b { color: #C0553A; }
+</style>
+<div class="cards ph-cards">
+
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-image ph-stage"><div class="ph-phone"><div class="ph-status"><span>9:41</span><span class="ph-status-icons"><i class="ph-signal"></i><i class="ph-battery"></i></span></div><div class="ph-body">
+  <div style="display:flex;align-items:center;gap:10px"><img class="ph-ava" src="/files/cutit-chao.webp" alt=""><div class="ph-msg" style="max-width:none"><b style="color:var(--ph-earth);font-size:14px">Chào Mai!</b><br>Hôm nay học 10 phút nhé?</div></div>
+  <div class="ph-surface ph-lesson"><div class="ph-eyebrow" style="margin:0">Bài tiếp theo</div><b>Unit 1 · Bài 4 — Chào hỏi</b><div class="ph-progress"><i></i></div><div class="ph-btn">Học tiếp</div></div>
+  <div class="ph-review"><span class="ph-badge">12</span><div><b>Ôn tập</b>12 thẻ đến hạn</div></div>
+  <div class="ph-surface" style="padding:12px;font-size:12.5px"><b>Luyện phát âm</b><br><span class="ph-sub">Thanh điệu: ngang, sắc, huyền…</span></div></div><div class="ph-tabbar"><div class="ph-tab ph-on"><span class="ph-pill"><svg class="ph-ic " viewBox="0 0 24 24"><path d="M4 5.5C6.5 4.5 9.5 4.5 12 6c2.5-1.5 5.5-1.5 8-.5v13c-2.5-1-5.5-1-8 .5-2.5-1.5-5.5-1.5-8-.5z"/><path d="M12 6v13.5"/></svg></span>Học</div><div class="ph-tab"><span class="ph-pill"><svg class="ph-ic " viewBox="0 0 24 24"><path d="M6.5 8v8M3.5 10v4M17.5 8v8M20.5 10v4M6.5 12h11"/></svg></span>Luyện tập</div><div class="ph-tab"><span class="ph-pill"><svg class="ph-ic " viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M3.5 19c0-3 2.5-5 5.5-5s5.5 2 5.5 5"/><path d="M15.5 14.3c.5-.2 1-.3 1.5-.3 2.5 0 4 1.8 4 4.5"/></svg></span>Bạn bè</div><div class="ph-tab"><span class="ph-pill"><svg class="ph-ic " viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c0-3.8 3.1-6 7-6s7 2.2 7 6"/></svg></span>Hồ sơ</div></div><div class="ph-dim"></div><div class="ph-sheet"><div class="ph-handle"></div>
+  <div class="ph-chathead"><img class="ph-ava" src="/files/cutit-chao.webp" alt="Bé Cu Tít"><div><b>Bé Cu Tít</b><small>Hỏi mình bất cứ điều gì</small></div></div><div class="ph-modes"><div class="ph-on"><svg class="ph-ic " viewBox="0 0 24 24"><path d="M4 6.5A2.5 2.5 0 0 1 6.5 4h11A2.5 2.5 0 0 1 20 6.5v8a2.5 2.5 0 0 1-2.5 2.5H11l-4 3.5V17h-.5A2.5 2.5 0 0 1 4 14.5z"/></svg>Chat</div><div><svg class="ph-ic " viewBox="0 0 24 24"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A15 15 0 0 1 3 6a2 2 0 0 1 2-2z"/></svg>Gọi thoại</div><div><svg class="ph-ic " viewBox="0 0 24 24"><path d="M4 8h3l1.5-2h7L17 8h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>Camera</div></div>
+  <div style="flex:1;overflow:hidden;display:flex;flex-direction:column;gap:7px"><div class="ph-msg">Xin chào Mai! Hôm nay mình tập chào hỏi nhé. Bạn thử nói "Chào cô ạ" xem?</div><div class="ph-msg ph-me">Chào cô ạ!</div><div class="ph-msg">Giỏi lắm! Nói với bạn bè thì sao nhỉ?</div></div>
+  <div class="ph-input"><span>Nhắn cho Cu Tít…</span><div class="ph-iconbtn"><svg class="ph-ic " viewBox="0 0 24 24"><path d="M4 12l16-8-6 16-2.5-6.5z"/></svg></div></div></div></div></div>
+    <div class="card-body"><h3>A · Bảng trượt từ dưới, 3 chế độ</h3>
+      <p class="ph-note ph-pro"><b>Ưu:</b> vẫn thấy màn đang học phía sau; đổi Chat ↔ Gọi thoại ↔ Camera một chạm; vuốt xuống là đóng.</p>
+      <p class="ph-note ph-con"><b>Nhược:</b> bảng chiếm ~3/4 màn, khó nhìn bài song song; camera trong bảng nhỏ hơn camera toàn màn.</p></div>
+  </div>
+
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-image ph-stage"><div class="ph-phone"><div class="ph-status"><span>9:41</span><span class="ph-status-icons"><i class="ph-signal"></i><i class="ph-battery"></i></span></div><div class="ph-body">
+  <div style="display:flex;align-items:center;gap:10px"><img class="ph-ava" src="/files/cutit-chao.webp" alt=""><div class="ph-msg" style="max-width:none"><b style="color:var(--ph-earth);font-size:14px">Chào Mai!</b><br>Hôm nay học 10 phút nhé?</div></div>
+  <div class="ph-surface ph-lesson"><div class="ph-eyebrow" style="margin:0">Bài tiếp theo</div><b>Unit 1 · Bài 4 — Chào hỏi</b><div class="ph-progress"><i></i></div><div class="ph-btn">Học tiếp</div></div>
+  <div class="ph-review"><span class="ph-badge">12</span><div><b>Ôn tập</b>12 thẻ đến hạn</div></div>
+  <div class="ph-surface" style="padding:12px;font-size:12.5px"><b>Luyện phát âm</b><br><span class="ph-sub">Thanh điệu: ngang, sắc, huyền…</span></div></div><div class="ph-tabbar"><div class="ph-tab ph-on"><span class="ph-pill"><svg class="ph-ic " viewBox="0 0 24 24"><path d="M4 5.5C6.5 4.5 9.5 4.5 12 6c2.5-1.5 5.5-1.5 8-.5v13c-2.5-1-5.5-1-8 .5-2.5-1.5-5.5-1.5-8-.5z"/><path d="M12 6v13.5"/></svg></span>Học</div><div class="ph-tab"><span class="ph-pill"><svg class="ph-ic " viewBox="0 0 24 24"><path d="M6.5 8v8M3.5 10v4M17.5 8v8M20.5 10v4M6.5 12h11"/></svg></span>Luyện tập</div><div class="ph-tab"><span class="ph-pill"><svg class="ph-ic " viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M3.5 19c0-3 2.5-5 5.5-5s5.5 2 5.5 5"/><path d="M15.5 14.3c.5-.2 1-.3 1.5-.3 2.5 0 4 1.8 4 4.5"/></svg></span>Bạn bè</div><div class="ph-tab"><span class="ph-pill"><svg class="ph-ic " viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c0-3.8 3.1-6 7-6s7 2.2 7 6"/></svg></span>Hồ sơ</div></div><div class="ph-dim"></div><div class="ph-fan"><div class="ph-sat" style="left:1px;bottom:104px"><svg class="ph-ic " viewBox="0 0 24 24"><path d="M4 6.5A2.5 2.5 0 0 1 6.5 4h11A2.5 2.5 0 0 1 20 6.5v8a2.5 2.5 0 0 1-2.5 2.5H11l-4 3.5V17h-.5A2.5 2.5 0 0 1 4 14.5z"/></svg><em>Chat</em></div><div class="ph-sat" style="left:-70px;bottom:71px"><svg class="ph-ic " viewBox="0 0 24 24"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A15 15 0 0 1 3 6a2 2 0 0 1 2-2z"/></svg><em>Gọi thoại</em></div><div class="ph-sat" style="left:-96px;bottom:-3px"><svg class="ph-ic " viewBox="0 0 24 24"><path d="M4 8h3l1.5-2h7L17 8h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg><em>Camera</em></div></div><div class="ph-x"><svg class="ph-ic " viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></div></div></div>
+    <div class="card-body"><h3>B · Menu tỏa hình quạt từ bong bóng</h3>
+      <p class="ph-note ph-pro"><b>Ưu:</b> nhanh nhất (hai chạm tới việc cần), vui mắt, hợp ý Cu Tít là “bạn đồng hành”.</p>
+      <p class="ph-note ph-con"><b>Nhược:</b> ba nút nhỏ, phải học nhận diện biểu tượng; không thấy lịch sử chat ngay.</p></div>
+  </div>
+
+  <div class="card" data-choice="c" onclick="toggleSelect(this)">
+    <div class="card-image ph-stage"><div class="ph-phone"><div class="ph-status"><span>9:41</span><span class="ph-status-icons"><i class="ph-signal"></i><i class="ph-battery"></i></span></div>
+  <div class="ph-body" style="gap:8px;padding-bottom:8px">
+    <div class="ph-topbar" style="gap:6px"><div class="ph-iconbtn" style="border:0;background:transparent"><svg class="ph-ic " viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg></div>
+      <div class="ph-chathead" style="flex:1"><img class="ph-ava" src="/files/cutit-chao.webp" alt="Bé Cu Tít"><div><b>Bé Cu Tít</b><small>Đang trực tuyến</small></div></div></div>
+    <div class="ph-modes"><div class="ph-on"><svg class="ph-ic " viewBox="0 0 24 24"><path d="M4 6.5A2.5 2.5 0 0 1 6.5 4h11A2.5 2.5 0 0 1 20 6.5v8a2.5 2.5 0 0 1-2.5 2.5H11l-4 3.5V17h-.5A2.5 2.5 0 0 1 4 14.5z"/></svg>Chat</div><div><svg class="ph-ic " viewBox="0 0 24 24"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A15 15 0 0 1 3 6a2 2 0 0 1 2-2z"/></svg>Gọi thoại</div><div><svg class="ph-ic " viewBox="0 0 24 24"><path d="M4 8h3l1.5-2h7L17 8h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>Camera</div></div>
+    <div style="flex:1;display:flex;flex-direction:column;gap:7px;overflow:hidden;padding-top:4px"><div class="ph-msg">Xin chào Mai! Hôm nay mình tập chào hỏi nhé. Bạn thử nói "Chào cô ạ" xem?</div><div class="ph-msg ph-me">Chào cô ạ!</div><div class="ph-msg">Giỏi lắm! Nói với bạn bè thì sao nhỉ?</div><div class="ph-msg ph-me">Chào bạn nhé!</div></div>
+    <div class="ph-input"><span>Nhắn cho Cu Tít…</span><div class="ph-iconbtn" style="background:var(--ph-sky);color:#2F6F8F"><svg class="ph-ic " viewBox="0 0 24 24"><rect x="9" y="3.5" width="6" height="11" rx="3"/><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v3"/></svg></div><div class="ph-iconbtn"><svg class="ph-ic " viewBox="0 0 24 24"><path d="M4 12l16-8-6 16-2.5-6.5z"/></svg></div></div>
+  </div></div></div>
+    <div class="card-body"><h3>C · Mở thẳng màn chat, nút đổi chế độ</h3>
+      <p class="ph-note ph-pro"><b>Ưu:</b> ít bước nhất cho việc phổ biến nhất (chat); chế độ gọi thoại và camera là một công tắc ngay đầu màn.</p>
+      <p class="ph-note ph-con"><b>Nhược:</b> rời hẳn màn đang học (có nút quay lại); người mới không biết còn gọi thoại, camera.</p></div>
+  </div>
+</div>
+
+<div class="ph-state-wrap">
+  <h3>Trạng thái của bong bóng (dùng chung)</h3>
+  <p class="subtitle" style="margin:0">Khung ngắn, chỉ cắt phần dưới điện thoại.</p>
+  <div class="ph-states">
+    <div class="ph-state"><div class="ph-stage2"><div class="ph-phone ph-short"><div class="ph-status"><span>9:41</span><span class="ph-status-icons"><i class="ph-signal"></i><i class="ph-battery"></i></span></div><div class="ph-body"><div class="ph-surface ph-lesson"><b>Unit 1 · Bài 4</b><div class="ph-btn">Học tiếp</div></div></div><div class="ph-fab"><div class="ph-say">Hỏi mình nhé!</div><img class="ph-fab-btn" src="/files/cutit-chan-dung.webp" alt="Bé Cu Tít"></div><div class="ph-tabbar"><div class="ph-tab ph-on"><span class="ph-pill"><svg class="ph-ic " viewBox="0 0 24 24"><path d="M4 5.5C6.5 4.5 9.5 4.5 12 6c2.5-1.5 5.5-1.5 8-.5v13c-2.5-1-5.5-1-8 .5-2.5-1.5-5.5-1.5-8-.5z"/><path d="M12 6v13.5"/></svg></span>Học</div><div class="ph-tab"><span class="ph-pill"><svg class="ph-ic " viewBox="0 0 24 24"><path d="M6.5 8v8M3.5 10v4M17.5 8v8M20.5 10v4M6.5 12h11"/></svg></span>Luyện tập</div><div class="ph-tab"><span class="ph-pill"><svg class="ph-ic " viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M3.5 19c0-3 2.5-5 5.5-5s5.5 2 5.5 5"/><path d="M15.5 14.3c.5-.2 1-.3 1.5-.3 2.5 0 4 1.8 4 4.5"/></svg></span>Bạn bè</div><div class="ph-tab"><span class="ph-pill"><svg class="ph-ic " viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c0-3.8 3.1-6 7-6s7 2.2 7 6"/></svg></span>Hồ sơ</div></div></div></div>
+      <h4>1 · Nghỉ</h4><p>Ảnh chân dung 52 px, có lời chào ngắn, tự ẩn lời chào sau vài giây.</p></div>
+    <div class="ph-state"><div class="ph-stage2"><div class="ph-phone ph-short"><div class="ph-status"><span>9:41</span><span class="ph-status-icons"><i class="ph-signal"></i><i class="ph-battery"></i></span></div><div class="ph-body"><div class="ph-surface ph-lesson"><b>Unit 1 · Bài 4</b><div class="ph-btn">Học tiếp</div></div></div><div class="ph-fab ph-think"><div class="ph-say">Đang nghĩ<span class="ph-dots"><i></i><i></i><i></i></span></div><img class="ph-fab-btn" src="/files/cutit-suy-nghi.webp" alt=""></div><div class="ph-tabbar"><div class="ph-tab ph-on"><span class="ph-pill"><svg class="ph-ic " viewBox="0 0 24 24"><path d="M4 5.5C6.5 4.5 9.5 4.5 12 6c2.5-1.5 5.5-1.5 8-.5v13c-2.5-1-5.5-1-8 .5-2.5-1.5-5.5-1.5-8-.5z"/><path d="M12 6v13.5"/></svg></span>Học</div><div class="ph-tab"><span class="ph-pill"><svg class="ph-ic " viewBox="0 0 24 24"><path d="M6.5 8v8M3.5 10v4M17.5 8v8M20.5 10v4M6.5 12h11"/></svg></span>Luyện tập</div><div class="ph-tab"><span class="ph-pill"><svg class="ph-ic " viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M3.5 19c0-3 2.5-5 5.5-5s5.5 2 5.5 5"/><path d="M15.5 14.3c.5-.2 1-.3 1.5-.3 2.5 0 4 1.8 4 4.5"/></svg></span>Bạn bè</div><div class="ph-tab"><span class="ph-pill"><svg class="ph-ic " viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c0-3.8 3.1-6 7-6s7 2.2 7 6"/></svg></span>Hồ sơ</div></div></div></div>
+      <h4>2 · Suy nghĩ</h4><p>Đổi sang ảnh “suy nghĩ”, viền vàng nhấp nhô, lời “Đang nghĩ…” có ba chấm nhảy. Tắt nhấp nhô khi bật “giảm chuyển động”.</p></div>
+    <div class="ph-state"><div class="ph-stage2"><div class="ph-phone ph-short"><div class="ph-status"><span>9:41</span><span class="ph-status-icons"><i class="ph-signal"></i><i class="ph-battery"></i></span></div><div class="ph-body"><div class="ph-surface" style="padding:12px;font-size:12.5px"><b>Ôn tập</b><br><span class="ph-sub">12 thẻ đến hạn</span></div><div class="ph-surface" style="padding:12px;font-size:12.5px"><b>Luyện phát âm</b><br><span class="ph-sub">Thanh điệu</span></div><div class="ph-surface" style="padding:12px;font-size:12.5px"><b>Truyện nghe</b></div></div><div class="ph-fab" style="right:-8px;bottom:70px"><img class="ph-fab-btn ph-mini" src="/files/cutit-chan-dung.webp" alt=""></div><div class="ph-tabbar"><div class="ph-tab ph-on"><span class="ph-pill"><svg class="ph-ic " viewBox="0 0 24 24"><path d="M4 5.5C6.5 4.5 9.5 4.5 12 6c2.5-1.5 5.5-1.5 8-.5v13c-2.5-1-5.5-1-8 .5-2.5-1.5-5.5-1.5-8-.5z"/><path d="M12 6v13.5"/></svg></span>Học</div><div class="ph-tab"><span class="ph-pill"><svg class="ph-ic " viewBox="0 0 24 24"><path d="M6.5 8v8M3.5 10v4M17.5 8v8M20.5 10v4M6.5 12h11"/></svg></span>Luyện tập</div><div class="ph-tab"><span class="ph-pill"><svg class="ph-ic " viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M3.5 19c0-3 2.5-5 5.5-5s5.5 2 5.5 5"/><path d="M15.5 14.3c.5-.2 1-.3 1.5-.3 2.5 0 4 1.8 4 4.5"/></svg></span>Bạn bè</div><div class="ph-tab"><span class="ph-pill"><svg class="ph-ic " viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c0-3.8 3.1-6 7-6s7 2.2 7 6"/></svg></span>Hồ sơ</div></div></div></div>
+      <h4>3 · Đang cuộn</h4><p>Cuộn xuống: thu còn 34 px, mờ nhẹ, dạt nửa vào mép phải. Cuộn lên hoặc dừng 1 giây: phình lại.</p></div>
+    <div class="ph-state"><div class="ph-stage2"><div class="ph-phone ph-short"><div class="ph-status"><span>9:41</span><span class="ph-status-icons"><i class="ph-signal"></i><i class="ph-battery"></i></span></div><div class="ph-body"><div class="ph-chathead"><img class="ph-ava" src="/files/cutit-chao.webp" alt="Bé Cu Tít"><div><b>Bé Cu Tít</b><small>Đang trực tuyến</small></div></div><div class="ph-msg">Bạn thử nói “Chào cô ạ” xem?</div></div><div class="ph-input" style="margin:0 12px 8px"><span>Chào cô ạ|</span><div class="ph-iconbtn"><svg class="ph-ic " viewBox="0 0 24 24"><path d="M4 12l16-8-6 16-2.5-6.5z"/></svg></div></div><div class="ph-kb"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div></div></div>
+      <h4>4 · Bàn phím mở</h4><p>Ẩn hẳn bong bóng (và cả thanh tab), hiện lại khi đóng bàn phím. Cũng ẩn trong lúc ghi âm và khi đang làm bài.</p></div>
+  </div>
+  <div class="ph-rules"><b>Chỗ mình tự quyết (nói để bạn duyệt):</b>
+    <ul>
+      <li>Chừa 80 px cuối mọi màn cuộn (đệm dưới) để bong bóng không che nút “Học tiếp”, “Kiểm tra”.</li>
+      <li>Cho kéo thả sang trái/phải và nhớ vị trí; mặc định góc phải dưới, cao hơn thanh tab 12 px.</li>
+      <li>Ẩn bong bóng ở màn đã có Cu Tít (chat, gọi thoại, camera) và khi đang ghi âm chấm phát âm.</li>
+      <li>Ở A và B, bấm ra ngoài hoặc nút Back của Android là đóng; ở C, Back quay về màn trước.</li>
+    </ul></div>
+</div>

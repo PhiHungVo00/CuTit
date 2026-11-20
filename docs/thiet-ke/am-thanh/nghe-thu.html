@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nghe thử âm thanh Bé Cu Tít</title>
+<style>
+  :root { --bg:#fff8ec; --fg:#3b2a1a; --card:#fff; --line:#ecd9b8; --a:#e07a2f; --b:#3f8f6b; --mut:#8a735a; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#241a12; --fg:#f5e8d4; --card:#33261b; --line:#5a4531; --mut:#c2a98c; } }
+  * { box-sizing: border-box; }
+  body { margin:0; padding:16px; background:var(--bg); color:var(--fg); font:16px/1.5 system-ui, "Segoe UI", sans-serif; }
+  main { max-width:760px; margin:0 auto; }
+  h1 { font-size:1.4rem; margin:0 0 4px; }
+  p.lead { color:var(--mut); margin:0 0 16px; }
+  .row { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:12px 14px; margin-bottom:10px; }
+  .row h2 { font-size:1rem; margin:0; }
+  .row small { color:var(--mut); display:block; margin-bottom:8px; }
+  .btns { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+  button { min-height:48px; min-width:120px; border:0; border-radius:12px; color:#fff; font:inherit; font-weight:600; cursor:pointer; padding:0 16px; }
+  button.a { background:var(--a); } button.b { background:var(--b); }
+  button:focus-visible { outline:3px solid var(--fg); outline-offset:2px; }
+  button.on { filter:brightness(.8); }
+  label.pick { margin-left:auto; color:var(--mut); font-size:.9rem; }
+  select { font:inherit; padding:6px; border-radius:8px; border:1px solid var(--line); background:var(--card); color:var(--fg); }
+  footer { color:var(--mut); font-size:.85rem; margin-top:16px; }
+  #fmt { font-size:.85rem; color:var(--mut); margin-bottom:12px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Nghe thử âm thanh Bé Cu Tít</h1>
+  <p class="lead">Mỗi sự kiện có 2 ứng viên A / B. Bấm để nghe, chọn một bên ở ô bên phải rồi bấm "Sao chép lựa chọn" để gửi lại cho phiên chính. Bật loa vừa phải, âm đã chuẩn hóa nên có thể to hơn tưởng tượng.</p>
+  <div id="fmt"></div>
+  <div id="list"></div>
+  <p><button class="a" id="copy" style="background:var(--fg);color:var(--bg)">Sao chép lựa chọn</button> <span id="copied" aria-live="polite"></span></p>
+  <footer>Nguồn: Kenney (kenney.nl), giấy phép CC0 — dùng thương mại được, không bắt buộc ghi công. Chi tiết trong README.md.</footer>
+</main>
+<script>
+(function () {
+  var EVENTS = [
+    ['tap', 'Chạm nút', 'Nhấn nút thường, rất ngắn'],
+    ['correct', 'Đúng', 'Trả lời đúng'],
+    ['wrong', 'Sai (nhẹ nhàng)', 'Không trách bé; nghe xem có đủ dịu không'],
+    ['complete', 'Hoàn thành bài', 'Kết thúc bài tập'],
+    ['streak', 'Lên chuỗi ngày', 'Tăng chuỗi học liên tiếp'],
+    ['bubble-open', 'Mở bong bóng Cu Tít', 'Bong bóng nhân vật bật lên'],
+    ['speak-start', 'Cu Tít bắt đầu nói', 'Trước khi đọc'],
+    ['notify', 'Thông báo', 'Thông báo trong app'],
+    ['tab', 'Chuyển tab', 'Rất khẽ, dùng thường xuyên']
+  ];
+  var ext = (function () { var a = document.createElement('audio'); return a.canPlayType('audio/ogg; codecs=opus') ? 'ogg' : 'mp3'; })();
+  document.getElementById('fmt').textContent = 'Đang phát định dạng: .' + ext + (ext === 'mp3' ? ' (trình duyệt này không phát được Opus)' : '');
+  var current = null, curBtn = null;
+  function play(name, btn) {
+    if (current) { current.pause(); current.currentTime = 0; }
+    if (curBtn) curBtn.classList.remove('on');
+    current = new Audio('ung-vien/' + name + '.' + ext);
+    curBtn = btn; btn.classList.add('on');
+    current.onended = function () { btn.classList.remove('on'); };
+    current.play().catch(function () {});
+  }
+  var list = document.getElementById('list');
+  EVENTS.forEach(function (e) {
+    var row = document.createElement('section'); row.className = 'row';
+    row.innerHTML = '<h2></h2><small></small><div class="btns"></div>';
+    row.querySelector('h2').textContent = e[1];
+    row.querySelector('small').textContent = e[2];
+    var box = row.querySelector('.btns');
+    ['a', 'b'].forEach(function (v) {
+      var b = document.createElement('button'); b.className = v; b.type = 'button';
+      b.textContent = '▶ ' + v.toUpperCase();
+      b.setAttribute('aria-label', e[1] + ' — phương án ' + v.toUpperCase());
+      b.onclick = function () { play(e[0] + '-' + v, b); };
+      box.appendChild(b);
+    });
+    var lab = document.createElement('label'); lab.className = 'pick'; lab.textContent = 'Chọn: ';
+    var sel = document.createElement('select'); sel.id = 'pick-' + e[0];
+    [['', '—'], ['a', 'A'], ['b', 'B'], ['none', 'Cả hai không hợp']].forEach(function (o) {
+      var op = document.createElement('option'); op.value = o[0]; op.textContent = o[1]; sel.appendChild(op);
+    });
+    lab.appendChild(sel); box.appendChild(lab);
+    list.appendChild(row);
+  });
+  document.getElementById('copy').onclick = function () {
+    var txt = EVENTS.map(function (e) {
+      var v = document.getElementById('pick-' + e[0]).value;
+      return e[1] + ': ' + (v === 'none' ? 'cả hai không hợp' : v ? v.toUpperCase() : '(chưa chọn)');
+    }).join('\n');
+    var done = function () { document.getElementById('copied').textContent = 'Đã sao chép'; };
+    if (navigator.clipboard) navigator.clipboard.writeText(txt).then(done, function () { prompt('Sao chép:', txt); });
+    else prompt('Sao chép:', txt);
+  };
+})();
+</script>
+</body>
+</html>

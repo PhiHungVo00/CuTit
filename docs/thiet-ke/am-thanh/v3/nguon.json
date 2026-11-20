@@ -1,0 +1,116 @@
+[
+ {
+  "nhom": "que",
+  "ten": "ga-gay-small",
+  "ghi": "cắt 0.97s–2.77s của ga-small.ogg",
+  "loai": "gáy",
+  "ms": 1800
+ },
+ {
+  "nhom": "que",
+  "ten": "ga-gay-medium",
+  "ghi": "cắt 0.07s–1.83s của ga-medium.ogg",
+  "loai": "gáy",
+  "ms": 1760
+ },
+ {
+  "nhom": "que",
+  "ten": "chim-rip-rit",
+  "ghi": "cửa sổ 2,2 s từ 0.8s, lọc thông cao 250 Hz",
+  "loai": "chim",
+  "ms": 2200
+ },
+ {
+  "nhom": "que",
+  "ten": "ech-1",
+  "ghi": "bỏ lặng đầu/đuôi của croak_01.mp3",
+  "loai": "ếch",
+  "ms": 459
+ },
+ {
+  "nhom": "que",
+  "ten": "ech-2",
+  "ghi": "bỏ lặng đầu/đuôi của ribbit_01.mp3",
+  "loai": "ếch",
+  "ms": 715
+ },
+ {
+  "nhom": "que",
+  "ten": "gio-lua",
+  "ghi": "cửa sổ đều 3,5 s từ 250.5s (gió công viên, thay cho gió tre)",
+  "loai": "gió",
+  "ms": 3500
+ },
+ {
+  "nhom": "que",
+  "ten": "nuoc-suoi",
+  "ghi": "cửa sổ đều 3,5 s từ 99.0s (sông công viên)",
+  "loai": "nước",
+  "ms": 3500
+ },
+ {
+  "nhom": "que",
+  "ten": "chuong-trau",
+  "ghi": "tự tổng hợp: bell(820/780/840 Hz) + mo(430 Hz) lắc 3 tiếng lệch nhịp",
+  "loai": "chuông",
+  "ms": 1700
+ },
+ {
+  "nhom": "que",
+  "ten": "mo-trau",
+  "ghi": "tự tổng hợp: mo(520/480/520/470 Hz) cách ~0,3 s, lọc mềm 3 kHz",
+  "loai": "mõ",
+  "ms": 1300
+ },
+ {
+  "nhom": "lai",
+  "ten": "hoan-thanh-chim",
+  "ghi": "hoan-thanh (xong-a) + chim ríu rít CC0 khẽ −17 dB phía sau, đuôi 0,25 s",
+  "ms": 1450
+ },
+ {
+  "nhom": "lai",
+  "ten": "chuoi-ngay-ga",
+  "ghi": "chuoi-ngay (chuoi-a) + gà gáy PD khẽ −13 dB phía sau",
+  "ms": 1300
+ },
+ {
+  "nhom": "lai",
+  "ten": "chuoi-ngay-chim",
+  "ghi": "chuoi-ngay + chim ríu rít khẽ −16 dB (phương án không gáy)",
+  "ms": 1300
+ },
+ {
+  "nhom": "nen",
+  "ten": "sang-lang",
+  "ghi": "Sáng làng: sáo trúc dẫn, T'rưng rải ngũ cung, đàn tranh gảy trầm, chim đồng quê rất khẽ",
+  "giay": 67.2,
+  "bpm": 100,
+  "kb": 473,
+  "lufs": -18.8,
+  "buoc_nhay": 0.03,
+  "nhay_sau_ma_hoa": 0.45
+ },
+ {
+  "nhom": "nen",
+  "ten": "chieu-dong",
+  "ghi": "Chiều đồng: đàn bầu gảy luân phiên sáo, ngân dài, gió lùa khẽ",
+  "giay": 75.8,
+  "bpm": 76,
+  "kb": 485,
+  "lufs": -20.1,
+  "buoc_nhay": 0.24,
+  "nhay_sau_ma_hoa": 0.78
+ },
+ {
+  "nhom": "nen",
+  "ten": "trau-ve",
+  "ghi": "Trâu về: T'rưng nhảy nhịp 112, sáo trúc ở đoạn B, mõ gõ phách nghịch, suối róc rách",
+  "giay": 68.6,
+  "bpm": 112,
+  "kb": 405,
+  "lufs": -22.1,
+  "buoc_nhay": 0.97,
+  "nhay_sau_ma_hoa": 0.56
+ }
+]
