@@ -3,8 +3,10 @@ import { defineMessages } from '@vietlearning/state';
 /** Tên + mô tả 12 công cụ (M1–M12) cho màn Khám phá — nằm trong chunk lazy của màn này, không ở bundle đầu. */
 export const { useT } = defineMessages(
   {
-    exploreTitle: 'Khám phá',
-    exploreLead: 'Tất cả công cụ luyện tập, mở tự do bất cứ lúc nào.',
+    exploreTitle: 'Luyện tập',
+    exploreLead: 'Chọn một cách luyện, mở tự do bất cứ lúc nào.',
+    'on-tap.label': 'Ôn tập hôm nay',
+    'on-tap.desc': 'Thẻ đến hạn ôn theo lịch lặp lại ngắt quãng',
     'gym.label': 'Phòng tập thanh điệu',
     'gym.desc': 'Nghe phân biệt ma/má/mà…, bắt thanh tốc độ, xem tiến bộ từng thanh',
     'xung-ho.label': 'Ma trận xưng hô',
@@ -33,8 +35,10 @@ export const { useT } = defineMessages(
     'bat-dau.desc': 'M11 · Mục tiêu, phương ngữ, bài xếp lớp thích ứng 8–12 câu (A5)'
   },
   {
-    exploreTitle: 'Explore',
-    exploreLead: 'Every practice tool, open any time.',
+    exploreTitle: 'Practice',
+    exploreLead: 'Pick a way to practise, open any time.',
+    'on-tap.label': 'Review today',
+    'on-tap.desc': 'Cards that are due, on a spaced-repetition schedule',
     'gym.label': 'Tone gym',
     'gym.desc': 'Tell ma/má/mà… apart, catch tones at speed, track each tone',
     'xung-ho.label': 'Pronoun matrix',

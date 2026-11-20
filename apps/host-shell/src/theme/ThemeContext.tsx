@@ -1,52 +1,47 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { setDeviceSettings, useDeviceSettings } from '@vietlearning/state';
 import { applySystemBars } from '../native/bootstrap';
+import { THEME_COLOR, applyDocumentSettings, resolveTheme, type AppTheme } from './deviceBindings';
 
-export type AppTheme = 'dark' | 'light';
-
-const STORAGE_KEY = 'becutit.theme';
-const META_COLOR: Record<AppTheme, string> = { dark: '#16100B', light: '#F6F3EC' };
-
-function readStoredTheme(): AppTheme {
-  try {
-    const v = localStorage.getItem(STORAGE_KEY);
-    return v === 'light' || v === 'dark' ? v : 'dark';
-  } catch {
-    return 'dark'; // chế độ riêng tư / bị chặn storage
-  }
-}
+export type { AppTheme };
 
 interface ThemeValue {
+  /** Giao diện đang áp dụng (đã giải 'system') */
   theme: AppTheme;
   setTheme: (t: AppTheme) => void;
 }
 
 const ThemeContext = createContext<ThemeValue | null>(null);
 
+const DARK_QUERY = '(prefers-color-scheme: dark)';
+
 /**
- * Giao diện của toàn app là "state slice" do Host cấp (Nguyên tắc 7): Shell giữ, lưu lại,
- * gắn data-theme lên <html> để thanh tab và mọi màn hình đổi cùng lúc qua CSS variables.
+ * Giao diện là cài đặt THEO MÁY (`deviceSettings`): Shell đọc, gắn data-theme / data-reduced-motion lên <html>
+ * để thanh tab và mọi màn hình đổi cùng lúc qua CSS variables. 'system' theo prefers-color-scheme.
  */
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [theme, setThemeState] = useState<AppTheme>(readStoredTheme);
+  const choice = useDeviceSettings((s) => s.theme);
+  const reducedMotion = useDeviceSettings((s) => s.reducedMotion);
+  const [prefersDark, setPrefersDark] = useState(() => window.matchMedia?.(DARK_QUERY).matches ?? false);
+  const theme = resolveTheme(choice, prefersDark);
 
   useEffect(() => {
-    // Chỉ ghi khi khác: ghi lại cùng giá trị ở <html>/color-scheme vẫn có thể buộc tính lại style toàn trang
-    const root = document.documentElement;
-    if (root.dataset.theme !== theme) root.dataset.theme = theme;
+    if (choice !== 'system' || !window.matchMedia) return;
+    const mq = window.matchMedia(DARK_QUERY);
+    const on = () => setPrefersDark(mq.matches);
+    on();
+    mq.addEventListener('change', on);
+    return () => mq.removeEventListener('change', on);
+  }, [choice]);
+
+  useEffect(() => {
+    applyDocumentSettings(document.documentElement, { theme: choice, reducedMotion }, prefersDark);
     applySystemBars(theme); // app Android: dải status/navigation bar đổi theo
     const themeMeta = document.querySelector('meta[name="theme-color"]');
-    if (themeMeta && themeMeta.getAttribute('content') !== META_COLOR[theme]) themeMeta.setAttribute('content', META_COLOR[theme]);
-  }, [theme]);
+    if (themeMeta && themeMeta.getAttribute('content') !== THEME_COLOR[theme]) themeMeta.setAttribute('content', THEME_COLOR[theme]);
+  }, [choice, reducedMotion, prefersDark, theme]);
 
-  const setTheme = useCallback((t: AppTheme) => {
-    setThemeState(t);
-    try {
-      localStorage.setItem(STORAGE_KEY, t);
-    } catch {
-      /* không lưu được thì vẫn đổi trong phiên hiện tại */
-    }
-  }, []);
-
+  const setTheme = useCallback((t: AppTheme) => setDeviceSettings({ theme: t }), []);
   const value = useMemo(() => ({ theme, setTheme }), [theme, setTheme]);
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
 }
