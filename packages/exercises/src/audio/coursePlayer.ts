@@ -5,6 +5,7 @@
  * Không chặn bài học: mọi lỗi mạng/cache đều im lặng và rơi về TTS của máy.
  */
 import { getDeviceSpeech } from '@vietlearning/native';
+import { acquireAudio } from '@vietlearning/shared/audio/focus';
 import { learnerStore, SLOW_FACTOR, speechRate } from '@vietlearning/state';
 
 export type Dialect = 'north' | 'central' | 'south';
@@ -94,6 +95,13 @@ export function findAudioKey(text: string, dialect: Dialect): string | undefined
 }
 
 let current: HTMLAudioElement | null = null;
+/** Giữ "đang phát âm bài học" với điều phối âm thanh (nhạc nền tự dừng). */
+let release: (() => void) | null = null;
+
+function endHold(): void {
+  release?.();
+  release = null;
+}
 
 async function playFile(key: string, rate: number): Promise<boolean> {
   try {
@@ -101,16 +109,24 @@ async function playFile(key: string, rate: number): Promise<boolean> {
     const cached = await (await openCache())?.match(url);
     const src = cached ? URL.createObjectURL(await cached.blob()) : url;
     current?.pause();
+    endHold();
     const audio = new Audio(src);
     // trình duyệt giữ cao độ khi đổi tốc độ (mặc định đã bật; đặt rõ để thanh điệu không bị méo)
     audio.preservesPitch = true;
     audio.playbackRate = rate;
     current = audio;
-    await new Promise<void>((resolve, reject) => {
-      audio.onended = () => resolve();
-      audio.onerror = () => reject(new Error('audio'));
-      audio.play().catch(reject);
-    });
+    const mine = acquireAudio('lesson-audio');
+    release = mine;
+    try {
+      await new Promise<void>((resolve, reject) => {
+        audio.onended = () => resolve();
+        audio.onerror = () => reject(new Error('audio'));
+        audio.play().catch(reject);
+      });
+    } finally {
+      mine();
+      if (release === mine) release = null;
+    }
     if (cached) URL.revokeObjectURL(src);
     return true;
   } catch {
@@ -132,6 +148,7 @@ export async function playText(text: string, dialect: Dialect = learnerStore.get
 export function stopPlayback(): void {
   current?.pause();
   current = null;
+  endHold();
   void getDeviceSpeech()
     .stop()
     .catch(() => undefined);

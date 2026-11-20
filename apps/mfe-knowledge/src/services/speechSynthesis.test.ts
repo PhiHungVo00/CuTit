@@ -24,6 +24,7 @@ vi.mock('@vietlearning/native', () => {
   return { SpeechError, getDeviceSpeech: () => ({ speak: device.speak, stop: device.stop }) };
 });
 
+import { isAudioBusy } from '@vietlearning/shared/audio/focus';
 const { speechService } = await import('./speechSynthesis');
 
 const flush = () => new Promise((r) => setTimeout(r, 0));
@@ -83,5 +84,53 @@ describe('speechService', () => {
     const onError = vi.fn();
     await speechService.speak('Chào bác', { onError });
     expect(onError).toHaveBeenCalledWith(expect.objectContaining({ code: 'network' }));
+  });
+
+  describe('báo điều phối âm thanh khi phát giọng Gateway', () => {
+    function gateway(end: 'ended' | 'error' | 'never') {
+      device.mode = 'no-voice';
+      vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({ audioUrl: 'http://gw.test/a.mp3', durationMs: 1000, cached: false }), { status: 200, headers: { 'content-type': 'application/json' } })));
+      const seen: boolean[] = [];
+      class A {
+        onended: (() => void) | null = null;
+        onerror: (() => void) | null = null;
+        constructor(public src: string) {}
+        play() {
+          seen.push(isAudioBusy());
+          if (end === 'ended') setTimeout(() => this.onended?.(), 0);
+          if (end === 'error') setTimeout(() => this.onerror?.(), 0);
+          return Promise.resolve();
+        }
+        pause() {}
+      }
+      vi.stubGlobal('Audio', A);
+      return seen;
+    }
+
+    it('bận khi đang phát, hết bận khi xong', async () => {
+      const seen = gateway('ended');
+      await speechService.speak('Chào bác', {});
+      await flush();
+      await flush();
+      expect(seen).toEqual([true]);
+      expect(isAudioBusy()).toBe(false);
+    });
+
+    it('lỗi phát => hết bận', async () => {
+      gateway('error');
+      await speechService.speak('Chào bác', { onError: vi.fn() });
+      await flush();
+      await flush();
+      expect(isAudioBusy()).toBe(false);
+    });
+
+    it('stop() giữa chừng => hết bận', async () => {
+      gateway('never');
+      await speechService.speak('Chào bác', {});
+      await flush();
+      expect(isAudioBusy()).toBe(true);
+      speechService.stop();
+      expect(isAudioBusy()).toBe(false);
+    });
   });
 });

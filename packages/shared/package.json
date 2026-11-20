@@ -6,7 +6,8 @@
   "types": "./dist/index.d.ts",
   "scripts": {
     "build": "tsc -b",
-    "dev": "tsc -b -w"
+    "dev": "tsc -b -w",
+    "test": "node --test \"test/**/*.test.mjs\""
   },
   "dependencies": {
     "@vietlearning/contracts": "workspace:*"
@@ -22,6 +23,10 @@
     "./audio": {
       "types": "./dist/audio/index.d.ts",
       "default": "./dist/audio/index.js"
+    },
+    "./audio/focus": {
+      "types": "./dist/audio/focus.d.ts",
+      "default": "./dist/audio/focus.js"
     }
   }
 }
