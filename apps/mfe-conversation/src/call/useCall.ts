@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import type { NewWord } from '@vietlearning/contracts/api';
 import { getDeviceSpeech } from '@vietlearning/native';
+import { acquireAudio } from '@vietlearning/shared/audio/focus';
 import { learnerStore, speechRate } from '@vietlearning/state';
 import { useChatSession } from '../chat/useChatSession';
 import { useVoiceInput } from '../chat/useVoiceInput';
@@ -52,6 +53,7 @@ export function useCall(deps?: Partial<SpeakerDeps>) {
   const [turnsLeft, setTurnsLeft] = useState<number | null>(null);
   const [slow, setSlow] = useState(false);
   const lastReply = useRef('');
+  const callHold = useRef<(() => void) | null>(null);
   const slowRef = useRef(slow);
   slowRef.current = slow;
 
@@ -72,6 +74,23 @@ export function useCall(deps?: Partial<SpeakerDeps>) {
   });
 
   const voice = useVoiceInput(({ text }) => dispatch({ type: 'HEARD', text }), undefined, { autoStop: true });
+
+  // Cả cuộc gọi báo điều phối âm thanh là "đang bận" (nhạc nền tắt từ lúc bắt đầu tới khi gác máy/rời màn)
+  useEffect(() => {
+    const inCall = state.phase !== 'idle' && state.phase !== 'ended';
+    if (inCall && !callHold.current) callHold.current = acquireAudio('call');
+    if (!inCall) {
+      callHold.current?.();
+      callHold.current = null;
+    }
+  }, [state.phase]);
+  useEffect(
+    () => () => {
+      callHold.current?.();
+      callHold.current = null;
+    },
+    []
+  );
 
   // Hạn mức hôm nay (để hiện "còn N lượt"); lỗi thì bỏ qua — lượt đầu sẽ cập nhật
   useEffect(() => {

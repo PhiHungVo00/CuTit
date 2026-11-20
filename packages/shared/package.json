@@ -23,6 +23,10 @@
     "./audio": {
       "types": "./dist/audio/index.d.ts",
       "default": "./dist/audio/index.js"
+    },
+    "./audio/focus": {
+      "types": "./dist/audio/focus.d.ts",
+      "default": "./dist/audio/focus.js"
     }
   }
 }
