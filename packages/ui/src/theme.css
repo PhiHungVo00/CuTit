@@ -5,8 +5,9 @@
  * Rồi dùng class ngữ nghĩa: bg-surface, text-ink, border-line, bg-accent, text-accent-ink...
  *
  * Màu là CSS variables đổi theo thuộc tính data-theme trên phần tử gốc của màn hình:
- *   data-theme="dark"  : "Gỗ Mộc Cổ Truyền" (mặc định)
- *   data-theme="light" : "Tre Trúc Sáng"
+ *   data-theme="light" : "Làng quê sáng" (bản sắc mới: nền kem, nhấn vàng rơm, chính xanh lá)
+ *   data-theme="dark"  : "Làng quê tối" (nâu ấm, không đen/xám lạnh) — cũng là giá trị khi chưa gán data-theme
+ * Mọi màu, bo góc, bóng, chuyển động ở đây là NGUỒN DUY NHẤT; thành phần dùng var(--ct-*).
  * => Đổi giao diện chỉ là đổi một thuộc tính, không remount component, không tính style bằng JS.
  */
 
@@ -29,6 +30,8 @@
   --color-danger: var(--ct-danger);
   --color-danger-soft: var(--ct-danger-soft);
   --color-danger-ink: var(--ct-danger-ink);
+  --color-gold: var(--ct-gold);
+  --color-sky: var(--ct-sky);
 
   /* 3 thành tố ngữ pháp: Ngôi 1 (đỏ), Ngôi 2 (hổ phách), Kính ngữ (xanh) */
   --color-chip1-bg: var(--ct-chip1-bg);
@@ -44,63 +47,75 @@
   --shadow-card: var(--ct-shadow-card);
 }
 
+:root {
+  --ct-radius-sm: 12px;
+  --ct-radius-md: 16px;
+  --ct-radius-lg: 24px;
+  --ct-motion-fast: 120ms;
+  --ct-motion-base: 180ms;
+}
+
 :root,
 [data-theme='dark'] {
   color-scheme: dark;
-  --ct-canvas: #16100b;
-  --ct-surface: #221812;
-  --ct-surface-2: #2a1f18;
-  --ct-sunken: #19110b;
-  --ct-line: #3d2d23;
-  --ct-line-strong: #b45309;
-  --ct-ink: #fdfbf7;
-  --ct-ink-soft: #d4b895;
-  --ct-ink-muted: #a38c76;
-  --ct-heading: #fbbf24;
-  --ct-accent: #f59e0b;
-  --ct-accent-ink: #000000;
-  --ct-accent-soft: rgb(245 158 11 / 0.18);
-  --ct-danger: #dc2626;
-  --ct-danger-soft: #3b1515;
-  --ct-danger-ink: #fecaca;
-  --ct-chip1-bg: #3b1515;
-  --ct-chip1-line: #991b1b;
-  --ct-chip1-ink: #fca5a5;
-  --ct-chip2-bg: #42240c;
-  --ct-chip2-line: #b45309;
-  --ct-chip2-ink: #fde68a;
-  --ct-chip3-bg: #063b2c;
-  --ct-chip3-line: #059669;
-  --ct-chip3-ink: #a7f3d0;
-  --ct-shadow-card: 0 10px 30px rgb(0 0 0 / 0.5);
+  --ct-canvas: #1f1710;
+  --ct-surface: #2b2118;
+  --ct-surface-2: #352a1e;
+  --ct-sunken: #19120c;
+  --ct-line: #4b3b2b;
+  --ct-line-strong: #e9b949;
+  --ct-ink: #f7ecda;
+  --ct-ink-soft: #dcc7a8;
+  --ct-ink-muted: #b09b83;
+  --ct-heading: #f0c25a;
+  --ct-accent: #8dbf5e;
+  --ct-accent-ink: #1b2a0e;
+  --ct-accent-soft: rgb(141 191 94 / 0.18);
+  --ct-gold: #e9b949;
+  --ct-sky: #2f4a57;
+  --ct-danger: #e4694f;
+  --ct-danger-soft: #3f1f17;
+  --ct-danger-ink: #fbcdbf;
+  --ct-chip1-bg: #3f1f17;
+  --ct-chip1-line: #a24331;
+  --ct-chip1-ink: #fbb8a8;
+  --ct-chip2-bg: #45300f;
+  --ct-chip2-line: #b8832a;
+  --ct-chip2-ink: #fde3a0;
+  --ct-chip3-bg: #1f3319;
+  --ct-chip3-line: #5e8f3a;
+  --ct-chip3-ink: #cdeab0;
+  --ct-shadow-card: 0 8px 24px rgb(0 0 0 / 0.4);
 }
 
 [data-theme='light'] {
   color-scheme: light;
-  --ct-canvas: #f6f3ec;
-  --ct-surface: #ffffff;
-  --ct-surface-2: #faf7f2;
-  --ct-sunken: #fffdf9;
-  --ct-line: #e5d5c0;
-  --ct-line-strong: #059669;
-  --ct-ink: #1c1917;
-  --ct-ink-soft: #44403c;
-  --ct-ink-muted: #6b6560;
-  --ct-heading: #047857;
-  --ct-accent: #059669;
-  --ct-accent-ink: #ffffff;
-  --ct-accent-soft: rgb(5 150 105 / 0.12);
-  --ct-danger: #e11d48;
-  --ct-danger-soft: #fee2e2;
-  --ct-danger-ink: #991b1b;
-  --ct-chip1-bg: #fee2e2;
-  --ct-chip1-line: #fca5a5;
-  --ct-chip1-ink: #7f1d1d;
-  --ct-chip2-bg: #fef3c7;
-  --ct-chip2-line: #fcd34d;
-  --ct-chip2-ink: #78350f;
-  --ct-chip3-bg: #d1fae5;
-  --ct-chip3-line: #6ee7b7;
-  --ct-chip3-ink: #065f46;
-  --ct-shadow-card: 0 8px 24px rgb(180 83 9 / 0.06);
+  --ct-canvas: #fbf3e4;
+  --ct-surface: #fffdf8;
+  --ct-surface-2: #f6ecd8;
+  --ct-sunken: #fff8ea;
+  --ct-line: #eadfcb;
+  --ct-line-strong: #6fa544;
+  --ct-ink: #3b2a1e;
+  --ct-ink-soft: #5e4a39;
+  --ct-ink-muted: #75624f;
+  --ct-heading: #5a3e28;
+  --ct-accent: #6fa544;
+  --ct-accent-ink: #1f2e10;
+  --ct-accent-soft: rgb(111 165 68 / 0.16);
+  --ct-gold: #e9b949;
+  --ct-sky: #cfe8f3;
+  --ct-danger: #c03a27;
+  --ct-danger-soft: #fde4dc;
+  --ct-danger-ink: #8a2616;
+  --ct-chip1-bg: #fde4dc;
+  --ct-chip1-line: #f0a893;
+  --ct-chip1-ink: #7f2514;
+  --ct-chip2-bg: #fbeec4;
+  --ct-chip2-line: #e9b949;
+  --ct-chip2-ink: #6b4208;
+  --ct-chip3-bg: #e1f0d1;
+  --ct-chip3-line: #9cc578;
+  --ct-chip3-ink: #2f5a14;
+  --ct-shadow-card: 0 6px 20px rgb(90 62 40 / 0.1);
 }
