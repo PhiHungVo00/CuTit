@@ -48,3 +48,7 @@ apps/gateway/.data/
 
 # Python cache (tools/tts-local)
 __pycache__/
+
+# Claude Code: worktree tạm và cấu hình cá nhân (không commit)
+.claude/worktrees/
+.claude/settings.local.json

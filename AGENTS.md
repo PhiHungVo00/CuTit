@@ -91,6 +91,45 @@ VITE_GATEWAY_URL=http://localhost:4000 pnpm --filter @vietlearning/host-shell bu
 pnpm --filter @vietlearning/host-shell e2e
 ```
 
+---
+
+## 🧭 5. Phân việc theo model (thống nhất với người dùng 20/11/2026)
+
+**Phiên chính dùng model mạnh nhất (Opus) làm điều phối.** Nó lập kế hoạch, chia việc, chọn model/effort, kiểm và gộp. Việc đã chia rõ thì giao cho subagent (`.claude/agents/`) hoặc phiên phụ, kèm model rẻ hơn.
+
+Effort chọn theo **rủi ro và mức mơ hồ**, không theo độ dài. Bốn câu hỏi để quyết:
+- Sai có khó hoàn tác không (DB, bảo mật, dữ liệu người dùng, pháp lý)?
+- Có cần tự suy luận nhiều không?
+- Sửa có lan ra nhiều chỗ không?
+- Có cách kiểm tự động không?
+
+| Việc | Agent / phiên | Model | Effort |
+|---|---|---|---|
+| Điều phối, kế hoạch, kiểm và gộp | phiên chính | Opus | high |
+| Kiến trúc, bảo mật, schema/migration, auth, lỗi khó (native, hiệu năng, race), review cuối | `kien-truc` | Opus | xhigh |
+| Tính năng nhiều tệp đã có yêu cầu rõ, TDD | `lam-tinh-nang` | Sonnet | high |
+| Lỗi đã rõ nguyên nhân, test chập chờn, CI đỏ có log, refactor nhỏ | `sua-nho` | Sonnet | medium |
+| Tìm/đọc code, nhật ký, tài liệu, chụp ảnh, slide, sửa chữ hàng loạt | `tai-lieu` | Haiku | medium (low cho việc rất máy móc) |
+
+**Luật nâng cấp:**
+- Model rẻ làm 2 lần vẫn hỏng ⇒ chuyển lên model cao hơn.
+- Việc đụng DB, auth, native Android hay pháp lý ⇒ `kien-truc` xem lại.
+- **Không gì vào `main`** nếu chưa qua skill `kiem-truoc-khi-gop`.
+
+**Skill của dự án** (`.claude/skills/`):
+- `kiem-truoc-khi-gop`
+- `thu-tren-emulator`
+- `dung-am-thanh`
+- `chup-man-hinh-app`
+
+**Hook** (`.claude/settings.json`):
+- chặn sửa migration đã phát hành;
+- chặn commit `AGENTS.md` khi turbo tự sửa.
+
+**Cách làm việc với người dùng:**
+- Có ý hay hơn đề xuất của người dùng thì phải nói ra kèm lý do trước khi làm.
+- Cần plugin, hook, skill, MCP, subagent hay phiên mới thì hỏi người dùng, đừng cố làm thiếu công cụ.
+
 > `turbo.json` đặt `"agentGuidance": false` để `pnpm build` không tự sửa tệp này (R13). Khối turbo bên dưới được giữ nguyên có chủ đích.
 
 <!-- BEGIN:turborepo-agent-rules -->
