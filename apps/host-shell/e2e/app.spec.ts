@@ -288,6 +288,8 @@ test.describe('M9 Tiến độ & M12 Tùy chỉnh', () => {
       );
     });
     await page.goto('/ho-so');
+    await page.getByRole('link', { name: /Tiến độ/ }).click(); // tab Hồ sơ → dòng Tiến độ
+    await expect(page).toHaveURL(/\/tien-do$/);
     await expect(page.getByRole('heading', { name: 'Tiến độ học' })).toBeVisible();
     await expect(page.getByText('3 ngày', { exact: true })).toBeVisible();
     await expect(page.getByText('17 phút', { exact: true })).toBeVisible();
@@ -323,7 +325,7 @@ test.describe('M9 Tiến độ & M12 Tùy chỉnh', () => {
       puts.push(route.request().postDataJSON());
       await route.fulfill({ json: route.request().postDataJSON() });
     });
-    await page.goto('/tuy-chinh');
+    await page.goto('/cai-dat/hoc');
     await expect(page.getByText('Giọng Bắc (máy chủ)')).toBeVisible();
     await assertMobileLayout(page);
     await page.getByText('Miền Nam', { exact: true }).click();
@@ -596,7 +598,8 @@ test.describe('Giao diện tiếng Anh (người nước ngoài)', () => {
       ['/ghep-cau', 'Sentence builder'],
       ['/nhap-vai', 'Role-play'],
       ['/camera', 'Camera vocabulary'],
-      ['/ho-so', 'My progress'],
+      ['/ho-so', 'Profile'],
+      ['/tien-do', 'My progress'],
       ['/tuy-chinh', 'Settings'],
       ['/bat-dau', 'Get started']
     ];
