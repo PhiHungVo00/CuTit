@@ -19,14 +19,15 @@ async function assertMobileLayout(page: Page) {
 }
 
 test.describe('Khung app', () => {
-  test('trang chủ: liệt kê 6 màn hình, thanh tab, bố cục mobile chuẩn', async ({ page }) => {
+  test('trang chủ: thanh 4 tab, lối vào tra cứu, bố cục mobile chuẩn', async ({ page }) => {
     await page.goto('/');
     await expect(page.getByRole('heading', { name: 'Học Tiếng Việt Cùng Bé Cu Tít' })).toBeVisible();
     await expect(page.getByRole('navigation', { name: 'Điều hướng chính' })).toBeVisible();
     await assertMobileLayout(page);
-    // GĐ1: 12 công cụ chuyển từ trang chủ sang tab Khám phá (trang chủ nay là lộ trình)
-    await page.getByRole('navigation').getByRole('link', { name: /Khám phá/ }).click();
-    await expect(page.locator('.screen-card')).toHaveCount(12);
+    // Dự án 1: màn Khám phá được thay bằng tab Luyện tập (5 cách luyện); tra cứu nằm cuối tab Học
+    await expect(page.getByRole('link', { name: /Ma trận xưng hô/ })).toBeVisible();
+    await page.getByRole('navigation').getByRole('link', { name: 'Luyện tập' }).click();
+    await expect(page.locator('.list-card a')).toHaveCount(5);
     await assertMobileLayout(page);
   });
 
@@ -35,7 +36,7 @@ test.describe('Khung app', () => {
     page.on('request', (r) => loaded.push(r.url()));
     await page.goto('/');
     expect(loaded.some((u) => /HonorificScreen|ToneLabRoute/.test(u))).toBe(false);
-    await page.getByRole('navigation').getByRole('link', { name: /Xưng hô/ }).click();
+    await page.getByRole('link', { name: /Ma trận xưng hô/ }).click();
     await expect(page.getByRole('heading', { name: 'Ma trận đại từ xưng hô' })).toBeVisible();
     expect(loaded.some((u) => /HonorificScreen/.test(u))).toBe(true);
     expect(loaded.some((u) => /ToneLabRoute/.test(u))).toBe(false);
@@ -63,7 +64,7 @@ test.describe('M3 Ma trận xưng hô', () => {
     await page.reload();
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
     const tabBg = await page.locator('.tabbar').evaluate((el) => getComputedStyle(el).backgroundColor);
-    expect(tabBg).toBe('rgb(246, 243, 236)');
+    expect(tabBg).toBe('rgb(251, 243, 228)'); // --ct-canvas sáng của bảng Cu Tít
   });
 
   test('bảng 20 cặp: tìm không dấu, Esc đóng và trả focus, Áp dụng đưa cặp lên', async ({ page }) => {
@@ -549,9 +550,10 @@ test.describe('Hiệu năng trên máy yếu (CPU chậm 4×) @perf', () => {
     test.skip(browserName !== 'chromium' || info.project.name !== 'perf', 'chỉ đo trên Chromium, một cấu hình');
     const cdp = await page.context().newCDPSession(page);
     await page.goto('/');
+    await expect(page.getByRole('link', { name: /Ma trận xưng hô/ })).toBeVisible();
     await cdp.send('Emulation.setCPUThrottlingRate', { rate: 4 });
     const t0 = Date.now();
-    await page.getByRole('navigation').getByRole('link', { name: /Xưng hô/ }).click();
+    await page.getByRole('link', { name: /Ma trận xưng hô/ }).click();
     await expect(page.getByRole('heading', { name: 'Ma trận đại từ xưng hô' })).toBeVisible();
     const ms = Date.now() - t0;
     console.log(`  Mở M3 với CPU chậm 4×: ${ms} ms`);

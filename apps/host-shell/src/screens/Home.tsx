@@ -14,6 +14,8 @@ const loadPath = () => import('./PathHomeRoute');
 if (typeof location !== 'undefined' && location.pathname === '/') void loadPath().catch(() => undefined);
 const PathHome = lazy(loadPath);
 
+const HomeLookup = lazy(() => import('./HomeLookup'));
+
 function PathSkeleton() {
   const t = useT();
   return (
@@ -65,6 +67,11 @@ export function Home() {
             </span>
           </Link>
         )}
+      </Suspense>
+
+      {/* Tra cứu: vào từ tab Học (spec 5.2); chunk lười để gói đầu không gánh */}
+      <Suspense fallback={null}>
+        <HomeLookup />
       </Suspense>
     </div>
   );
