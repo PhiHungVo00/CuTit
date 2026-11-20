@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { installFakeMicStartHook } from './fake-mic';
 
 /** Không có tràn ngang + mọi nút/link trong <main> chạm được (>= 44px chiều cao). */
 async function assertMobileLayout(page: Page) {
@@ -497,23 +498,26 @@ test.describe('M4 Camera từ vựng', () => {
 
 test.describe('M2 Luyện thanh điệu', () => {
   test('micro giả lập giọng đi lên => chấm đúng thanh sắc (AudioWorklet → resample → Worker)', async ({ page }) => {
+    await installFakeMicStartHook(page);
     await page.addInitScript(() => {
       navigator.mediaDevices.getUserMedia = async () => {
         const ctx = new AudioContext();
         const osc = ctx.createOscillator();
         osc.type = 'sawtooth';
         const g = ctx.createGain();
-        const t = ctx.currentTime;
-        osc.frequency.setValueAtTime(150, t);
-        osc.frequency.setValueAtTime(150, t + 0.25);
-        osc.frequency.linearRampToValueAtTime(280, t + 1.05);
-        g.gain.setValueAtTime(0, t);
-        g.gain.linearRampToValueAtTime(0.4, t + 0.25);
-        g.gain.setValueAtTime(0.4, t + 1.05);
-        g.gain.linearRampToValueAtTime(0, t + 1.1);
         const dest = ctx.createMediaStreamDestination();
         osc.connect(g).connect(dest);
-        osc.start();
+        (dest.stream as MediaStream & { __start?: () => void }).__start = () => {
+          const t = ctx.currentTime;
+          osc.frequency.setValueAtTime(150, t);
+          osc.frequency.setValueAtTime(150, t + 0.25);
+          osc.frequency.linearRampToValueAtTime(280, t + 1.05);
+          g.gain.setValueAtTime(0, t);
+          g.gain.linearRampToValueAtTime(0.4, t + 0.25);
+          g.gain.setValueAtTime(0.4, t + 1.05);
+          g.gain.linearRampToValueAtTime(0, t + 1.1);
+          osc.start();
+        };
         return dest.stream;
       };
     });
@@ -561,6 +565,9 @@ test.describe('Hiệu năng trên máy yếu (CPU chậm 4×) @perf', () => {
     console.log(`  Mở M3 với CPU chậm 4×: ${ms} ms`);
     expect(ms).toBeLessThan(1500);
 
+    // Chuyển cảnh giữa hai màn (View Transition ≤ 200 ms, dự án 1 đợt 2) là hoạt ảnh CÓ CHỦ ĐÍCH và phủ lên trang;
+    // phép đo này là độ trễ của MỘT LẦN CHẠM, nên đợi hoạt ảnh hữu hạn kết thúc rồi mới chạm (trần 300 ms giữ nguyên).
+    await page.waitForFunction(() => document.getAnimations().every((a) => a.effect?.getComputedTiming().iterations === Infinity));
     const t1 = Date.now();
     await page.getByRole('radio', { name: 'Lớn hơn' }).click();
     await expect(page.getByRole('radio', { name: 'Lớn hơn' })).toHaveAttribute('aria-checked', 'true');

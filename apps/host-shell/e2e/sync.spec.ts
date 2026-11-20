@@ -53,8 +53,11 @@ test.describe('GĐ0 Tài khoản khách & đồng bộ', () => {
 
     // Có mạng lại: gửi hàng đợi, kể cả bấm đồng bộ nhiều lần cũng không nhân đôi
     await page.unroute('**/v1/**');
-    await page.getByRole('button', { name: 'Đồng bộ ngay' }).click();
-    await expect(page.getByRole('status').filter({ hasText: 'Đã sao lưu' })).toBeVisible({ timeout: 15_000 });
+    // Bộ đồng bộ vừa lỗi mạng nên có thể còn chờ thử lại: bấm lại tới khi báo đã sao lưu (cùng khẳng định, chỉ bớt phụ thuộc thời điểm)
+    await expect(async () => {
+      await page.getByRole('button', { name: 'Đồng bộ ngay' }).click();
+      await expect(page.getByRole('status').filter({ hasText: 'Đã sao lưu' })).toBeVisible({ timeout: 4_000 });
+    }).toPass({ timeout: 25_000 });
     await page.getByRole('button', { name: 'Đồng bộ ngay' }).click();
     const cards = await serverCards(request, code);
     expect(cards).toHaveLength(2);

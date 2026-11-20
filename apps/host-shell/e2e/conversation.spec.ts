@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { installFakeMicStartHook } from './fake-mic';
 
 /**
  * GĐ3 — Hội thoại AI, chạy với Gateway THẬT (PGlite RAM, không khóa AI => gia sư + STT giả lập, xem playwright.config.ts).
@@ -23,19 +24,22 @@ const srsOf = (page: Page) => page.evaluate(() => JSON.parse(localStorage.getIte
 
 /** Micro giả: mỗi lần mở micro phát 0.4 s im lặng → 1 s "giọng" (âm 220 Hz) → im lặng (để bộ phát hiện ngừng nói tự dừng) */
 async function fakeMicSpeechThenSilence(page: Page) {
+  await installFakeMicStartHook(page);
   await page.addInitScript(() => {
     navigator.mediaDevices.getUserMedia = async () => {
       const ctx = new AudioContext();
       const osc = ctx.createOscillator();
       osc.frequency.value = 220;
       const gain = ctx.createGain();
-      const t = ctx.currentTime;
-      gain.gain.setValueAtTime(0, t);
-      gain.gain.setValueAtTime(0.8, t + 0.4);
-      gain.gain.setValueAtTime(0, t + 1.4);
       const dest = ctx.createMediaStreamDestination();
       osc.connect(gain).connect(dest);
-      osc.start();
+      (dest.stream as MediaStream & { __start?: () => void }).__start = () => {
+        const t = ctx.currentTime;
+        gain.gain.setValueAtTime(0, t);
+        gain.gain.setValueAtTime(0.8, t + 0.4);
+        gain.gain.setValueAtTime(0, t + 1.4);
+        osc.start();
+      };
       return dest.stream;
     };
   });
