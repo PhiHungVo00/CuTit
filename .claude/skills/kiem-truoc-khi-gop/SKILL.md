@@ -16,6 +16,12 @@ Chỉ gộp khi **mọi bước** đạt. Bước nào đỏ thì phân biệt n
 4. `VITE_GATEWAY_URL=http://localhost:<cổng GW> pnpm --filter @vietlearning/host-shell build`, rồi `pnpm --filter @vietlearning/host-shell size`. Không mục nào "exceeded".
 5. e2e trong `apps/host-shell`: `E2E_PORT=<cổng UI> E2E_GATEWAY_PORT=<cổng GW> npx playwright test --reporter=line`. Mỗi phiên dùng **cổng riêng** để không đụng phiên khác.
 6. **Đụng native/khởi động/tài khoản/đồng bộ/camera/micro** ⇒ chạy skill `thu-tren-emulator`.
+6b. **Plugin đã cài** (người dùng bật 20/11):
+   - **code-review**: chạy review nhiều agent trên PR/diff trước khi gộp. Chỉ sửa phát hiện có độ tin cậy cao; phát hiện còn nghi ngờ thì ghi vào PR.
+   - **Axe Accessibility**: PR có đổi giao diện thì quét màn bị ảnh hưởng (độ tương phản, nhãn, bàn phím). Lighthouse a11y phải giữ 100.
+   - **Android Emulator QA**: dùng kèm skill `thu-tren-emulator` để chụp màn hình, xem UI và lấy logcat.
+   - **Playwright MCP**: xem nhanh hoặc chụp màn hình trong trình duyệt. e2e chính thức vẫn chạy bằng `@playwright/test` của repo.
+   - **Security review**: plugin tự cảnh báo khi sửa code và khi commit. Cảnh báo nào đụng auth/Gateway thì chuyển cho `kien-truc` xem.
 7. Đẩy nhánh, mở draft PR, chờ CI: `verify` phải xanh; `performance` không chặn merge, nhưng đỏ thì phải biết là nhiễu hay thật.
 8. Ghi một dòng vào đầu bảng nhật ký: việc gì, xung đột gì, số đo từng bước.
 9. Gộp (`gh pr ready` + `gh pr merge --merge`), rồi fast-forward nhánh làm việc và checkout gốc (`git merge --ff-only origin/main`).
