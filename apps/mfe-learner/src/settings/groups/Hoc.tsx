@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
 import { getDeviceSpeech } from '@vietlearning/native';
-import { learnerStore, useLearner, type CorrectionLevel, type Dialect, type Preferences, type UiLanguage } from '@vietlearning/state';
-import { ChoiceGroup, ScreenFrame, card, linkBtn, secondaryBtn } from '../common/ui';
-import { useT } from '../i18n';
-import { AccountSection } from './AccountSection';
+import { useLearner, type CorrectionLevel, type Dialect } from '@vietlearning/state';
+import { ChoiceGroup, card, secondaryBtn } from '../../common/ui';
+import { useT } from '../../i18n';
+import { SyncLine } from '../parts';
+import { usePrefsUpdate } from '../usePrefs';
 
 interface Voice {
   id: string;
@@ -22,25 +22,7 @@ const OFFLINE_VOICES: (Voice & { en: string })[] = [
 
 const DIALECTS: Dialect[] = ['north', 'central', 'south'];
 const CORRECTION: CorrectionLevel[] = ['gentle', 'strict', 'off'];
-const UI_LANGS: { value: UiLanguage; label: string }[] = [
-  { value: 'en', label: 'English' },
-  { value: 'vi', label: 'Tiếng Việt' }
-];
-
 const SAMPLE = 'Xin chào, mình là Bé Cu Tít. Hôm nay mình cùng học tiếng Việt nhé!';
-
-type Sync = 'idle' | 'saving' | 'synced' | 'local';
-
-/** Đồng bộ lên Gateway (best-effort): luôn lưu trên máy trước, mạng lỗi thì giữ bản trên máy. */
-async function pushPreferences(p: Preferences): Promise<boolean> {
-  const [{ request }, { PreferencesSchema }] = await Promise.all([import('@vietlearning/api-client'), import('@vietlearning/contracts/api')]);
-  try {
-    await request('/v1/preferences', { method: 'PUT', body: p, schema: PreferencesSchema });
-    return true;
-  } catch {
-    return false;
-  }
-}
 
 async function fetchVoices(): Promise<Voice[] | null> {
   const [{ request }, { VoiceListResponseSchema }] = await Promise.all([import('@vietlearning/api-client'), import('@vietlearning/contracts/api')]);
@@ -52,15 +34,13 @@ async function fetchVoices(): Promise<Voice[] | null> {
   }
 }
 
-/** Màn hình M12: giọng đọc, tốc độ, phương ngữ, mức sửa lỗi, nhân vật; nghe thử; tài khoản (mã khôi phục, khôi phục, xóa). */
-export function PreferencesScreen() {
+/** Phương ngữ, giọng đọc, tốc độ, gia sư, mức sửa lỗi (chuyển từ PreferencesScreen cũ). Đổi phương ngữ ghi cả preferences.dialect và profile.dialect. */
+export function Hoc() {
   const t = useT();
   const prefs = useLearner((s) => s.preferences);
-  const consents = useLearner((s) => s.consents);
+  const { sync, update } = usePrefsUpdate();
   const [voices, setVoices] = useState<Voice[]>(() => OFFLINE_VOICES.map((v) => ({ ...v, name: prefs.uiLanguage === 'en' ? v.en : v.name })));
-  const [sync, setSync] = useState<Sync>('idle');
   const [speakError, setSpeakError] = useState<string | null>(null);
-  const timer = useRef<ReturnType<typeof setTimeout>>();
   const mounted = useRef(true);
 
   useEffect(() => {
@@ -68,20 +48,8 @@ export function PreferencesScreen() {
     void fetchVoices().then((v) => v && mounted.current && setVoices(v));
     return () => {
       mounted.current = false;
-      clearTimeout(timer.current);
     };
   }, []);
-
-  const update = (patch: Partial<Preferences>) => {
-    learnerStore.getState().setPreferences(patch);
-    setSync('saving');
-    // gộp các thay đổi liên tiếp (kéo thanh tốc độ) thành một lần gửi
-    clearTimeout(timer.current);
-    timer.current = setTimeout(async () => {
-      const ok = await pushPreferences(learnerStore.getState().preferences);
-      if (mounted.current) setSync(ok ? 'synced' : 'local');
-    }, 600);
-  };
 
   const listen = async () => {
     setSpeakError(null);
@@ -97,27 +65,8 @@ export function PreferencesScreen() {
   const shownVoices = voicesForDialect.length ? voicesForDialect : voices;
 
   return (
-    <ScreenFrame
-      title={t('prefsTitle')}
-      action={
-        <Link to="/ho-so" className={linkBtn}>
-          {t('progressLink')}
-        </Link>
-      }
-    >
-      <p role="status" className="m-0 min-h-5 text-sm text-ink-muted">
-        {sync === 'saving' && t('saving')}
-        {sync === 'synced' && t('synced')}
-        {sync === 'local' && t('localOnly')}
-      </p>
-
-      <section className={card} aria-labelledby="ct-app">
-        <h2 id="ct-app" className="m-0 text-lg font-extrabold text-ink">
-          {t('appSection')}
-        </h2>
-        <ChoiceGroup name="uilang" legend={t('uiLangLegend')} value={prefs.uiLanguage} options={UI_LANGS} onChange={(uiLanguage) => update({ uiLanguage })} />
-      </section>
-
+    <>
+      <SyncLine sync={sync} />
       <section className={card} aria-labelledby="ct-voice">
         <h2 id="ct-voice" className="m-0 text-lg font-extrabold text-ink">
           {t('voiceSection')}
@@ -129,7 +78,7 @@ export function PreferencesScreen() {
           options={DIALECTS.map((d) => ({ value: d, label: t(`dialect.${d}`) }))}
           onChange={(dialect) => {
             const first = voices.find((v) => v.dialect === dialect);
-            update(first && !voices.some((v) => v.id === prefs.voiceId && v.dialect === dialect) ? { dialect, voiceId: first.id } : { dialect });
+            update(first && !voices.some((v) => v.id === prefs.voiceId && v.dialect === dialect) ? { dialect, voiceId: first.id } : { dialect }, true);
           }}
         />
         <ChoiceGroup name="voice" legend={t('voiceLegend')} value={prefs.voiceId} options={shownVoices.map((v) => ({ value: v.id, label: v.name }))} onChange={(voiceId) => update({ voiceId })} />
@@ -181,40 +130,6 @@ export function PreferencesScreen() {
           onChange={(correctionLevel) => update({ correctionLevel })}
         />
       </section>
-
-      <section className={card} aria-labelledby="ct-privacy">
-        <h2 id="ct-privacy" className="m-0 text-lg font-extrabold text-ink">
-          {t('privacySection')}
-        </h2>
-        <p className="m-0 text-[15px] text-ink-soft">{t('privacyAi')}</p>
-        <p className="m-0 text-[15px] text-ink-soft">{t('privacyLocal')}</p>
-        {/* Rút lại đồng ý (Luật 91/2025 Điều 4, 10): có hiệu lực ngay trên máy, lên server ở lần đồng bộ kế */}
-        <h3 className="m-0 text-base font-extrabold text-ink">{t('consentHeading')}</h3>
-        <ul className="m-0 flex list-none flex-col gap-2 p-0">
-          {(['voice', 'camera'] as const).map((key) => (
-            <li key={key} className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-surface-2 p-3">
-              <span className="min-w-0 flex-1 text-[15px] text-ink">
-                <span className="block font-bold">{t(`consent.${key}`)}</span>
-                <span className="text-sm text-ink-muted" data-testid={`consent-${key}`}>
-                  {consents[key] ? t('consentOn') : t('consentOff')}
-                </span>
-              </span>
-              {consents[key] && (
-                <button type="button" className="min-h-11 rounded-xl border border-line-strong bg-surface px-3 text-sm font-bold text-ink" onClick={() => learnerStore.getState().revokeConsent(key)}>
-                  {t('consentRevoke')}
-                </button>
-              )}
-            </li>
-          ))}
-        </ul>
-        <p className="m-0 text-sm text-ink-muted">{t('consentRevokeHint')}</p>
-        {/* Trang chính sách nằm ở Host: chỉ link bằng URL (không import chéo) */}
-        <Link to="/quyen-rieng-tu" className={`${linkBtn} self-start`}>
-          {t('privacyPolicy')}
-        </Link>
-      </section>
-
-      <AccountSection />
-    </ScreenFrame>
+    </>
   );
 }

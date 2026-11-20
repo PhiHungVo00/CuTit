@@ -110,7 +110,7 @@ function Quest({ f, t, busy, pending, onGoal, onRemove }: { f: FriendQuest; t: T
  * GĐ4c — Bạn học hợp tác (chunk lười, mở từ màn Tiến độ). Không có bảng xếp hạng (D7): mỗi cặp bạn một
  * nhiệm vụ tuần chung “chúng ta”, thành viên luôn theo thứ tự cố định (mình trước).
  */
-export function FriendsPanel({ api = gatewayApi }: { api?: FriendsApi }) {
+export function FriendsPanel({ api = gatewayApi, onData }: { api?: FriendsApi; onData?: (d: FriendsResponse) => void }) {
   const t = useT();
   const lang = useLearner((s) => s.preferences.uiLanguage);
   const [data, setData] = useState<FriendsResponse | null>(null);
@@ -132,6 +132,7 @@ export function FriendsPanel({ api = gatewayApi }: { api?: FriendsApi }) {
       const d = await api.list(today());
       if (!alive.current) return;
       setData(d);
+      onData?.(d);
       setLoad('ok');
     } catch (e) {
       if (!alive.current) return;
