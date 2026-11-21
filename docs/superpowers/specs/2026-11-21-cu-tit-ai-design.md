@@ -1,6 +1,6 @@
 # Thiết kế dự án 2 — Cu Tít AI (chat kiểu Messenger, gọi thường/gọi video, tình huống cuối unit)
 
-> Ngày: 2026-11-21 · Trạng thái: **chờ người dùng duyệt** · Nguồn: `docs/nhat-ky/GOP-Y-20-11.md` (góp ý số 6), `docs/thiet-ke/KHAO-SAT-AI.md`, `docs/thiet-ke/DE-XUAT-AI-THAY-THE.md`, `docs/van-hanh/AI-CHUOI-DU-PHONG.md` (nhánh `claude/gateway-ai-du-phong-79bacc`).
+> Ngày: 2026-11-21 · Trạng thái: **đã duyệt 2026-11-21** · Nguồn: `docs/nhat-ky/GOP-Y-20-11.md` (góp ý số 6), `docs/thiet-ke/KHAO-SAT-AI.md`, `docs/thiet-ke/DE-XUAT-AI-THAY-THE.md`, `docs/van-hanh/AI-CHUOI-DU-PHONG.md` (nhánh `claude/gateway-ai-du-phong-79bacc`).
 > Phụ thuộc: dự án 1 (bong bóng Cu Tít, `CuTit`, `@vietlearning/ui`, điều phối âm thanh) đã/đang gộp vào `claude/app-improvement-feedback-a500bb`.
 
 ## 1. Mục đích và lý do
