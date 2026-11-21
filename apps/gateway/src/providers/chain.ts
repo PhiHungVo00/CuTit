@@ -26,6 +26,9 @@ export interface BreakerOptions {
   now?: () => number;
 }
 
+/** Mã HTTP của nhà cung cấp cho biết lỗi nằm ở yêu cầu, không phải ở nguồn */
+const REQUEST_FAULT = new Set([400, 413, 415, 422]);
+
 export class CircuitBreaker {
   private openUntil = new Map<string, number>();
   private failures = new Map<string, number>();
@@ -59,6 +62,9 @@ export class CircuitBreaker {
   recordFailure(id: string, err: unknown): void {
     const e = err as Partial<LlmProviderError> | undefined;
     if (e?.code === 'llm_bad_output' || e?.code === 'llm_unsupported') return; // lỗi nội dung, không phải nguồn hỏng
+    // 4xx do chính YÊU CẦU (ảnh/âm thanh hỏng, quá lớn, tham số sai): nguồn vẫn khỏe. Không đếm, kẻo một người gửi vài
+    // ảnh hỏng là nguồn bị nghỉ cho MỌI người (chuỗi vẫn thử nguồn kế cho yêu cầu này)
+    if (e?.upstreamStatus !== undefined && REQUEST_FAULT.has(e.upstreamStatus)) return;
     const rate = e?.code === 'llm_busy';
     const fatal = e?.upstreamStatus === 401 || e?.upstreamStatus === 402 || e?.upstreamStatus === 403 || e?.upstreamStatus === 404;
     if (rate || fatal) {
