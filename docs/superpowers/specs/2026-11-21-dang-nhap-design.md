@@ -74,9 +74,8 @@ Cập nhật `/quyen-rieng-tu`, `docs/phap-ly/DATA-SAFETY.md` (giờ có **email
 
 ## 7. Câu hỏi chỉ người dùng trả lời được (không chặn bắt đầu code phía Gateway)
 1. **Google Cloud:** đứng tên **người dùng** (đã chốt 21/11). Claude tạo project + OAuth client (Web + Android) trong trình duyệt khi bạn đăng nhập.
-2. **Gmail riêng của app:** người dùng nhờ Claude tạo (21/11) — Claude điền phần thông tin chung trong trình duyệt; **mật khẩu và mã xác minh số điện thoại do người dùng tự nhập**.
-3. **Trẻ em trên Play Console:** có khai nhóm dưới 13 tuổi không? Có phát hành ở Mỹ không (COPPA)? Ảnh hưởng việc thu email/tên đăng nhập của trẻ.
-4. **Pháp nhân phát hành** (cá nhân / hộ kinh doanh / doanh nghiệp).
+2. **Gmail riêng của app:** `becutithoctiengviet@gmail.com` (tạo 21/11; Claude điền tên/chọn địa chỉ, người dùng tự nhập ngày sinh, mật khẩu, số điện thoại). Còn: bật xác minh 2 bước + tạo mật khẩu ứng dụng.
+3. ~~Trẻ em trên Play Console~~ và 4. ~~Pháp nhân phát hành~~: **hoãn tới lúc phát hành** (người dùng chốt 21/11: app xong mới tính phát hành) — đưa vào hàng chờ phát hành cuối kế hoạch.
 
 ## 8. Để lại cho người làm
 Bố cục mã Gateway (routes/services), thư viện argon2 (ưu tiên `@node-rs/argon2`, không cần build native trên Windows), thư viện SMTP (`nodemailer`), chi tiết hoạt ảnh màn đăng nhập, cách đóng gói danh sách mật khẩu phổ biến.
