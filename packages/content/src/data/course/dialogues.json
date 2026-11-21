@@ -26,7 +26,7 @@
         "options": [
           {
             "text": "Cháu chào bác ạ!",
-            "textEn": "Cháu chào bác ạ!",
+            "textEn": "Hello, auntie/uncle! (polite, as a young relative)",
             "next": "n2",
             "a6": {
               "speaker": "cháu",
@@ -35,7 +35,7 @@
           },
           {
             "text": "Tôi chào bà.",
-            "textEn": "Tôi chào bà.",
+            "textEn": "I greet you, madam. (too distant)",
             "next": "n2",
             "a6": {
               "speaker": "tôi",
@@ -44,7 +44,7 @@
           },
           {
             "text": "Tao chào mày.",
-            "textEn": "Tao chào mày.",
+            "textEn": "Hi, you. (very rude)",
             "next": "n2",
             "a6": {
               "speaker": "tao",
@@ -60,12 +60,12 @@
         "options": [
           {
             "text": "Cháu tên là Mai ạ.",
-            "textEn": "Cháu tên là Mai ạ.",
+            "textEn": "My name is Mai.",
             "next": "n3"
           },
           {
             "text": "Không biết.",
-            "textEn": "Không biết.",
+            "textEn": "Don’t know.",
             "next": "end-retry"
           }
         ]
@@ -88,7 +88,7 @@
         "options": [
           {
             "text": "Bác có khỏe không ạ?",
-            "textEn": "Bác có khỏe không ạ?",
+            "textEn": "Are you well? (polite)",
             "next": "n4",
             "a6": {
               "speaker": "cháu",
@@ -97,7 +97,7 @@
           },
           {
             "text": "Bà có khỏe không?",
-            "textEn": "Bà có khỏe không?",
+            "textEn": "Are you well, madam? (wrong pronouns)",
             "next": "n4",
             "a6": {
               "speaker": "tôi",
@@ -113,12 +113,12 @@
         "options": [
           {
             "text": "Cháu chào bác ạ, tạm biệt bác!",
-            "textEn": "Cháu chào bác ạ, tạm biệt bác!",
+            "textEn": "Goodbye, auntie/uncle!",
             "next": "end-ok"
           },
           {
             "text": "Thôi.",
-            "textEn": "Thôi.",
+            "textEn": "Enough.",
             "next": "end-retry"
           }
         ]
@@ -152,7 +152,7 @@
         "options": [
           {
             "text": "Em chào chị ạ. Em muốn mua dứa.",
-            "textEn": "Em chào chị ạ. Em muốn mua dứa.",
+            "textEn": "Hello. I would like to buy a pineapple.",
             "next": "n2",
             "a6": {
               "speaker": "em",
@@ -161,7 +161,7 @@
           },
           {
             "text": "Tôi muốn mua dứa, bà.",
-            "textEn": "Tôi muốn mua dứa, bà.",
+            "textEn": "I want to buy a pineapple, madam. (wrong pronouns)",
             "next": "n2",
             "a6": {
               "speaker": "tôi",
@@ -170,7 +170,7 @@
           },
           {
             "text": "Cho tao dứa.",
-            "textEn": "Cho tao dứa.",
+            "textEn": "Give me a pineapple. (rude)",
             "next": "n2",
             "a6": {
               "speaker": "tao",
@@ -186,12 +186,12 @@
         "options": [
           {
             "text": "Dứa này bao nhiêu tiền một quả ạ?",
-            "textEn": "Dứa này bao nhiêu tiền một quả ạ?",
+            "textEn": "How much is one of these pineapples?",
             "next": "n3"
           },
           {
             "text": "Dứa này ở đâu?",
-            "textEn": "Dứa này ở đâu?",
+            "textEn": "Where is this pineapple?",
             "next": "end-retry"
           }
         ]
@@ -203,12 +203,12 @@
         "options": [
           {
             "text": "Cho em hai quả ạ.",
-            "textEn": "Cho em hai quả ạ.",
+            "textEn": "Two, please.",
             "next": "n4"
           },
           {
             "text": "Em không mua.",
-            "textEn": "Em không mua.",
+            "textEn": "I am not buying.",
             "next": "end-retry"
           }
         ]
@@ -231,7 +231,7 @@
         "options": [
           {
             "text": "Em cảm ơn chị ạ!",
-            "textEn": "Em cảm ơn chị ạ!",
+            "textEn": "Thank you!",
             "next": "end-ok",
             "a6": {
               "speaker": "em",
@@ -240,7 +240,7 @@
           },
           {
             "text": "Tôi cảm ơn bà.",
-            "textEn": "Tôi cảm ơn bà.",
+            "textEn": "I thank you, madam. (wrong pronouns)",
             "next": "end-ok",
             "a6": {
               "speaker": "tôi",
@@ -278,7 +278,7 @@
         "options": [
           {
             "text": "Cho em một đĩa cơm gà ạ.",
-            "textEn": "Cho em một đĩa cơm gà ạ.",
+            "textEn": "One plate of chicken rice, please.",
             "next": "n2",
             "a6": {
               "speaker": "em",
@@ -287,7 +287,7 @@
           },
           {
             "text": "Cho tôi cơm gà, bà.",
-            "textEn": "Cho tôi cơm gà, bà.",
+            "textEn": "Chicken rice for me, madam. (wrong pronouns)",
             "next": "n2",
             "a6": {
               "speaker": "tôi",
@@ -296,7 +296,7 @@
           },
           {
             "text": "Cơm gà đi.",
-            "textEn": "Cơm gà đi.",
+            "textEn": "Chicken rice. (rude)",
             "next": "end-retry",
             "a6": {
               "speaker": "tao",
@@ -312,12 +312,12 @@
         "options": [
           {
             "text": "Ngon quá, em cảm ơn chị!",
-            "textEn": "Ngon quá, em cảm ơn chị!",
+            "textEn": "Delicious, thank you!",
             "next": "n3"
           },
           {
             "text": "Không ngon.",
-            "textEn": "Không ngon.",
+            "textEn": "Not tasty.",
             "next": "end-retry"
           }
         ]
@@ -329,12 +329,12 @@
         "options": [
           {
             "text": "Chị ơi, tính tiền giúp em ạ.",
-            "textEn": "Chị ơi, tính tiền giúp em ạ.",
+            "textEn": "Excuse me, the bill please.",
             "next": "n4"
           },
           {
             "text": "Chị ơi, cơm gà.",
-            "textEn": "Chị ơi, cơm gà.",
+            "textEn": "Excuse me, chicken rice.",
             "next": "end-retry"
           }
         ]
@@ -357,7 +357,7 @@
         "options": [
           {
             "text": "Anh ơi, bưu điện ở đâu ạ?",
-            "textEn": "Anh ơi, bưu điện ở đâu ạ?",
+            "textEn": "Excuse me, where is the post office?",
             "next": "end-ok",
             "a6": {
               "speaker": "em",
@@ -366,7 +366,7 @@
           },
           {
             "text": "Mày ơi, bưu điện ở đâu?",
-            "textEn": "Mày ơi, bưu điện ở đâu?",
+            "textEn": "Hey you, where is the post office? (rude)",
             "next": "end-ok",
             "a6": {
               "speaker": "tao",
