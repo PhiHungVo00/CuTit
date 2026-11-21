@@ -20,7 +20,8 @@ import { chatRoutes } from './routes/chat.js';
 import { speechRoutes } from './routes/speech.js';
 import { practiceRoutes } from './routes/practice.js';
 import { contentRoutes } from './routes/content.js';
-import { authRoutes } from './routes/auth.js';
+import { authLogoutRoutes, authRoutes } from './routes/auth.js';
+import { purgeExpiredAccounts } from './services/auth/lifecycle.js';
 import { meRoutes } from './routes/me.js';
 import { quotaRoutes } from './routes/quota.js';
 import { friendsRoutes } from './routes/friends.js';
@@ -30,6 +31,7 @@ import { AuditLog, purgeAuditEvents } from './services/audit/audit.js';
 /** Dọn audit_events quá hạn: mỗi ngày một lần, lần đầu sau 1 phút (không mở DB lúc khởi động/test) */
 const AUDIT_PURGE_FIRST_MS = 60_000;
 const AUDIT_PURGE_EVERY_MS = 24 * 3600 * 1000;
+const ACCOUNT_PURGE_EVERY_MS = 3600 * 1000;
 
 declare module 'fastify' {
   interface FastifyInstance {
@@ -119,11 +121,26 @@ export async function buildApp(config: GatewayConfig, opts: BuildOptions = {}): 
     purgeTimer = setInterval(() => void purge(), AUDIT_PURGE_EVERY_MS).unref();
   }, AUDIT_PURGE_FIRST_MS).unref();
 
+  // Dự án 3: xóa cứng tài khoản quá hạn 30 ngày + dọn bia mộ/tên giữ chỗ hết hạn. Chạy mỗi giờ (idempotent, an toàn nhiều instance).
+  const purgeAccounts = () =>
+    db
+      .get()
+      .then((d) => purgeExpiredAccounts(d, (opts.clock ?? (() => new Date()))(), (err) => app.log.error({ err }, 'account purge failed for one user')))
+      .then((n) => n && app.log.info({ deleted: n }, 'expired accounts purged'))
+      .catch((err: unknown) => app.log.warn({ err }, 'account purge failed'));
+  let accountTimer: NodeJS.Timeout | undefined = setTimeout(() => {
+    void purgeAccounts();
+    accountTimer = setInterval(() => void purgeAccounts(), ACCOUNT_PURGE_EVERY_MS).unref();
+  }, AUDIT_PURGE_FIRST_MS).unref();
+
   // Ghi nốt nhật ký đang dở TRƯỚC khi đóng DB (DB tiêm từ test thì test tự đóng)
   app.addHook('onClose', async () => {
     clearTimeout(purgeTimer);
     clearInterval(purgeTimer);
     purgeTimer = undefined;
+    clearTimeout(accountTimer);
+    clearInterval(accountTimer);
+    accountTimer = undefined;
     await audit.flush();
     if (!opts.db) await db.close();
   });
@@ -172,6 +189,7 @@ export async function buildApp(config: GatewayConfig, opts: BuildOptions = {}): 
         onExceeded: (req) => audit.noteRateLimited(AuditLog.context(req), req.url.split('?')[0])
       });
       await auth.register(authRoutes, deps);
+      await auth.register(authLogoutRoutes, deps);
     },
     { prefix: '/v1/auth' }
   );

@@ -31,7 +31,10 @@ const METADATA = {
   'auth.refresh_reuse': z.object({}),
   'auth.rate_limited': z.object({ route: z.string().regex(/^\/[\w/.-]{0,80}$/) }),
   'auth.failure_burst': z.object({ count: z.number().int(), threshold: z.number().int(), windowMinutes: z.number().int(), lastReason: reason }),
-  'account.deleted': z.object({}),
+  'auth.logout': z.object({ reason: reason.optional() }),
+  'account.deleted': z.object({ reason: reason.optional() }),
+  'account.deletion_scheduled': z.object({}),
+  'account.restored': z.object({}),
   'friends.invite_created': z.object({}),
   'friends.invite_accepted': z.object({ reason: reason.optional() })
 } as const;
