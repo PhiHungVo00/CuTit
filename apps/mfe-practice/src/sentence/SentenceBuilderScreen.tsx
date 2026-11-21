@@ -2,7 +2,8 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { SENTENCE_ITEMS, type SentenceBank } from '@vietlearning/content';
 import { dueCards, learnerStore, useLearner } from '@vietlearning/state';
 import { SlowListen, say } from '../listen';
-import { useSentenceBuilder } from '@vietlearning/exercises';
+import { answerFeedback, FeedbackMascot, useSentenceBuilder } from '@vietlearning/exercises';
+import { Button, Card, Icon } from '@vietlearning/ui';
 import { useT } from '../i18n';
 
 /** Chủ đề câu (dữ liệu tiếng Việt) => nhãn tiếng Anh */
@@ -45,6 +46,7 @@ function Exercise({ item, seed, onNext }: { item: SentenceBank; seed: number; on
 
   const onCheck = () => {
     const r = b.check();
+    answerFeedback(r.valid);
     const ref = `sentence:${item.id}`;
     recordAttempt('sentence', r.valid);
     if (!r.valid) addCard({ itemRef: ref, front: item.translation, back: r.correctOrder.join(' '), source: 'sentence' });
@@ -54,7 +56,7 @@ function Exercise({ item, seed, onNext }: { item: SentenceBank; seed: number; on
   const sentence = b.placed.map((i) => item.tokens[i].text).join(' ');
 
   return (
-    <section aria-labelledby="ct-sb-prompt" className="flex flex-col gap-4 rounded-2xl border border-line-strong bg-surface p-4 shadow-card">
+    <Card role="region" aria-labelledby="ct-sb-prompt" elevated style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       <div className="flex items-start justify-between gap-2">
         <div>
           <p className="m-0 text-xs font-bold uppercase tracking-wide text-ink-muted">
@@ -112,37 +114,39 @@ function Exercise({ item, seed, onNext }: { item: SentenceBank; seed: number; on
       </div>
 
       <div className="grid grid-cols-3 gap-2">
-        <button type="button" onClick={b.undo} disabled={!b.canUndo || b.result?.valid} className="min-h-12 rounded-xl border border-line bg-surface-2 text-sm font-bold text-ink disabled:opacity-40">
+        <Button variant="secondary" size="sm" onClick={b.undo} disabled={!b.canUndo || b.result?.valid}>
           {t('undo')}
-        </button>
+        </Button>
         {b.result?.valid ? (
-          <button type="button" onClick={onNext} className="col-span-2 min-h-12 rounded-xl bg-accent text-base font-extrabold text-accent-ink">
+          <Button style={{ gridColumn: 'span 2' }} onClick={onNext}>
             {t('nextSentence')}
-          </button>
+          </Button>
         ) : (
-          <button type="button" onClick={onCheck} disabled={!b.complete} className="col-span-2 min-h-12 rounded-xl bg-accent text-base font-extrabold text-accent-ink disabled:opacity-40">
+          <Button style={{ gridColumn: 'span 2' }} onClick={onCheck} disabled={!b.complete}>
             {t('check')}
-          </button>
+          </Button>
         )}
       </div>
 
       <div ref={feedbackRef} className="scroll-mb-[calc(80px+env(safe-area-inset-bottom))]">
         {b.result?.valid && (
           <div role="status" className="flex items-center justify-between gap-2 rounded-xl bg-accent-soft p-3">
+            <FeedbackMascot correct size={48} />
             <span className="text-[15px] font-bold text-heading">{t('correct', { sentence })}</span>
             <button
               type="button"
               aria-label={t('listenSentence')}
               onClick={() => void say(sentence, 0.9)}
-              className="min-h-11 min-w-11 rounded-xl bg-surface text-lg"
+              className="grid min-h-11 min-w-11 place-items-center rounded-xl bg-surface text-ink"
             >
-              🔈
+              <Icon name="loa" size={20} />
             </button>
             <SlowListen text={sentence} base={0.9} className="min-h-11 min-w-11 rounded-xl bg-surface text-lg" />
           </div>
         )}
         {b.result && !b.result.valid && (
           <div role="alert" className="flex flex-col gap-2 rounded-xl bg-danger-soft p-3 text-[15px] text-danger-ink">
+            <FeedbackMascot correct={false} size={48} />
             <ul className="m-0 flex list-disc flex-col gap-1 pl-5">
               {b.result.errors.map((e) => (
                 <li key={e}>{e}</li>
@@ -150,14 +154,14 @@ function Exercise({ item, seed, onNext }: { item: SentenceBank; seed: number; on
             </ul>
             {b.result.hint && <p className="m-0 text-sm">{b.result.hint}</p>}
             <div className="flex flex-wrap gap-2 pt-1">
-              <button type="button" onClick={onNext} className="min-h-11 rounded-xl bg-surface px-3 text-sm font-bold text-ink">
+              <Button variant="secondary" size="sm" onClick={onNext}>
                 {t('skip')}
-              </button>
+              </Button>
             </div>
           </div>
         )}
       </div>
-    </section>
+    </Card>
   );
 }
 
