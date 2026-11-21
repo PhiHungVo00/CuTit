@@ -1,5 +1,5 @@
 {
-  "id": "327e2583-0ef5-44ae-b9af-db1a649014ba",
+  "id": "9d53afc0-607b-4d1b-af1b-19c590aa9a4c",
   "prevId": "52e3bba3-2942-4aa0-b71f-0dc794fb6bdb",
   "version": "7",
   "dialect": "postgresql",
@@ -619,7 +619,7 @@
       "checkConstraints": {
         "auth_challenges_kind_ck": {
           "name": "auth_challenges_kind_ck",
-          "value": "\"auth_challenges\".\"kind\" in ('oidc_nonce', 'email_otp', 'merge_ticket', 'login_fail')"
+          "value": "\"auth_challenges\".\"kind\" in ('oidc_nonce', 'email_otp', 'merge_ticket', 'rate_counter')"
         }
       },
       "isRLSEnabled": false

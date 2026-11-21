@@ -482,17 +482,21 @@ export const passwordCredentials = pgTable('password_credentials', {
 /**
  * 26. Thử thách ngắn hạn (job dọn theo `expires_at`, sau 1 ngày). Nghĩa các cột theo `kind`:
  * - 'oidc_nonce'   : key_hash = sha256(nonce); subject/user_id NULL. Dùng một lần (đặt consumed_at). Sống 10 phút.
- * - 'email_otp'    : subject = email chữ thường; key_hash = HMAC(AUTH_OTP_PEPPER, mã 6 số) — có thể TRÙNG giữa các
- *                    email nên KHÔNG unique; tra theo (kind, subject); user_id = người gắn email (NULL khi quên mật khẩu);
+ * - 'email_otp'    : subject = HMAC(AUTH_OTP_PEPPER, email chữ thường) — KHÔNG lưu email nguyên văn ở đây (email đầy đủ chỉ
+ *                    nằm ở identities provider 'email'); key_hash = HMAC(AUTH_OTP_PEPPER, mã 6 số) — có thể TRÙNG giữa
+ *                    các email nên KHÔNG unique; tra theo (kind, subject); user_id = người gắn email (NULL khi quên mật khẩu);
  *                    attempts = số lần sai (≥ 5 => otp_locked). Sống 10 phút.
  * - 'merge_ticket' : key_hash = sha256(ticket); user_id = KHÁCH U_B (nguồn); subject = id tài khoản đích U_A (chuỗi uuid).
  *                    Dùng một lần, sống 10 phút. Xóa U_B => vé mất theo (cascade).
- * - 'login_fail'   : key_hash = HMAC(pepper, khóa đếm), khóa đếm = 'pair:'+ip_hash+'|'+tên / 'ip:'+ip_hash / 'user:'+tên;
- *                    attempts = số lần sai trong cửa sổ, expires_at = hết cửa sổ. Tăng nguyên tử bằng
- *                    INSERT … ON CONFLICT (kind, key_hash) WHERE kind <> 'email_otp' DO UPDATE.
- * oidc_nonce / merge_ticket / login_fail: unique (kind, key_hash).
+ * - 'rate_counter' : bộ đếm CHUNG cho mọi giới hạn tần suất của đăng nhập/OTP (không cần migration khi thêm loại đếm mới).
+ *                    key_hash = HMAC(pepper, khóa đếm), khóa đếm có tiền tố theo mục đích, vd:
+ *                    'login:pair:'+ip_hash+'|'+tên · 'login:ip:'+ip_hash · 'login:user:'+tên · 'otp_send:email:'+email ·
+ *                    'otp_send:ip:'+ip_hash · 'otp_fail:email:'+email. attempts = số lần trong cửa sổ, expires_at = hết cửa sổ.
+ *                    Tăng nguyên tử: INSERT … ON CONFLICT (kind, key_hash) WHERE kind <> 'email_otp' DO UPDATE
+ *                    (phải lặp lại vị từ WHERE của index một phần); cửa sổ đã hết thì đặt lại attempts.
+ * oidc_nonce / merge_ticket / rate_counter: unique (kind, key_hash).
  */
-export const AUTH_CHALLENGE_KINDS = ['oidc_nonce', 'email_otp', 'merge_ticket', 'login_fail'] as const;
+export const AUTH_CHALLENGE_KINDS = ['oidc_nonce', 'email_otp', 'merge_ticket', 'rate_counter'] as const;
 export type AuthChallengeKind = (typeof AUTH_CHALLENGE_KINDS)[number];
 export const authChallenges = pgTable(
   'auth_challenges',
@@ -508,7 +512,7 @@ export const authChallenges = pgTable(
     createdAt: ts('created_at').notNull().defaultNow()
   },
   (t) => [
-    check('auth_challenges_kind_ck', sql`${t.kind} in ('oidc_nonce', 'email_otp', 'merge_ticket', 'login_fail')`),
+    check('auth_challenges_kind_ck', sql`${t.kind} in ('oidc_nonce', 'email_otp', 'merge_ticket', 'rate_counter')`),
     uniqueIndex('auth_challenges_kind_key_uq')
       .on(t.kind, t.keyHash)
       .where(sql`${t.kind} <> 'email_otp'`),

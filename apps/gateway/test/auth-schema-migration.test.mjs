@@ -110,12 +110,17 @@ test('Migration: DB trống — unique/check/cascade của bảng đăng nhập'
     await client.query(`insert into password_credentials (user_id, password_hash) values ($1, '$argon2id$x')`, [a.id]);
     await fails(client, `insert into password_credentials (user_id, password_hash) values ($1, '$argon2id$y')`, [a.id]);
 
-    // auth_challenges: nonce/ticket/login_fail duy nhất theo (kind, key_hash); OTP email thì không
+    // auth_challenges: nonce/ticket/rate_counter duy nhất theo (kind, key_hash); OTP email thì không
     await client.query(`insert into auth_challenges (kind, key_hash, expires_at) values ('oidc_nonce', 'k1', now() + interval '10 minutes')`);
     await fails(client, `insert into auth_challenges (kind, key_hash, expires_at) values ('oidc_nonce', 'k1', now())`, []);
-    await client.query(`insert into auth_challenges (kind, key_hash, subject, expires_at) values ('email_otp', 'same', 'a@b.co', now()), ('email_otp', 'same', 'c@d.co', now())`);
+    await client.query(`insert into auth_challenges (kind, key_hash, subject, expires_at) values ('email_otp', 'same', 'hmac-a', now()), ('email_otp', 'same', 'hmac-c', now())`);
     await client.query(`insert into auth_challenges (kind, key_hash, subject, user_id, expires_at) values ('merge_ticket', 't1', $2, $1, now())`, [b.id, a.id]);
     await fails(client, `insert into auth_challenges (kind, key_hash, expires_at) values ('weird', 'k9', now())`, [], /violates check/i);
+    // rate_counter: tăng nguyên tử bằng ON CONFLICT trên index một phần (đúng câu lệnh Task 2 sẽ dùng)
+    const bump = `insert into auth_challenges (kind, key_hash, attempts, expires_at) values ('rate_counter', 'login:pair:x', 1, now() + interval '15 minutes')
+      on conflict (kind, key_hash) where kind <> 'email_otp' do update set attempts = auth_challenges.attempts + 1 returning attempts`;
+    assert.equal((await client.query(bump)).rows[0].attempts, 1);
+    assert.equal((await client.query(bump)).rows[0].attempts, 2);
 
     // deleted_accounts: lý do hợp lệ
     await client.query(`insert into deleted_accounts (credential_hash, reason) values ('h-merged', 'merged')`);

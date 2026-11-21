@@ -8,7 +8,7 @@ CREATE TABLE "auth_challenges" (
 	"expires_at" timestamp with time zone NOT NULL,
 	"consumed_at" timestamp with time zone,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
-	CONSTRAINT "auth_challenges_kind_ck" CHECK ("auth_challenges"."kind" in ('oidc_nonce', 'email_otp', 'merge_ticket', 'login_fail'))
+	CONSTRAINT "auth_challenges_kind_ck" CHECK ("auth_challenges"."kind" in ('oidc_nonce', 'email_otp', 'merge_ticket', 'rate_counter'))
 );
 --> statement-breakpoint
 CREATE TABLE "identities" (
