@@ -1,6 +1,6 @@
 # Thiết kế dự án 7: Trang giới thiệu cho bản web
 
-> Ngày: 2026-11-21 · Trạng thái: **CHỜ NGƯỜI DÙNG DUYỆT** (đã qua người đọc độc lập rà) · Góp ý gốc: đợt 2, số 6 trong `docs/nhat-ky/GOP-Y-20-11.md`.
+> Ngày: 2026-11-21 · Trạng thái: **ĐÃ DUYỆT 2026-11-21** (đã qua người đọc độc lập rà) · Góp ý gốc: đợt 2, số 6 trong `docs/nhat-ky/GOP-Y-20-11.md`.
 > Liên quan: `docs/thiet-ke/DE-XUAT-TRIEN-KHAI.md` (tên miền `.id.vn`, Cloudflare Pages), `docs/superpowers/specs/2026-11-21-dang-nhap-design.md` (màn đăng nhập, trang xóa tài khoản).
 > Ký hiệu: *(gọi của người thiết kế)* = người dùng chưa nói, người thiết kế tự quyết; người dùng sửa được khi đọc.
 
@@ -140,7 +140,7 @@ Hiện bản web mở thẳng vào app. Người lạ vào không hiểu app là
 - Build ra đủ các trang vi/en; mọi link nội bộ sống (kiểm tự động lúc build).
 - size-limit theo ngân sách ở 5.4; Lighthouse CI (hoặc chạy tay, ghi kết quả vào nhật ký).
 - axe-core: không lỗi nghiêm trọng; tương phản chữ trên tranh đạt AA (có lớp phủ nếu cần).
-- Playwright: bấm ba nút đi đúng URL; nút APK ở trạng thái "Sắp có" khi không có biến; nút nghe phát âm thanh, không tự phát; đổi VI/EN nhớ lựa chọn; chạy ở khung 360 px không cuộn ngang.
+- Playwright: bấm ba nút đi đúng URL; nút APK ở trạng thái "Sắp có" khi không có `apk-release.json`; nút nghe phát âm thanh, không tự phát; đổi VI/EN nhớ lựa chọn; chạy ở khung 360 px không cuộn ngang.
 - Chụp ảnh trang ở khung Pixel 7 và máy tính, gửi người dùng xem.
 
 ## 7. Để lại cho người làm

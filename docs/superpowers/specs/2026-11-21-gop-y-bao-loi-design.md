@@ -1,6 +1,6 @@
 # Thiết kế dự án 5a: Góp ý / Báo lỗi và trang quản trị nền
 
-> Ngày: 2026-11-21 · Trạng thái: **CHỜ NGƯỜI DÙNG DUYỆT** (đã qua người đọc độc lập rà) · Góp ý gốc: đợt 2 số 1 và số 11 trong `docs/nhat-ky/GOP-Y-20-11.md`.
+> Ngày: 2026-11-21 · Trạng thái: **ĐÃ DUYỆT 2026-11-21** (đã qua người đọc độc lập rà) · Góp ý gốc: đợt 2 số 1 và số 11 trong `docs/nhat-ky/GOP-Y-20-11.md`.
 > Nền kỹ thuật: `docs/thiet-ke/DE-XUAT-DANG-NHAP-PHAN-QUYEN.md`, Phần B (vai trò, 2FA, nhật ký quản trị). Tài liệu này chỉ ghi phần **chốt cho 5a**.
 > Ký hiệu: *(gọi của người thiết kế)* là chỗ người dùng chưa nói, người thiết kế tự quyết. Người dùng sửa được khi đọc.
 
@@ -129,7 +129,7 @@ App sẽ phát hành thật. Người dùng gặp lỗi hoặc có ý tưởng t
 - **Gộp tài khoản** (dự án 3, Task 5, `services/auth/merge.ts`): góp ý của khách **chuyển sang tài khoản đích** (`UPDATE feedback_reports SET user_id = đích`) ở **cả hai** cách gộp, `merge` và `discard_device`. Lý do: "bỏ tiến độ máy này" chỉ nói về tiến độ học, còn góp ý người dùng vẫn muốn theo dõi *(gọi của người thiết kế)*. Phải thêm một dòng vào bảng luật gộp và có test.
 
 ### 5.3 Kho tệp (năng lực trừu tượng mới)
-- Interface `BlobStore { put(key, stream, {contentType, maxBytes}), get(key, range?), delete(key), size(key) }` trong `apps/gateway/src/services/blob/`.
+- Interface `BlobStore { put(key, stream, {contentType, maxBytes}), get(key, range?), delete(key), totalBytes() }` trong `apps/gateway/src/services/blob/`.
 - Hai ruột chọn bằng biến môi trường `BLOB_PROVIDER`:
   - **`fs`** (mặc định, dev/test): thư mục `BLOB_DIR` (mặc định `~/.becutit/blobs`, ngoài repo); test dùng thư mục tạm;
   - **`r2`**: làm ở dự án triển khai. Chỉ cần interface khớp.
@@ -145,8 +145,9 @@ App sẽ phát hành thật. Người dùng gặp lỗi hoặc có ý tưởng t
   - Chặn dùng lại cùng một mã (`last_used_step`).
   - Thư viện: `otpauth` (MIT) hoặc tương đương MIT/ISC. Người làm kiểm số tải, lần cập nhật và lỗ hổng.
 - **Đăng nhập quản trị** (`/admin/v1/auth/*`, không Bearer app):
-  1. `POST /admin/v1/auth/login {username, password}`: dùng lại hàm kiểm mật khẩu của dự án 3. **Hàm này chưa có.** Nó thuộc Task 2 trong `docs/superpowers/plans/2026-11-21-dang-nhap.md` ⇒ phần đăng nhập quản trị **chờ Task 2 của dự án 3 gộp xong** (xem mục 9). Sai mật khẩu, hoặc không có vai trò, thì **cùng một lỗi** `invalid_credentials`. Trả `{ticket}` sống 5 phút.
-  2. `POST /admin/v1/auth/totp {ticket, code}` (hoặc `{ticket, backupCode}`): tạo **phiên quản trị** theo đề xuất Phần B §B7:
+  1. `POST /admin/v1/auth/login {username, password}`: dùng lại hàm kiểm mật khẩu của dự án 3. **Hàm này chưa có.** Nó thuộc Task 2 trong `docs/superpowers/plans/2026-11-21-dang-nhap.md` ⇒ phần đăng nhập quản trị **chờ Task 2 của dự án 3 gộp xong** (xem mục 9). Sai mật khẩu, hoặc không có vai trò, thì **cùng một lỗi** `invalid_credentials`. Trả `{ticket, next}` (ticket sống 5 phút), trong đó `next` là `totp` nếu đã đăng ký mã 6 số (`confirmed_at` có giá trị), còn chưa đăng ký thì là `enroll`.
+  - Đăng ký lần đầu: `POST /admin/v1/auth/totp/enroll {ticket}` → `{otpauthUrl, secret}`, **chỉ khi `next=enroll`**. Đã xác nhận rồi thì không bao giờ cấp lại bằng mật khẩu, muốn làm lại phải dùng CLI `admin:reset-totp`. Tiếp theo, `POST /admin/v1/auth/totp/confirm {ticket, code}` → tạo phiên (như bước 2) và trả 10 mã dự phòng.
+  2. `POST /admin/v1/auth/totp {ticket, code}` (hoặc `{ticket, backupCode}`, chỉ khi `next=totp`): tạo **phiên quản trị** theo đề xuất Phần B §B7:
      - bảng `admin_sessions` (băm refresh, `mfa_at`, rảnh **30 phút** thì hết, tối đa **12 giờ**, thu hồi được);
      - refresh nằm trong cookie `HttpOnly; Secure; SameSite=Strict`, `Path=/admin/v1/auth`. Ở localhost, cổng 5180 và 4000 vẫn cùng site; ở production, `admin.<tên>.id.vn` và `api.<tên>.id.vn` cũng cùng site;
      - access là JWT `typ:'admin'`, ký bằng khóa riêng `ADMIN_JWT_SECRET`, sống **10 phút**, chỉ giữ trong bộ nhớ của trang quản trị.
@@ -161,7 +162,7 @@ App sẽ phát hành thật. Người dùng gặp lỗi hoặc có ý tưởng t
 - `GET /admin/v1/queue?type=feedback&status=&kind=&cursor=`: mới nhất lên đầu, phân trang theo con trỏ. Trường `type` để dự án 4 thêm `chat_report`.
 - `GET /admin/v1/feedback/:id`: nội dung, ngữ cảnh, danh sách tệp, các lời nhắn, mã người dùng rút gọn (không email).
 - `POST /admin/v1/feedback/:id/status {status, message?}`: `status` ∈ `received | in_progress | done`, `message` ≤ 1000 ký tự. Mỗi lần gọi thêm một dòng `feedback_events` và đặt `unread=true` cho người dùng nếu có lời nhắn hoặc đổi trạng thái.
-- `GET /admin/v1/feedback/:id/files/:fileId/url`: trả URL **ký HMAC sống 5 phút** (`/admin/v1/blob?k=…&exp=…&sig=…`) để thẻ `<img>`/`<video>` mở được (hỗ trợ `Range` cho video). Không có URL công khai.
+- `GET /admin/v1/feedback/:id/files/:fileId/url`: trả URL **ký HMAC sống 5 phút** (`/admin/v1/blob?k=…&exp=…&sig=…`) để thẻ `<img>`/`<video>` mở được (hỗ trợ `Range` cho video). Không có URL công khai. Route `/admin/v1/blob` **không qua hook quản trị** (chữ ký là phần xác thực, thẻ `<img>`/`<video>` không gửi được Bearer) và đặt `cross-origin-resource-policy: cross-origin` (helmet mặc định chặn media khác nguồn, xem `apps/gateway/src/routes/audio.ts`).
 - **Nhật ký quản trị** `admin_audit_log(id, actor_user_id | 'cli', action, target_type, target_id, meta jsonb, created_at)`:
   - **ghi trong cùng transaction** với thao tác (không dùng `audit.record` bắn-rồi-quên);
   - chỉ thêm, **ép ở DB** bằng trigger `BEFORE UPDATE OR DELETE` → `RAISE` (migration tùy chỉnh, theo §B7). Giữ **2 năm** *(gọi của người thiết kế, §B7 đề xuất 2 năm)*;
