@@ -1,6 +1,6 @@
 # Thiết kế dự án 8 — Cập nhật ứng dụng (web/PWA + Android Play + APK tự cập nhật)
 
-> Ngày: 2026-11-21 · Trạng thái: **chờ người dùng duyệt** (đã qua một lượt người đọc độc lập rà, 5 câu hỏi đã xử lý; sửa 21/11 theo người dùng: **bản APK tự tải và tự cài**) · Hiện trạng đã kiểm: nhật ký dòng 104.
+> Ngày: 2026-11-21 · Trạng thái: **đã duyệt 2026-11-21** (đã qua một lượt người đọc độc lập rà, 5 câu hỏi đã xử lý; sửa 21/11 theo người dùng: **bản APK tự tải và tự cài**) · Hiện trạng đã kiểm: nhật ký dòng 104.
 > Người dùng đã chốt trong phiên thiết kế: **ý C** (nhắc mềm, chỉ chặn khi dưới "bản tối thiểu", offline không chặn) và **cách 1** (Gateway là nguồn duy nhất về phiên bản); sau đó chốt thêm: **bản APK cài tay tự tải và tự cài bản mới trong app** (không bắt người dùng lên trang chủ tải lại).
 
 ## 1. Mục đích và lý do
