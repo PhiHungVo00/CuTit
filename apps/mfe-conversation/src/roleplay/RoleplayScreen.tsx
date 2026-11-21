@@ -3,6 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { ROLEPLAY_SCENARIOS, findLesson, type RoleplayScenario } from '@vietlearning/content';
 import type { ChatCorrection, NewWord } from '@vietlearning/contracts/api';
 import { useLearner } from '@vietlearning/state';
+import { Button, Icon } from '@vietlearning/ui';
 import { ChatPanel } from '../chat/ChatPanel';
 import { useChatSession } from '../chat/useChatSession';
 import { t as tConv, useT } from '../i18n';
@@ -10,6 +11,10 @@ import { buildSummary } from '../summary/summaryItems';
 import { SessionSummary } from '../summary/SessionSummary';
 
 const btn = 'min-h-12 w-full rounded-xl px-4 font-extrabold';
+
+/** Dấu nhiệm vụ: sao khi xong, vòng rỗng khi chưa (không dùng emoji) */
+const TaskMark = ({ done }: { done: boolean }) =>
+  done ? <Icon name="luyen-tap" size={16} className="inline align-text-bottom text-heading" /> : <span aria-hidden="true" className="inline-block size-3 rounded-full border-2 border-line-strong align-baseline" />;
 
 /** Tên/nhiệm vụ của kịch bản theo ngôn ngữ giao diện (Gateway vẫn chấm theo chỉ số nhiệm vụ) */
 function useScenarioText() {
@@ -87,7 +92,7 @@ function Session({ scenario, lessonId, onExit }: { scenario: RoleplayScenario; l
         <ul className="m-0 flex list-none flex-col gap-1 p-0">
           {tasks.map((task, i) => (
             <li key={task} className="text-[15px]">
-              {done.includes(i) ? '✅' : '⬜'} {task}
+              <TaskMark done={done.includes(i)} /> {task}
             </li>
           ))}
         </ul>
@@ -97,9 +102,9 @@ function Session({ scenario, lessonId, onExit }: { scenario: RoleplayScenario; l
             {t('backToPath')}
           </Link>
         ) : (
-          <button type="button" className={`${btn} bg-accent text-accent-ink`} onClick={onExit}>
+          <Button style={{ width: '100%' }} onClick={onExit}>
             {t('otherScenario')}
-          </button>
+          </Button>
         )}
       </section>
     );
@@ -114,7 +119,9 @@ function Session({ scenario, lessonId, onExit }: { scenario: RoleplayScenario; l
         <ul className="m-0 flex list-none flex-col gap-1 p-0" aria-label={t('tasks')}>
           {tasks.map((task, i) => (
             <li key={task} className="text-[15px]">
-              <span aria-hidden="true">{done.includes(i) ? '✅' : '⬜'} </span>
+              <span aria-hidden="true">
+                <TaskMark done={done.includes(i)} />{' '}
+              </span>
               <span className={done.includes(i) ? 'text-ink-muted line-through' : 'text-ink'}>{task}</span>
               <span className="sr-only">{done.includes(i) ? t('taskDone') : t('taskTodo')}</span>
             </li>
@@ -122,10 +129,10 @@ function Session({ scenario, lessonId, onExit }: { scenario: RoleplayScenario; l
         </ul>
         {scenario.reviewed === false && <p className="m-0 text-xs italic text-ink-muted">{t('draftScenario')}</p>}
       </section>
-      <ChatPanel session={session} tutorName={t('npc')} placeholder={t('npcPlaceholder')} emptyHint={t('rpEmpty', { place: text.place(scenario), task: tasks[0] })} />
-      <button type="button" className={`${btn} ${allDone ? 'bg-accent text-accent-ink' : 'border border-line-strong bg-surface-2 text-ink'}`} onClick={() => void finish()}>
+      <ChatPanel session={session} avatar={false} tutorName={t('npc')} placeholder={t('npcPlaceholder')} emptyHint={t('rpEmpty', { place: text.place(scenario), task: tasks[0] })} />
+      <Button variant={allDone ? 'primary' : 'secondary'} style={{ width: '100%' }} onClick={() => void finish()}>
         {allDone ? t('finishAll') : t('finish')}
-      </button>
+      </Button>
     </>
   );
 }
@@ -146,7 +153,8 @@ export function RoleplayScreen() {
     <Frame
       title={t('roleplayTitle')}
       action={
-        <Link to="/hoi-thoai" className="flex min-h-11 items-center rounded-xl border border-line-strong bg-surface px-3 text-sm font-bold text-ink no-underline">
+        <Link to="/hoi-thoai" className="flex min-h-11 items-center gap-1 rounded-xl border border-line-strong bg-surface px-3 text-sm font-bold text-ink no-underline">
+          <Icon name="chat" size={18} />
           {t('chatLink')}
         </Link>
       }

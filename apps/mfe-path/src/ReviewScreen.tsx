@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { haptic, playSfx } from '@vietlearning/shared/audio';
+import { Button, Card, CuTit, Icon } from '@vietlearning/ui';
 import { PitchReferenceFlyweight, type ExerciseRef } from '@vietlearning/content';
 import { getDeviceSpeech } from '@vietlearning/native';
 import { dueCards, learnerStore, speechRate, useLearner, useUiLanguage, type SrsCard } from '@vietlearning/state';
@@ -8,7 +9,8 @@ import { useT } from './i18n';
 import { weakestTone } from './path/pathModel';
 import { mistakeRefs, toneDrill } from './review/reviewModel';
 import { SessionRunner } from './session/SessionRunner';
-import { card, Page, primaryBtn, secondaryBtn } from './ui';
+import { celebrateFinish, currentStreak } from './celebration';
+import { cardStack, fullWidth, LinkButton, Page } from './Page';
 
 const GRADES = [1, 3, 5] as const;
 
@@ -25,11 +27,19 @@ function CardReview({ cards, onClose }: { cards: SrsCard[]; onClose(): void }) {
   const grade = (q: number) => {
     learnerStore.getState().reviewCard(cur.itemRef, q);
     const n = remembered + (q >= 3 ? 1 : 0);
+    // tự chấm: nhớ => âm đúng, quên => âm sai (câu cuối nhường tiếng hoàn thành bên dưới)
+    const last = i + 1 >= queue.length;
+    if (!last) {
+      playSfx(q >= 3 ? 'dung' : 'sai');
+      haptic(q >= 3 ? 'thanh-cong' : 'loi');
+    }
     setRemembered(n);
     setFlipped(false);
-    if (i + 1 >= queue.length) {
+    if (last) {
       const gained = reviewXp(n);
+      const streakBefore = currentStreak();
       progressStore.getState().addXp(gained);
+      celebrateFinish(streakBefore);
       setXp(gained);
     }
     setI(i + 1);
@@ -37,27 +47,28 @@ function CardReview({ cards, onClose }: { cards: SrsCard[]; onClose(): void }) {
 
   if (!cur) {
     return (
-      <section role="status" className={`${card} items-center text-center`}>
+      <Card role="status" elevated style={{ ...cardStack, alignItems: 'center', textAlign: 'center' }}>
+        <CuTit mood="an-mung" size={112} />
         <h2 className="m-0 text-xl font-black text-heading">{t('reviewDone', { n: remembered, total: queue.length, xp: xp ?? 0 })}</h2>
-        <button type="button" className={primaryBtn} onClick={onClose}>
+        <Button style={fullWidth} onClick={onClose}>
           {t('done')}
-        </button>
-      </section>
+        </Button>
+      </Card>
     );
   }
   return (
-    <section className={card} aria-labelledby="ct-card-front">
+    <Card role="region" elevated style={cardStack} aria-labelledby="ct-card-front">
       <p className="m-0 text-xs font-bold uppercase tracking-wide text-ink-muted">{t('cardOf', { i: i + 1, n: queue.length })}</p>
       <h2 id="ct-card-front" lang="vi" className="m-0 break-words text-center text-2xl font-black text-heading">
         {cur.front}
       </h2>
-      <button type="button" className={secondaryBtn} onClick={() => getDeviceSpeech().speak(cur.front, { rate: speechRate(0.85) }).catch(() => undefined)}>
-        🔈
-      </button>
+      <Button variant="secondary" style={fullWidth} aria-label={t('listenCard')} onClick={() => getDeviceSpeech().speak(cur.front, { rate: speechRate(0.85) }).catch(() => undefined)}>
+        <Icon name="loa" size={22} />
+      </Button>
       {!flipped ? (
-        <button type="button" className={primaryBtn} onClick={() => setFlipped(true)}>
+        <Button style={fullWidth} onClick={() => setFlipped(true)}>
           {t('flip')}
-        </button>
+        </Button>
       ) : (
         <>
           <p lang="vi" className="m-0 break-words rounded-xl bg-surface-2 p-3 text-center text-lg text-ink">
@@ -65,19 +76,14 @@ function CardReview({ cards, onClose }: { cards: SrsCard[]; onClose(): void }) {
           </p>
           <div role="group" aria-label={t('gradeQ')} className="grid grid-cols-3 gap-2">
             {GRADES.map((q) => (
-              <button
-                key={q}
-                type="button"
-                onClick={() => grade(q)}
-                className={['min-h-12 rounded-xl border-2 font-bold', q === 1 ? 'border-danger bg-danger-soft text-danger-ink' : 'border-line bg-surface-2 text-ink'].join(' ')}
-              >
+              <Button key={q} variant={q === 1 ? 'danger' : 'secondary'} onClick={() => grade(q)}>
                 {t(`grade.${q}`)}
-              </button>
+              </Button>
             ))}
           </div>
         </>
       )}
-    </section>
+    </Card>
   );
 }
 
@@ -110,7 +116,9 @@ export function ReviewScreen() {
           onClose={back}
           onFinish={(o) => {
             const xp = lessonXp(o);
+            const streakBefore = currentStreak();
             progressStore.getState().addXp(xp);
+            celebrateFinish(streakBefore);
             setMode({ kind: 'practiceDone', xp });
           }}
         />
@@ -132,57 +140,58 @@ export function ReviewScreen() {
         <p className="m-0 text-[15px] text-ink-soft">{t('reviewIntro')}</p>
       </header>
       {mode.kind === 'practiceDone' && (
-        <p role="status" className="m-0 rounded-xl bg-accent-soft p-3 font-bold text-heading">
-          {t('practiceDone', { xp: mode.xp })}
-        </p>
+        <Card role="status" style={{ display: 'flex', alignItems: 'center', gap: 12, background: 'var(--ct-accent-soft)' }}>
+          <CuTit mood="an-mung" size={64} />
+          <p className="m-0 font-bold text-heading">{t('practiceDone', { xp: mode.xp })}</p>
+        </Card>
       )}
 
-      <section aria-labelledby="ct-due" className={card}>
+      <Card role="region" aria-labelledby="ct-due" elevated style={cardStack}>
         <h2 id="ct-due" className="m-0 text-lg font-extrabold text-ink">
-          🗂️ {t('dueTitle')} ({due.length})
+          {t('dueTitle')} ({due.length})
         </h2>
         {due.length ? (
-          <button type="button" className={primaryBtn} onClick={() => setMode({ kind: 'cards', cards: due })}>
+          <Button style={fullWidth} onClick={() => setMode({ kind: 'cards', cards: due })}>
             {t('dueStart', { n: due.length })}
-          </button>
+          </Button>
         ) : (
           <p className="m-0 text-sm text-ink-soft">{t('dueEmpty')}</p>
         )}
-      </section>
+      </Card>
 
-      <section aria-labelledby="ct-mistakes" className={card}>
+      <Card role="region" aria-labelledby="ct-mistakes" elevated style={cardStack}>
         <h2 id="ct-mistakes" className="m-0 text-lg font-extrabold text-ink">
-          ✏️ {t('mistakesTitle')} ({recent.length})
+          {t('mistakesTitle')} ({recent.length})
         </h2>
         {recent.length ? (
-          <button type="button" className={secondaryBtn} onClick={() => setMode({ kind: 'practice', refs: recent, seedKey: `mistakes-${mistakes.length}`})}>
+          <Button variant="secondary" style={fullWidth} onClick={() => setMode({ kind: 'practice', refs: recent, seedKey: `mistakes-${mistakes.length}` })}>
             {t('mistakesStart', { n: recent.length })}
-          </button>
+          </Button>
         ) : (
           <p className="m-0 text-sm text-ink-soft">{t('mistakesEmpty')}</p>
         )}
-      </section>
+      </Card>
 
-      <section aria-labelledby="ct-tone" className={card}>
+      <Card role="region" aria-labelledby="ct-tone" elevated style={cardStack}>
         <h2 id="ct-tone" className="m-0 text-lg font-extrabold text-ink">
-          🎙️ {t('toneTitle')}
+          {t('toneTitle')}
         </h2>
         {weak ? (
           <>
             <p className="m-0 text-sm text-ink-soft">{t('toneWeak', { tone: weakName, avg: weakAvg })}</p>
-            <button type="button" className={secondaryBtn} onClick={() => setMode({ kind: 'practice', refs: toneDrill(weak), seedKey: `tone-${weak}`})}>
+            <Button variant="secondary" style={fullWidth} onClick={() => setMode({ kind: 'practice', refs: toneDrill(weak), seedKey: `tone-${weak}` })}>
               {t('toneStart', { tone: weakName })}
-            </button>
+            </Button>
           </>
         ) : (
           <>
             <p className="m-0 text-sm text-ink-soft">{t('toneEmpty')}</p>
-            <Link to="/phat-am" className={secondaryBtn}>
+            <LinkButton to="/phat-am" variant="secondary">
               {t('toneLab')}
-            </Link>
+            </LinkButton>
           </>
         )}
-      </section>
+      </Card>
     </Page>
   );
 }

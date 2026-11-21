@@ -2,7 +2,8 @@ import { useEffect, useMemo } from 'react';
 import { COURSE, PitchReferenceFlyweight, type ToneId } from '@vietlearning/content';
 import { learnerStore, useLearner, useUiLanguage } from '@vietlearning/state';
 import { badgeStatuses, progressStore, useProgress, weeklySummary, type BadgeStatus } from '@vietlearning/state/progress';
-import { card } from '../ui';
+import { Card } from '@vietlearning/ui';
+import { cardStack } from '../Page';
 import { badgeFacts } from './facts';
 import { useT } from './i18n';
 
@@ -92,10 +93,9 @@ export function MotivationPanel() {
 
   return (
     <>
-      <section aria-labelledby="ct-week-sum" className={card}>
+      <Card role="region" aria-labelledby="ct-week-sum" elevated style={cardStack}>
         <div>
           <h2 id="ct-week-sum" className="m-0 text-base font-extrabold text-ink">
-            <span aria-hidden="true">📊 </span>
             {t('weekSummary')}
           </h2>
           <p className="m-0 text-xs text-ink-muted">{t('weekNote')}</p>
@@ -108,7 +108,7 @@ export function MotivationPanel() {
         {tone && w.bestTone && <p className="m-0 text-sm text-ink">{t('bestTone', { tone: en ? tone.nameEn : tone.name, avg: w.bestTone.avg, delta: `+${w.bestTone.delta}` })}</p>}
         {!w.hasLastWeek && <p className="m-0 text-sm text-ink-soft">{t('noLastWeek')}</p>}
         <p className="m-0 text-xs text-ink-muted">{t('wordsHint')}</p>
-      </section>
+      </Card>
 
       <details className="rounded-2xl border border-line-strong bg-surface px-4 shadow-card">
         <summary className="flex min-h-12 cursor-pointer items-center text-base font-extrabold text-ink">🏅 {t('badges', { got, total: statuses.length })}</summary>

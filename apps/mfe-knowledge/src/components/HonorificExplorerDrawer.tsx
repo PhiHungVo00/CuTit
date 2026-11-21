@@ -10,7 +10,7 @@ export interface HonorificExplorerDrawerProps {
   onClose: () => void;
   onSelectPair: (pair: HonorificPairItem) => void;
   /** Giao diện của màn hình cha; drawer render qua Portal nên phải gắn lại data-theme */
-  theme: 'dark' | 'light';
+  theme?: 'dark' | 'light';
   /** Phần tử nhận lại focus khi đóng bảng (drawer mở bằng state, không qua Dialog.Trigger) */
   returnFocusRef?: RefObject<HTMLElement | null>;
 }
@@ -102,7 +102,7 @@ export const HonorificExplorerDrawer = memo(function HonorificExplorerDrawer({
             <header className="flex items-start justify-between gap-3 border-b border-line bg-surface px-4 py-3">
               <div>
                 <Dialog.Title className="m-0 flex items-center gap-2 text-lg font-extrabold text-ink">
-                  <span aria-hidden="true">📜</span> {t('drawerTitle')}
+                  {t('drawerTitle')}
                 </Dialog.Title>
                 <Dialog.Description id="ct-drawer-desc" className="m-0 text-sm text-ink-soft">
                   {t('drawerHint')}
@@ -116,9 +116,6 @@ export const HonorificExplorerDrawer = memo(function HonorificExplorerDrawer({
             <div className="flex flex-col gap-3 border-b border-line bg-surface-2 px-4 py-3">
               <label className="relative block">
                 <span className="sr-only">{t('searchPairs')}</span>
-                <span aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2">
-                  🔍
-                </span>
                 <input
                   type="search"
                   inputMode="search"
@@ -127,7 +124,7 @@ export const HonorificExplorerDrawer = memo(function HonorificExplorerDrawer({
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   // 16px: tránh iOS tự phóng to khi focus
-                  className="min-h-11 w-full rounded-xl border border-line bg-surface pl-10 pr-3 text-base text-ink placeholder:text-ink-muted focus:border-accent focus:outline-none"
+                  className="min-h-11 w-full rounded-xl border border-line bg-surface px-3 text-base text-ink placeholder:text-ink-muted focus:border-accent focus:outline-none"
                 />
               </label>
               <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1" role="group" aria-label={t('filter')}>

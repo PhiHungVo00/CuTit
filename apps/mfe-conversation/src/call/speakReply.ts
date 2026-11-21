@@ -14,6 +14,8 @@ export interface SpeakerDeps {
   device: { speak(text: string, o?: { rate?: number }): Promise<void>; stop(): Promise<void> };
   /** tốc độ đọc của máy theo tùy chỉnh người học (speechRate) */
   deviceRate: (base: number) => number;
+  /** Gọi ngay trước khi nói (âm hiệu "Cu Tít sắp nói") */
+  announce?: () => void;
 }
 
 export type SpokenBy = 'server' | 'device' | 'none';
@@ -37,6 +39,7 @@ export function createSpeaker(deps: SpeakerDeps) {
   let serverTts = true;
   return async function speak(text: string, { slow }: { slow: boolean }): Promise<SpokenBy> {
     const deadline = speakTimeoutMs(text, slow);
+    deps.announce?.();
     const attempt = async (): Promise<SpokenBy> => {
       if (serverTts) {
         try {

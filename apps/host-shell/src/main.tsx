@@ -13,6 +13,7 @@ import { isNativeApp } from './native/bootstrap';
 import { applySwapFontsForNativeApp } from './styles/nativeFonts';
 import { ThemeProvider } from './theme/ThemeContext';
 import { configureGateway } from '@vietlearning/api-client/config';
+import { startAudioOnFirstGesture } from './audio/lazyAudio';
 
 // Tài khoản khách + đồng bộ: chunk lười, chỉ tải khi cần token hoặc sau lần vẽ đầu
 const account = () => import('./account/bootstrap');
@@ -25,6 +26,10 @@ configureGateway({
   getToken: async () => (await account()).session().getToken(),
   onUnauthorized: async () => (await account()).session().handleUnauthorized()
 });
+
+// Âm thanh: cài đặt theo máy (deviceSettings) là nguồn duy nhất; Cài đặt chỉ ghi slice, host phản ứng.
+// Trình duyệt/WebView chỉ cho phát sau cử chỉ ⇒ nạp lười + mở khóa ở lần chạm đầu tiên (nhạc nền bắt đầu từ đó).
+startAudioOnFirstGesture();
 
 if (isNativeApp) applySwapFontsForNativeApp();
 

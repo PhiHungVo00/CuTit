@@ -25,7 +25,7 @@ async function saveDialectCard(page: Page, search: string, meaning: string) {
 }
 
 async function recoveryCode(page: Page): Promise<string> {
-  await page.goto('/tuy-chinh');
+  await page.goto('/cai-dat/tai-khoan');
   const create = page.getByRole('button', { name: 'Tạo tài khoản và mã khôi phục ngay' });
   const code = page.getByTestId('recovery-code');
   await expect(create.or(code)).toBeVisible();
@@ -47,14 +47,17 @@ test.describe('GĐ0 Tài khoản khách & đồng bộ', () => {
     // Mất mạng (Gateway không tới được): thẻ mới vẫn lưu trên máy, nằm trong hàng đợi
     await page.route('**/v1/**', (route) => route.abort('internetdisconnected'));
     await saveDialectCard(page, 'bắp', 'Bắp ngô');
-    await page.goto('/tuy-chinh');
+    await page.goto('/cai-dat/tai-khoan');
     await page.getByRole('button', { name: 'Đồng bộ ngay' }).click();
     await expect(page.getByText(/Chưa đồng bộ được/).first()).toBeVisible();
 
     // Có mạng lại: gửi hàng đợi, kể cả bấm đồng bộ nhiều lần cũng không nhân đôi
     await page.unroute('**/v1/**');
-    await page.getByRole('button', { name: 'Đồng bộ ngay' }).click();
-    await expect(page.getByRole('status').filter({ hasText: 'Đã sao lưu' })).toBeVisible({ timeout: 15_000 });
+    // Bộ đồng bộ vừa lỗi mạng nên có thể còn chờ thử lại: bấm lại tới khi báo đã sao lưu (cùng khẳng định, chỉ bớt phụ thuộc thời điểm)
+    await expect(async () => {
+      await page.getByRole('button', { name: 'Đồng bộ ngay' }).click();
+      await expect(page.getByRole('status').filter({ hasText: 'Đã sao lưu' })).toBeVisible({ timeout: 4_000 });
+    }).toPass({ timeout: 25_000 });
     await page.getByRole('button', { name: 'Đồng bộ ngay' }).click();
     const cards = await serverCards(request, code);
     expect(cards).toHaveLength(2);
@@ -69,7 +72,7 @@ test.describe('GĐ0 Tài khoản khách & đồng bộ', () => {
     // “Máy khác” = hồ sơ trình duyệt mới: nhập mã khôi phục => thấy đủ thẻ SRS
     const other = await browser.newContext({ locale: 'vi-VN' });
     const p2 = await other.newPage();
-    await p2.goto('/tuy-chinh');
+    await p2.goto('/cai-dat/tai-khoan');
     await p2.getByLabel('Mã khôi phục từ máy khác').fill(code.toLowerCase());
     await p2.getByRole('button', { name: 'Khôi phục trên máy này' }).click();
     await expect(p2.getByText('✓ Đã khôi phục: 2 thẻ ôn.')).toBeVisible({ timeout: 15_000 });

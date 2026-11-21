@@ -16,7 +16,7 @@ async function learner(browser: Browser, minutesToday: number): Promise<Page> {
     localStorage.setItem('becutit.learner', JSON.stringify({ version: 1, state: { activity: { [today]: seconds } } }));
   }, minutesToday * 60);
   // Tạo tài khoản khách + đồng bộ lần đầu (đẩy thời gian học lên server)
-  await page.goto('/tuy-chinh');
+  await page.goto('/cai-dat/tai-khoan');
   const create = page.getByRole('button', { name: 'Tạo tài khoản và mã khôi phục ngay' });
   const code = page.getByTestId('recovery-code');
   await expect(create.or(code)).toBeVisible();
@@ -32,8 +32,7 @@ async function learner(browser: Browser, minutesToday: number): Promise<Page> {
 }
 
 async function openFriends(page: Page) {
-  await page.goto('/ho-so');
-  await page.getByRole('button', { name: 'Mở bạn học' }).click();
+  await page.goto('/ban-be');
 }
 
 async function setName(page: Page, name: string) {
