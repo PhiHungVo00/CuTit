@@ -105,3 +105,10 @@ test('llm_busy (503) và trần toàn cục (429 scope=global) có câu riêng, 
   assert.match(describeGatewayError(global, 'vi'), /rất nhiều bạn/);
   assert.doesNotMatch(describeGatewayError(global, 'vi'), /Bạn đã dùng hết/);
 });
+
+test('422 (llm_rejected / llm_blocked: nhà cung cấp từ chối dữ liệu gửi lên) => invalid-request, không phải lỗi máy chủ', async () => {
+  mockFetch(async () => new Response(JSON.stringify({ error: 'llm_rejected' }), { status: 422 }));
+  const err = await request('/x', { schema: Schema }).catch((e) => e);
+  assert.equal(err.kind, 'invalid-request');
+  assert.match(describeGatewayError(err, 'vi'), /chưa hợp lệ/);
+});

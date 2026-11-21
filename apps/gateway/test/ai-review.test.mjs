@@ -109,3 +109,31 @@ test('remaining đọc lỗi sau khi AI đã trả lời => vẫn 200 (bỏ rema
   assert.equal(r.json().remaining, undefined);
   await a.close();
 });
+
+test('mọi nguồn đã gọi đều trả 4xx do YÊU CẦU (ảnh hỏng) => llm_rejected (422), KHÔNG hoàn lượt (không đốt trần chung miễn phí)', async () => {
+  const breaker = new CircuitBreaker({ openMs: 180_000, failureThreshold: 3, transientOpenMs: 60_000 });
+  const bad = { name: 'v', supportsImage: true, async generateJson() { throw new LlmProviderError(502, 'llm_unavailable', 'x (400)', 400); } };
+  const vision = new FallbackLlmProvider('vision', [{ id: 'v', provider: bad }], { breaker, budgetMs: 9000 });
+  const quotaStore = new InMemoryQuotaStore();
+  const globalQuotaStore = new InMemoryGlobalQuotaStore();
+  const a = await makeApp({ JWT_SECRET: SECRET, GLOBAL_MAX_VISION_PER_DAY: '100' }, { llm: null, vision, quotaStore, globalQuotaStore });
+  const g = await guest(a);
+  const JPEG = Buffer.concat([Buffer.from([0xff, 0xd8, 0xff, 0xe0]), Buffer.alloc(200, 1)]).toString('base64');
+  for (let i = 0; i < 4; i++) {
+    const r = await a.inject({ method: 'POST', url: '/v1/vision/label', headers: g.headers, payload: { imageBase64: JPEG } });
+    assert.equal(r.statusCode, 422);
+    assert.equal(r.json().error, 'llm_rejected');
+  }
+  assert.equal(await quotaStore.get(g.body.userId, 'vision'), 4, 'ảnh bị nhà cung cấp từ chối vẫn tính lượt người gửi');
+  assert.equal(await globalQuotaStore.get('vision'), 4);
+  await a.close();
+});
+
+test('chuỗi: một nguồn 400 + một nguồn 429 => vẫn llm_busy (lỗi hỗn hợp, hoàn lượt như cũ)', async () => {
+  const breaker = new CircuitBreaker({ openMs: 180_000, failureThreshold: 3, transientOpenMs: 60_000 });
+  const bad = { name: 'a', async generateJson() { throw new LlmProviderError(502, 'llm_unavailable', 'x (400)', 400); } };
+  const busy = { name: 'b', async generateJson() { throw new LlmProviderError(503, 'llm_busy', '429', 429); } };
+  const chain = new FallbackLlmProvider('llm', [{ id: 'a', provider: bad }, { id: 'b', provider: busy }], { breaker, budgetMs: 9000 });
+  const err = await chain.generateJson({ system: '', turns: [], schema: {} }).catch((e) => e);
+  assert.equal(err.code, 'llm_busy');
+});

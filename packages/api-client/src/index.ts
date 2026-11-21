@@ -91,7 +91,8 @@ function kindForStatus(status: number): GatewayErrorKind {
   if (status === 401) return 'unauthorized';
   if (status === 429) return 'quota';
   if (status === 503) return 'unavailable';
-  if (status === 400 || status === 413 || status === 415) return 'invalid-request';
+  // 422: nhà cung cấp AI từ chối dữ liệu gửi lên (llm_rejected) hoặc nội dung (llm_blocked) — không phải lỗi máy chủ
+  if (status === 400 || status === 413 || status === 415 || status === 422) return 'invalid-request';
   return 'server';
 }
 
