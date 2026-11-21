@@ -1,6 +1,7 @@
 import { Suspense, lazy, useCallback, useEffect, useRef, useState } from 'react';
 import { HONORIFIC_PAIRS_20 } from '@vietlearning/content';
 import { useLearner } from '@vietlearning/state';
+import { Button } from '@vietlearning/ui';
 import { CuTitWisdomCard } from './CuTitWisdomCard';
 import { useT } from '../i18n';
 
@@ -13,10 +14,9 @@ import { useHonorificPlayground } from './honorific/useHonorificPlayground';
 import { type Theme } from './honorific/options';
 
 export interface HonorificMatrixScreenProps {
-  /** Giao diện ban đầu khi màn hình tự quản lý theme */
-  initialTheme?: Theme;
-  /** Truyền vào để màn hình cha điều khiển theme (controlled) */
+  /** Chỉ dùng cho khung giả lập dev: bình thường giao diện do Cài đặt quyết định (data-theme trên <html>). */
   theme?: Theme;
+  /** @deprecated Công tắc sáng/tối đã gỡ khỏi màn này; giữ prop để host cũ vẫn biên dịch. */
   onThemeChange?: (theme: Theme) => void;
   onPairChange?: (pair: { speaker: string; listener: string; pairId: string }) => void;
 }
@@ -26,19 +26,12 @@ export interface HonorificMatrixScreenProps {
  * Logic nằm trong useHonorificPlayground; màu lấy từ design tokens qua data-theme,
  * nên đổi giao diện không remount và giữ nguyên lựa chọn của người học.
  */
-export function HonorificMatrixScreen({ initialTheme = 'dark', theme: themeProp, onThemeChange, onPairChange }: HonorificMatrixScreenProps) {
+export function HonorificMatrixScreen({ theme, onPairChange }: HonorificMatrixScreenProps) {
   const t = useT();
   const en = useLearner((s) => s.preferences.uiLanguage) === 'en';
-  const [themeState, setThemeState] = useState<Theme>(initialTheme);
-  const theme = themeProp ?? themeState;
-  const setTheme = (next: Theme) => {
-    if (themeProp === undefined) setThemeState(next);
-    onThemeChange?.(next);
-  };
-
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [drawerMounted, setDrawerMounted] = useState(false);
-  const drawerButtonRef = useRef<HTMLButtonElement>(null);
+  const drawerButtonRef = useRef<HTMLButtonElement | null>(null);
   const openDrawer = () => {
     setDrawerMounted(true);
     setDrawerOpen(true);
@@ -67,40 +60,19 @@ export function HonorificMatrixScreen({ initialTheme = 'dark', theme: themeProp,
           <p className="m-0 text-[15px] text-ink-soft">{t('matrixIntro')}</p>
 
           <div className="flex flex-wrap items-center gap-2">
-            <div role="radiogroup" aria-label={t('themeLabel')} className="inline-flex rounded-xl border border-line bg-surface-2 p-1">
-              {(
-                [
-                  ['dark', t('themeDark')],
-                  ['light', t('themeLight')]
-                ] as const
-              ).map(([id, label]) => (
-                <button
-                  key={id}
-                  type="button"
-                  role="radio"
-                  aria-checked={theme === id}
-                  onClick={() => setTheme(id)}
-                  className={[
-                    'min-h-11 rounded-lg px-3 text-sm',
-                    theme === id ? 'bg-accent font-extrabold text-accent-ink' : 'font-medium text-ink-soft'
-                  ].join(' ')}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-
-            <button
+            <Button
               type="button"
-              ref={drawerButtonRef}
+              variant="secondary"
               onPointerDown={() => void loadDrawer()}
               onFocus={() => void loadDrawer()}
-              onClick={openDrawer}
+              onClick={(e) => {
+                drawerButtonRef.current = e.currentTarget;
+                openDrawer();
+              }}
               aria-haspopup="dialog"
-              className="flex min-h-12 items-center gap-2 rounded-xl border border-line-strong bg-surface px-4 text-[15px] font-bold text-ink"
             >
-              <span aria-hidden="true">📜</span> {t('pairsButton')}
-            </button>
+              {t('pairsButton')}
+            </Button>
           </div>
         </header>
 

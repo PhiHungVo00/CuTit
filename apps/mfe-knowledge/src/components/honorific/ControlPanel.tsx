@@ -1,5 +1,6 @@
 import { memo } from 'react';
 import type { RelationCategory } from '@vietlearning/content';
+import { Button } from '@vietlearning/ui';
 import { ChoiceGroup } from './ChoiceGroup';
 import { useT } from '../../i18n';
 import {
@@ -35,12 +36,7 @@ export const ControlPanel = memo(function ControlPanel(p: ControlPanelProps) {
   const t = useT();
   const relationChoices = RELATIONS.map((r) => ({
     id: r.id,
-    label: (
-      <>
-        <span aria-hidden="true">{r.icon}</span>
-        <span>{t(`relation.${r.id}`)}</span>
-      </>
-    )
+    label: t(`relation.${r.id}`)
   }));
   const ageChoices = AGE_STEPS.map((a) => ({ id: a, label: t(`age.${a}`) }));
   const contextChoices = CONTEXT_STEPS.map((c) => ({ id: c, label: t(`context.${c}`) }));
@@ -52,7 +48,7 @@ export const ControlPanel = memo(function ControlPanel(p: ControlPanelProps) {
       className="flex flex-col gap-5 rounded-2xl border border-line bg-surface p-4 shadow-card"
     >
       <h2 id="ct-controls-title" className="flex items-center gap-2 text-lg font-extrabold text-ink">
-        <span aria-hidden="true">🎛️</span> {t('controls')}
+        {t('controls')}
       </h2>
 
       <ChoiceGroup label={t('relationLabel')} value={p.relation} options={relationChoices} onChange={p.setRelation} columns={2} size="sm" align="start" />
@@ -88,18 +84,9 @@ export const ControlPanel = memo(function ControlPanel(p: ControlPanelProps) {
           onChange={p.setPartnerGender}
         />
 
-        <button
-          type="button"
-          aria-pressed={p.isReversed}
-          onClick={p.toggleReversed}
-          className={[
-            'flex min-h-12 items-center justify-center gap-2 rounded-xl border px-3 text-[15px] font-bold transition-colors',
-            p.isReversed ? 'border-accent bg-accent text-accent-ink' : 'border-line-strong bg-surface-2 text-ink'
-          ].join(' ')}
-        >
-          <span aria-hidden="true">🔄</span>
+        <Button type="button" variant={p.isReversed ? 'primary' : 'secondary'} aria-pressed={p.isReversed} onClick={p.toggleReversed}>
           {p.isReversed ? t('theyTalk') : t('iTalk')}
-        </button>
+        </Button>
       </div>
     </section>
   );
