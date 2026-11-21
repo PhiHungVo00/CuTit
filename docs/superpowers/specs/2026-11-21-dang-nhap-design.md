@@ -1,6 +1,6 @@
 # Thiết kế dự án 3 — Đăng nhập: Google + tên đăng nhập/mật khẩu
 
-> Ngày: 2026-11-21 · Trạng thái: **chờ người dùng duyệt** · Nền kỹ thuật chi tiết: `docs/thiet-ke/DE-XUAT-DANG-NHAP-PHAN-QUYEN.md` Phần A (đọc kèm; tài liệu này chỉ ghi chỗ **khác** hoặc **chốt** so với đề xuất đó). Góp ý gốc: số 1 trong `docs/nhat-ky/GOP-Y-20-11.md`.
+> Ngày: 2026-11-21 · Trạng thái: **đã duyệt 2026-11-21** · Nền kỹ thuật chi tiết: `docs/thiet-ke/DE-XUAT-DANG-NHAP-PHAN-QUYEN.md` Phần A (đọc kèm; tài liệu này chỉ ghi chỗ **khác** hoặc **chốt** so với đề xuất đó). Góp ý gốc: số 1 trong `docs/nhat-ky/GOP-Y-20-11.md`.
 
 ## 1. Mục đích và lý do
 Góp ý số 1: app chưa có đăng nhập/đăng ký phổ biến. Hiện chỉ có **tài khoản khách + mã khôi phục** (`apps/gateway/src/routes/auth.ts`, `packages/api-client/src/session.ts`). App sẽ phát hành thật: người dùng cần một tài khoản dùng được trên nhiều máy, lấy lại được khi mất máy/quên mật khẩu, mà **không tốn tiền dịch vụ và không cần xác minh doanh nghiệp**.
