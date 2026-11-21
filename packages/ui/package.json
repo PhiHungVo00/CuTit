@@ -2,7 +2,7 @@
   "name": "@vietlearning/ui",
   "version": "1.0.0",
   "type": "module",
-  "sideEffects": false,
+  "sideEffects": ["**/*.css"],
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
@@ -22,7 +22,7 @@
     "./mascot.css": "./src/mascot/cutit.css"
   },
   "scripts": {
-    "build": "tsc -b",
+    "build": "tsc -b && node scripts/copy-css.mjs",
     "dev": "tsc -b -w",
     "test": "vitest run"
   },
