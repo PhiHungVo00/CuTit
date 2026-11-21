@@ -1,10 +1,9 @@
 import { useEffect, useRef, useState, type ChangeEvent } from 'react';
 import { Link } from 'react-router-dom';
-import { canOpenAppSettings, openAppSettings } from '@vietlearning/native';
+import { canOpenAppSettings, fileToJpegBase64, openAppSettings, toJpegBase64 } from '@vietlearning/native';
 import { learnerStore, useLearner } from '@vietlearning/state';
 import { Button, CuTit, Icon } from '@vietlearning/ui';
 import { SlowListen, say as sayAt } from '../listen';
-import { fileToJpegBase64, toJpegBase64 } from './image';
 import { t as tCam, useT } from '../i18n';
 
 interface Label {
