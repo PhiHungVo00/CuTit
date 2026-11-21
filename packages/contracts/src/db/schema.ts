@@ -10,8 +10,10 @@ import {
   primaryKey,
   uniqueIndex,
   index,
+  check,
   type AnyPgColumn
 } from 'drizzle-orm/pg-core';
+import { sql } from 'drizzle-orm';
 
 /**
  * Schema PostgreSQL (Drizzle) — một nguồn duy nhất cho Gateway.
@@ -31,28 +33,42 @@ const userRef = (name = 'user_id') =>
     .references(() => users.id, { onDelete: 'cascade' });
 
 /** 1. Người dùng + hồ sơ học (tài khoản khách: email null, is_guest = true) */
-export const users = pgTable('users', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  email: text('email').unique(),
-  isGuest: boolean('is_guest').notNull().default(true),
-  /**
-   * Có từ GĐ0 (schema nền). Chế độ trẻ em (D4/GĐ4b) đã gỡ 19/11: trẻ dùng app như mọi người, không còn tài khoản
-   * 'child'. Giữ hai cột này (vô hại, luôn 'adult' / null) để không phải đổi bảng users; không code nào đọc nữa.
-   */
-  accountType: text('account_type').notNull().default('adult'),
-  parentUserId: uuid('parent_user_id').references((): AnyPgColumn => users.id, { onDelete: 'cascade' }),
-  /** sha256 của mã khôi phục (mã gốc chỉ hiện cho người học, server không giữ) */
-  recoveryCodeHash: text('recovery_code_hash').unique(),
-  locale: text('locale').default('en'),
-  nativeLang: text('native_lang').notNull().default('en'),
-  level: integer('level').notNull().default(1),
-  goal: text('goal'),
-  targetDialect: text('target_dialect').notNull().default('north'), // north | central | south
-  onboardingDone: boolean('onboarding_done').notNull().default(false),
-  profileUpdatedAt: ts('profile_updated_at'),
-  createdAt: ts('created_at').notNull().defaultNow(),
-  deletedAt: ts('deleted_at')
-});
+export const users = pgTable(
+  'users',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    email: text('email').unique(),
+    isGuest: boolean('is_guest').notNull().default(true),
+    /**
+     * Có từ GĐ0 (schema nền). Chế độ trẻ em (D4/GĐ4b) đã gỡ 19/11: trẻ dùng app như mọi người, không còn tài khoản
+     * 'child'. Giữ hai cột này (vô hại, luôn 'adult' / null) để không phải đổi bảng users; không code nào đọc nữa.
+     */
+    accountType: text('account_type').notNull().default('adult'),
+    parentUserId: uuid('parent_user_id').references((): AnyPgColumn => users.id, { onDelete: 'cascade' }),
+    /** sha256 của mã khôi phục (mã gốc chỉ hiện cho người học, server không giữ) */
+    recoveryCodeHash: text('recovery_code_hash').unique(),
+    locale: text('locale').default('en'),
+    nativeLang: text('native_lang').notNull().default('en'),
+    level: integer('level').notNull().default(1),
+    goal: text('goal'),
+    targetDialect: text('target_dialect').notNull().default('north'), // north | central | south
+    onboardingDone: boolean('onboarding_done').notNull().default(false),
+    profileUpdatedAt: ts('profile_updated_at'),
+    createdAt: ts('created_at').notNull().defaultNow(),
+    deletedAt: ts('deleted_at'),
+    /**
+     * Dự án 3 — xóa mềm 30 ngày: khác NULL = đã bấm xóa, tài khoản bị khóa (API thường trả `account_pending_deletion`),
+     * job dọn xóa cứng khi `delete_at <= now()`. Đăng nhập lại trước hạn => hỏi khôi phục (đặt lại NULL).
+     * (`deleted_at` cũ vẫn không dùng.)
+     */
+    deleteAt: ts('delete_at')
+  },
+  (t) => [
+    index('users_delete_at_idx')
+      .on(t.deleteAt)
+      .where(sql`${t.deleteAt} is not null`)
+  ]
+);
 
 /** 2. Tùy chỉnh (M12) — khớp Preferences của client */
 export const preferences = pgTable('preferences', {
@@ -199,9 +215,15 @@ export const refreshTokens = pgTable(
     tokenHash: text('token_hash').notNull().unique(),
     createdAt: ts('created_at').notNull().defaultNow(),
     expiresAt: ts('expires_at').notNull(),
-    revokedAt: ts('revoked_at')
+    revokedAt: ts('revoked_at'),
+    /**
+     * Dự án 3 — họ token: token sinh ra khi xoay vòng mang family_id của token cũ; dùng lại token đã xoay => thu hồi
+     * cả họ. Token có từ trước migration này: mỗi cái một họ riêng (gen_random_uuid() tính theo từng dòng).
+     */
+    familyId: uuid('family_id').notNull().defaultRandom(),
+    lastUsedAt: ts('last_used_at')
   },
-  (t) => [index('refresh_tokens_user_idx').on(t.userId)]
+  (t) => [index('refresh_tokens_user_idx').on(t.userId), index('refresh_tokens_family_idx').on(t.familyId)]
 );
 
 /** 12. Sự kiện XP — CHỈ THÊM (append-only), đồng thời là lịch sử */
@@ -284,14 +306,30 @@ export const learnerProgress = pgTable('learner_progress', {
 });
 
 /**
- * 18. “Bia mộ” tài khoản đã xóa: CHỈ sha256 của refresh token / mã khôi phục lúc xóa (không userId, không dữ liệu học).
- * Để máy khác còn giữ credential cũ nhận `account_deleted` (xóa dữ liệu trên máy) thay vì `invalid_*` (lặng lẽ tạo khách mới).
- * Dọn sau 90 ngày (= hạn refresh token).
+ * 18. “Bia mộ” = credential đã nghỉ hưu: CHỈ sha256 của refresh token / mã khôi phục (không userId, không dữ liệu học).
+ * Để máy khác còn giữ credential cũ nhận lỗi đúng thay vì `invalid_*` (lặng lẽ tạo khách mới):
+ * - reason 'deleted'  => `account_deleted` (xóa dữ liệu trên máy)
+ * - reason 'merged'   => `account_merged` (khách đã gộp vào tài khoản: mời đăng nhập, KHÔNG xóa dữ liệu máy)
+ * - reason 'upgraded' => `account_upgraded` (mã khôi phục của khách đã nâng cấp: mời đăng nhập)
+ * `expires_at` = hạn dọn: hash refresh token +90 ngày; hash mã khôi phục NULL (giữ mãi — mã không bao giờ hết hạn).
+ * Dòng có từ trước dự án 3: expires_at NULL (không phân biệt được loại hash => giữ mãi cho an toàn).
+ * LƯU Ý: tới khi Task 4 đổi job dọn (repo.ts) sang lọc theo expires_at, job cũ vẫn dọn theo deleted_at sau 90 ngày.
  */
-export const deletedAccounts = pgTable('deleted_accounts', {
-  credentialHash: text('credential_hash').primaryKey(),
-  deletedAt: ts('deleted_at').notNull().defaultNow()
-});
+export const DELETED_REASONS = ['deleted', 'merged', 'upgraded'] as const;
+export type DeletedReason = (typeof DELETED_REASONS)[number];
+export const deletedAccounts = pgTable(
+  'deleted_accounts',
+  {
+    credentialHash: text('credential_hash').primaryKey(),
+    deletedAt: ts('deleted_at').notNull().defaultNow(),
+    reason: text('reason').$type<DeletedReason>().notNull().default('deleted'),
+    expiresAt: ts('expires_at')
+  },
+  (t) => [
+    check('deleted_accounts_reason_ck', sql`${t.reason} in ('deleted', 'merged', 'upgraded')`),
+    index('deleted_accounts_expires_idx').on(t.expiresAt)
+  ]
+);
 
 /**
  * 19. Hạn mức AI theo ngày (GĐ3): bộ đếm theo người dùng × năng lực × ngày CỦA SERVER.
@@ -393,4 +431,99 @@ export const auditEvents = pgTable(
     index('audit_events_type_created_idx').on(t.type, t.createdAt),
     index('audit_events_user_idx').on(t.userId)
   ]
+);
+
+/**
+ * 24–27. Dự án 3 — đăng nhập Google + tên đăng nhập/mật khẩu (spec docs/superpowers/specs/2026-11-21-dang-nhap-design.md).
+ * Mẫu "danh tính tách khỏi người dùng, duy nhất theo (provider, subject)" tham khảo bảng `accounts` của Auth.js
+ * Drizzle adapter (ISC, https://github.com/nextauthjs/next-auth) và hướng dẫn nhiều provider của Lucia
+ * (MIT, https://github.com/lucia-auth/lucia) — chỉ lấy ý tưởng, không chép mã.
+ */
+
+/** 24. Danh tính đăng nhập: 'google' (subject = `sub`), 'password' (subject = tên đăng nhập chữ thường), 'email' (subject = email chữ thường, CHỈ để lấy lại mật khẩu) */
+export const IDENTITY_PROVIDERS = ['google', 'password', 'email'] as const;
+export type IdentityProvider = (typeof IDENTITY_PROVIDERS)[number];
+export const identities = pgTable(
+  'identities',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    userId: userRef(),
+    provider: text('provider').$type<IdentityProvider>().notNull(),
+    subject: text('subject').notNull(),
+    /** bản che để hiển thị ('m***@gmail.com', tên đăng nhập) — KHÔNG lưu email đầy đủ của Google */
+    display: text('display'),
+    emailVerified: boolean('email_verified').notNull().default(false),
+    createdAt: ts('created_at').notNull().defaultNow(),
+    lastUsedAt: ts('last_used_at')
+  },
+  (t) => [
+    uniqueIndex('identities_provider_subject_uq').on(t.provider, t.subject),
+    /**
+     * Mỗi người dùng tối đa một danh tính mỗi provider => hai máy cùng nâng cấp một khách chỉ gắn được một
+     * (Review Focus 1). Cũng là index theo user_id (cột đầu).
+     */
+    uniqueIndex('identities_user_provider_uq').on(t.userId, t.provider),
+    check('identities_provider_ck', sql`${t.provider} in ('google', 'password', 'email')`),
+    /** tên đăng nhập/email phải lưu chữ thường => unique(provider, subject) không phân biệt hoa thường; Google `sub` giữ nguyên */
+    check('identities_subject_lower_ck', sql`${t.provider} = 'google' or ${t.subject} = lower(${t.subject})`)
+  ]
+);
+
+/** 25. Mật khẩu (argon2id) + mã dự phòng (sha256, một lần, chỉ để đặt lại mật khẩu) — tách khỏi identities để bảng đó không chứa bí mật */
+export const passwordCredentials = pgTable('password_credentials', {
+  userId: uuid('user_id')
+    .primaryKey()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  passwordHash: text('password_hash').notNull(),
+  backupCodeHash: text('backup_code_hash'),
+  updatedAt: ts('updated_at').notNull().defaultNow()
+});
+
+/**
+ * 26. Thử thách ngắn hạn (job dọn theo `expires_at`, sau 1 ngày). Nghĩa các cột theo `kind`:
+ * - 'oidc_nonce'   : key_hash = sha256(nonce); subject/user_id NULL. Dùng một lần (đặt consumed_at). Sống 10 phút.
+ * - 'email_otp'    : subject = email chữ thường; key_hash = HMAC(AUTH_OTP_PEPPER, mã 6 số) — có thể TRÙNG giữa các
+ *                    email nên KHÔNG unique; tra theo (kind, subject); user_id = người gắn email (NULL khi quên mật khẩu);
+ *                    attempts = số lần sai (≥ 5 => otp_locked). Sống 10 phút.
+ * - 'merge_ticket' : key_hash = sha256(ticket); user_id = KHÁCH U_B (nguồn); subject = id tài khoản đích U_A (chuỗi uuid).
+ *                    Dùng một lần, sống 10 phút. Xóa U_B => vé mất theo (cascade).
+ * - 'login_fail'   : key_hash = HMAC(pepper, khóa đếm), khóa đếm = 'pair:'+ip_hash+'|'+tên / 'ip:'+ip_hash / 'user:'+tên;
+ *                    attempts = số lần sai trong cửa sổ, expires_at = hết cửa sổ. Tăng nguyên tử bằng
+ *                    INSERT … ON CONFLICT (kind, key_hash) WHERE kind <> 'email_otp' DO UPDATE.
+ * oidc_nonce / merge_ticket / login_fail: unique (kind, key_hash).
+ */
+export const AUTH_CHALLENGE_KINDS = ['oidc_nonce', 'email_otp', 'merge_ticket', 'login_fail'] as const;
+export type AuthChallengeKind = (typeof AUTH_CHALLENGE_KINDS)[number];
+export const authChallenges = pgTable(
+  'auth_challenges',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    kind: text('kind').$type<AuthChallengeKind>().notNull(),
+    keyHash: text('key_hash').notNull(),
+    subject: text('subject'),
+    userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }),
+    attempts: integer('attempts').notNull().default(0),
+    expiresAt: ts('expires_at').notNull(),
+    consumedAt: ts('consumed_at'),
+    createdAt: ts('created_at').notNull().defaultNow()
+  },
+  (t) => [
+    check('auth_challenges_kind_ck', sql`${t.kind} in ('oidc_nonce', 'email_otp', 'merge_ticket', 'login_fail')`),
+    uniqueIndex('auth_challenges_kind_key_uq')
+      .on(t.kind, t.keyHash)
+      .where(sql`${t.kind} <> 'email_otp'`),
+    index('auth_challenges_kind_subject_idx').on(t.kind, t.subject),
+    index('auth_challenges_expires_idx').on(t.expiresAt),
+    index('auth_challenges_user_idx').on(t.userId)
+  ]
+);
+
+/** 27. Tên đăng nhập đang giữ chỗ (giải phóng 30 ngày sau khi tài khoản bị xóa hẳn) — chữ thường như identities */
+export const reservedUsernames = pgTable(
+  'reserved_usernames',
+  {
+    username: text('username').primaryKey(),
+    until: ts('until').notNull()
+  },
+  (t) => [check('reserved_usernames_lower_ck', sql`${t.username} = lower(${t.username})`), index('reserved_usernames_until_idx').on(t.until)]
 );
