@@ -1,3 +1,4 @@
+import { hardDeleteUser } from '../auth/lifecycle.js';
 import { and, asc, desc, eq, lte, sql } from 'drizzle-orm';
 import type { z } from 'zod';
 import type { PreferencesSchema, ProgressSnapshot, SyncEvent } from '@vietlearning/contracts/api';
@@ -171,7 +172,8 @@ export async function snapshot(db: Db, userId: string): Promise<ProgressSnapshot
   };
 }
 
-// Xóa cứng + bia mộ: xem services/auth/lifecycle.ts (hardDeleteUser, purgeExpiredAccounts)
+/** Giữ tên cũ cho nơi gọi cũ: xóa cứng + bia mộ nằm ở services/auth/lifecycle.ts */
+export const deleteUser = (db: Db, userId: string, now = new Date()): Promise<boolean> => hardDeleteUser(db, userId, now);
 
 /** credentialHash = sha256 của refresh token / mã khôi phục đã chuẩn hóa */
 export async function isDeletedCredential(db: Db, credentialHash: string): Promise<boolean> {

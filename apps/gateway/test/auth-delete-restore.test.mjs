@@ -10,7 +10,8 @@ import { makeApp, guest } from './helpers.mjs';
  * Mọi mốc thời gian dùng ĐỒNG HỒ GIẢ (`clock` tiêm vào buildApp) — không chờ thật.
  */
 const DAY = 24 * 3600 * 1000;
-const T0 = new Date('2026-12-01T03:00:00.000Z');
+// Lấy theo giờ thật lúc chạy: /auth/refresh dùng giờ thật, nên mốc cố định sẽ hỏng test khi lịch trôi qua
+const T0 = new Date(Math.floor(Date.now() / 1000) * 1000);
 
 async function setup() {
   const dbp = createDbProvider({ PGLITE_DIR: 'memory://' });
@@ -151,7 +152,7 @@ test('Khôi phục trong hạn: hết delete_at, API dùng lại được; hỏi
     const [u] = await db.select().from(schema.users).where(eq(schema.users.id, A.body.userId));
     assert.equal(u.deleteAt, null);
     assert.equal((await app.inject({ url: '/v1/preferences', headers: h })).statusCode, 200);
-    assert.equal(await restorableOf(db, A.body.userId, state_now(advance, 0)), null);
+    assert.equal(await restorableOf(db, A.body.userId, new Date(T0.getTime() + 29 * DAY + 23 * 3600 * 1000)), null);
     // lần hai: không sao
     assert.equal((await app.inject({ method: 'POST', url: '/v1/me/restore', headers: h })).statusCode, 200);
     // thân khác {} (strict) => 400
@@ -160,7 +161,24 @@ test('Khôi phục trong hạn: hết delete_at, API dùng lại được; hỏi
     await close();
   }
 });
-const state_now = (advance, ms) => advance(ms);
+
+test('Token cấp lúc đăng nhập-để-khôi-phục: refresh khi đang chờ xóa => 401 pending, KHÔNG bị cháy; khôi phục xong dùng lại được', async () => {
+  const { app, db, close } = await setup();
+  try {
+    const A = await guest(app);
+    await app.inject({ method: 'DELETE', url: '/v1/me', headers: A.headers, payload: { mode: 'grace' } });
+    const { issueTokens } = await import('../dist/services/auth/tokens.js');
+    const t = await issueTokens(app, db, A.body.userId, new Date());
+    const r1 = await app.inject({ method: 'POST', url: '/v1/auth/refresh', payload: { refreshToken: t.refreshToken } });
+    assert.equal(r1.statusCode, 401);
+    assert.equal(r1.json().error, 'account_pending_deletion');
+    assert.equal((await app.inject({ method: 'POST', url: '/v1/me/restore', headers: bearer(t.accessToken) })).statusCode, 200);
+    const r2 = await app.inject({ method: 'POST', url: '/v1/auth/refresh', payload: { refreshToken: t.refreshToken } });
+    assert.equal(r2.statusCode, 200, r2.body);
+  } finally {
+    await close();
+  }
+});
 
 test('Quá hạn 30 ngày mà job chưa chạy: API trả account_deleted, không khôi phục được nữa', async () => {
   const { app, db, advance, close } = await setup();

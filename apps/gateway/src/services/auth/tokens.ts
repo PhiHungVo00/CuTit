@@ -39,6 +39,15 @@ export async function issueTokens(app: FastifyInstance, db: Db, userId: string, 
   return { accessToken, refreshToken, expiresIn: ACCESS_TTL_S, userId };
 }
 
+/** Giữ cho nơi gọi cũ; /refresh mới dùng classifyRefreshFailure (thu hồi cả họ) */
+export async function refreshTokenOwnerIfReused(db: Db, refreshToken: string): Promise<string | null> {
+  const [row] = await db
+    .select({ userId: schema.refreshTokens.userId, revokedAt: schema.refreshTokens.revokedAt })
+    .from(schema.refreshTokens)
+    .where(eq(schema.refreshTokens.tokenHash, sha256(refreshToken)));
+  return row?.revokedAt ? row.userId : null;
+}
+
 export type RefreshFailure =
   | { kind: 'reused'; userId: string }
   | { kind: 'pending_deletion'; userId: string }
@@ -70,17 +79,28 @@ export async function classifyRefreshFailure(db: Db, refreshToken: string, now =
 export async function rotateRefreshToken(app: FastifyInstance, db: Db, refreshToken: string, now = new Date()): Promise<AuthTokens | null> {
   const hash = sha256(refreshToken);
   const next = await db.transaction(async (tx) => {
-    const [row] = await tx
+    // Kiểm CHỦ TOKEN trước khi thu hồi: người đang chờ xóa không được làm "cháy" token (sau khôi phục token vẫn dùng được)
+    const [live] = await tx
+      .select({ userId: schema.refreshTokens.userId, familyId: schema.refreshTokens.familyId })
+      .from(schema.refreshTokens)
+      .innerJoin(schema.users, eq(schema.users.id, schema.refreshTokens.userId))
+      .where(
+        and(
+          eq(schema.refreshTokens.tokenHash, hash),
+          isNull(schema.refreshTokens.revokedAt),
+          gt(schema.refreshTokens.expiresAt, now),
+          isNull(schema.users.deletedAt),
+          isNull(schema.users.deleteAt)
+        )
+      );
+    if (!live) return null;
+    // Điều kiện revoked_at IS NULL nằm trong UPDATE: hai lần xoay vòng đồng thời chỉ một lần thắng
+    const won = await tx
       .update(schema.refreshTokens)
       .set({ revokedAt: now, lastUsedAt: now })
-      .where(and(eq(schema.refreshTokens.tokenHash, hash), isNull(schema.refreshTokens.revokedAt), gt(schema.refreshTokens.expiresAt, now)))
-      .returning({ userId: schema.refreshTokens.userId, familyId: schema.refreshTokens.familyId });
-    if (!row) return null;
-    const [user] = await tx
-      .select({ id: schema.users.id })
-      .from(schema.users)
-      .where(and(eq(schema.users.id, row.userId), isNull(schema.users.deletedAt), isNull(schema.users.deleteAt)));
-    return user ? { userId: user.id, familyId: row.familyId } : null;
+      .where(and(eq(schema.refreshTokens.tokenHash, hash), isNull(schema.refreshTokens.revokedAt)))
+      .returning({ id: schema.refreshTokens.id });
+    return won.length ? live : null;
   });
   return next ? issueTokens(app, db, next.userId, now, next.familyId) : null;
 }

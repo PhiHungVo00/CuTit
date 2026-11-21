@@ -5,11 +5,10 @@ import { schema, type Db } from '../../db/client.js';
 /**
  * Vòng đời tài khoản (dự án 3, Task 4): xóa mềm 30 ngày, khôi phục, xóa cứng + bia mộ, thu hồi token.
  *
- * Mẫu tham khảo (chỉ ý tưởng, tự viết lại theo kiến trúc dự án):
- *  - "soft delete + purge job" kiểu cột `deleted_at` + truy vấn `where deleted_at <= now()` chạy định kỳ,
- *    phổ biến trong tài liệu Drizzle ORM (Apache-2.0) và Rails `paranoia`/Django `softdelete` (MIT).
- *  - Họ refresh token + thu hồi cả họ khi dùng lại token đã xoay vòng: OAuth 2.0 Security BCP (RFC 9700 §4.14.2),
- *    Auth0 "refresh token rotation" (tài liệu, không chép mã).
+ * Tham khảo (chỉ ý tưởng, không chép mã; tự viết theo kiến trúc dự án):
+ *  - Refresh token xoay vòng + phát hiện dùng lại: OAuth 2.0 Security BCP, RFC 9700 §4.14 (Refresh Token Protection),
+ *    https://www.rfc-editor.org/rfc/rfc9700 (đã xác nhận mục 4.14.2 là "Recommendations"; chưa đối chiếu từng câu chữ).
+ *  - Mẫu "xóa mềm bằng cột hạn + job dọn định kỳ" là kỹ thuật phổ biến; KHÔNG tìm thấy/không dùng đoạn mã mẫu cụ thể nào.
  * Không có mã nguồn bên thứ ba nào được chép vào tệp này.
  */
 
