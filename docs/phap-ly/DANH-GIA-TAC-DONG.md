@@ -146,6 +146,25 @@ Người đã đồng ý `voice` v1 trên máy trước 19/11/2026 không bị h
 
 ---
 
+## B2. Bổ sung 21/11/2026 — chuỗi nhiều nhà cung cấp AI (dự án 2)
+> Cập nhật hồ sơ B khi nộp thật (Luật Điều 22; thay đổi bên nhận ⇒ cập nhật hồ sơ). Bản nháp, `[CẦN ĐIỀN]` giữ nguyên.
+
+| Mục | Thay đổi |
+|---|---|
+| Bên nhận | Thêm **Groq, Inc.** (chat chữ, chép lời giọng nói; không nhận ảnh) `[CẦN ĐIỀN: địa chỉ pháp lý, điều khoản gói đang dùng]` và **OpenRouter** (dự phòng; chuyển tiếp tới nhà vận hành mô hình khác — bên nhận thứ hai chưa biết trước `[CẦN ĐIỀN]`). Google (Gemini) vẫn nhận chữ, ảnh, khung hình, giọng nói |
+| Loại dữ liệu | Thêm: **khung hình camera mỗi lượt nói khi gọi video** (JPEG ≤ 768 px, không phải video liên tục); tin nhắn kèm ≤ 10 lượt gần nhất và đoạn **tóm tắt ≤ 600 ký tự do AI tạo** từ cuộc trò chuyện; tin giọng nói ≤ 15 s |
+| Lưu trữ phía nhận | Gateway vẫn không lưu nội dung. Phía nhà cung cấp: gói miễn phí có thể lưu và dùng cải thiện dịch vụ — **chính sách đã nói thẳng điều này**; `[CẦN ĐIỀN]` điều khoản từng gói |
+| Dữ liệu mới trên máy (không gửi đi) | Lịch sử chat chỉ chữ trong IndexedDB, ≤ 500 cuộc. **Chưa thấy mã xóa lịch sử khi “Xóa tài khoản”** (xóa nằm ở màn lịch sử chat và khi gỡ app) ⇒ việc cần làm, xem mục C.7 |
+| Đồng ý | Hộp gộp “Quyền khi nói chuyện với Cu Tít” (khóa `voice`, `camera` + `aiProvidersVersion`): ghi sổ đồng ý dưới đây |
+
+**Sổ đồng ý — bổ sung:**
+
+| Khóa | Phiên bản | Nội dung người dùng đã đọc | Từ |
+|---|---|---|---|
+| `aiProvidersVersion` | 2 (`AI_PROVIDERS_VERSION`) | Danh sách nhà cung cấp: Google (Gemini), Groq, OpenRouter; dữ liệu: chữ, giọng nói, ảnh/khung hình gọi video; có thể bị nhà cung cấp dùng cải thiện dịch vụ của họ; rút lại ở Tùy chỉnh | 2026-11-21 |
+
+Mọi người dùng cũ phải xác nhận lại một lần (đổi bên nhận dữ liệu). Công tắc micro/camera bật sẵn theo giá trị cũ, nhưng **bấm xác nhận mới ghi đồng ý**.
+
 ## C. Việc cần làm trước khi phát hành công khai
 1. Điền mọi `[CẦN ĐIỀN]`, xác định tư cách pháp lý ⇒ ân hạn có áp dụng không.
 2. Chọn gói Gemini; lưu bản điều khoản.
@@ -153,3 +172,4 @@ Người đã đồng ý `voice` v1 trên máy trước 19/11/2026 không bị h
 4. Nộp hồ sơ B (và A nếu không được ân hạn) trong 60 ngày từ ngày đầu xử lý/chuyển.
 5. Đối chiếu nguyên văn các văn bản ở mục 0 trên Công báo; nhờ người có chuyên môn pháp lý xem lại câu hỏi mở 1–2.
 6. Lập lịch cập nhật hồ sơ 6 tháng/lần.
+7. (Dự án 2) Nối “Xóa tài khoản” với `deleteAll()` của `@vietlearning/state/chat-history` để xóa luôn lịch sử chat trên máy; chốt gói + điều khoản Groq và OpenRouter (ZDR/không huấn luyện); bỏ OpenRouter khỏi chuỗi nếu không chốt được.
