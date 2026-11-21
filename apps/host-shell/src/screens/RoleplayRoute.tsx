@@ -1,11 +1,11 @@
 import { RoleplayScreen } from '@vietlearning/mfe-conversation';
-import { CuTitModeBar } from '../shell/CuTitModeBar';
+import { BackBar } from '../shell/BackBar';
 
-/** Route bọc mỏng để chunk lazy có tên ổn định "RoleplayRoute". Host thêm thanh đổi chế độ Cu Tít. */
+/** Route bọc mỏng để chunk lazy có tên ổn định "RoleplayRoute". Host thêm nút quay lại (link cũ). */
 export default function RoleplayRoute() {
   return (
     <>
-      <CuTitModeBar />
+      <BackBar />
       <RoleplayScreen />
     </>
   );

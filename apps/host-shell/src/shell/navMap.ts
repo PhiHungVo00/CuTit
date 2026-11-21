@@ -41,6 +41,6 @@ export function tabOf(pathname: string): TabId | null {
 const FOCUS = new Set(['/bai-hoc', '/kiem-tra', '/hoi-thoai', '/nhap-vai', '/goi-thoai', '/camera']);
 export const isFocusRoute = (pathname: string): boolean => FOCUS.has(first(pathname));
 
-/** Các màn của Cu Tít (bong bóng mở, thanh đổi chế độ) */
+/** Các màn của Cu Tít (bong bóng mở) */
 export const CUTIT_MODES = ['/hoi-thoai', '/nhap-vai', '/goi-thoai', '/camera'] as const;
 export const isCuTitRoute = (pathname: string): boolean => (CUTIT_MODES as readonly string[]).includes(first(pathname));
