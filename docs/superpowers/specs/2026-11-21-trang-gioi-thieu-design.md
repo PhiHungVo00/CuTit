@@ -65,7 +65,9 @@ Hiện bản web mở thẳng vào app. Người lạ vào không hiểu app là
 3. **"Một câu, ba miền":**
    - Một câu chào thật, có 3 nút ▶ **Bắc / Trung / Nam**.
    - Kèm một ví dụ xưng hô: cùng câu "Bạn ăn cơm chưa?" khi nói với ông, chị, em.
-   - Âm thanh là **3–6 tệp dựng sẵn** chép từ gói âm thanh của app, chuyển sang Opus/MP3 nhỏ, commit vào `apps/landing/public/audio/`. Không gọi Gateway.
+   - Âm thanh là **3–6 tệp dựng sẵn**, chuyển sang Opus/MP3 nhỏ, commit vào `apps/landing/public/audio/`. Không gọi Gateway.
+   - Nguồn tệp: app không đóng gói âm thanh theo miền. Âm thanh khóa học là WAV đặt tên theo sha256, Gateway phục vụ, nằm trong thư mục **không commit** `apps/gateway/.data/tts` (tra theo manifest `packs/<gói>-<miền>.json`). Mẫu đã commit có ở `docs/d9-tts-mau/`.
+   - Cách lấy: tra manifest để chọn câu, hoặc dựng lại bằng skill `dung-am-thanh`. Cần một script nhỏ một lần (tìm, chuyển đổi, chép).
 4. **Ba điểm nổi bật**, mỗi điểm một ảnh chụp app thật (khung điện thoại) và 2 dòng chữ:
    - **Lộ trình bài học** theo bước nhỏ;
    - **Trò chuyện và gọi với Cu Tít (AI)**;
@@ -91,7 +93,7 @@ Hiện bản web mở thẳng vào app. Người lạ vào không hiểu app là
   - hướng dẫn 3 bước cho phép "Cài ứng dụng không rõ nguồn" trên Android, có hình.
 
   Trên máy không phải Android thì hiện thêm: "Trên iPhone/máy tính, hãy dùng bản web".
-- **Trạng thái "Sắp có":** tới khi có **APK ký bằng khóa phát hành** (đang hoãn), nút Tải APK hiện "Sắp có", bấm vào không làm gì. Bật lên bằng một biến lúc build (`LANDING_APK_URL`). Không có biến thì hiện "Sắp có".
+- **Trạng thái "Sắp có":** tới khi có **APK ký bằng khóa phát hành** (đang hoãn), nút Tải APK hiện "Sắp có", bấm vào không làm gì. Bật lên bằng tệp **`apps/landing/apk-release.json`** `{version, url, bytes, sha256, minAndroid}`. Bước phát hành APK (mở rộng `scripts/build-apk.ps1` hoặc job CI phát hành) ghi tệp này. Lúc build, trang đọc nó. Không có tệp thì hiện "Sắp có" *(gọi của người thiết kế: một nguồn cho cả phiên bản, cỡ tệp, SHA-256)*.
 
 ### 5.3 Song ngữ
 - Hai bản HTML dựng sẵn: `/` (tiếng Việt) và `/en/` (tiếng Anh). Có `hreflang`, `<html lang>` đúng ngôn ngữ.
@@ -100,17 +102,23 @@ Hiện bản web mở thẳng vào app. Người lạ vào không hiểu app là
 
 ### 5.4 Kỹ thuật
 - `apps/landing`: **Vite multi-page, HTML + CSS + một ít TypeScript, không React**.
-  - Dùng token màu và font từ `packages/ui` (chỉ CSS `theme.css`, không import thành phần React).
-  - Font Be Vietnam Pro tự host như app, chỉ nạp các độ đậm cần dùng.
+  - Màu lấy từ biến `--ct-*` của `packages/ui/src/theme.css`. Tệp đó mở đầu bằng khối `@theme inline` của Tailwind v4 ⇒ **không import nguyên tệp**. Thay vào đó, script build trích các biến `--ct-*` của **chủ đề sáng** ra một tệp CSS nhỏ, hoặc chép tay có ghi chú phải đồng bộ.
+  - Trang **luôn dùng chủ đề sáng** (`data-theme="light"`) *(gọi của người thiết kế: tranh làng vẽ cho nền sáng; không có `data-theme` thì theme mặc định ra tối)*.
+  - Font: Be Vietnam Pro qua `@fontsource/be-vietnam-pro` như app (`apps/host-shell/src/styles/fonts.css`), chỉ **400 và 800**, tập con `latin` + `vietnamese`, `font-display: swap`, preload bản 800 cho tiêu đề.
 - **Ngân sách** (thêm vào size-limit):
-  - HTML + CSS + JS của trang đầu **≤ 30 kB gzip**, không tính ảnh;
+  - HTML + CSS + JS của trang đầu **≤ 30 kB gzip**, không tính ảnh và font;
+  - font ≤ 80 kB tổng (woff2, 2 độ đậm × 2 tập con);
   - tranh đầu trang ≤ 150 kB (WebP/AVIF, có `srcset`);
   - Lighthouse di động: Performance ≥ 90, Accessibility ≥ 95.
 - **Không cookie, không công cụ đo lường bên thứ ba.** Sau này cần đếm lượt thì dùng Cloudflare Web Analytics (không cookie) và cập nhật trang quyền riêng tư (để dự án triển khai quyết).
 - **SEO và chia sẻ:**
   - `<title>`, `description`, Open Graph và Twitter card có ảnh 1200×630 (tranh làng + Cu Tít);
   - `sitemap.xml`, `robots.txt`, `manifest` đơn giản và favicon từ icon app.
-- **Trang tĩnh khác:** `/quyen-rieng-tu` (dựng từ cùng nguồn chữ với `PrivacyRoute` của app nếu tách được, không thì chép và ghi chú phải đồng bộ), `/xoa-tai-khoan`, `/tai-apk`. Mỗi trang có bản `/en/...`.
+- **Trang pháp lý chỉ có một bản, nằm ở app** *(gọi của người thiết kế, khớp `DE-XUAT-TRIEN-KHAI.md` dòng 126: địa chỉ khai cho Google OAuth và Play nằm trên miền app)*:
+  - **Quyền riêng tư:** trang giới thiệu chỉ **link** tới `https://app.<tên>.id.vn/quyen-rieng-tu`. Trang này đã có (`apps/host-shell/src/routes.tsx:141`, chữ trong `privacyI18n`). Không chép chữ pháp lý sang trang giới thiệu.
+  - **Xóa tài khoản:** thêm **route công khai `/xoa-tai-khoan` trong host-shell** (nạp lười, không cần đăng nhập, vi + en). Trang giới thiệu link tới đó. Đây là địa chỉ khai cho Play.
+  - Trang tĩnh riêng của trang giới thiệu chỉ có `/tai-apk` (và `/en/tai-apk`).
+- **Thứ tự với dự án 3:** dựng trang giới thiệu được ngay. **Nội dung trang Xóa tài khoản và link Đăng nhập** chốt **sau khi dự án 3 gộp** (route `/dang-nhap`, đường Cài đặt › Tài khoản › Xóa tài khoản, xóa mềm 30 ngày đều do dự án 3 làm). Trước đó, Đăng nhập trỏ `/ho-so`, còn trang xóa mô tả luồng hiện tại (`DELETE /v1/me`, xóa ngay) và ghi chú phải sửa.
 - **Trang Xóa tài khoản** (Play bắt buộc có link web), nội dung:
   - cách xóa trong app (Hồ sơ › Cài đặt › Tài khoản › Xóa tài khoản);
   - dữ liệu nào bị xóa, dữ liệu nào giữ và trong bao lâu (theo `docs/phap-ly/`);
@@ -141,4 +149,11 @@ Hiện bản web mở thẳng vào app. Người lạ vào không hiểu app là
 - Chọn câu và tệp âm thanh cho ô "ba miền" (câu đã có âm thanh dựng sẵn cả 3 miền).
 
 ## 8. Câu hỏi đã hỏi người dùng sau khi rà
-*(Điền sau bước người đọc độc lập rà.)*
+Người đọc độc lập đã rà (21/11). **Không có câu nào cần người dùng quyết.** Các điểm đã tự chốt:
+- trang pháp lý chỉ một bản, nằm ở app;
+- thêm route `/xoa-tai-khoan` vào host-shell;
+- nội dung trang xóa và link Đăng nhập chốt sau khi dự án 3 gộp;
+- ngân sách tách riêng cho font;
+- thông tin APK lấy từ `apk-release.json`;
+- nguồn âm thanh;
+- trang luôn dùng chủ đề sáng.
