@@ -55,17 +55,12 @@ test.describe('M3 Ma trận xưng hô', () => {
     await assertMobileLayout(page);
   });
 
-  test('giao diện sáng: áp dụng cả thanh tab, giữ lựa chọn, còn sau khi tải lại', async ({ page }) => {
+  test('không còn công tắc sáng/tối ở màn Xưng hô (giao diện chỉ đổi ở Cài đặt)', async ({ page }) => {
     await page.goto('/xung-ho');
-    await page.getByRole('radio', { name: 'Nhỏ hơn' }).click();
-    const sentence = await page.locator('blockquote').first().textContent();
-    await page.getByRole('radio', { name: /Tre trúc/ }).click();
-    await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
-    await expect(page.locator('blockquote').first()).toHaveText(sentence ?? '');
-    await page.reload();
-    await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
-    const tabBg = await page.locator('.tabbar').evaluate((el) => getComputedStyle(el).backgroundColor);
-    expect(tabBg).toBe('rgb(251, 243, 228)'); // --ct-canvas sáng của bảng Cu Tít
+    await expect(page.getByRole('heading', { name: 'Ma trận đại từ xưng hô' })).toBeVisible();
+    await expect(page.getByRole('radiogroup', { name: 'Giao diện' })).toHaveCount(0);
+    await expect(page.getByRole('radio', { name: /Gỗ mộc|Tre trúc/ })).toHaveCount(0);
+    await expect(page.getByRole('img', { name: /Bé Cu Tít/ }).first()).toBeVisible();
   });
 
   test('bảng 20 cặp: tìm không dấu, Esc đóng và trả focus, Áp dụng đưa cặp lên', async ({ page }) => {
