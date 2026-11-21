@@ -10,6 +10,8 @@ describe('bubbleVisibility', () => {
     for (const p of ['/bai-hoc/u1l1', '/kiem-tra/u1', '/hoi-thoai', '/nhap-vai', '/goi-thoai', '/camera'])
       expect(bubbleVisibility({ ...base, pathname: p })).toBe('hidden');
   });
+  it('màn Làm quen (/bat-dau) ⇒ hidden: bong bóng không che nút Tiếp, vẫn giữ thanh tab để thoát', () =>
+    expect(bubbleVisibility({ ...base, pathname: '/bat-dau' })).toBe('hidden'));
   it('đã cuộn xuống ⇒ mini', () => expect(bubbleVisibility({ ...base, scrollMode: 'mini' })).toBe('mini'));
   it('bàn phím mở ⇒ hidden (thắng cả mini)', () => expect(bubbleVisibility({ ...base, scrollMode: 'mini', keyboardOpen: true })).toBe('hidden'));
   it('đang thu âm/phát âm ⇒ hidden', () => expect(bubbleVisibility({ ...base, audioBusy: true })).toBe('hidden'));
