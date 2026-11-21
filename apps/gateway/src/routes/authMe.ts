@@ -20,7 +20,7 @@ import { RateCounters } from '../services/auth/rateCounter.js';
 import { formatRecoveryCode, issueTokens, newRecoveryCode, sha256 } from '../services/auth/tokens.js';
 import { refundMailQuota, tryConsumeMailQuota } from '../services/mail/dailyCap.js';
 import { otpEmail } from '../services/mail/templates.js';
-import { OTP_FAIL_EMAIL_MAX, OTP_SEND_EMAIL_MAX, OTP_SEND_IP_MAX } from './authPassword.js';
+import { OTP_FAIL_EMAIL_MAX, OTP_SEND_EMAIL_MAX, OTP_SEND_IP_MAX, authKeys } from './authPassword.js';
 
 /**
  * Dự án 3 Task 2 — luồng CÓ Bearer (scope /v1: hook xác thực + giới hạn theo người dùng):
@@ -71,8 +71,8 @@ export const authMeRoutes: FastifyPluginAsync<RouteDeps> = async (server, { db, 
     const now = clock();
     if (!(await passwordAccountOf(d, userId))) return reply.status(409).send(PASSWORD_REQUIRED);
     if (!mail.available()) return reply.status(503).send({ error: 'provider_unavailable' });
-    if ((await counters.hit(d, `otp_send:email:${body.email}`, 15 * MIN, now)) > OTP_SEND_EMAIL_MAX) return reply.status(429).send({ error: 'rate_limited' });
-    if ((await counters.hit(d, `otp_send:ip:${req.ip}`, 60 * MIN, now)) > OTP_SEND_IP_MAX) return reply.status(429).send({ error: 'rate_limited' });
+    if ((await counters.hit(d, authKeys.sendLink(body.email), 15 * MIN, now)) > OTP_SEND_EMAIL_MAX) return reply.status(429).send({ error: 'rate_limited' });
+    if ((await counters.hit(d, authKeys.sendIp(req.ip), 60 * MIN, now)) > OTP_SEND_IP_MAX) return reply.status(429).send({ error: 'rate_limited' });
     if (!(await tryConsumeMailQuota(d, config.MAIL_DAILY_CAP, now))) {
       audit.record('auth.email_code_failed', { outcome: 'blocked', userId, metadata: { purpose: 'link', reason: 'daily_cap' } });
       return reply.status(503).send({ error: 'provider_unavailable' });
@@ -99,7 +99,7 @@ export const authMeRoutes: FastifyPluginAsync<RouteDeps> = async (server, { db, 
     const d = await db.get();
     const now = clock();
     const ctx = AuditLog.context(req);
-    const failKey = `otp_fail:email:${body.email}`;
+    const failKey = authKeys.failLink(userId, body.email);
     if ((await counters.count(d, failKey, now)) >= OTP_FAIL_EMAIL_MAX) return reply.status(400).send({ error: 'otp_locked' });
     const result = await otp.verify(d, 'link', body.email, body.code, userId, now);
     if (result !== 'ok') {

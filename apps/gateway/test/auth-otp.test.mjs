@@ -311,6 +311,54 @@ test('Mã gắn email của người A không dùng được để đặt lại 
   }
 });
 
+test('reset-email: mật khẩu yếu + mã sai => CÙNG thân lỗi cho tài khoản có thật và không có (không lộ qua weak_password/otp_locked)', async () => {
+  const mail = fakeMail();
+  const a = await makeAuthApp({}, { mail });
+  try {
+    const acc = await account(a, 'lo.ten');
+    await attachEmail(a, mail, acc, E('lo.ten'));
+    for (const newPassword of ['password123', `${U('lo.ten')}-${U('lo.tenx')}`]) {
+      const known = await post(a, '/v1/auth/password/reset-email', { usernameOrEmail: U('lo.ten'), code: '000000', newPassword });
+      const unknown = await post(a, '/v1/auth/password/reset-email', { usernameOrEmail: U('lo.tenx'), code: '000000', newPassword });
+      assert.equal(known.body, unknown.body, newPassword);
+    }
+    // 10 lần sai: khóa như nhau cho cả hai
+    for (let i = 0; i < 12; i++) {
+      await post(a, '/v1/auth/password/reset-email', { usernameOrEmail: U('lo.ten'), code: '000000', newPassword: 'mi-quang-ga-22' });
+      await post(a, '/v1/auth/password/reset-email', { usernameOrEmail: U('lo.tenx'), code: '000000', newPassword: 'mi-quang-ga-22' });
+    }
+    const k = await post(a, '/v1/auth/password/reset-email', { usernameOrEmail: U('lo.ten'), code: '000000', newPassword: 'mi-quang-ga-22' });
+    const u = await post(a, '/v1/auth/password/reset-email', { usernameOrEmail: U('lo.tenx'), code: '000000', newPassword: 'mi-quang-ga-22' });
+    assert.equal(k.body, u.body);
+  } finally {
+    await a.close();
+  }
+});
+
+test('Người khác KHÔNG phá được quên mật khẩu của nạn nhân qua /me/email/* (không xóa mã, không đốt lượt gửi, không khóa)', async () => {
+  const mail = fakeMail();
+  const a = await makeAuthApp({}, { mail });
+  try {
+    const victim = await account(a, 'nan.nhan');
+    const email = E('nan.nhan');
+    await attachEmail(a, mail, victim, email);
+    mail.sent.length = 0;
+    assert.equal((await post(a, '/v1/auth/password/forgot', { usernameOrEmail: U('nan.nhan') })).statusCode, 202);
+    const code = await mail.codeFor(email);
+    // kẻ xấu: xin mã gắn email của nạn nhân nhiều lần, nhập sai 10+ lần
+    const evil = await account(a, 'ke.xau');
+    for (let i = 0; i < 3; i++) await post(a, '/v1/me/email/start', { email }, bearer(evil));
+    for (let i = 0; i < 6; i++) await post(a, '/v1/me/email/verify', { email, code: code === '000000' ? '111111' : '000000' }, bearer(evil));
+    a.advance(61_000);
+    for (let i = 0; i < 6; i++) await post(a, '/v1/me/email/verify', { email, code: code === '000000' ? '111111' : '000000' }, bearer(evil));
+    // mã đặt lại của nạn nhân vẫn dùng được
+    const r = await post(a, '/v1/auth/password/reset-email', { usernameOrEmail: U('nan.nhan'), code, newPassword: 'mi-quang-ga-22' });
+    assert.equal(r.statusCode, 204, r.body);
+  } finally {
+    await a.close();
+  }
+});
+
 test('Không log mã OTP hay email đầy đủ', async () => {
   const lines = [];
   const mail = fakeMail();
