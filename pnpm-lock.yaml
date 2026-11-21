@@ -576,9 +576,15 @@ importers:
       '@vietlearning/native':
         specifier: workspace:*
         version: link:../../packages/native
+      '@vietlearning/shared':
+        specifier: workspace:*
+        version: link:../../packages/shared
       '@vietlearning/state':
         specifier: workspace:*
         version: link:../../packages/state
+      '@vietlearning/ui':
+        specifier: workspace:*
+        version: link:../../packages/ui
       react:
         specifier: ^18.3.1
         version: 18.3.1
@@ -634,6 +640,9 @@ importers:
       '@vietlearning/state':
         specifier: workspace:*
         version: link:../../packages/state
+      '@vietlearning/ui':
+        specifier: workspace:*
+        version: link:../../packages/ui
       react:
         specifier: ^18.3.1
         version: 18.3.1
@@ -859,6 +868,9 @@ importers:
       '@vietlearning/state':
         specifier: workspace:*
         version: link:../state
+      '@vietlearning/ui':
+        specifier: workspace:*
+        version: link:../ui
       comlink:
         specifier: ^4.4.2
         version: 4.4.2

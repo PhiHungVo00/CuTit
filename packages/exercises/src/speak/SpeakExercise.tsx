@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import { PitchReferenceFlyweight, type ToneId } from '@vietlearning/content';
 import type { AssessResponse, AssessWord } from '@vietlearning/contracts/api';
 import { learnerStore, useLearner } from '@vietlearning/state';
+import { Icon } from '@vietlearning/ui';
+import { answerFeedback, FeedbackMascot } from '../feedback';
 import { useT } from '../i18n';
 import { say } from '../choice/ChoiceExercise';
 import { SlowButton } from '../audio/SlowButton';
@@ -92,6 +94,12 @@ export default function SpeakExercise({ item, onDone, onSkip, assess }: { item: 
   const feedbackRef = useRef<HTMLDivElement>(null);
   const grade = result ? gradeAssess(result) : null;
 
+  // phản hồi một lần cho mỗi kết quả chấm thật (mock/bỏ qua không tính đúng/sai)
+  useEffect(() => {
+    if (result && grade && !result.mock && !grade.skipped) answerFeedback(grade.correct);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [result]);
+
   useEffect(() => {
     if (status === 'done' || error) feedbackRef.current?.scrollIntoView?.({ block: 'nearest', behavior: 'smooth' });
   }, [status, error]);
@@ -112,7 +120,8 @@ export default function SpeakExercise({ item, onDone, onSkip, assess }: { item: 
           <p className="m-0 text-sm text-ink-soft">{item.translation}</p>
         </div>
         <div className="flex shrink-0 gap-2">
-          <button type="button" onClick={() => say(item.text)} className="min-h-12 shrink-0 rounded-xl border border-line bg-surface-2 px-3 text-sm font-bold text-ink">
+          <button type="button" onClick={() => say(item.text)} className="inline-flex min-h-12 shrink-0 items-center gap-1.5 rounded-xl border border-line bg-surface-2 px-3 text-sm font-bold text-ink">
+            <Icon name="loa" size={20} />
             {t('playSample')}
           </button>
           <SlowButton text={item.text} />
@@ -177,7 +186,8 @@ export default function SpeakExercise({ item, onDone, onSkip, assess }: { item: 
         {result && grade && (
           <div role="status" className="flex flex-col gap-2 rounded-xl border border-line bg-sunken p-3">
             {!result.mock && (
-              <div className="flex items-baseline justify-between gap-2">
+              <div className="flex items-center justify-between gap-2">
+                <FeedbackMascot correct={grade.correct} size={48} />
                 <strong className={grade.correct ? 'text-heading' : 'text-danger'}>{t(grade.correct ? (grade.score >= 90 ? 'verdict.good' : 'verdict.ok') : 'verdict.bad')}</strong>
                 <span className="text-2xl font-black text-ink">{t('speakScore', { score: grade.score })}</span>
               </div>
