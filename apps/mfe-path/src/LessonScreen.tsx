@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect, useState } from 'react';
-import { Link, Navigate, useNavigate, useParams } from 'react-router-dom';
+import { Navigate, useNavigate, useParams } from 'react-router-dom';
 import { COURSE, findLesson, findWord, PitchReferenceFlyweight, type ToneId } from '@vietlearning/content';
 import { useLearner, useUiLanguage } from '@vietlearning/state';
 import { prefetchPack } from '@vietlearning/exercises';
@@ -9,7 +9,9 @@ import { nextLesson } from './path/pathModel';
 import { lessonHref } from './path/lessonHref';
 import { syncReminders } from './reminders';
 import { SessionRunner, type SessionOutcome } from './session/SessionRunner';
-import { Page, primaryBtn, secondaryBtn } from './ui';
+import { Card, CuTit } from '@vietlearning/ui';
+import { celebrateFinish, currentStreak } from './celebration';
+import { cardStack, LinkButton, Page } from './Page';
 
 // GĐ4: thông báo huy hiệu mới — chunk lười riêng
 const Motivation = lazy(() => import('./motivation/Motivation'));
@@ -48,7 +50,7 @@ function LessonBody({ lessonId }: { lessonId: string }) {
     return (
       <Page>
         <p role="alert" className="m-0 text-ink">{t('notFound')}</p>
-        <Link to="/" className={primaryBtn}>{t('backToPath')}</Link>
+        <LinkButton to="/">{t('backToPath')}</LinkButton>
       </Page>
     );
   }
@@ -67,7 +69,9 @@ function LessonBody({ lessonId }: { lessonId: string }) {
           title={lessonTitle}
           onClose={() => navigate('/')}
           onFinish={(o) => {
+            const streakBefore = currentStreak();
             const r = progressStore.getState().completeLesson(lessonId, { total: o.total, firstTryCorrect: o.firstTryCorrect });
+            celebrateFinish(streakBefore);
             setResult({ ...o, ...r });
             void syncReminders().catch(() => undefined);
           }}
@@ -83,10 +87,8 @@ function LessonBody({ lessonId }: { lessonId: string }) {
 
   return (
     <Page>
-      <section role="status" aria-labelledby="ct-sum" className="flex flex-col items-center gap-3 rounded-2xl border border-line-strong bg-surface p-5 text-center shadow-card">
-        <span aria-hidden="true" className="text-5xl">
-          {pct >= 80 ? '🏮' : '🎋'}
-        </span>
+      <Card role="status" aria-labelledby="ct-sum" elevated style={{ ...cardStack, alignItems: 'center', textAlign: 'center' }}>
+        <CuTit mood="an-mung" size={120} />
         <h1 id="ct-sum" className="m-0 text-xl font-black text-heading">
           {t('summaryTitle', { lesson: lessonTitle })}
         </h1>
@@ -95,7 +97,7 @@ function LessonBody({ lessonId }: { lessonId: string }) {
         {result.skipped > 0 && <p className="m-0 text-sm text-ink-soft">{t('summarySkipped', { n: result.skipped })}</p>}
         {result.freezeEarned && <p className="m-0 text-sm font-bold text-heading">{t('summaryFreeze')}</p>}
         {result.mistakes.length > 0 && <p className="m-0 text-sm text-ink-soft">{t('summaryMistakes')}</p>}
-      </section>
+      </Card>
 
       <Suspense fallback={null}>
         <Motivation part="notice" />
@@ -122,13 +124,11 @@ function LessonBody({ lessonId }: { lessonId: string }) {
 
       <div className="flex flex-col gap-2">
         {!nextIsSame && (
-          <Link to={lessonHref(next)} className={primaryBtn}>
-            {t('nextLesson', { lesson: en ? next.titleEn : next.title })}
-          </Link>
+          <LinkButton to={lessonHref(next)}>{t('nextLesson', { lesson: en ? next.titleEn : next.title })}</LinkButton>
         )}
-        <Link to="/" className={nextIsSame ? primaryBtn : secondaryBtn}>
+        <LinkButton to="/" variant={nextIsSame ? 'primary' : 'secondary'}>
           {t('backToPath')}
-        </Link>
+        </LinkButton>
         {!unit.reviewed && <p className="m-0 text-center text-xs italic text-ink-muted">{t('draftContent')}</p>}
       </div>
     </Page>

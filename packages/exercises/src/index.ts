@@ -7,6 +7,7 @@
 export type { ExerciseItem, ExerciseResult, ChoiceVariant, ExerciseRef, StoryItemLine, StoryItemQuestion } from './types';
 export { buildItem, refKey, parseRefKey, isResolvable, rng } from './build';
 export { ExerciseView } from './ExerciseView';
+export { answerFeedback, FeedbackMascot } from './feedback';
 export { ChoiceExercise } from './choice/ChoiceExercise';
 export { SentenceExercise } from './sentence/SentenceExercise';
 export { useSentenceBuilder, shuffledIndices } from './sentence/useSentenceBuilder';
