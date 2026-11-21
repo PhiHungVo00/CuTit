@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
+import { playSfx } from '@vietlearning/shared/audio';
+import { Button, CuTit, Icon } from '@vietlearning/ui';
 import type { ToneId } from '@vietlearning/audio-dsp';
 import { PitchReferenceFlyweight } from '@vietlearning/content';
 import { canOpenAppSettings, getDeviceSpeech, openAppSettings } from '@vietlearning/native';
@@ -37,6 +39,12 @@ export function ToneLabScreen() {
 
   const best = result ? PitchReferenceFlyweight.get(result.bestMatch) : null;
   const v = result ? verdict(result.targetScore.score, result.bestMatch === target) : null;
+
+  // Có kết quả mới ⇒ âm hiệu ứng đúng/sai (playSfx tự im khi đang thu âm; kết quả chỉ có SAU khi thu xong)
+  useEffect(() => {
+    if (v === 'good') playSfx('dung');
+    else if (v === 'bad') playSfx('sai');
+  }, [result]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div className="min-h-dvh bg-canvas px-4 pb-8 pt-[calc(16px+env(safe-area-inset-top))] font-sans text-ink">
@@ -86,13 +94,10 @@ export function ToneLabScreen() {
                 {en ? tone.markEn : tone.mark} · {en ? tone.descriptionEn : tone.description}. {t('example', { meaning: en ? tone.meaningEn : tone.meaning })}
               </p>
             </div>
-            <button
-              type="button"
-              onClick={playSample}
-              className="min-h-11 shrink-0 rounded-xl border border-line bg-surface-2 px-3 text-sm font-bold text-ink"
-            >
+            <Button variant="secondary" onClick={playSample} style={{ flexShrink: 0 }}>
+              <Icon name="loa" size={18} />
               {t('playSample')}
-            </button>
+            </Button>
           </div>
 
           <ContourChart
@@ -121,7 +126,9 @@ export function ToneLabScreen() {
                   style={{ transform: `scale(${1 + level * 0.35})`, opacity: 0.35 + level * 0.5 }}
                 />
               )}
-              <span aria-hidden="true">{recording ? '⏹️' : '🎙️'}</span>
+              <span aria-hidden="true" className="text-sm font-extrabold">
+                {recording ? t('stopShort') : t('recShort')}
+              </span>
             </button>
             <p className="m-0 min-h-6 text-center text-sm text-ink-soft" aria-live="polite">
               {status === 'idle' && t('status.idle')}
@@ -137,20 +144,19 @@ export function ToneLabScreen() {
               <p className="m-0">{t(`err.${error}`)}</p>
               {/* Đã từ chối vĩnh viễn thì Android không hỏi lại: đưa thẳng tới trang quyền của app */}
               {error === 'permission-denied' && canOpenAppSettings() && (
-                <button
-                  type="button"
-                  onClick={() => void openAppSettings()}
-                  className="min-h-11 self-start rounded-xl bg-danger px-4 font-bold text-white"
-                >
+                <Button variant="danger" onClick={() => void openAppSettings()} style={{ alignSelf: 'flex-start' }}>
+                  <Icon name="cai-dat" size={18} />
                   {t('openSettings')}
-                </button>
+                </Button>
               )}
             </div>
           )}
 
           {result && v && best && (
             <div role="status" className="flex flex-col gap-2 rounded-xl border border-line bg-sunken p-4">
-              <div className="flex items-baseline justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <CuTit mood={v === 'good' ? 'khen' : 'dong-vien'} size={64} />
+                <div className="flex min-w-0 flex-1 items-baseline justify-between gap-3">
                 <span
                   className={[
                     'text-lg font-extrabold',
@@ -163,6 +169,7 @@ export function ToneLabScreen() {
                   {result.targetScore.score}
                   <span className="text-base font-bold text-ink-muted">/100</span>
                 </span>
+                </div>
               </div>
               <p className="m-0 text-[15px] text-ink-soft">
                 {result.bestMatch === target ? (

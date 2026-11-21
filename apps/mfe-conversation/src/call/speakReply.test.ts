@@ -37,6 +37,13 @@ describe('speakReply — đọc câu trả lời của Bé Cu Tít', () => {
     expect(d.synth).toHaveBeenNthCalledWith(2, 'Chào bạn');
   });
 
+  it('báo hiệu Cu Tít sắp nói (announce) TRƯỚC khi gọi TTS', async () => {
+    const d = deps();
+    const announce = vi.fn(() => void d.calls.push('announce'));
+    await createSpeaker({ ...d, announce })('Chào bạn', { slow: false });
+    expect(d.calls).toEqual(['announce', 'synth', 'play:1']);
+  });
+
   it('âm thanh máy chủ treo => watchdog dừng phát (gác máy không còn tiếng)', async () => {
     vi.useFakeTimers();
     const stopPlayback = vi.fn();
