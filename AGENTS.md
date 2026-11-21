@@ -134,6 +134,26 @@ Effort chọn theo **rủi ro và mức mơ hồ**, không theo độ dài. Bố
 - **Giao việc bằng phiên con, không bằng subagent chạy ngầm** (người dùng chốt 20/11/2026). Phiên chính mở phiên con từ chính nó (hiện thành các dòng lồng dưới phiên chính, người dùng mở xem và nhắn chỉnh được), chọn model theo bảng trên. Việc nào độc lập thì mở nhiều phiên con chạy đồng thời. Subagent chỉ dùng cho việc rất nhỏ cần kết quả ngay trong lượt.
 - **Làm gì cũng ghi nhật ký** (`docs/NHAT_KY_CHUYEN_DOI_MOBILE.md`, mỗi việc một dòng: làm gì, tệp nào, đã kiểm thế nào / chưa kiểm gì), kể cả việc chỉ đọc, bàn thiết kế, tạo tài nguyên. Mỗi phiên con tự ghi dòng của mình; phiên chính kiểm số dòng không trùng.
 
+---
+
+## 🧱 6. Quy trình 10 giai đoạn (người dùng đưa vào 21/11/2026)
+
+Bản đầy đủ: `docs/QUY-TRINH-VIBE-CODING.md`. Người dùng không phải lập trình viên chuyên nghiệp ⇒ giải thích tiếng Việt dễ hiểu. **Không viết code khi chưa hiểu yêu cầu, chưa có kế hoạch, chưa được xác nhận.**
+
+| Giai đoạn | Ở dự án này làm bằng |
+|---|---|
+| 1 Yêu cầu · 2 Kiến trúc · 3 Database · 4 Giao diện | skill `superpowers:brainstorming` ⇒ spec `docs/superpowers/specs/` (có mục phương án, mục tiêu/không làm, người đọc độc lập rà) ⇒ người dùng duyệt |
+| 5 Thiết lập dự án | monorepo sẵn có; `.env.example` không chứa khóa; bí mật ở `~/.becutit/gateway.env` |
+| 6 Lập trình từng chức năng | `superpowers:writing-plans` ⇒ kế hoạch `docs/superpowers/plans/` chia đợt ⇒ phiên con TDD, commit nhỏ |
+| 7 Bảo mật | 7 nguyên tắc mục 2; `kien-truc` xem lại khi đụng DB/auth; plugin security review |
+| 8 Kiểm thử | build/test/boundaries/size/e2e/a11y (axe-core)/AVD — skill `kiem-truoc-khi-gop` |
+| 9 Triển khai | hoãn tới cuối (`docs/thiet-ke/DE-XUAT-TRIEN-KHAI.md`); không tự triển khai production |
+| 10 Bảo trì | nhật ký, sao lưu (`docs/van-hanh/`), góp ý người dùng |
+
+**Bắt buộc:** không làm vượt bước; xin xác nhận trước khi đổi kiến trúc quan trọng, xóa/ghi đè dữ liệu, đổi DB có rủi ro, dùng dịch vụ có phí, triển khai production; đọc hiểu + tìm nguyên nhân trước khi sửa; **phân biệt rõ** đã viết code / đã chạy thử / đã kiểm thử / đã triển khai / đã nghiệm thu; ưu tiên giải pháp đơn giản.
+
+**Báo cáo cuối mỗi giai đoạn** theo mẫu: Giai đoạn · Mục tiêu · Đã thực hiện · Kết quả kiểm tra · Vấn đề còn tồn tại · Điều kiện chuyển bước · Bước tiếp theo · Trạng thái (CHƯA BẮT ĐẦU / ĐANG THỰC HIỆN / CHỜ XÁC NHẬN / ĐÃ HOÀN THÀNH).
+
 > `turbo.json` đặt `"agentGuidance": false` để `pnpm build` không tự sửa tệp này (R13). Khối turbo bên dưới được giữ nguyên có chủ đích.
 
 <!-- BEGIN:turborepo-agent-rules -->
