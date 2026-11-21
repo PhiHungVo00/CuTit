@@ -66,7 +66,11 @@ export async function sendTurn(req: TurnRequest, onEvent: (e: ChatEvent) => void
       ChatEventSchema,
       (e) => {
         kick();
-        if (e.type === 'error') throw new TurnError('server', e.message ?? t('errTutor'));
+        if (e.type === 'error') {
+          // AI bận (hết chuỗi dự phòng, lượt không bị trừ): câu riêng theo ngôn ngữ giải thích, dùng chung bản dịch của api-client
+          if (e.code === 'llm_busy') throw new TurnError('unavailable', describeGatewayError(new GatewayRequestError('unavailable', 'llm_busy', 503, 'llm_busy'), req.explanationLanguage), e.code);
+          throw new TurnError('server', e.message ?? t('errTutor'), e.code);
+        }
         if (e.type === 'done') done = e;
         onEvent(e);
       },

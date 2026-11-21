@@ -35,13 +35,15 @@ export class GatewayRequestError extends Error {
 }
 
 /** Câu thông báo tiếng Việt thống nhất cho người học */
-const ERROR_TEXT: Record<'vi' | 'en', Partial<Record<GatewayErrorKind | 'rate', string>> & { server: string }> = {
+const ERROR_TEXT: Record<'vi' | 'en', Partial<Record<GatewayErrorKind | 'rate' | 'busy' | 'globalQuota', string>> & { server: string }> = {
   vi: {
     offline: 'Không có kết nối mạng. Phần này cần mạng, hãy thử lại khi có mạng.',
     timeout: 'Máy chủ phản hồi chậm. Vui lòng thử lại.',
     unauthorized: 'Phiên đăng nhập đã hết hạn. Hãy đăng nhập lại.',
     quota: 'Bạn đã dùng hết lượt hôm nay. Hãy quay lại vào ngày mai nhé.',
     rate: 'Bạn gửi hơi nhanh. Đợi một chút rồi thử lại nhé.',
+    busy: 'Cu Tít đang bận một chút. Bạn thử lại sau ít giây nhé (lượt của bạn chưa bị trừ).',
+    globalQuota: 'Hôm nay Cu Tít đã học cùng rất nhiều bạn. Mai quay lại nhé!',
     unavailable: 'Tính năng AI đang tạm ngưng. Vui lòng thử lại sau.',
     'invalid-request': 'Dữ liệu gửi lên chưa hợp lệ.',
     server: 'Có lỗi ở máy chủ. Vui lòng thử lại.'
@@ -52,6 +54,8 @@ const ERROR_TEXT: Record<'vi' | 'en', Partial<Record<GatewayErrorKind | 'rate', 
     unauthorized: 'Your session has expired. Please sign in again.',
     quota: 'You have used up today’s allowance. Come back tomorrow!',
     rate: 'You’re sending too fast. Wait a moment and try again.',
+    busy: 'Cu Tít is busy for a moment. Please try again in a few seconds (your turn was not used).',
+    globalQuota: 'Cu Tít has been helping lots of learners today. Come back tomorrow!',
     unavailable: 'The AI feature is temporarily unavailable. Please try again later.',
     'invalid-request': 'The request was not valid.',
     server: 'Something went wrong on the server. Please try again.'
@@ -64,6 +68,10 @@ export function describeGatewayError(err: unknown, lang: 'vi' | 'en' = 'vi'): st
   // 429 có mã khác quota_exceeded = giới hạn tốc độ theo phút, KHÔNG phải "hết lượt hôm nay"
   const code = err instanceof GatewayRequestError ? err.code : undefined;
   if (kind === 'quota' && code && code !== 'quota_exceeded') return ERROR_TEXT[lang].rate!;
+  // Trần dùng chung cả app đã hết (không phải lượt của riêng người học)
+  if (kind === 'quota' && err instanceof GatewayRequestError && err.details?.scope === 'global') return ERROR_TEXT[lang].globalQuota!;
+  // Mọi nguồn AI đều bận: KHÔNG trừ lượt, thử lại được (khác với hết lượt)
+  if (code === 'llm_busy') return ERROR_TEXT[lang].busy!;
   return ERROR_TEXT[lang][kind] ?? ERROR_TEXT[lang].server;
 }
 
@@ -83,7 +91,8 @@ function kindForStatus(status: number): GatewayErrorKind {
   if (status === 401) return 'unauthorized';
   if (status === 429) return 'quota';
   if (status === 503) return 'unavailable';
-  if (status === 400 || status === 413 || status === 415) return 'invalid-request';
+  // 422: nhà cung cấp AI từ chối dữ liệu gửi lên (llm_rejected) hoặc nội dung (llm_blocked) — không phải lỗi máy chủ
+  if (status === 400 || status === 413 || status === 415 || status === 422) return 'invalid-request';
   return 'server';
 }
 

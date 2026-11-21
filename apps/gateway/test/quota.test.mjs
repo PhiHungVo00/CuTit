@@ -4,6 +4,7 @@ import { eq } from 'drizzle-orm';
 import { ChatEventSchema, QuotaStatusSchema } from '@vietlearning/contracts';
 import { createDbProvider, schema } from '../dist/db/client.js';
 import { DbQuotaStore } from '../dist/pipeline/DbQuotaStore.js';
+import { quotaDay, quotaResetAt } from '../dist/pipeline/QuotaStore.js';
 import { makeApp, guest } from './helpers.mjs';
 
 const SID = '7d444840-9dc0-11d1-b245-5ffdce74fad2';
@@ -11,10 +12,8 @@ const SECRET = 'q'.repeat(40);
 const events = (body) => body.split('\n\n').filter(Boolean).map((c) => ChatEventSchema.parse(JSON.parse(c.replace(/^data: /, ''))));
 const turn = (a, headers, text = 'xin chào') =>
   a.inject({ method: 'POST', url: '/v1/chat/turn', headers: { ...headers, accept: 'text/event-stream' }, payload: { sessionId: SID, userText: text } });
-const nextUtcMidnight = () => {
-  const d = new Date();
-  return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() + 1)).toISOString();
-};
+// Hạn mức đổi ngày lúc 00:00 giờ Việt Nam (UTC+7 = 17:00 UTC), không phải nửa đêm UTC
+const nextVnMidnight = () => quotaResetAt(new Date());
 
 test('lượt hội thoại AI theo ngày: đếm trong DB, còn sau khi khởi động lại, hết lượt => 429 quota_exceeded có resetAt', async () => {
   const db = createDbProvider({ PGLITE_DIR: 'memory://' });
@@ -27,14 +26,14 @@ test('lượt hội thoại AI theo ngày: đếm trong DB, còn sau khi khởi 
   assert.equal(d2.turnsLeft, 0);
   const r3 = await turn(a, g.headers);
   assert.equal(r3.statusCode, 429);
-  assert.deepEqual(r3.json(), { error: 'quota_exceeded', capability: 'turn', resetAt: nextUtcMidnight(), message: r3.json().message });
+  assert.deepEqual(r3.json(), { error: 'quota_exceeded', capability: 'turn', resetAt: nextVnMidnight(), message: r3.json().message });
 
   const status = await a.inject({ method: 'GET', url: '/v1/quota', headers: g.headers });
   assert.equal(status.statusCode, 200);
   const q = QuotaStatusSchema.parse(status.json());
   assert.deepEqual(q.turns, { used: 2, limit: 2 });
-  assert.equal(q.resetAt, nextUtcMidnight());
-  assert.equal(q.day, new Date().toISOString().slice(0, 10));
+  assert.equal(q.resetAt, nextVnMidnight());
+  assert.equal(q.day, quotaDay(new Date()));
   await a.close();
 
   // Khởi động lại (cùng DB): vẫn hết lượt — không reset khi deploy/khởi động lại
