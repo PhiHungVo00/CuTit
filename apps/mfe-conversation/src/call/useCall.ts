@@ -1,13 +1,17 @@
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import type { NewWord } from '@vietlearning/contracts/api';
-import { getDeviceSpeech } from '@vietlearning/native';
+import { getDeviceSpeech, grabFrame } from '@vietlearning/native';
 import { playSfx } from '@vietlearning/shared/audio';
 import { acquireAudio } from '@vietlearning/shared/audio/focus';
 import { learnerStore, speechRate } from '@vietlearning/state';
 import { useChatSession } from '../chat/useChatSession';
 import { useVoiceInput } from '../chat/useVoiceInput';
-import { callReducer, initialCall } from './callMachine';
+import { callReducer, initialCall, type CameraOffReason } from './callMachine';
 import { createSpeaker, type SpeakerDeps } from './speakReply';
+import { useThinkingFiller } from './thinkingFiller';
+
+/** Lượt có ảnh: `send` của useChatSession nhận thêm `imageBase64` (Task 5–6); kiểu ở đây khai riêng để call/ không sửa chat/** */
+type SendWithImage = (text: string, opts?: { imageBase64?: string }) => Promise<void>;
 
 /** Gọi /v1/speech/synthesize (Gateway quyết định nhà cung cấp TTS); 503 => kind 'unavailable' */
 async function synth(text: string): Promise<string | null> {
@@ -48,13 +52,16 @@ function play(url: string, rate: number): Promise<void> {
 const VOICE_TO_TEXT = new Set(['permission-denied', 'no-microphone', 'unsupported', 'quota']);
 
 /** Điều phối một cuộc gọi: micro (tự dừng) → STT → lượt chat mode 'call' → đọc trả lời → nghe tiếp. */
-export function useCall(deps?: Partial<SpeakerDeps>) {
+export function useCall(deps?: Partial<SpeakerDeps>, _opts: { video?: boolean } = {}) {
   const [state, dispatch] = useReducer(callReducer, initialCall);
   const [words, setWords] = useState<NewWord[]>([]);
   const [turnsLeft, setTurnsLeft] = useState<number | null>(null);
   const [slow, setSlow] = useState(false);
   const lastReply = useRef('');
   const callHold = useRef<(() => void) | null>(null);
+  const videoEl = useRef<HTMLVideoElement | null>(null);
+  // Khung hình chụp lúc người học vừa ngừng nói, chờ gửi cùng câu chép lời (null = lỗi/không có)
+  const frame = useRef<Promise<string | null> | null>(null);
   const slowRef = useRef(slow);
   slowRef.current = slow;
 
@@ -75,6 +82,23 @@ export function useCall(deps?: Partial<SpeakerDeps>) {
   });
 
   const voice = useVoiceInput(({ text }) => dispatch({ type: 'HEARD', text }), undefined, { autoStop: true });
+
+  // Gọi video: người học vừa ngừng nói (đang ghi → đang chép lời) ⇒ chụp ĐÚNG 1 khung hình cho lượt này
+  const prevVoice = useRef(voice.status);
+  useEffect(() => {
+    const was = prevVoice.current;
+    prevVoice.current = voice.status;
+    if (was === 'recording' && voice.status === 'transcribing' && state.video && videoEl.current) {
+      frame.current = grabFrame(videoEl.current).then(
+        (f) => f.base64,
+        () => null
+      );
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [voice.status]);
+
+  // Chờ AI > 1 200 ms ⇒ "ừm" một lần (giọng máy, ngắn) để cuộc gọi không im lặng
+  useThinkingFiller(state.phase, () => void getDeviceSpeech().speak('ừm', { rate: speechRate(1) }).catch(() => undefined));
 
   // Cả cuộc gọi báo điều phối âm thanh là "đang bận" (nhạc nền tắt từ lúc bắt đầu tới khi gác máy/rời màn)
   useEffect(() => {
@@ -116,8 +140,17 @@ export function useCall(deps?: Partial<SpeakerDeps>) {
   useEffect(() => {
     if (state.phase !== 'thinking' || !state.pendingText) return;
     // Gửi lại sau lỗi: session.retry không thêm lại câu của người học vào hội thoại/lịch sử
-    if (state.retry) session.retry();
-    else void session.send(state.pendingText);
+    if (state.retry) {
+      session.retry();
+      return;
+    }
+    const text = state.pendingText;
+    const pending = state.video ? frame.current : null;
+    frame.current = null;
+    void (async () => {
+      const imageBase64 = (await pending) ?? undefined;
+      void (session.send as SendWithImage)(text, imageBase64 ? { imageBase64 } : undefined);
+    })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.phase, state.pendingText, state.retry]);
 
@@ -169,5 +202,13 @@ export function useCall(deps?: Partial<SpeakerDeps>) {
     dispatch({ type: 'REPLAY' });
   }, [voice]);
 
-  return { state, dispatch, session, voice, words, turnsLeft, slow, setSlow, replaySlow };
+  const setVideoElement = useCallback((v: HTMLVideoElement | null) => {
+    videoEl.current = v;
+  }, []);
+  const onCameraOff = useCallback((reason: CameraOffReason) => {
+    frame.current = null;
+    dispatch({ type: 'CAMERA_OFF', reason });
+  }, []);
+
+  return { state, dispatch, setVideoElement, onCameraOff, session, voice, words, turnsLeft, slow, setSlow, replaySlow };
 }
