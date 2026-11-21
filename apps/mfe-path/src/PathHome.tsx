@@ -5,7 +5,8 @@ import { dayKey, dueCards, learnerStore, useLearner, useUiLanguage } from '@viet
 import { goalProgress, learnedDays, progressStore, streakWithFreezes, totalXp, useProgress, weekCalendar } from '@vietlearning/state/progress';
 import { useT } from './i18n';
 import { lessonStatuses, nextLesson, unitProgress } from './path/pathModel';
-import { lessonAfter, lessonHref } from './path/lessonHref';
+import { lessonHref } from './path/lessonHref';
+import { defaultVisible } from './path/visibility';
 import { GoalPanel } from './GoalPanel';
 import { startGoalWatch, syncReminders } from './reminders';
 import { Card, Icon } from '@vietlearning/ui';
@@ -50,8 +51,6 @@ export function PathHome() {
   const nextUnit = COURSE.units.find((u) => u.lessons.some((l) => l.id === next.id))!;
   const statuses = lessonStatuses(COURSE, lessons, testedOut);
   const isNew = Object.keys(lessons).length === 0 && Object.keys(testedOut).length === 0;
-  // Bài nhập vai cần mạng + lượt AI: luôn có lối sang bài sau (không ghi là đã xong)
-  const skip = next.roleplay ? lessonAfter(COURSE, next.id) : null;
 
   return (
     <div className="flex flex-col gap-4">
@@ -90,11 +89,6 @@ export function PathHome() {
         <span>{isNew ? t('startFirst') : t('continue')}</span>
         <span className="text-sm font-semibold">{t('continueSub', { unit: en ? nextUnit.titleEn : nextUnit.title, lesson: en ? next.titleEn : next.title })}</span>
       </LinkButton>
-      {skip && (
-        <Link to={lessonHref(skip)} className="-mt-2 flex min-h-11 items-center justify-center text-sm font-bold text-ink-soft underline">
-          {t('skipRoleplay', { lesson: en ? skip.titleEn : skip.title })}
-        </Link>
-      )}
 
       <Link to="/on-tap" className="flex min-h-14 items-center justify-between gap-3 rounded-2xl border border-line-strong bg-surface px-4 py-2 text-ink no-underline shadow-card">
         <span className="font-bold">
@@ -149,7 +143,7 @@ export function PathHome() {
                 <span className="shrink-0 text-xs text-ink-muted">{t('unitProgress', p)}</span>
               </div>
               <ol className="m-0 flex list-none flex-col gap-2 p-0">
-                {u.lessons.map((l, i) => {
+                {u.lessons.filter(defaultVisible).map((l, i) => {
                   const st = statuses[l.id];
                   return (
                     <li key={l.id}>

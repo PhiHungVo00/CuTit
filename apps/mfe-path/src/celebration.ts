@@ -8,9 +8,12 @@ export function currentStreak(now = new Date()): number {
   return streakWithFreezes(learnerStore.getState().activity, p.xpByDay, p.frozenDays, now);
 }
 
-/** Gọi MỘT lần ngay sau khi ghi kết quả: âm + rung hoàn thành; lên chuỗi ngày thì thêm âm chuỗi sau tiếng hoàn thành. */
-export function celebrateFinish(streakBefore: number): void {
-  playSfx('hoan-thanh');
+/**
+ * Gọi MỘT lần ngay sau khi ghi kết quả: âm + rung hoàn thành; lên chuỗi ngày thì thêm âm chuỗi sau tiếng hoàn thành.
+ * `withSfx=false`: bộ chạy tình huống đã tự phát 'hoan-thanh' lúc tới đích, không phát lần hai.
+ */
+export function celebrateFinish(streakBefore: number, withSfx = true): void {
+  if (withSfx) playSfx('hoan-thanh');
   haptic('thanh-cong');
   if (currentStreak() > streakBefore) setTimeout(() => playSfx('chuoi-ngay'), 900);
 }
