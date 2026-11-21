@@ -15,7 +15,7 @@ export const AgentUIBlockSchema = z.object({
   payload: z.record(z.any())
 });
 
-/** Một lượt cũ gửi kèm để LLM có ngữ cảnh (client giữ tối đa 6 lượt gần nhất) */
+/** Một lượt cũ gửi kèm để LLM có ngữ cảnh (client giữ tối đa 10 lượt gần nhất) */
 export const ChatHistoryItemSchema = z.object({
   role: z.enum(['user', 'tutor']),
   text: z.string().max(500)
@@ -34,13 +34,29 @@ export const VoiceTurnRequestSchema = z
     /** M12: mức sửa lỗi và nhân vật gia sư */
     correctionLevel: z.enum(['gentle', 'strict', 'off']).default('gentle'),
     persona: z.string().max(32).default('be_cu_tit'),
-    history: z.array(ChatHistoryItemSchema).max(6).default([]),
+    history: z.array(ChatHistoryItemSchema).max(10).default([]),
+    /** Bản tóm tắt cuộc trò chuyện (≤ 600 ký tự) do /chat/summarize viết; thay cho phần lịch sử cũ hơn 10 lượt */
+    summary: z.string().trim().max(600).optional(),
+    /** Ảnh JPEG/PNG base64 (≤ 150 KB sau base64 theo luật client; trần 200 KB) — lượt có ảnh đi VISION_CHAIN, trừ thêm 1 `visionImages` */
+    imageBase64: z.string().max(204800).optional(),
     /** Ngôn ngữ giao diện của người học: lời giải thích lỗi viết bằng ngôn ngữ này (câu mẫu vẫn là tiếng Việt) */
     explanationLanguage: z.enum(['vi', 'en']).default('vi'),
     /** GĐ3: 'call' = gọi thoại — userText là bản chép lời giọng nói, gia sư trả lời văn nói ngắn */
     mode: z.enum(['chat', 'call']).default('chat')
   })
   .refine((b) => b.userText || b.userAudioBase64, { message: 'Cần userText hoặc userAudioBase64' });
+
+/** POST /chat/summarize: viết lại bản tóm tắt cuộc trò chuyện (không trừ lượt người dùng, tính vào trần chung) */
+export const ChatSummarizeRequestSchema = z.object({
+  sessionId: z.string().uuid(),
+  previousSummary: z.string().trim().max(600).optional(),
+  history: z.array(ChatHistoryItemSchema).min(1).max(20),
+  explanationLanguage: z.enum(['vi', 'en']).default('vi')
+});
+export const ChatSummarizeResponseSchema = z.object({
+  summary: z.string().trim().min(1).max(600),
+  remaining: z.lazy(() => RemainingSchema).optional()
+});
 
 /** Một lỗi đã sửa trong lượt (để tổng kết cuối buổi nhập vai) */
 export const ChatCorrectionSchema = z.object({
@@ -96,6 +112,8 @@ export const VoiceTurnResponseSchema = z.object({
 export type AgentUIBlock = z.infer<typeof AgentUIBlockSchema>;
 export type VoiceTurnRequest = z.infer<typeof VoiceTurnRequestSchema>;
 export type VoiceTurnResponse = z.infer<typeof VoiceTurnResponseSchema>;
+export type ChatSummarizeRequest = z.input<typeof ChatSummarizeRequestSchema>;
+export type ChatSummarizeResponse = z.infer<typeof ChatSummarizeResponseSchema>;
 export type ChatEvent = z.infer<typeof ChatEventSchema>;
 export type ChatCorrection = z.infer<typeof ChatCorrectionSchema>;
 const QuotaCounterSchema = z.object({ used: z.number().int().min(0), limit: z.number().int().min(0) });

@@ -138,7 +138,7 @@ export async function buildApp(config: GatewayConfig, opts: BuildOptions = {}): 
   const tts = opts.tts !== undefined ? opts.tts : createTtsProvider(config);
   const audioStore = new FileAudioStore(config.TTS_AUDIO_DIR);
   const ttsCache = opts.ttsCache ?? new TTSCacheProxy(fileSynthesizer(audioStore, tts), Boolean(tts));
-  const deps: RouteDeps = { pipeline, ttsCache, config, llm, vision, stt, tts, tutor: createTutor(llm, app.log), db, audit };
+  const deps: RouteDeps = { pipeline, ttsCache, config, llm, vision, stt, tts, tutor: createTutor(llm, app.log, vision), db, audit };
   app.log.info({ llm: llm?.name ?? 'mock', vision: vision?.name ?? 'mock', stt: stt?.name ?? 'mock' }, 'AI providers');
 
   // Phải đặt trước khi đăng ký các scope con để chúng thừa hưởng
