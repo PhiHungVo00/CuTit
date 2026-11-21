@@ -120,6 +120,8 @@ async function runChain<T, R>(
   const failed: string[] = [];
   let retryAfterMs: number | undefined;
   let providerCalls = 0;
+  /** mọi nguồn ĐÃ GỌI đều từ chối vì chính yêu cầu (400/413/415/422) */
+  let allRequestFault = true;
 
   const reserve = opts.reserveMs ?? 3000;
   for (const [idx, s] of sources.entries()) {
@@ -144,6 +146,7 @@ async function runChain<T, R>(
     try {
       const { result, ok } = await call(s.item, attemptMs);
       if (!ok) {
+        allRequestFault = false;
         failed.push(`${s.id}:llm_bad_output`);
         opts.log?.warn({ chain: label, source: s.id, code: 'llm_bad_output' }, 'AI source returned invalid output, trying next');
         continue;
@@ -155,12 +158,17 @@ async function runChain<T, R>(
       const code = (err as { code?: string }).code ?? 'unknown';
       if (code === 'llm_blocked' || (err instanceof GatewayError && !RETRYABLE.has(code) && !(err instanceof LlmProviderError))) throw err;
       opts.breaker.recordFailure(s.id, err);
+      const up = (err as Partial<LlmProviderError>).upstreamStatus;
+      if (up === undefined || !REQUEST_FAULT.has(up)) allRequestFault = false;
       failed.push(`${s.id}:${code}`);
       opts.log?.warn({ chain: label, source: s.id, code, status: (err as LlmProviderError).upstreamStatus, ms: now() - t0 }, 'AI source failed, trying next');
     }
   }
 
   opts.log?.warn({ chain: label, tried: failed }, 'AI chain exhausted');
+  // Lỗi nằm ở yêu cầu (ảnh/âm thanh hỏng, quá lớn): không phải "AI bận" — không hứa "chưa trừ lượt", không hoàn lượt
+  // (nếu hoàn, gửi lặp lại dữ liệu hỏng sẽ đốt trần chung miễn phí vì ngắt mạch cố ý không đếm các lỗi này)
+  if (providerCalls > 0 && allRequestFault) throw new RequestRejectedError(providerCalls);
   const retryAfterSec = retryAfterMs && retryAfterMs > 0 ? Math.min(Math.ceil(retryAfterMs / 1000), 300) : undefined;
   throw new ChainExhaustedError(providerCalls, retryAfterSec);
 }
@@ -172,6 +180,13 @@ async function runChain<T, R>(
 export class ChainExhaustedError extends GatewayError {
   constructor(public readonly providerCalls: number, retryAfterSec?: number) {
     super(503, 'llm_busy', 'Cu Tít đang bận, thử lại sau ít giây', retryAfterSec ? { retryAfterSec } : undefined);
+  }
+}
+
+/** Mọi nguồn đã gọi đều từ chối chính yêu cầu (4xx) => 422 `llm_rejected`; RequestPipeline KHÔNG hoàn lượt */
+export class RequestRejectedError extends GatewayError {
+  constructor(public readonly providerCalls: number) {
+    super(422, 'llm_rejected', 'Dịch vụ AI không nhận dữ liệu này (ảnh/âm thanh hỏng hoặc quá lớn)');
   }
 }
 

@@ -51,6 +51,12 @@ function providerWasCalled(cause: unknown): boolean {
   return typeof (cause as { code?: unknown }).code === 'string' && (cause as { code: string }).code.startsWith('llm_');
 }
 
+/**
+ * Lỗi do chính yêu cầu của người dùng mà nhà cung cấp đã xử lý (và tính phí): KHÔNG hoàn lượt.
+ * `llm_blocked` = bộ lọc an toàn từ chối nội dung; `llm_rejected` = mọi nguồn trả 4xx cho dữ liệu gửi lên (ảnh/âm thanh hỏng).
+ */
+const NO_REFUND = new Set(['llm_blocked', 'llm_rejected']);
+
 export class RequestPipeline {
   private readonly limits: Record<Capability, number>;
   /** trần dùng chung toàn app (0 = không giới hạn); tts không có trần chung (không tốn hạn mức nhà cung cấp AI) */
@@ -197,7 +203,7 @@ export class RequestPipeline {
       refund: async (cause?: unknown) => {
         if (refunded) return;
         refunded = true;
-        if ((cause as { code?: unknown } | undefined)?.code === 'llm_blocked') return;
+        if (NO_REFUND.has(String((cause as { code?: unknown } | undefined)?.code))) return;
         const includeGlobal = !providerWasCalled(cause);
         await Promise.all(done.map(([c, u]) => this.refund(request, c, u, includeGlobal, day)));
       }
