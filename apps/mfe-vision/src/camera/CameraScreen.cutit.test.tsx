@@ -3,9 +3,14 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import { MemoryRouter } from 'react-router-dom';
 import { learnerStore } from '@vietlearning/state';
 
-vi.mock('./image', () => ({ fileToJpegBase64: vi.fn(async () => ({ base64: 'x', previewUrl: 'blob:p' })), toJpegBase64: vi.fn() }));
 vi.mock('@vietlearning/api-client', () => ({ request: vi.fn(() => new Promise(() => undefined)), describeGatewayError: vi.fn() }));
-vi.mock('@vietlearning/native', () => ({ canOpenAppSettings: () => false, openAppSettings: vi.fn(), getDeviceSpeech: () => ({ speak: vi.fn() }) }));
+vi.mock('@vietlearning/native', () => ({
+  canOpenAppSettings: () => false,
+  openAppSettings: vi.fn(),
+  getDeviceSpeech: () => ({ speak: vi.fn() }),
+  fileToJpegBase64: vi.fn(async () => ({ base64: 'x', previewUrl: 'blob:p' })),
+  toJpegBase64: vi.fn(),
+}));
 
 import { CameraScreen } from './CameraScreen';
 
