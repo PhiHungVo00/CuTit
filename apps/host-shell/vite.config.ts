@@ -56,7 +56,7 @@ export default defineConfig({
         ]
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,woff2,png,svg}'],
+        globPatterns: ['**/*.{js,css,html,woff2,png,svg,webp}'],
         // Bản mới kích hoạt ngay và nhận quyền điều khiển tab đang mở; xóa precache cũ
         skipWaiting: true,
         clientsClaim: true,
