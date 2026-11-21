@@ -91,7 +91,7 @@ Phía người dùng là màn `/gop-y` trong `mfe-learner`. Phía chủ app là 
 - `FeedbackContextSchema {appVersion: string, build: string, platform: 'android'|'web', osVersion: string, locale: 'vi'|'en', route: string, recentRoutes: string[] (≤5, mỗi chuỗi bắt đầu '/', không '?'), error?: {name: string, firstFrame: string}}`
 - `FeedbackCreateMetaSchema {kind, body, context}` (phần `meta` của multipart) → `FeedbackCreateResponseSchema {id: uuid}`
 - `MyFeedbackSchema {id, kind, body, status, createdAt, unread: boolean, files: {media: 'image'|'video', purged: boolean}[], events: {at, status: FeedbackStatus|null, message: string|null}[]}`; `MyFeedbackListSchema {items: MyFeedback[]}`; `UnreadCountSchema {count: number}`
-- Admin: `AdminLoginRequestSchema {username, password}` → `{ticket}`; `AdminTotpRequestSchema {ticket, code?: /^\d{6}$/, backupCode?: string}` (đúng một trong hai) → `AdminSessionSchema {accessToken, expiresIn, enrollment?: {otpauthUrl, secret}}`; `AdminTotpConfirmSchema {ticket, code}` → `{backupCodes: string[10]}`; `QueueQuerySchema {type: 'feedback', status?, kind?, cursor?}` → `QueueItemSchema {type:'feedback', id, kind, excerpt (≤120), status, appVersion, route, fileCount, createdAt, accountPendingDeletion: boolean}` + `nextCursor`; `AdminFeedbackDetailSchema` (= MyFeedback + `context`, `userIdShort`, `files: {id, media, contentType, bytes, durationMs, purged}[]`); `AdminStatusRequestSchema {status, message?}`; `SignedUrlSchema {url, expiresAt}`; `AuditEntrySchema {id, at, actorKind, actorUserIdShort, action, targetType, targetId, meta}`.
+- Admin: `AdminLoginRequestSchema {username, password}` → `AdminLoginResponseSchema {ticket, next: 'totp'|'enroll'}`; `AdminEnrollRequestSchema {ticket}` → `AdminEnrollResponseSchema {otpauthUrl, secret}`; `AdminTotpConfirmSchema {ticket, code}` → `AdminSessionSchema & {backupCodes: string[] (10)}`; `AdminTotpRequestSchema {ticket, code?: /^\d{6}$/, backupCode?: string}` (đúng một trong hai) → `AdminSessionSchema {accessToken, expiresIn}`; `QueueQuerySchema {type: 'feedback', status?, kind?, cursor?}` → `QueueItemSchema {type:'feedback', id, kind, excerpt (≤120), status, appVersion, route, fileCount, createdAt, accountPendingDeletion: boolean}` + `nextCursor`; `AdminFeedbackDetailSchema` (= MyFeedback + `context`, `userIdShort`, `files: {id, media, contentType, bytes, durationMs, purged}[]`); `AdminStatusRequestSchema {status, message?}`; `SignedUrlSchema {url, expiresAt}`; `AuditEntrySchema {id, at, actorKind, actorUserIdShort, action, targetType, targetId, meta}`.
 - Mã lỗi mới: `feedback_limit, file_too_large, file_type, too_many_files, video_too_long, storage_full, admin_disabled, invalid_credentials` (dùng lại), `totp_invalid, totp_required, session_expired`.
 - Bảng: theo spec §5.7 (`feedback_reports`, `feedback_files`, `feedback_events`, `blob_deletions`, `staff_roles`, `staff_totp`, `admin_sessions`, `admin_audit_log`). Thêm **trigger chặn UPDATE/DELETE trên `admin_audit_log`**, viết tay trong migration tùy chỉnh (`db:generate --custom`, tên `admin_audit_append_only`). Thêm hàm `admin_audit_purge(before timestamptz)` dạng `SECURITY DEFINER`, tắt trigger cục bộ để job dọn được.
 
@@ -168,6 +168,7 @@ Phía người dùng là màn `/gop-y` trong `mfe-learner`. Phía chủ app là 
   - gửi lỗi mạng → chữ và tệp còn nguyên, hiện nút "Gửi lại", nháp chữ nằm trong `localStorage`;
   - gửi xong → nháp bị xóa, hiện Cu Tít `khen`;
   - dòng "Gửi kèm: …" hiện đúng phiên bản và route;
+  - có dòng thông báo "Chủ app sẽ xem nội dung, ảnh và video bạn gửi để sửa lỗi…" (chữ đúng spec §5.8, vi + en);
   - `unread>0` → có chấm ở dòng Hồ sơ;
   - mọi chuỗi có cả vi và en.
 - [ ] **Step 2:** `pnpm --filter @vietlearning/mfe-learner test` thấy FAIL.
@@ -192,12 +193,13 @@ Phía người dùng là màn `/gop-y` trong `mfe-learner`. Phía chủ app là 
 - Produces:
   - `withAdminAudit<T>(db, entry: {actorUserId|null, actorKind, action, targetType, targetId?, meta?, ipHash?, userAgent?}, fn: (tx) => Promise<T>): Promise<T>`: ghi nhật ký **trong cùng transaction** với `fn`
   - `requireAdmin(role: 'owner'|'editor'|'reviewer'|'support')`: preHandler, gắn `request.admin = {userId, roles}`
-  - Routes `POST /admin/v1/auth/login | totp | totp/confirm | refresh | logout`
+  - Routes `POST /admin/v1/auth/login | totp/enroll | totp/confirm | totp | refresh | logout`. Luồng: `login` → (`next=enroll`: `totp/enroll` → `totp/confirm` ⇒ phiên + mã dự phòng) | (`next=totp`: `totp` ⇒ phiên)
   - CLI `admin:grant --username <x> --role owner`, `admin:revoke --username <x> --role <r>`, `admin:reset-totp --username <x>` (tác nhân `cli` trong nhật ký)
 
 - [ ] **Step 1:** Viết test thất bại:
   - sai mật khẩu, và đúng mật khẩu nhưng không có vai trò → response **giống hệt** (`invalid_credentials`, cùng body);
-  - lần đầu (chưa có `staff_totp`) → `totp` trả `enrollment`; `totp/confirm` với mã đúng → 10 mã dự phòng;
+  - lần đầu (chưa có `staff_totp` đã xác nhận) → `login` trả `next:'enroll'`; `totp/enroll` trả `otpauthUrl`; `totp/confirm` với mã đúng → phiên + 10 mã dự phòng;
+  - **đã xác nhận TOTP** → `login` trả `next:'totp'`, và `totp/enroll` với ticket đó → 403 (không đăng ký lại được chỉ bằng mật khẩu); gọi `totp` khi `next=enroll` → 403;
   - mã đúng → access `typ:'admin'` + cookie `HttpOnly; SameSite=Strict; Path=/admin/v1/auth`;
   - **cùng mã dùng lần 2 trong 30 giây** → `totp_invalid`;
   - mã dự phòng dùng lần 2 → `totp_invalid`;
@@ -229,6 +231,7 @@ Phía người dùng là màn `/gop-y` trong `mfe-learner`. Phía chủ app là 
 **Interfaces:**
 - Consumes: `requireAdmin`, `withAdminAudit` (Task 4); `BlobStore` (Task 2).
 - Produces:
+  - `/admin/v1/blob` đăng ký **ngoài** `requireAdmin` (chữ ký là xác thực), đặt `cross-origin-resource-policy: cross-origin`
   - `GET /admin/v1/queue`, `GET /admin/v1/feedback/:id`, `POST /admin/v1/feedback/:id/status`, `GET /admin/v1/feedback/:id/files/:fileId/url`, `GET /admin/v1/blob?k&exp&sig` (hỗ trợ `Range`), `GET /admin/v1/audit`
   - `signBlobUrl(key, ttlSec=300): {url, expiresAt}`, `verifyBlobUrl(k, exp, sig): boolean` (HMAC-SHA256 bằng `ADMIN_BLOB_URL_SECRET`)
 
@@ -240,7 +243,8 @@ Phía người dùng là màn `/gop-y` trong `mfe-learner`. Phía chủ app là 
   - URL ký hết hạn (đồng hồ giả +301 giây) → 403; `sig` sai → 403;
   - `Range: bytes=0-99` → 206 đúng 100 byte;
   - lấy URL của tệp → nhật ký `feedback.view_file`;
-  - tệp đã `purged` → `url` trả 410.
+  - tệp đã `purged` → `url` trả 410;
+  - `GET /admin/v1/blob` có chữ ký đúng, **không** Bearer → 200 kèm `cross-origin-resource-policy: cross-origin`.
 - [ ] **Step 2–4:** FAIL → cài → PASS.
 - [ ] **Step 5:** Commit `feat(gateway): hàng chờ góp ý cho quản trị + URL ký + nhật ký`, thêm dòng nhật ký.
 
@@ -263,7 +267,8 @@ Phía người dùng là màn `/gop-y` trong `mfe-learner`. Phía chủ app là 
   - tải lại trang (khởi động lại client) → gọi refresh, không hỏi lại mã;
   - hàng chờ hiện số chưa xong, bộ lọc đổi query; chọn dòng → chi tiết hiện ảnh (thẻ `img` dùng URL ký) và video (`video controls`);
   - lưu trạng thái + lời nhắn → gọi `setStatus` đúng body, danh sách cập nhật;
-  - 401 hai lần liên tiếp → về màn đăng nhập.
+  - 401 hai lần liên tiếp → về màn đăng nhập;
+  - Playwright (trang quản trị thật ở 5180 + Gateway thật ở 4000): mở chi tiết góp ý có ảnh ⇒ `img.naturalWidth > 0` (ảnh hiện thật trong trình duyệt khác nguồn).
 - [ ] **Step 2–4:** FAIL → cài (dùng `packages/ui` cho token và nút; QR bằng thư viện MIT chỉ cài trong `apps/admin`) → PASS; `pnpm lint:boundaries` xanh; `pnpm build`.
 - [ ] **Step 5:** Commit `feat(admin): trang quản trị: đăng nhập TOTP, hàng chờ góp ý, nhật ký`, thêm dòng nhật ký.
 

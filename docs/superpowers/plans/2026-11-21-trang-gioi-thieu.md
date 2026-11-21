@@ -11,7 +11,7 @@
 
 **Tech Stack:** Vite (multi-page), TypeScript, `@fontsource/be-vietnam-pro` (400, 800), size-limit, Playwright, axe-core, ffmpeg (chỉ dùng một lần cho script âm thanh, chạy trên máy).
 
-**Spec:** `docs/superpowers/specs/2026-11-21-trang-gioi-thieu-design.md` (đã duyệt 21/11). Liên quan: `docs/thiet-ke/DE-XUAT-TRIEN-KHAI.md`, spec dự án 3.
+**Spec:** `docs/superpowers/specs/2026-11-21-trang-gioi-thieu-design.md` (đã duyệt 2026-11-21). Liên quan: `docs/thiet-ke/DE-XUAT-TRIEN-KHAI.md`, spec dự án 3.
 
 ## Global Constraints
 
