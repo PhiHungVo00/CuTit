@@ -1,4 +1,5 @@
 import { learnerStore, useLearner } from '@vietlearning/state';
+import { Button } from '@vietlearning/ui';
 import { useT } from '../i18n';
 import type { SummaryItem } from './summaryItems';
 
@@ -22,15 +23,16 @@ export function SessionSummary({ items }: { items: SummaryItem[] }) {
           <strong lang="vi">{i.front}</strong>
           <span className="text-ink-soft"> · {i.back}</span>
         </p>
-        <button
-          type="button"
+        <Button
+         
+          variant="secondary"
           disabled={added}
           onClick={() => addCard(i)}
           aria-label={added ? `${i.front}: ${t('added')}` : `${t('addToReview')}: ${i.front}`}
-          className={`min-h-11 self-start rounded-xl px-3 text-sm font-bold ${added ? 'bg-surface text-ink-muted' : 'border border-line-strong bg-surface text-ink'}`}
+          style={{ alignSelf: 'flex-start' }}
         >
           {added ? t('added') : t('addToReview')}
-        </button>
+        </Button>
       </li>
     );
   };
@@ -54,9 +56,9 @@ export function SessionSummary({ items }: { items: SummaryItem[] }) {
         </section>
       )}
       {pending.length > 1 && (
-        <button type="button" onClick={() => pending.forEach(addCard)} className="min-h-12 rounded-xl border border-line-strong bg-surface-2 px-4 font-bold text-ink">
+        <Button variant="secondary" onClick={() => pending.forEach(addCard)}>
           {t('addAll', { n: pending.length })}
-        </button>
+        </Button>
       )}
       <p className="m-0 text-sm text-ink-muted">{t('srsHint')}</p>
     </div>

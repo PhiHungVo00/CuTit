@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import type { NewWord } from '@vietlearning/contracts/api';
 import { getDeviceSpeech } from '@vietlearning/native';
+import { playSfx } from '@vietlearning/shared/audio';
 import { acquireAudio } from '@vietlearning/shared/audio/focus';
 import { learnerStore, speechRate } from '@vietlearning/state';
 import { useChatSession } from '../chat/useChatSession';
@@ -58,7 +59,7 @@ export function useCall(deps?: Partial<SpeakerDeps>) {
   slowRef.current = slow;
 
   const speak = useMemo(
-    () => createSpeaker({ synth, play, stopPlayback, device: getDeviceSpeech(), deviceRate: (b) => speechRate(b), ...deps }),
+    () => createSpeaker({ synth, play, stopPlayback, device: getDeviceSpeech(), deviceRate: (b) => speechRate(b), announce: () => playSfx('cutit-noi'), ...deps }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     []
   );
