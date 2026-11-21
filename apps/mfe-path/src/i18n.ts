@@ -65,7 +65,7 @@ export const { useT, t } = defineMessages(
 
     // Phiên bài học
     close: 'Đóng bài học',
-    closeShort: '✕',
+    listenCard: 'Nghe mặt trước thẻ',
     progress: 'Tiến độ bài học',
     itemOf: 'Câu {i}/{n}',
     retry: 'Làm lại',
@@ -176,7 +176,7 @@ export const { useT, t } = defineMessages(
     'reminderBody.2': 'Review a few words today so they stick.',
 
     close: 'Close lesson',
-    closeShort: '✕',
+    listenCard: 'Listen to the card front',
     progress: 'Lesson progress',
     itemOf: 'Item {i}/{n}',
     retry: 'Try again',
