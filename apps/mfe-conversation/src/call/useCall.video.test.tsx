@@ -58,7 +58,7 @@ describe('useCall — gọi video theo lượt', () => {
     expect(grabFrame).toHaveBeenCalledTimes(1);
     await act(async () => onHeard({ text: 'Xin chào', mock: false }));
     await act(async () => undefined);
-    expect(send).toHaveBeenCalledWith('Xin chào', { imageBase64: 'IMG' });
+    expect(send).toHaveBeenCalledWith('Xin chào', { image: { base64: 'IMG', previewUrl: 'data:x' } });
   });
 
   it('gọi thường: không bao giờ grabFrame, gửi không kèm ảnh', async () => {
