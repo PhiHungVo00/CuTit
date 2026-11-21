@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it } from 'vitest';
-import { cleanup, render } from '@testing-library/react';
+import { cleanup, fireEvent, render } from '@testing-library/react';
 import { learnerStore } from '@vietlearning/state';
 import { CuTit } from './CuTit.js';
 
@@ -85,5 +85,23 @@ describe('CuTit — CSS đi kèm component (P0-1)', () => {
     // jsdom không tính animation-name nên kiểm trực tiếp luật CSS đã nạp
     expect(css).toMatch(/prefers-reduced-motion[^{]*\{\s*\.ct-cutit--anim\s*\{\s*animation:\s*none/);
     expect(css).toMatch(/data-reduced-motion=['"]true['"]\]\s*\.ct-cutit--anim\s*\{\s*animation:\s*none/);
+  });
+});
+
+describe('CuTit — ảnh lỗi (ngoại tuyến, P0-3)', () => {
+  it('ảnh không tải được thì bỏ thẻ img (không hiện alt xuống dòng), khung giữ nguyên kích thước', () => {
+    const { container } = render(<CuTit mood="khen" size={64} />);
+    fireEvent.error(container.querySelector('img')!);
+    expect(container.querySelector('img')).toBeNull();
+    const frame = container.firstElementChild as HTMLElement;
+    expect(frame.style.width).toBe('64px');
+    expect(frame.getAttribute('aria-hidden')).toBe('true');
+  });
+
+  it('đổi mood sau lỗi thì thử tải lại ảnh mới', () => {
+    const { container, rerender } = render(<CuTit mood="khen" />);
+    fireEvent.error(container.querySelector('img')!);
+    rerender(<CuTit mood="buon" />);
+    expect(container.querySelector('img')!.getAttribute('src')).toContain('cutit-buon');
   });
 });
