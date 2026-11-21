@@ -16,3 +16,5 @@ export { ContourChart } from './tone/ContourChart';
 export { verdict } from './tone/verdict';
 export { gradeAssess, SPEAK_PASS } from './speak/grade';
 export { prefetchPack, playText, findAudioKey, stopPlayback } from './audio/coursePlayer';
+export { DialogueRunner, type DialogueOutcome } from './dialogue/DialogueRunner';
+export { runStep, scoreRun, type StepResult } from './dialogue/engine';
