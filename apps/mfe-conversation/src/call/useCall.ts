@@ -10,8 +10,8 @@ import { callReducer, initialCall, type CameraOffReason } from './callMachine';
 import { createSpeaker, type SpeakerDeps } from './speakReply';
 import { useThinkingFiller } from './thinkingFiller';
 
-/** Lượt có ảnh: `send` của useChatSession nhận thêm `imageBase64` (Task 5–6); kiểu ở đây khai riêng để call/ không sửa chat/** */
-type SendWithImage = (text: string, opts?: { imageBase64?: string }) => Promise<void>;
+/** Lượt có ảnh: `send` của useChatSession (Task 5–6) nhận `{ image: { base64, previewUrl } }`; khai kiểu riêng để call/ không sửa chat/** */
+type SendWithImage = (text: string, opts?: { image?: { base64: string; previewUrl: string } }) => unknown;
 
 /** Gọi /v1/speech/synthesize (Gateway quyết định nhà cung cấp TTS); 503 => kind 'unavailable' */
 async function synth(text: string): Promise<string | null> {
@@ -61,7 +61,7 @@ export function useCall(deps?: Partial<SpeakerDeps>, _opts: { video?: boolean } 
   const callHold = useRef<(() => void) | null>(null);
   const videoEl = useRef<HTMLVideoElement | null>(null);
   // Khung hình chụp lúc người học vừa ngừng nói, chờ gửi cùng câu chép lời (null = lỗi/không có)
-  const frame = useRef<Promise<string | null> | null>(null);
+  const frame = useRef<Promise<{ base64: string; previewUrl: string } | null> | null>(null);
   const slowRef = useRef(slow);
   slowRef.current = slow;
 
@@ -90,7 +90,7 @@ export function useCall(deps?: Partial<SpeakerDeps>, _opts: { video?: boolean } 
     prevVoice.current = voice.status;
     if (was === 'recording' && voice.status === 'transcribing' && state.video && videoEl.current) {
       frame.current = grabFrame(videoEl.current).then(
-        (f) => f.base64,
+        (f) => f,
         () => null
       );
     }
@@ -148,8 +148,8 @@ export function useCall(deps?: Partial<SpeakerDeps>, _opts: { video?: boolean } 
     const pending = state.video ? frame.current : null;
     frame.current = null;
     void (async () => {
-      const imageBase64 = (await pending) ?? undefined;
-      void (session.send as SendWithImage)(text, imageBase64 ? { imageBase64 } : undefined);
+      const image = (await pending) ?? undefined;
+      void (session.send as SendWithImage)(text, image ? { image } : undefined);
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.phase, state.pendingText, state.retry]);
