@@ -57,7 +57,7 @@ Mục tiêu: **một chỗ duy nhất để nói chuyện với Cu Tít, quen th
 ### 5.1 Màn chat Cu Tít (`/hoi-thoai`, thuộc `mfe-conversation`)
 ```
 ┌──────────────────────────────────┐
-│ ←  (Cu Tít) Bé Cu Tít       📞  📹 │  gọi thường · gọi video
+│ ←  (Cu Tít) Bé Cu Tít   🕘  📞  📹 │  lịch sử · gọi thường · gọi video
 │    Còn 42 lượt hôm nay · Miễn phí   │
 ├──────────────────────────────────┤
 │   Cu Tít: Chào bạn! …               │
@@ -72,6 +72,7 @@ Mục tiêu: **một chỗ duy nhất để nói chuyện với Cu Tít, quen th
 - Đầu màn: `CuTit mood="chan-dung"` (đổi `suy-nghi` khi chờ AI), tên, dòng phụ "Còn N lượt hôm nay · Miễn phí trong thời gian đầu" (N từ `remaining.turns`; ≤ 5 đổi màu nhẹ), nút 📞 gọi thường, 📹 gọi video, nút quay lại.
 - Ô soạn: 📷 chụp ảnh ⇒ ảnh hiện thành tin của người dùng, Cu Tít trả lời từ vựng/ví dụ (VISION_CHAIN); 🎤 **giữ để nói** ⇒ tin giọng nói (STT_CHAIN) hiện kèm bản chép lời, đếm ngược từ giây 10, cắt ở 15 s kèm câu giải thích; gõ chữ như hiện tại.
 - Tin của Cu Tít có nút ▶ nghe lại (TTS máy / âm dựng sẵn), `playSfx('cutit-noi')` trước khi nói.
+- **🕘 Lịch sử cuộc trò chuyện** (người dùng yêu cầu 21/11): bấm ⇒ bảng trượt liệt kê các cuộc trò chuyện (mới nhất trên cùng), mỗi dòng: tiêu đề (tự lấy từ tin đầu, đổi tên được), ngày, dòng tin cuối, nhãn nếu là "Luyện tình huống: …". Có nút **"Cuộc trò chuyện mới"**, mở lại cuộc cũ để chat tiếp (gửi kèm ≤ 6 lượt gần nhất làm ngữ cảnh như hiện nay), xóa từng cuộc (vuốt/giữ) và xóa tất cả. Mỗi lần bấm "Luyện với Cu Tít" từ cuối unit tạo một cuộc mới gắn tình huống.
 - `CuTitModeBar` của dự án 1 **bị gỡ**; route `/nhap-vai`, `/camera` vẫn chạy (link cũ), nhưng lối vào chính là màn chat.
 - Phát `cutit:thinking` (bus) khi chờ AI để bong bóng đổi trạng thái (đã có ở dự án 1).
 
@@ -122,7 +123,7 @@ Mục tiêu: **một chỗ duy nhất để nói chuyện với Cu Tít, quen th
 
 1. **Lượt gọi video [Claude quyết]:** contract trước — thêm trường tùy chọn `imageBase64` (JPEG, ≤ 150 KB sau base64) vào `VoiceTurnRequestSchema` của `/chat/turn`. Lượt có ảnh đi **`VISION_CHAIN`**, lượt không ảnh đi `LLM_CHAIN`. PromptBuilder thêm đoạn "người học đang cho bạn xem hình này". Groq hiện **không có model nhận ảnh** trong gói free ⇒ lượt gọi video sẽ chậm hơn (thường 2–7 s qua Gemini) cho tới khi có nguồn vision nhanh; màn gọi video hiện chỉ báo "Cu Tít đang xem…". Không chọn cách "gắn nhãn từ `/vision/label` vào câu" vì Cu Tít chỉ "thấy" một từ.
 2. **Đếm lượt [Claude quyết]:** con số hiển thị = `remaining.turns`. Tin giọng nói = **1 lượt** (giây STT tính ngầm); lượt gọi video = **1 lượt + 1 ảnh**; chụp ảnh trong chat = 1 lượt + 1 ảnh. Khi `sttSeconds` hoặc `visionImages` hết trước `turns`: tắt nút 🎤 / 📷 / 📹 tương ứng, chú thích "Hết lượt nói/ảnh hôm nay, vẫn gõ chữ được". Chặn trước khi gửi dựa trên `remaining` lần trả lời gần nhất; Gateway vẫn là nơi quyết.
-3. **Lịch sử chat [Claude quyết]:** lưu **chữ** của 50 tin gần nhất **trên máy** (`packages/state`, slice cục bộ, **không đồng bộ**), xóa khi xóa tài khoản/đăng xuất và có nút "Xóa cuộc trò chuyện". **Không lưu ảnh và âm thanh** — mở lại chỉ còn ô "Ảnh đã gửi"/"Tin giọng nói" + bản chép lời. Lý do: tránh lưu dữ liệu nhạy cảm của người dùng (có trẻ em), không phải sửa `/v1/sync`, DATA-SAFETY đơn giản. Chat bạn bè (dự án 4) sẽ có thiết kế lưu trữ riêng.
+3. **Lịch sử chat [người dùng chọn 21/11: có 🕘 danh sách cuộc trò chuyện; Claude quyết phần lưu trữ]:** lưu **chữ** theo **từng cuộc trò chuyện** **trên máy** (`packages/state`, slice cục bộ, **không đồng bộ**), tối đa **30 cuộc × 100 tin** (quá thì xóa cuộc cũ nhất, báo trước trong danh sách), xóa khi xóa tài khoản/đăng xuất; có xóa từng cuộc và xóa tất cả. **Không lưu ảnh và âm thanh** — mở lại chỉ còn ô "Ảnh đã gửi"/"Tin giọng nói" + bản chép lời. Lý do: tránh lưu dữ liệu nhạy cảm của người dùng (có trẻ em), không phải sửa `/v1/sync`, DATA-SAFETY đơn giản. Chat bạn bè (dự án 4) sẽ có thiết kế lưu trữ riêng.
 4. **▶ nghe lại [Claude quyết]:** tin của Cu Tít chỉ có nút ▶ đọc bằng TTS máy (không thanh thời gian). Sơ đồ mục 5.1 dòng "▶ ━━━━ 0:04" được hiểu là tin giọng nói **của người dùng** (có thời lượng thật từ bản ghi).
 5. **Đồng ý [Claude quyết]:** hộp mới dùng hai khóa `consents.voice` và `consents.camera` sẵn có (không tạo khóa mới, không đổi state/sync), thêm `consents.aiProvidersVersion`. Vì danh sách nhà cung cấp đổi (thêm Groq…), **mọi người dùng thấy hộp mới một lần** khi mở Cu Tít (đổi nơi nhận dữ liệu thì phải hỏi lại); người đã đồng ý cũ thấy công tắc bật sẵn theo lựa chọn cũ nhưng phải bấm xác nhận.
 6. **Nội dung tình huống [Claude quyết]:** bản phát hành **chỉ hiện kịch bản `reviewed:true`**; unit chưa có kịch bản đã duyệt thì **không có bước tình huống** (không khóa tiến độ). Mục tiêu nội dung: 1 kịch bản/unit cho các unit hiện có, AI soạn nháp, người dùng duyệt theo quy trình `DUYET-NOI-DUNG.md`. Kịch bản rẽ nhánh mới có `aiScenarioId` trỏ tới id cũ (`sc1`…) để nút "Luyện với Cu Tít" dùng lại prompt nhập vai Gateway đã có; không xóa định dạng cũ.
