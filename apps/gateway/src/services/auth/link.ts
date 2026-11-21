@@ -14,9 +14,9 @@ import { REFRESH_TTL_MS, sha256 } from './tokens.js';
  * - Gỡ: không gỡ được phương thức đăng nhập cuối (google/password; email chỉ để lấy lại mật khẩu nên không tính).
  * Đồng thời: khóa hàng users của người gọi (FOR UPDATE) + unique (provider,subject) và (user_id,provider) của DB.
  *
- * Tham khảo ý (không chép mã): mô hình "account linking" của Lucia (MIT, https://github.com/lucia-auth/lucia — bảng
- * oauth_account khóa theo (provider_id, provider_user_id)) và Auth.js (ISC, https://authjs.dev — mặc định KHÔNG tự liên kết
- * theo email, "allowDangerousEmailAccountLinking" tắt).
+ * Tham khảo ý (không chép mã): Lucia (MIT) — bảng oauth_account khóa chính (provider_id, provider_user_id),
+ * https://lucia-auth.com/guides/oauth/multiple-providers ; Auth.js (ISC) — mặc định KHÔNG tự liên kết theo email
+ * (`allowDangerousEmailAccountLinking` tắt), https://github.com/nextauthjs/next-auth/discussions/10631 .
  */
 type Tx = Parameters<Parameters<Db['transaction']>[0]>[0];
 
