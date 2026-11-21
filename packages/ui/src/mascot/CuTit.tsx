@@ -1,3 +1,5 @@
+import './cutit.css';
+import { useState } from 'react';
 import { defineMessages } from '@vietlearning/state';
 
 export type CuTitMood = 'chao' | 'khen' | 'an-mung' | 'dong-vien' | 'suy-nghi' | 'nghe' | 'noi' | 'nhac-hoc' | 'buon' | 'ngu' | 'chan-dung';
@@ -67,10 +69,30 @@ const messages = defineMessages(
 /** Nhân vật Bé Cu Tít theo trạng thái. Đổi `mood` chỉ đổi `src` của cùng một thẻ img (không remount). */
 export function CuTit({ mood, size = 96, animate = true, alt }: CuTitProps) {
   const t = messages.useT();
-  const motion = animate ? MOTION[mood] : undefined;
+  // Ảnh lỗi (vd. ngoại tuyến mà chưa precache): bỏ thẻ img để trình duyệt không vẽ alt xuống dòng từng chữ.
+  // Lưu theo src nên đổi mood sẽ thử tải ảnh mới.
+  const [failedSrc, setFailedSrc] = useState<string | null>(null);
+  const src = SRC[mood];
+  const failed = failedSrc === src;
+  const motion = animate && !failed ? MOTION[mood] : undefined;
   return (
-    <span className={`ct-cutit${motion ? ` ct-cutit--anim ${motion}` : ''}`} style={{ width: size, height: size }}>
-      <img src={SRC[mood]} alt={alt ?? t(mood)} width={size} height={size} loading="lazy" decoding="async" draggable={false} />
+    <span
+      className={`ct-cutit${motion ? ` ct-cutit--anim ${motion}` : ''}`}
+      style={{ width: size, height: size }}
+      aria-hidden={failed ? true : undefined}
+    >
+      {!failed && (
+        <img
+          src={src}
+          alt={alt ?? t(mood)}
+          width={size}
+          height={size}
+          loading="lazy"
+          decoding="async"
+          draggable={false}
+          onError={() => setFailedSrc(src)}
+        />
+      )}
     </span>
   );
 }
