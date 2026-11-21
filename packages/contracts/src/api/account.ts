@@ -59,7 +59,170 @@ export const AuthRefreshRequestSchema = z.object({ refreshToken: z.string().min(
 export const AuthRecoverRequestSchema = z.object({ recoveryCode: RecoveryCodeSchema });
 
 // DELETE /v1/me
+/** Hình dạng cũ (xóa cứng ngay) — giữ tới khi Task 4 dự án 3 chuyển sang DeleteMeRequestSchema/DeleteMeResultSchema */
 export const DeleteMeResponseSchema = z.object({ deleted: z.literal(true) });
+
+// ---------- Dự án 3: đăng nhập Google + tên đăng nhập/mật khẩu ----------
+// Spec: docs/superpowers/specs/2026-11-21-dang-nhap-design.md. `/v1/auth/*` không Bearer; `/v1/me/*` có Bearer.
+
+/** Mã lỗi máy đọc được (trường `error` của thân lỗi Gateway) cho luồng tài khoản */
+export const AuthErrorCode = {
+  // có từ GĐ0
+  accountDeleted: 'account_deleted',
+  invalidRefreshToken: 'invalid_refresh_token',
+  invalidRecoveryCode: 'invalid_recovery_code',
+  /** 401: sai tên đăng nhập HOẶC mật khẩu HOẶC mã dự phòng — MỘT mã, thân lỗi giống hệt (không lộ tên tồn tại) */
+  invalidCredentials: 'invalid_credentials',
+  /** 409: chỉ ở đăng ký (được phép lộ, spec 6) */
+  usernameTaken: 'username_taken',
+  /** 400: mật khẩu phổ biến / trùng tên đăng nhập */
+  weakPassword: 'weak_password',
+  /** 409: danh tính đã thuộc tài khoản khác (không gộp hai tài khoản thật) */
+  identityInUse: 'identity_in_use',
+  /** 409: gỡ phương thức đăng nhập cuối (mã dự phòng không tính) */
+  lastIdentity: 'last_identity',
+  /** 401: credential của khách đã được gộp vào tài khoản — mời đăng nhập, KHÔNG xóa dữ liệu máy */
+  accountMerged: 'account_merged',
+  /** 401: mã khôi phục của khách đã nâng cấp thành tài khoản — mời đăng nhập */
+  accountUpgraded: 'account_upgraded',
+  /** 403: tài khoản đang chờ xóa (30 ngày) */
+  accountPendingDeletion: 'account_pending_deletion',
+  /** 503: nhà cung cấp (mail/Google) chưa cấu hình hoặc hết trần ngày => giao diện chỉ đường mã dự phòng */
+  providerUnavailable: 'provider_unavailable',
+  otpInvalid: 'otp_invalid',
+  otpExpired: 'otp_expired',
+  /** sai ≥ 5 lần: mã bị hủy */
+  otpLocked: 'otp_locked',
+  /** 429: khóa tạm theo (IP, tên) / trần IP */
+  rateLimited: 'rate_limited'
+} as const;
+export type AuthErrorCodeValue = (typeof AuthErrorCode)[keyof typeof AuthErrorCode];
+
+export const AuthProviderSchema = z.enum(['google', 'password', 'email']);
+export type AuthProvider = z.infer<typeof AuthProviderSchema>;
+
+/** Không được dùng làm tên đăng nhập (so sau khi chuẩn hóa) */
+export const RESERVED_USERNAMES: readonly string[] = ['admin', 'cutit', 'becutit', 'support', 'root', 'system', 'moderator'];
+export const USERNAME_MIN = 3;
+export const USERNAME_MAX = 24;
+export const PASSWORD_MIN = 8;
+export const PASSWORD_MAX = 128;
+
+/**
+ * Tên đăng nhập: trim => CHỈ ASCII `A-Za-z0-9._` (từ chối Unicode TRƯỚC khi viết thường, để vd. ký hiệu Kelvin U+212A
+ * không lặng lẽ thành 'k') => viết thường => 3–24 ký tự, không bắt đầu/kết thúc bằng '.', không thuộc danh sách cấm.
+ * Dùng cùng một schema ở đăng ký, đăng nhập, đặt lại mật khẩu => chuẩn hóa nhất quán.
+ */
+export const UsernameSchema = z
+  .string()
+  .max(64)
+  .transform((s) => s.trim())
+  .pipe(
+    z
+      .string()
+      .regex(/^[A-Za-z0-9._]+$/, 'Tên đăng nhập chỉ gồm chữ không dấu, số, dấu chấm, gạch dưới')
+      .transform((s) => s.toLowerCase())
+      .pipe(
+        z
+          .string()
+          .min(USERNAME_MIN)
+          .max(USERNAME_MAX)
+          .regex(/^[^.].*[^.]$/, 'Không bắt đầu/kết thúc bằng dấu chấm')
+          .refine((s) => !RESERVED_USERNAMES.includes(s), 'Tên đăng nhập không dùng được')
+      )
+  );
+
+/** Mật khẩu: 8–128 ký tự, KHÔNG trim/biến đổi (NIST SP 800-63B). Chặn mật khẩu phổ biến ở Gateway (weak_password). */
+export const PasswordSchema = z.string().min(PASSWORD_MIN).max(PASSWORD_MAX);
+
+export const EmailSchema = z
+  .string()
+  .max(254)
+  .transform((s) => s.trim().toLowerCase())
+  .pipe(z.string().email());
+
+export const OtpCodeSchema = z.string().regex(/^\d{6}$/, 'Mã gồm 6 chữ số');
+
+/** Mã dự phòng: cùng bảng chữ/độ dài/chuẩn hóa với mã khôi phục của khách */
+export const BackupCodeSchema = RecoveryCodeSchema;
+
+const Opaque = z.string().min(16).max(200);
+const IsoDate = z.string().datetime();
+
+// GET /v1/auth/nonce
+export const AuthNonceResponseSchema = z.object({ nonce: Opaque, expiresIn: z.number().int().positive() });
+export type AuthNonceResponse = z.infer<typeof AuthNonceResponseSchema>;
+
+// POST /v1/auth/google (không Bearer: đăng nhập) · POST /v1/me/identities/google (Bearer: nâng cấp/liên kết)
+export const AuthGoogleRequestSchema = z.object({ idToken: z.string().min(20).max(4096), nonce: Opaque });
+
+// POST /v1/auth/register (Bearer khách tùy chọn: có thì nâng cấp chính khách đó)
+export const AuthRegisterRequestSchema = z.object({ username: UsernameSchema, password: PasswordSchema });
+// POST /v1/auth/login
+export const AuthPasswordLoginRequestSchema = z.object({ username: UsernameSchema, password: z.string().min(1).max(PASSWORD_MAX) });
+
+export const AuthSignedInSchema = AuthTokensSchema.extend({
+  status: z.literal('signed_in'),
+  isGuest: z.literal(false),
+  providers: z.array(AuthProviderSchema),
+  /** có khi tài khoản đang chờ xóa: client hỏi "Khôi phục tài khoản?" (POST /v1/me/restore) */
+  restorable: z.object({ deleteAt: IsoDate }).optional()
+});
+export type AuthSignedIn = z.infer<typeof AuthSignedInSchema>;
+
+export const AuthNeedsMergeSchema = z.object({
+  status: z.literal('needs_merge'),
+  /** dùng một lần, sống 10 phút, gắn cặp (khách hiện tại, tài khoản đích) */
+  mergeTicket: Opaque,
+  target: z.object({ createdAt: IsoDate, hasProgress: z.literal(true) })
+});
+
+export const AuthSignInResponseSchema = z.discriminatedUnion('status', [AuthSignedInSchema, AuthNeedsMergeSchema]);
+export type AuthSignInResponse = z.infer<typeof AuthSignInResponseSchema>;
+
+/** Đăng ký luôn signed_in (nâng cấp khách giữ userId) + mã dự phòng hiện MỘT lần */
+export const AuthRegisterResponseSchema = AuthSignedInSchema.extend({ backupCode: z.string() });
+export type AuthRegisterResponse = z.infer<typeof AuthRegisterResponseSchema>;
+
+// POST /v1/me/merge (Bearer khách) → AuthSignedInSchema
+export const AuthMergeRequestSchema = z.object({ mergeTicket: Opaque, strategy: z.enum(['merge', 'discard_device']) });
+
+// POST /v1/auth/logout (xác thực bằng chính refresh token)
+export const AuthLogoutRequestSchema = z.object({ refreshToken: z.string().min(20).max(200), everywhere: z.boolean().optional() });
+
+// POST /v1/me/email/start (202) · POST /v1/me/email/verify
+export const EmailStartRequestSchema = z.object({ email: EmailSchema });
+export const EmailVerifyRequestSchema = z.object({ email: EmailSchema, code: OtpCodeSchema });
+
+// POST /v1/auth/password/forgot (luôn 202, không lộ)
+export const PasswordForgotRequestSchema = z.object({ usernameOrEmail: z.string().trim().min(1).max(254) });
+// POST /v1/auth/password/reset-email
+export const PasswordResetWithEmailRequestSchema = z.object({
+  usernameOrEmail: z.string().trim().min(1).max(254),
+  code: OtpCodeSchema,
+  newPassword: PasswordSchema
+});
+// POST /v1/auth/password/reset-backup → BackupCodeResponseSchema (mã MỚI, mã cũ hết hiệu lực)
+export const PasswordResetWithBackupRequestSchema = z.object({ username: UsernameSchema, backupCode: BackupCodeSchema, newPassword: PasswordSchema });
+/** cũng là phản hồi của POST /v1/me/backup-code (tạo mã mới) */
+export const BackupCodeResponseSchema = z.object({ backupCode: z.string() });
+
+// POST /v1/me/password (đổi; thu hồi mọi refresh token khác)
+export const PasswordChangeRequestSchema = z.object({ currentPassword: z.string().min(1).max(PASSWORD_MAX), newPassword: PasswordSchema });
+
+// GET /v1/me/identities · DELETE /v1/me/identities/:id
+export const IdentityListResponseSchema = z.object({
+  identities: z.array(z.object({ id: z.string().uuid(), provider: AuthProviderSchema, /** đã che */ display: z.string() }))
+});
+export type IdentityListResponse = z.infer<typeof IdentityListResponseSchema>;
+
+// DELETE /v1/me (dự án 3) — grace: khóa ngay, xóa cứng sau 30 ngày; now: xóa cứng ngay
+export const ACCOUNT_DELETE_GRACE_DAYS = 30;
+export const DeleteMeRequestSchema = z.object({ mode: z.enum(['grace', 'now']) });
+/** deleteAt = hạn xóa cứng (grace) hoặc null (đã xóa ngay) */
+export const DeleteMeResultSchema = z.object({ deleteAt: IsoDate.nullable() });
+// POST /v1/me/restore
+export const RestoreAccountRequestSchema = z.object({}).strict();
 
 // ---------- Đồng bộ ----------
 
