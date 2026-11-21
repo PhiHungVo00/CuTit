@@ -68,7 +68,7 @@ export const contentRoutes: FastifyPluginAsync<RouteDeps> = async (server, { pip
       if (provider) reply.header('x-ai-provider', provider);
       return respond(CultureAskResponseSchema, { answer, sources, mock: false, remaining: await pipeline.remaining(req) });
     }
-    await pipeline.consume(req, 'llm', tokensEstimate);
+    await pipeline.consume(req, 'llm', tokensEstimate, { providerCall: false });
     return respond(CultureAskResponseSchema, {
       remaining: await pipeline.remaining(req),
       mock: cards.length > 0,

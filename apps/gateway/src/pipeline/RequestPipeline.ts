@@ -140,20 +140,22 @@ export class RequestPipeline {
    * Hết hạn mức người dùng => 429 { error: 'quota_exceeded', capability, resetAt }.
    * Hết TRẦN DÙNG CHUNG cả app => cùng mã, thêm scope: 'global' (phần đã trừ của người dùng được hoàn lại).
    * Trả tổng đã dùng hôm nay của người dùng.
+   * `providerCall: false` = trả lời mẫu/giả lập không gọi nhà cung cấp ⇒ chỉ trừ hạn mức người dùng, KHÔNG trừ trần chung
+   * (trần chung bảo vệ hạn mức của nhà cung cấp; trừ cho trả lời mẫu làm một người đốt hết trần của cả app).
    */
-  async consume(request: FastifyRequest, capability: Capability, units: number): Promise<number> {
-    return this.charge(request, capability, units, quotaDay(this.clock()));
+  async consume(request: FastifyRequest, capability: Capability, units: number, opts: { providerCall?: boolean } = {}): Promise<number> {
+    return this.charge(request, capability, units, quotaDay(this.clock()), opts.providerCall ?? true);
   }
 
   /** Trừ người dùng rồi trần chung, cùng một khóa ngày `day`; trần chung từ chối HOẶC lỗi => hoàn phần của người dùng */
-  private async charge(request: FastifyRequest, capability: Capability, units: number, day: string): Promise<number> {
+  private async charge(request: FastifyRequest, capability: Capability, units: number, day: string, providerCall = true): Promise<number> {
     const id = this.principalId(request);
     const r = await this.quota.tryConsume(id, capability, units, this.limits[capability], day);
     if (!r.ok) {
       throw new GatewayError(429, 'quota_exceeded', `Đã hết hạn mức ${capability} hôm nay`, { capability, resetAt: quotaResetAt(this.clock()) });
     }
     const globalLimit = this.globalLimits[capability] ?? 0;
-    if (this.globalQuota && globalLimit > 0) {
+    if (providerCall && this.globalQuota && globalLimit > 0) {
       let g: { ok: boolean };
       try {
         g = await this.globalQuota.tryConsume(capability, units, globalLimit, day);

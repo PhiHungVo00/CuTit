@@ -45,7 +45,7 @@ export const practiceRoutes: FastifyPluginAsync<RouteDeps> = async (server, { pi
   server.post('/practice/generate', async (req, reply) => {
     const body = parseOr400(DrillGenerateRequestSchema, req.body, reply);
     if (!body) return reply;
-    await pipeline.consume(req, 'llm', body.count * 200);
+    await pipeline.consume(req, 'llm', body.count * 200, { providerCall: false });
 
     return respond(DrillListResponseSchema, [
       {
