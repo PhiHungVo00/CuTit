@@ -19,7 +19,7 @@ const BUSY_STATES = new Set(['UPLOADING', 'STREAMING', 'PLAYING']);
 /** Khung chat dùng chung cho M1 (tự do) và M7 (nhập vai). Nhập bằng chữ; câu trả lời có nút nghe. */
 export function ChatPanel({ session, placeholder, emptyHint, tutorName, avatar = true }: { session: Session; placeholder: string; emptyHint: string; tutorName: string; /** hiện Bé Cu Tít cạnh tin nhắn (tắt khi NPC là nhân vật khác) */ avatar?: boolean }) {
   const t = useT();
-  const { messages, busy, turnState, error, send, retry, cancel } = session;
+  const { messages, busy, turnState, error, errorCode, send, retry, cancel } = session;
   const [draft, setDraft] = useState('');
   const [announce, setAnnounce] = useState('');
   const endRef = useRef<HTMLDivElement>(null);
@@ -120,11 +120,17 @@ export function ChatPanel({ session, placeholder, emptyHint, tutorName, avatar =
       </p>
 
       {error && (
-        <div role="alert" className="flex flex-col gap-2 rounded-xl bg-danger-soft p-3 text-danger-ink">
-          <p className="m-0 text-[15px]">{error}</p>
-          <Button variant="secondary" onClick={retry}>
-            {t('retry')}
-          </Button>
+        <div role="alert" className="flex items-start gap-3 rounded-xl bg-danger-soft p-3 text-danger-ink">
+          {avatar && <CuTit mood="buon" size={56} alt="" />}
+          <div className="flex min-w-0 flex-1 flex-col gap-2">
+            <p className="m-0 text-[15px]">{error}</p>
+            {/* Hết lượt hôm nay: thử lại chỉ tốn công (mai mới có lượt mới) ⇒ không hiện nút */}
+            {errorCode !== 'quota_exceeded' && (
+              <Button variant="secondary" onClick={retry}>
+                {t('retry')}
+              </Button>
+            )}
+          </div>
         </div>
       )}
 
