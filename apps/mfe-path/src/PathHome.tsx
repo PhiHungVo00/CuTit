@@ -88,7 +88,7 @@ export function PathHome() {
 
       <LinkButton to={lessonHref(next)} style={{ minHeight: 64, flexDirection: 'column', fontSize: '1.125rem' }}>
         <span>{isNew ? t('startFirst') : t('continue')}</span>
-        <span className="text-sm font-semibold opacity-90">{t('continueSub', { unit: en ? nextUnit.titleEn : nextUnit.title, lesson: en ? next.titleEn : next.title })}</span>
+        <span className="text-sm font-semibold">{t('continueSub', { unit: en ? nextUnit.titleEn : nextUnit.title, lesson: en ? next.titleEn : next.title })}</span>
       </LinkButton>
       {skip && (
         <Link to={lessonHref(skip)} className="-mt-2 flex min-h-11 items-center justify-center text-sm font-bold text-ink-soft underline">
