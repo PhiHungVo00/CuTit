@@ -75,15 +75,22 @@ describe('DialogueRunner', () => {
     expect(screen.getByText('Bạn chào bác thế nào?')).toBeTruthy();
   });
 
-  it('giao diện tiếng Anh dùng cutitEn/textEn; nút Luyện với Cu Tít gọi onPractice với aiScenarioId', () => {
+  it('giao diện tiếng Anh: câu người học vẫn tiếng Việt kèm bản dịch; Luyện với Cu Tít gọi onPractice với aiScenarioId', () => {
     learnerStore.getState().setPreferences({ uiLanguage: 'en' });
     const onPractice = vi.fn();
     render(<DialogueRunner dialogue={d} onDone={vi.fn()} onPractice={onPractice} />);
+    expect(screen.getByText('Bạn chào bác thế nào?')).toBeTruthy();
     expect(screen.getByText('How do you greet?')).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: 'Hello (polite)' }));
+    expect(screen.getByText('Hello (polite)')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: /Cháu chào bác ạ/ }));
     fireEvent.click(screen.getByRole('button', { name: 'Next →' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Bye' }));
+    fireEvent.click(screen.getByRole('button', { name: /Tạm biệt bác/ }));
     fireEvent.click(screen.getByRole('button', { name: 'Practise with Cu Tít' }));
     expect(onPractice).toHaveBeenCalledWith('sc5');
+  });
+
+  it('giao diện tiếng Việt không hiện bản dịch tiếng Anh', () => {
+    render(<DialogueRunner dialogue={d} onDone={vi.fn()} />);
+    expect(screen.queryByText('Hello (polite)')).toBeNull();
   });
 });

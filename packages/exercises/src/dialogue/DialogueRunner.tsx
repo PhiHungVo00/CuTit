@@ -87,9 +87,10 @@ export function DialogueRunner({ dialogue, onDone, onPractice }: { dialogue: Dia
       <h2 className="m-0 text-base font-extrabold text-heading">{en ? dialogue.titleEn : dialogue.title}</h2>
       <div className="flex items-start gap-2">
         <CuTit mood="chan-dung" size={56} />
-        <p lang={en ? 'en' : 'vi'} className="m-0 flex-1 rounded-2xl bg-surface-2 p-3 text-ink">
-          {en ? node.cutitEn : node.cutit}
-        </p>
+        <div className="flex-1 rounded-2xl bg-surface-2 p-3 text-ink">
+          <p lang="vi" className="m-0">{node.cutit}</p>
+          {en && <p lang="en" className="m-0 mt-1 text-sm text-ink-soft">{node.cutitEn}</p>}
+        </div>
       </div>
       <div className="flex flex-col gap-2" role="group" aria-label={t('dlgChoose')}>
         {node.options.map((o, i) => (
@@ -100,7 +101,9 @@ export function DialogueRunner({ dialogue, onDone, onPractice }: { dialogue: Dia
             onClick={() => choose(i)}
             className="min-h-12 rounded-xl border-2 border-line bg-surface px-4 py-2 text-left font-bold text-ink disabled:opacity-60"
           >
-            <span lang={en ? 'en' : 'vi'}>{en ? o.textEn : o.text}</span>
+            {/* câu người học nói là nội dung học: luôn tiếng Việt; giao diện tiếng Anh thêm bản dịch bên dưới */}
+            <span lang="vi" className="block">{o.text}</span>
+            {en && <span lang="en" className="block text-sm font-normal text-ink-soft">{o.textEn}</span>}
           </button>
         ))}
       </div>
