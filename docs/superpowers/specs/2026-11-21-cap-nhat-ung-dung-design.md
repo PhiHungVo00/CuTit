@@ -1,6 +1,6 @@
 # Thiết kế dự án 8 — Cập nhật ứng dụng (web/PWA + Android Play + APK cài tay)
 
-> Ngày: 2026-11-21 · Trạng thái: **chờ người dùng duyệt** · Hiện trạng đã kiểm: nhật ký dòng 104.
+> Ngày: 2026-11-21 · Trạng thái: **chờ người dùng duyệt** (đã qua một lượt người đọc độc lập rà, 5 câu hỏi đã xử lý) · Hiện trạng đã kiểm: nhật ký dòng 104.
 > Người dùng đã chốt trong phiên thiết kế: **ý C** (nhắc mềm, chỉ chặn khi dưới "bản tối thiểu", offline không chặn) và **cách 1** (Gateway là nguồn duy nhất về phiên bản).
 
 ## 1. Mục đích và lý do
@@ -70,10 +70,11 @@ Tham khảo cùng stack (chỉ dùng tài liệu/API, không chép code):
 ## 5. Thiết kế đã chốt
 
 ### 5.1 Định danh phiên bản
-- **`build`**: số nguyên tăng dần, **duy nhất** dùng để so sánh. CI: `APP_BUILD = github.run_number + 100` (cộng 100 để luôn > `versionCode 1` hiện tại). Máy dev: `0`.
-- **`version`**: chuỗi hiển thị `x.y.z` lấy từ `apps/host-shell/package.json` (người phát hành tự tăng khi ra bản).
-- Web: Vite inject `import.meta.env.VITE_APP_BUILD` và `VITE_APP_VERSION`. Android: `build.gradle` đọc `versionCode` từ biến môi trường `BECUTIT_VERSION_CODE` (mặc định 1) và `versionName` từ `BECUTIT_VERSION_NAME` (mặc định `"1.0"`); CI truyền cùng giá trị với web build trong cùng lượt chạy ⇒ `versionCode` Android = `build` của bundle web trong APK đó.
-- **Kênh** `channel ∈ {web, play, apk}`: đặt lúc build bằng `VITE_DIST_CHANNEL`. Web build mặc định `web`. Native build **mặc định `play`** (an toàn chính sách: thiếu cờ thì không bao giờ hiện link APK); APK cho trang giới thiệu phải build với `VITE_DIST_CHANNEL=apk`.
+- **`version`**: chuỗi `x.y.z` trong `apps/host-shell/package.json` — **nguồn duy nhất**. Người phát hành tăng nó mỗi lần ra bản (bản nào lên Play cũng phải tăng ít nhất `z`).
+- **`build`**: số nguyên **suy ra tất định từ `version`**: `x·1 000 000 + y·1 000 + z` (vd. `1.4.2` ⇒ `1004002`; giới hạn `y, z ≤ 999`; tối đa vẫn < 2 100 000 000 của Play). Lý do (thay cho `run_number` của CI): không reset khi thêm workflow phát hành sau này, mọi lượt build PR không làm tăng số, máy dev và CI ra cùng số, luôn > `versionCode 1` hiện tại. Một hàm thuần dùng chung (`versionToBuild`) cho Vite, Gradle (tính lại bằng Groovy đọc `package.json`) và test.
+- Web: Vite inject `import.meta.env.VITE_APP_VERSION` + `VITE_APP_BUILD`. Android: `build.gradle` đọc `version` từ `../../package.json` ⇒ `versionName = version`, `versionCode = build` (không cần biến môi trường).
+- Bản dev (`import.meta.env.DEV`) không kiểm cập nhật và không gửi header.
+- **Kênh** `channel ∈ {web, play, apk}` quyết định **lúc chạy**: không native ⇒ `web`; native ⇒ `play`, **trừ khi** bundle được build với `VITE_DIST_CHANNEL=apk` (cùng một Vite build dùng cho web và `cap sync`, nên không có "native build" riêng để đặt mặc định). Thiếu cờ thì là `play` ⇒ an toàn chính sách, không bao giờ hiện link APK.
 
 ### 5.2 Contract (`packages/contracts/src/api/appVersion.ts`, export qua `api/index.ts`)
 ```ts
@@ -113,21 +114,22 @@ export const APP_CHANNEL_HEADER = 'x-app-channel';
 `status` do Gateway tính: `build < minBuild` ⇒ `update_required`; `build < latestBuild` ⇒ `update_available`; còn lại `up_to_date`.
 
 ### 5.3 Gateway
-- **Cấu hình**: tệp JSON `apps/gateway/config/app-versions.json` (commit trong repo, mặc định `minBuild 0`, `latestBuild 0` cho cả 3 kênh ⇒ không ai bị nhắc/chặn), có thể trỏ tệp khác bằng biến `APP_VERSIONS_FILE`. Dạng: `{ web: {...}, play: {...}, apk: {...} }`, mỗi kênh `{ latestBuild, latestVersion, minBuild, notes|null, downloadUrl|null }`. Kiểm bằng Zod lúc khởi động (**sai thì Gateway không khởi động**, như các biến môi trường khác); luật: `minBuild ≤ latestBuild`; `downloadUrl` chỉ được có ở `apk` và phải `https://`. Đọc lại tệp tối đa mỗi 60 giây (đổi số không cần khởi động lại; khi triển khai container thì đổi tệp = triển khai lại Gateway, **không** cần ra bản app).
+- **Cấu hình**: tệp JSON `apps/gateway/config/app-versions.json` (commit trong repo, mặc định `minBuild 0`, `latestBuild 0` cho cả 3 kênh ⇒ không ai bị nhắc/chặn), có thể trỏ tệp khác bằng biến `APP_VERSIONS_FILE`; chu kỳ đọc lại `APP_VERSIONS_TTL_MS` (mặc định 60 000; e2e đặt 0 để đổi cấu hình giữa các test bằng cách ghi tệp). **Ai sửa tệp:** người/phiên AI phát hành, theo danh sách việc phát hành `docs/van-hanh/PHAT-HANH-BAN-MOI.md` (tạo trong dự án này): tăng `version` ⇒ build ⇒ phát hành ⇒ sửa `latestBuild`/`latestVersion`/`notes` (và `minBuild` khi máy chủ đổi không tương thích) ⇒ triển khai Gateway. Tự động hóa bước này thuộc workflow phát hành (để cuối). Dạng: `{ web: {...}, play: {...}, apk: {...} }`, mỗi kênh `{ latestBuild, latestVersion, minBuild, notes|null, downloadUrl|null }`. Kiểm bằng Zod lúc khởi động (**sai thì Gateway không khởi động**, như các biến môi trường khác); luật: `minBuild ≤ latestBuild`; `downloadUrl` chỉ được có ở `apk` và phải `https://`. Đọc lại tệp tối đa mỗi 60 giây (đổi số không cần khởi động lại; khi triển khai container thì đổi tệp = triển khai lại Gateway, **không** cần ra bản app).
 - **Route** `GET /v1/app/version`: đăng ký trong **scope riêng không có hook xác thực** (giống `/v1/auth`), rate limit theo IP (dùng `AUTH_RATE_LIMIT_PER_MINUTE`-kiểu biến mới `APP_VERSION_RATE_LIMIT_PER_MINUTE`, mặc định 30), `Cache-Control: no-store`. Kênh `web`/`play` luôn trả `downloadUrl: null` bất kể cấu hình. `checkAfterSec` mặc định 21 600 (6 giờ).
-- **Hook 426**: `onRequest` ở scope `/v1` (chạy **trước** xác thực) và scope `/v1/auth`. Nếu có header `x-app-build` hợp lệ + `x-app-channel` hợp lệ và `build < minBuild[channel]` ⇒ `426 { error:'app_update_required', minBuild, channel }`. **Không có header ⇒ cho qua** (các bản đã phát hành trước dự án này, curl, công cụ). **Miễn trừ:** `GET /v1/app/version`, `DELETE /v1/me` (quyền xóa tài khoản), `/healthz`, `/audio/*` (ngoài `/v1`). Header sai định dạng ⇒ coi như không có.
+- **Hook 426**: `onRequest` ở scope `/v1` (chạy **trước** xác thực). **Không** gắn ở `/v1/auth`: các lời gọi phiên trong `packages/api-client/src/session.ts` tự `fetch` (không qua `gatewayConfig()`), và nếu refresh token nhận 426 thì lỗi biến thành `'server'` trước khi tới `/v1` ⇒ màn bắt buộc không bao giờ hiện. Mọi route dữ liệu đều nằm ở `/v1` nên chặn ở đó là đủ. Nếu có header `x-app-build` hợp lệ + `x-app-channel` hợp lệ và `build < minBuild[channel]` ⇒ `426 { error:'app_update_required', minBuild, channel }`. **Không có header ⇒ cho qua** (các bản đã phát hành trước dự án này, curl, công cụ). **Miễn trừ:** `GET /v1/app/version`, `DELETE /v1/me` (quyền xóa tài khoản), `/healthz`, `/audio/*` (ngoài `/v1`). Header sai định dạng ⇒ coi như không có.
 - **CORS**: hai header mới phải được phép trong preflight (`@fastify/cors` hiện phản chiếu header được hỏi — builder kiểm bằng test `inject` có `Origin` + `Access-Control-Request-Headers`).
 - Audit: không ghi từng request 426 (chỉ log mức info có gộp nếu cần) — để builder.
 
 ### 5.4 api-client
 - `GatewayConfig` thêm `appBuild?: number`, `appChannel?: 'web'|'play'|'apk'`, `onUpdateRequired?: (info) => void`. Có `appBuild` thì mọi request/SSE gửi 2 header. (Không gửi cho `/audio/*` — các tệp âm thanh đó không qua api-client.)
-- Lỗi 426 ⇒ `GatewayErrorKind` mới `'update-required'`, gọi `onUpdateRequired` **một lần mỗi phiên chạy**; `describeGatewayError` có câu vi/en tương ứng.
+- Lỗi 426 ⇒ `GatewayErrorKind` mới `'update-required'`, gọi `onUpdateRequired` **một lần mỗi phiên chạy**; `describeGatewayError` có câu vi/en tương ứng. `session.ts` không đổi.
+- **Hàng đợi đồng bộ** (`packages/state/src/sync.ts`): khi đã ở trạng thái bắt buộc cập nhật thì **tạm dừng đẩy** (thay vì thử lại mỗi ~60 s và nhận 426 liên tục); sự kiện vẫn vào outbox. Rủi ro đã biết: outbox giới hạn `OUTBOX_MAX = 5000` sự kiện và bỏ cái cũ nhất khi đầy — thời gian bị chặn thực tế ngắn nên chấp nhận, ghi vào tài liệu phát hành: "đặt `minBuild` chỉ khi bản mới đã có trên mọi kênh".
 - Phần thêm vào `config.ts` (nằm trong gói đầu) phải tối thiểu; phần xử lý 426 nằm ở client lười như phần còn lại của api-client (R10).
 
 ### 5.5 Client — mô-đun kiểm cập nhật (Host, chunk lười)
 Vị trí: `apps/host-shell/src/update/` (thuộc Host vì đây là năng lực khung app, không phải màn hình MFE). Chuỗi ở `apps/host-shell/src/update/updateI18n.ts` (chunk lười, không vào `i18n.ts` của gói đầu).
 
-**Nạp lười**: `main.tsx` chỉ có một `import('./update/start')` gọi sau khi trang đã vẽ (cùng chỗ đăng ký SW, `requestIdleCallback`/`setTimeout` ~3 s). Hàm `onUpdateRequired` truyền vào `configureGateway` chỉ là một hàm nhỏ gọi `import('./update/start').then(m => m.forceRequired(info))`.
+**Nạp lười**: hiện `main.tsx` đăng ký SW ở sự kiện `load` bằng `registerSW({ immediate: true })`. Đổi thành: ở sự kiện `load` gọi một `import('./update/start')`; mô-đun này lo cả đăng ký SW (web) lẫn kiểm cập nhật (mọi kênh). Hàm `onUpdateRequired` truyền vào `configureGateway` chỉ là một hàm nhỏ gọi `import('./update/start').then(m => m.forceRequired(info))`.
 
 **Khi nào kiểm**: lần đầu sau khi mở; khi quay lại app (web: `visibilitychange` → `visible`; native: sự kiện `resume` của `@capacitor/app`, đã có trong dependencies); mỗi `checkAfterSec` (mặc định 6 giờ) khi trang đang hiện. Không hỏi lại trong vòng 30 phút kể từ lần hỏi thành công gần nhất. Dev (`build = 0`) không kiểm.
 
@@ -178,7 +180,7 @@ Plugin `@capawesome/capacitor-app-update` chỉ được `import()` trong chunk 
 - `offlineReady` không cần thông báo.
 
 ### 5.7 Build & CI
-- `ci.yml`: đặt `APP_BUILD`, `BECUTIT_VERSION_CODE = APP_BUILD`, `BECUTIT_VERSION_NAME` = `version` trong `package.json` cho job build web và job APK. Job APK build **hai biến thể bundle** chỉ khi cần (hiện chỉ build debug; mặc định `play`). Thêm bước kiểm APK có `versionCode` đúng (`aapt dump badging` hoặc đọc `output-metadata.json`).
+- `ci.yml`: không cần biến số build (suy từ `package.json`). Job APK hiện có (debug, Gateway emulator) giữ nguyên, kênh `play`; thêm bước kiểm `versionCode` của APK = `versionToBuild(version)` (đọc `output-metadata.json`). **Không** tạo bản APK phân phối kênh `apk` trong dự án này (cần URL Gateway thật + ký release ⇒ phần phát hành / dự án 7); kênh `apk` được kiểm trên AVD bằng bản debug build tay với `VITE_DIST_CHANNEL=apk`.
 - Thêm dòng size-limit cho chunk cập nhật (đề xuất ≤ 3 kB gzip; plugin Capawesome là chunk riêng, không tính vào gói đầu).
 
 ### 5.8 Chuỗi giao diện song ngữ (`updateI18n.ts`)
@@ -218,7 +220,7 @@ Ghi chú "Có gì mới" đến từ Gateway (`notes.vi`/`notes.en`), hiển th�
 - Gateway: route (3 kênh, tính `status`, `downloadUrl` null cho web/play dù cấu hình có), cấu hình sai ⇒ không khởi động, hook 426 (dưới/ngang/trên min, thiếu header, header rác, miễn trừ `DELETE /v1/me` và `/v1/app/version`), preflight CORS với 2 header, rate limit IP.
 - api-client: gửi header khi có `appBuild`; 426 ⇒ `update-required` + callback một lần.
 - Host (vitest): lịch kiểm (khởi động/resume/6 giờ/30 phút), "Để sau" 3 ngày theo build, hoãn khi bận, offline không chặn, chọn hành động theo kênh (plugin giả).
-- e2e (Playwright, Gateway PGlite thật): cấu hình `minBuild` > build của bản e2e ⇒ màn bắt buộc; offline ⇒ chỉ dải; mở thẻ nhắc mềm bằng cấu hình `latestBuild` cao hơn; thẻ không hiện khi đang ở màn bài học.
+- e2e (Playwright, Gateway PGlite thật, `APP_VERSIONS_FILE` = tệp tạm, `APP_VERSIONS_TTL_MS=0`; test ghi tệp với số tính từ `versionToBuild(version)` của bản build — không chặn bằng `page.route` để đi đúng đường 426 thật): cấu hình `minBuild` > build của bản e2e ⇒ màn bắt buộc; offline ⇒ chỉ dải; mở thẻ nhắc mềm bằng cấu hình `latestBuild` cao hơn; thẻ không hiện khi đang ở màn bài học.
 - AVD (skill `thu-tren-emulator`): bản `apk` mở trình duyệt ngoài; bản `play` cài ngoài Play ⇒ plugin trả không khả dụng ⇒ rơi về `openAppStore()` không crash. **Thử In-App Updates thật cần Play internal app sharing ⇒ để phần phát hành.**
 - size-limit: gói đầu ≤ 67,5 kB, chunk cập nhật ≤ 3 kB.
 
@@ -234,7 +236,10 @@ Ghi chú "Có gì mới" đến từ Gateway (`notes.vi`/`notes.en`), hiển th�
 
 ## 8. Các quyết định tôi (AI) tự đặt — người dùng kiểm khi đọc
 - "Để sau" = 3 ngày; kiểm mỗi 6 giờ; không hỏi lại trong 30 phút.
-- Số build = `run_number + 100`; native mặc định kênh `play`.
+- Số build suy từ `version` (`x·10⁶ + y·10³ + z`), không dùng số lượt chạy CI; native mặc định kênh `play`.
+- Không chặn `/v1/auth` (chỉ chặn `/v1`); hàng đợi đồng bộ tạm dừng khi bị bắt buộc cập nhật.
+- Sửa `app-versions.json` bằng tay theo danh sách việc phát hành; chưa tự động.
+- Dự án này không tạo APK phân phối kênh `apk` (thuộc phát hành / dự án 7).
 - Endpoint công khai không cần token; client thiếu header thì không bị chặn.
 - Không chặn `DELETE /v1/me`.
 - Kênh web lấy "bản mới" từ SW, chỉ dùng Gateway cho bản tối thiểu.
