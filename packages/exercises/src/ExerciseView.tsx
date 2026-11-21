@@ -1,4 +1,5 @@
 import { lazy, Suspense } from 'react';
+import { Card } from '@vietlearning/ui';
 import { useT } from './i18n';
 import { ChoiceExercise } from './choice/ChoiceExercise';
 import { SentenceExercise } from './sentence/SentenceExercise';
@@ -16,7 +17,8 @@ export function ExerciseView({ item, seed = 1, onDone, onSkip, label }: { item: 
   const t = useT();
   const kind = item.kind === 'choice' ? item.variant : item.kind;
   return (
-    <section aria-labelledby="ct-ex-q" className="flex flex-col gap-3 rounded-2xl border border-line-strong bg-surface p-4 shadow-card">
+    <section aria-labelledby="ct-ex-q">
+      <Card elevated style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
       <p className="m-0 text-xs font-bold uppercase tracking-wide text-ink-muted">
         {t(`kind.${kind}`)}
         {label ? ` · ${label}` : ''}
@@ -41,6 +43,7 @@ export function ExerciseView({ item, seed = 1, onDone, onSkip, label }: { item: 
           <ToneExercise item={item} onDone={onDone} onSkip={onSkip} />
         </Suspense>
       )}
+      </Card>
     </section>
   );
 }
