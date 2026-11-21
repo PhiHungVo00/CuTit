@@ -61,3 +61,34 @@ describe('ChatPanel dùng Cu Tít + âm hiệu ứng', () => {
     expect(order).toEqual(['sfx:cutit-noi', 'tts:Chào bạn!']);
   });
 });
+
+describe('ChatPanel báo lỗi bằng Cu Tít buồn (P0-4)', () => {
+  const withError = (error: string, errorCode: string | null) =>
+    render(<ChatPanel session={{ ...session, error, errorCode } as never} placeholder="p" emptyHint="e" tutorName="Bé Cu Tít" />);
+
+  it('hết lượt hôm nay (quota_exceeded): Cu Tít buồn + câu giờ đặt lại, KHÔNG có nút Thử lại', () => {
+    const { container } = withError('Hôm nay bạn đã dùng hết lượt nói chuyện với AI. Lượt mới bắt đầu lúc 00:00.', 'quota_exceeded');
+    const alert = screen.getByRole('alert');
+    expect(alert.textContent).toContain('Lượt mới bắt đầu lúc 00:00');
+    expect(container.querySelector('img[src*="cutit-buon"]')).not.toBeNull();
+    expect(screen.queryByRole('button', { name: 'Thử lại' })).toBeNull();
+  });
+
+  it('mất mạng (offline): Cu Tít buồn và vẫn có nút Thử lại', () => {
+    const { container } = withError('Mất kết nối giữa chừng. Vui lòng thử lại.', 'offline');
+    expect(container.querySelector('img[src*="cutit-buon"]')).not.toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Thử lại' }));
+    expect(session.retry).toHaveBeenCalled();
+  });
+
+  it('bản en: nút "Try again" cho lỗi tạm thời', () => {
+    learnerStore.getState().setPreferences({ uiLanguage: 'en' });
+    withError('Connection lost.', 'timeout');
+    expect(screen.getByRole('button', { name: 'Try again' })).toBeTruthy();
+  });
+
+  it('không lỗi thì không có Cu Tít buồn', () => {
+    const { container } = show();
+    expect(container.querySelector('img[src*="cutit-buon"]')).toBeNull();
+  });
+});
