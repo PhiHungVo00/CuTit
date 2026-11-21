@@ -64,3 +64,26 @@ describe('CuTit', () => {
     expect(container.querySelector('img')!.getAttribute('width')).toBe('96');
   });
 });
+
+describe('CuTit — CSS đi kèm component (P0-1)', () => {
+  it('khung không bị co lại trong flex (flex-shrink 0)', () => {
+    const { container } = render(<CuTit mood="chao" />);
+    expect(getComputedStyle(container.firstElementChild!).flexShrink).toBe('0');
+  });
+
+  it('có luật giảm chuyển động tắt animation (OS và công tắc của app)', () => {
+    render(<CuTit mood="khen" />);
+    const css = [...document.querySelectorAll('style')].map((s) => s.textContent ?? '').join('\n');
+    expect(css).toMatch(/prefers-reduced-motion/);
+    expect(css).toMatch(/data-reduced-motion/);
+    expect(css).toMatch(/ct-nhun/);
+  });
+
+  it('cả hai luật giảm chuyển động đều ghi animation: none cho lớp chuyển động', () => {
+    render(<CuTit mood="khen" />);
+    const css = [...document.querySelectorAll('style')].map((s) => s.textContent ?? '').join(' ');
+    // jsdom không tính animation-name nên kiểm trực tiếp luật CSS đã nạp
+    expect(css).toMatch(/prefers-reduced-motion[^{]*\{\s*\.ct-cutit--anim\s*\{\s*animation:\s*none/);
+    expect(css).toMatch(/data-reduced-motion=['"]true['"]\]\s*\.ct-cutit--anim\s*\{\s*animation:\s*none/);
+  });
+});

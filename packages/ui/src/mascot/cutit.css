@@ -1,5 +1,5 @@
 /*
- * Chuyển động của <CuTit>. Nạp một lần ở khung app: @import "@vietlearning/ui/mascot.css";
+ * Chuyển động của <CuTit>. Được nạp tự động bởi CuTit.tsx (import CSS; chunk lười của Cu Tít). Subpath ./mascot.css vẫn dùng được.
  * Tắt hẳn khi hệ điều hành bật "giảm chuyển động" HOẶC công tắc của app (html[data-reduced-motion="true"]).
  */
 .ct-cutit {
