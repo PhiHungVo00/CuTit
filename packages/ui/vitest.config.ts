@@ -6,5 +6,5 @@ export default defineConfig({
   resolve: {
     alias: { '@vietlearning/state': fileURLToPath(new URL('../state/src/index.ts', import.meta.url)) }
   },
-  test: { environment: 'node', include: ['src/**/*.test.{ts,tsx}'] }
+  test: { environment: 'node', include: ['src/**/*.test.{ts,tsx}'], css: true }
 });

@@ -111,7 +111,18 @@ export const { useT, t } = defineMessages(
     chartLabel: 'Biểu đồ cao độ {tone}',
     legendSample: 'Mẫu',
     legendYou: 'Giọng của bạn',
-    yAxis: 'Trục dọc: nửa cung (semitone) so với giọng thường của bạn'
+    yAxis: 'Trục dọc: nửa cung (semitone) so với giọng thường của bạn',
+    dlgChoose: 'Bạn nói gì?',
+    dlgHonorOk: 'Xưng hô đúng ✓',
+    dlgHonorFix: 'Xưng hô gợi ý: “{speaker} – {listener}”',
+    dlgNext: 'Tiếp →',
+    dlgRetryTitle: 'Chưa xong, thử lại nhé',
+    dlgRetryBody: 'Câu vừa rồi chưa hợp với tình huống. Bắt đầu lại, lần này sẽ dễ hơn.',
+    dlgRetry: 'Làm lại',
+    dlgDoneTitle: 'Hoàn thành tình huống!',
+    dlgDoneScore: 'Xưng hô đúng ngay lần đầu: {ok}/{total}',
+    dlgPractice: 'Luyện với Cu Tít',
+    dlgPracticeHint: 'Nói chuyện tự do với Cu Tít về tình huống này.'
   },
   {
     qMeaningViEn: 'What does “{word}” mean?',
@@ -218,7 +229,18 @@ export const { useT, t } = defineMessages(
     chartLabel: 'Pitch chart for the {tone}',
     legendSample: 'Sample',
     legendYou: 'Your voice',
-    yAxis: 'Vertical axis: semitones relative to your normal voice'
+    yAxis: 'Vertical axis: semitones relative to your normal voice',
+    dlgChoose: 'What do you say?',
+    dlgHonorOk: 'Right pronouns ✓',
+    dlgHonorFix: 'Suggested pronouns: “{speaker} – {listener}”',
+    dlgNext: 'Next →',
+    dlgRetryTitle: 'Not quite, try again',
+    dlgRetryBody: 'That line did not fit the situation. Start over, it will be easier this time.',
+    dlgRetry: 'Try again',
+    dlgDoneTitle: 'Situation complete!',
+    dlgDoneScore: 'Right pronouns on the first try: {ok}/{total}',
+    dlgPractice: 'Practise with Cu Tít',
+    dlgPracticeHint: 'Chat freely with Cu Tít about this situation.'
   }
 );
 
