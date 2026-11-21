@@ -24,6 +24,8 @@ import { authRoutes } from './routes/auth.js';
 import { meRoutes } from './routes/me.js';
 import { quotaRoutes } from './routes/quota.js';
 import { friendsRoutes } from './routes/friends.js';
+import { identityAuthRoutes, identityRoutes } from './routes/identities.js';
+import { createIdentityProviderFromEnv, type IdentityProvider } from './providers/identity.js';
 import { createDbProvider, type DbProvider } from './db/client.js';
 import { AuditLog, purgeAuditEvents } from './services/audit/audit.js';
 
@@ -55,6 +57,8 @@ export interface RouteDeps {
   db: DbProvider;
   /** Nhật ký sự kiện bảo mật (ghi bất đồng bộ, lỗi ghi không làm hỏng request) */
   audit: AuditLog;
+  /** Dự án 3: kiểm ID token Google. null = chưa cấu hình GOOGLE_WEB_CLIENT_ID => route Google trả 503 provider_unavailable */
+  identity?: IdentityProvider | null;
 }
 
 export interface BuildOptions {
@@ -75,6 +79,8 @@ export interface BuildOptions {
   tts?: TtsProvider | null;
   /** Test tiêm DB dùng chung; bỏ trống = theo cấu hình (DATABASE_URL hoặc PGlite) và tự đóng khi app đóng */
   db?: DbProvider;
+  /** Test tiêm bộ kiểm token giả (khóa cục bộ); null = chưa cấu hình; bỏ trống = theo env GOOGLE_WEB_CLIENT_ID */
+  identity?: IdentityProvider | null;
 }
 
 export async function buildApp(config: GatewayConfig, opts: BuildOptions = {}): Promise<FastifyInstance> {
@@ -139,6 +145,7 @@ export async function buildApp(config: GatewayConfig, opts: BuildOptions = {}): 
   const audioStore = new FileAudioStore(config.TTS_AUDIO_DIR);
   const ttsCache = opts.ttsCache ?? new TTSCacheProxy(fileSynthesizer(audioStore, tts), Boolean(tts));
   const deps: RouteDeps = { pipeline, ttsCache, config, llm, vision, stt, tts, tutor: createTutor(llm, app.log, vision), db, audit };
+  deps.identity = opts.identity !== undefined ? opts.identity : createIdentityProviderFromEnv();
   app.log.info({ llm: llm?.name ?? 'mock', vision: vision?.name ?? 'mock', stt: stt?.name ?? 'mock' }, 'AI providers');
 
   // Phải đặt trước khi đăng ký các scope con để chúng thừa hưởng
@@ -172,6 +179,7 @@ export async function buildApp(config: GatewayConfig, opts: BuildOptions = {}): 
         onExceeded: (req) => audit.noteRateLimited(AuditLog.context(req), req.url.split('?')[0])
       });
       await auth.register(authRoutes, deps);
+      await auth.register(identityAuthRoutes, deps);
     },
     { prefix: '/v1/auth' }
   );
@@ -193,6 +201,7 @@ export async function buildApp(config: GatewayConfig, opts: BuildOptions = {}): 
       await v1.register(meRoutes, deps);
       await v1.register(quotaRoutes, deps);
       await v1.register(friendsRoutes, deps);
+      await v1.register(identityRoutes, deps);
     },
     { prefix: '/v1' }
   );
