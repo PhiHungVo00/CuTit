@@ -53,8 +53,8 @@ export function mockExplain(req: ExplainRequest): { explanation: string } {
   return { explanation };
 }
 
-export async function explainAnswer(llm: LlmProvider, req: ExplainRequest): Promise<{ explanation: string; tip?: string; tokens: number }> {
-  const { json, tokens } = await llm.generateJson({
+export async function explainAnswer(llm: LlmProvider, req: ExplainRequest): Promise<{ explanation: string; tip?: string; tokens: number; provider?: string }> {
+  const { json, tokens, provider } = await llm.generateJson({
     system: explainAnswerPrompt(req.language),
     turns: [
       {
@@ -64,11 +64,12 @@ export async function explainAnswer(llm: LlmProvider, req: ExplainRequest): Prom
     ],
     schema: SCHEMA,
     maxOutputTokens: 400,
-    temperature: 0.3
+    temperature: 0.3,
+    accept: (j) => Out.safeParse(j).success
   });
   const out = Out.safeParse(json);
   if (!out.success) throw new GatewayError(502, 'llm_bad_output', 'Dịch vụ AI trả về lời giải không hợp lệ');
-  return { explanation: out.data.explanation, ...(out.data.tip ? { tip: out.data.tip } : {}), tokens };
+  return { explanation: out.data.explanation, ...(out.data.tip ? { tip: out.data.tip } : {}), tokens, provider };
 }
 
 export type { ExplainResponse };
