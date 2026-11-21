@@ -8,6 +8,7 @@
  * Host gọi configureGateway() một lần lúc khởi động.
  */
 import type { ZodTypeAny, z } from 'zod';
+import { ChatSummarizeResponseSchema, type ChatSummarizeRequest, type ChatSummarizeResponse } from '@vietlearning/contracts/api';
 import { gatewayConfig } from './config.js';
 
 export type GatewayErrorKind =
@@ -188,4 +189,12 @@ export async function streamEvents<S extends ZodTypeAny>(
       onEvent(parsed.data);
     }
   }
+}
+
+/**
+ * POST /v1/chat/summarize — viết lại bản tóm tắt cuộc trò chuyện (≤ 600 ký tự). Không trừ lượt người dùng.
+ * Lỗi (kể cả 503 llm_busy) => nơi gọi giữ tóm tắt cũ và chat tiếp, không chặn lượt người dùng.
+ */
+export function summarizeChat(req: ChatSummarizeRequest, signal?: AbortSignal): Promise<ChatSummarizeResponse> {
+  return request('/v1/chat/summarize', { body: req, schema: ChatSummarizeResponseSchema, signal });
 }
