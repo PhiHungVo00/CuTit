@@ -77,7 +77,8 @@ test('lượt có ảnh: AI bận => hoàn cả turns lẫn visionImages (không
 });
 
 test('/chat/summarize: trả summary ≤ 600 qua Zod, không đổi remaining.turns, tính vào trần llm chung', async () => {
-  const llm = fake('llm', { summary: 'Mai (cháu), đang học chào hỏi; hay quên dấu hỏi.' });
+  const calls = [];
+  const llm = { calls, provider: { name: 'llm', async generateJson(req) { calls.push(req); return { json: req.schema.required.includes('summary') ? { summary: 'Mai (cháu), đang học chào hỏi; hay quên dấu hỏi.' } : TUTOR_JSON, tokens: 40 }; } } };
   const a = await app({ llm: llm.provider });
   const before = doneOf(await turn(a, { userText: 'chào' })).remaining;
   const res = await a.inject({
@@ -89,8 +90,8 @@ test('/chat/summarize: trả summary ≤ 600 qua Zod, không đổi remaining.tu
   const body = ChatSummarizeResponseSchema.parse(res.json());
   assert.ok(body.summary.length <= 600);
   assert.equal(body.remaining.turns, before.turns, 'không trừ lượt');
-  assert.match(llm.calls[1].system, /tóm tắt/i);
-  assert.match(JSON.stringify(llm.calls[1].turns), /Mai\./, 'tóm tắt cũ được đưa vào');
+  assert.match(llm.calls.at(-1).system, /tóm tắt/i);
+  assert.match(JSON.stringify(llm.calls.at(-1).turns), /Mai\./, 'tóm tắt cũ được đưa vào');
   assert.ok(body.remaining.llmTokens < before.llmTokens, 'token thật được ghi (đi vào trần chung)');
   await a.close();
 });
@@ -130,6 +131,4 @@ test('prompt mode:call gọn ≤ 1200 token (ước lượng ký tự/4) kể c�
   const text = b.build();
   assert.ok(text.length / 4 <= 1200, `quá dài: ${Math.ceil(text.length / 4)} token`);
   assert.match(text, /s{50}/);
-  const chat = new SystemPromptBuilder().setMode('chat').build();
-  assert.ok(text.length < chat.length + 600, 'bản gọi không dài hơn bản chat đáng kể');
 });

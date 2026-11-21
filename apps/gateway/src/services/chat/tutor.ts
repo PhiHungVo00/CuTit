@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { foldVietnamese, type RoleplayScenario } from '@vietlearning/content';
 import { AgentUIBlockType, type AgentUIBlock, type ChatHistoryItem } from '@vietlearning/contracts';
 import { SystemPromptBuilder } from '@vietlearning/prompts';
-import type { LlmProvider } from '../../providers/llm.js';
+import type { LlmProvider, LlmTurn } from '../../providers/llm.js';
 import { mockTutorTurn, type TutorInput, type TutorResult } from './mockTutor.js';
 import { filterNewWords } from './newWords.js';
 import { GatewayError } from '../../pipeline/RequestPipeline.js';
@@ -12,6 +12,10 @@ export interface LiveTutorInput extends TutorInput {
   level: number;
   explanationLanguage: 'vi' | 'en';
   mode: 'chat' | 'call';
+  /** tóm tắt cuộc trò chuyện (≤ 600 ký tự) */
+  summary?: string;
+  /** ảnh người học cho xem (lượt này đi VISION_CHAIN) */
+  image?: { mimeType: 'image/jpeg' | 'image/png'; base64: string };
 }
 
 export interface TutorTurn extends TutorResult {
@@ -72,9 +76,9 @@ const FIELD: Record<AgentUIBlock['type'], string> = {
   dialect_switch: 'note'
 };
 
-function toTurns(history: ChatHistoryItem[], userText: string) {
-  const turns = history.map((h) => ({ role: h.role === 'user' ? ('user' as const) : ('model' as const), parts: [{ text: h.text }] }));
-  turns.push({ role: 'user', parts: [{ text: userText }] });
+function toTurns(history: ChatHistoryItem[], userText: string, image?: LiveTutorInput['image']) {
+  const turns: LlmTurn[] = history.map((h) => ({ role: h.role === 'user' ? ('user' as const) : ('model' as const), parts: [{ text: h.text }] }));
+  turns.push({ role: 'user', parts: image ? [{ inline: { mimeType: image.mimeType, base64: image.base64 } }, { text: userText }] : [{ text: userText }] });
   // Gemini yêu cầu lượt đầu là user: bỏ các lượt model đứng đầu
   while (turns.length > 1 && turns[0].role === 'model') turns.shift();
   return turns;
@@ -96,13 +100,16 @@ export interface Tutor {
   turn(input: LiveTutorInput): Promise<TutorTurn>;
 }
 
-export function createTutor(llm: LlmProvider | null, log?: { warn: (o: object, msg: string) => void }): Tutor {
+export function createTutor(llm: LlmProvider | null, log?: { warn: (o: object, msg: string) => void }, vision: LlmProvider | null = llm): Tutor {
   const mock = (input: LiveTutorInput): TutorTurn => dropTranscriptionNoise({ ...mockTutorTurn(input), mock: true, tokens: 0 }, input);
   if (!llm) return { live: false, turn: async (input) => mock(input) };
 
   return {
     live: true,
     async turn(input) {
+      // Lượt có ảnh đi VISION_CHAIN; chưa cấu hình vision => bộ giả lập (mock: true), không bịa là AI thật
+      const source = input.image ? vision : llm;
+      if (!source) return mock(input);
       const scenario: RoleplayScenario | undefined = input.scenario;
       const system = new SystemPromptBuilder()
         .setPersona(input.persona)
@@ -112,12 +119,14 @@ export function createTutor(llm: LlmProvider | null, log?: { warn: (o: object, m
         .setExplanationLanguage(input.explanationLanguage)
         .setScenario(scenario ? { title: scenario.title, location: scenario.location, tasks: scenario.tasks } : null)
         .setMode(input.mode)
+        .setSummary(input.summary)
+        .setHasImage(Boolean(input.image))
         .build();
 
       try {
-        const { json, tokens, provider } = await llm.generateJson({
+        const { json, tokens, provider } = await source.generateJson({
           system,
-          turns: toTurns(input.history, input.userText),
+          turns: toTurns(input.history, input.userText, input.image),
           schema: OUTPUT_SCHEMA,
           maxOutputTokens: input.mode === 'call' ? 300 : 700,
           // JSON sai Zod => chuỗi dự phòng thử nguồn kế (Nguyên tắc 6)
