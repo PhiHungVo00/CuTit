@@ -1,6 +1,6 @@
 # Thiết kế dự án 5a: Góp ý / Báo lỗi và trang quản trị nền
 
-> Ngày: 2026-11-21 · Trạng thái: **CHỜ NGƯỜI DÙNG DUYỆT** · Góp ý gốc: đợt 2 số 1 và số 11 trong `docs/nhat-ky/GOP-Y-20-11.md`.
+> Ngày: 2026-11-21 · Trạng thái: **CHỜ NGƯỜI DÙNG DUYỆT** (đã qua người đọc độc lập rà) · Góp ý gốc: đợt 2 số 1 và số 11 trong `docs/nhat-ky/GOP-Y-20-11.md`.
 > Nền kỹ thuật: `docs/thiet-ke/DE-XUAT-DANG-NHAP-PHAN-QUYEN.md`, Phần B (vai trò, 2FA, nhật ký quản trị). Tài liệu này chỉ ghi phần **chốt cho 5a**.
 > Ký hiệu: *(gọi của người thiết kế)* là chỗ người dùng chưa nói, người thiết kế tự quyết. Người dùng sửa được khi đọc.
 
@@ -94,7 +94,7 @@ App sẽ phát hành thật. Người dùng gặp lỗi hoặc có ý tưởng t
   - nếu mở từ màn lỗi: tên lỗi và dòng đầu stack.
 
   Không gắn nội dung bài học hay tin nhắn.
-- **Ảnh chụp màn hình tự động:** **không làm trong 5a**. Lối vào ở Hồ sơ nên "màn đang mở" lúc đó chính là Hồ sơ, chụp ra vô ích. Xem mục 8, câu hỏi Q1.
+- **Ảnh chụp màn hình tự động:** **không làm trong 5a**. Lối vào ở Hồ sơ nên "màn đang mở" lúc đó chính là Hồ sơ, chụp ra vô ích. Người dùng chọn **"Chọn ảnh có sẵn"** (21/11): tự chụp bằng nút của máy rồi chọn ảnh khi gửi góp ý. Không thêm nút nổi, không thêm thư viện chụp DOM.
 - **Gửi:**
   - Một yêu cầu multipart `POST /v1/feedback` (Bearer, khách cũng được). Phiên bản app và mã build hiện **chưa có** trong host-shell ⇒ thêm define lúc build (`__APP_VERSION__` từ `package.json`, `__BUILD_ID__` từ biến CI hoặc mã commit ngắn).
   - Thanh tiến độ khi có tệp.
@@ -253,7 +253,18 @@ admin_audit_log(id bigserial pk, actor_user_id uuid null, actor_kind 'user'|'cli
 - Tên chính xác của route và thành phần, miễn theo quy ước hiện có.
 
 ## 8. Câu hỏi đã hỏi người dùng sau khi rà
-*(Điền sau bước người đọc độc lập rà.)*
+Người đọc độc lập đã rà (21/11).
+
+- **Q1. Lấy ảnh chụp màn hình theo cách nào?** Hai lựa chọn: chọn ảnh có sẵn, hoặc thêm nút nổi "Báo lỗi" để app tự chụp màn đang mở. Người dùng chọn **chọn ảnh có sẵn**.
+
+Các điểm người thiết kế tự chốt sau rà (người dùng xem khi duyệt):
+- phiên quản trị theo §B7: `admin_sessions`, cookie HttpOnly, rảnh 30 phút thì hết, tối đa 12 giờ, cảnh báo email;
+- nhật ký quản trị giữ 2 năm, trigger chặn sửa và xóa;
+- góp ý theo tài khoản khi gộp;
+- tài khoản chờ xóa vẫn giữ góp ý;
+- mốc dọn tệp theo `done_at`, tối đa 365 ngày;
+- CORS và giới hạn multipart tách theo scope;
+- đăng nhập quản trị chờ Task 2 của dự án 3.
 
 ## 9. Phụ thuộc vào dự án 3 (đăng nhập)
 | Phần của 5a | Cần gì từ dự án 3 | Ở đâu trong kế hoạch dự án 3 | Nếu chưa có |

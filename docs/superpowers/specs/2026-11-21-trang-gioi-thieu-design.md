@@ -1,6 +1,6 @@
 # Thiết kế dự án 7: Trang giới thiệu cho bản web
 
-> Ngày: 2026-11-21 · Trạng thái: **CHỜ NGƯỜI DÙNG DUYỆT** · Góp ý gốc: đợt 2, số 6 trong `docs/nhat-ky/GOP-Y-20-11.md`.
+> Ngày: 2026-11-21 · Trạng thái: **CHỜ NGƯỜI DÙNG DUYỆT** (đã qua người đọc độc lập rà) · Góp ý gốc: đợt 2, số 6 trong `docs/nhat-ky/GOP-Y-20-11.md`.
 > Liên quan: `docs/thiet-ke/DE-XUAT-TRIEN-KHAI.md` (tên miền `.id.vn`, Cloudflare Pages), `docs/superpowers/specs/2026-11-21-dang-nhap-design.md` (màn đăng nhập, trang xóa tài khoản).
 > Ký hiệu: *(gọi của người thiết kế)* = người dùng chưa nói, người thiết kế tự quyết; người dùng sửa được khi đọc.
 
