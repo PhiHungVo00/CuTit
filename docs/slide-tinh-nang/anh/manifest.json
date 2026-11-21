@@ -1,0 +1,153 @@
+[
+  {
+    "ten": "01-trang-chu-nguoi-moi",
+    "trang": "/",
+    "ok": true
+  },
+  {
+    "ten": "02-bat-dau",
+    "trang": "/bat-dau",
+    "ok": true
+  },
+  {
+    "ten": "03-bai-hoc-cau-hoi",
+    "trang": "/bai-hoc/u1l1",
+    "ok": true,
+    "ghiChu": "Câu hỏi đầu tiên của bài 1"
+  },
+  {
+    "ten": "04-bai-hoc-xong-bai",
+    "trang": "/bai-hoc/u1l1",
+    "ok": true,
+    "ghiChu": "Màn tổng kết bài: XP, độ đúng ngay lần đầu"
+  },
+  {
+    "ten": "05-trang-chu-tien-do",
+    "trang": "/",
+    "ok": true
+  },
+  {
+    "ten": "06-lo-trinh-unit",
+    "trang": "/",
+    "ok": true,
+    "ghiChu": "Thẻ unit với số bài đã xong"
+  },
+  {
+    "ten": "07-on-tap",
+    "trang": "/on-tap",
+    "ok": true
+  },
+  {
+    "ten": "08-kiem-tra-vuot-unit",
+    "trang": "/kiem-tra/u1",
+    "ok": true
+  },
+  {
+    "ten": "09-ho-so-tien-bo",
+    "trang": "/ho-so",
+    "ok": true
+  },
+  {
+    "ten": "10-huy-hieu",
+    "trang": "/ho-so",
+    "ok": true,
+    "ghiChu": "Khu Huy hiệu (0/8) trên trang chủ, chụp bổ sung bằng chup-huy-hieu.spec.ts"
+  },
+  {
+    "ten": "11-ban-hoc",
+    "trang": "/ho-so",
+    "ok": true,
+    "ghiChu": "Mã mời và danh sách bạn học"
+  },
+  {
+    "ten": "12-hoi-thoai",
+    "trang": "/hoi-thoai",
+    "ok": true
+  },
+  {
+    "ten": "12b-hoi-thoai-tra-loi",
+    "trang": "/hoi-thoai",
+    "ok": true,
+    "ghiChu": "Phản hồi của Bé Cu Tít (Gemini thật, có thể trễ)"
+  },
+  {
+    "ten": "13-goi-thoai",
+    "trang": "/goi-thoai",
+    "ok": true,
+    "ghiChu": "Màn gọi thoại: cần cấp quyền micro khi bấm bắt đầu"
+  },
+  {
+    "ten": "14-nhap-vai",
+    "trang": "/nhap-vai",
+    "ok": true
+  },
+  {
+    "ten": "15-kham-pha",
+    "trang": "/kham-pha",
+    "ok": true
+  },
+  {
+    "ten": "16-xung-ho",
+    "trang": "/xung-ho",
+    "ok": true
+  },
+  {
+    "ten": "17-van-hoa",
+    "trang": "/van-hoa",
+    "ok": true
+  },
+  {
+    "ten": "18-phat-am",
+    "trang": "/phat-am",
+    "ok": true
+  },
+  {
+    "ten": "19-phong-thanh",
+    "trang": "/phong-thanh",
+    "ok": true
+  },
+  {
+    "ten": "20-phuong-ngu",
+    "trang": "/phuong-ngu",
+    "ok": true
+  },
+  {
+    "ten": "21-luyen-tap",
+    "trang": "/luyen-tap",
+    "ok": true
+  },
+  {
+    "ten": "22-ghep-cau",
+    "trang": "/ghep-cau",
+    "ok": true
+  },
+  {
+    "ten": "23-camera",
+    "trang": "/camera",
+    "ok": true,
+    "ghiChu": "Trước khi cấp quyền camera (trang chưa bật máy ảnh)"
+  },
+  {
+    "ten": "24-tuy-chinh",
+    "trang": "/tuy-chinh",
+    "ok": true
+  },
+  {
+    "ten": "25-quyen-rieng-tu",
+    "trang": "/quyen-rieng-tu",
+    "ok": true,
+    "ghiChu": "Bản nháp chính sách"
+  },
+  {
+    "ten": "26-tieng-anh",
+    "trang": "/",
+    "ok": true,
+    "ghiChu": "Giao diện tiếng Anh (song ngữ)"
+  },
+  {
+    "ten": "27-che-do-toi",
+    "trang": "/",
+    "ok": true,
+    "ghiChu": "Theo cài đặt hệ thống (tối)"
+  }
+]
