@@ -1,3 +1,4 @@
+import { Button } from '@vietlearning/ui';
 import { useMemo, useState } from 'react';
 import { DIALECT_DICTIONARY, foldVietnamese, type Dialect, type DialectEntry } from '@vietlearning/content';
 import { getDeviceSpeech } from '@vietlearning/native';
@@ -60,15 +61,12 @@ export function DialectScreen() {
 
         <label className="relative block">
           <span className="sr-only">{t('search')}</span>
-          <span aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2">
-            🔍
-          </span>
           <input
             type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder={t('searchPlaceholder')}
-            className="min-h-11 w-full rounded-xl border border-line bg-surface pl-10 pr-3 text-base text-ink placeholder:text-ink-muted focus:border-accent focus:outline-none"
+            className="min-h-11 w-full rounded-xl border border-line bg-surface px-3 text-base text-ink placeholder:text-ink-muted focus:border-accent focus:outline-none"
           />
         </label>
         <label className="flex min-h-11 items-center gap-3 text-[15px] text-ink-soft">
@@ -112,14 +110,9 @@ export function DialectScreen() {
                     );
                   })}
                 </div>
-                <button
-                  type="button"
-                  onClick={() => save(e)}
-                  disabled={saved}
-                  className="min-h-11 self-start rounded-xl border border-line bg-surface-2 px-3 text-sm font-bold text-ink disabled:opacity-60"
-                >
+                <Button variant="secondary" onClick={() => save(e)} disabled={saved} style={{ alignSelf: 'flex-start' }}>
                   {saved ? t('saved') : t('save')}
-                </button>
+                </Button>
               </li>
             );
           })}
