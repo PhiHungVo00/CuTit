@@ -135,11 +135,12 @@ export const UsernameSchema = z
 /** Mật khẩu: 8–128 ký tự, KHÔNG trim/biến đổi (NIST SP 800-63B). Chặn mật khẩu phổ biến ở Gateway (weak_password). */
 export const PasswordSchema = z.string().min(PASSWORD_MIN).max(PASSWORD_MAX);
 
+/** trim => kiểm dạng email (Zod: chỉ ASCII) TRƯỚC khi viết thường — tránh ký tự Unicode (vd. Kelvin U+212A) lặng lẽ thành ASCII */
 export const EmailSchema = z
   .string()
   .max(254)
-  .transform((s) => s.trim().toLowerCase())
-  .pipe(z.string().email());
+  .transform((s) => s.trim())
+  .pipe(z.string().email().transform((s) => s.toLowerCase()));
 
 export const OtpCodeSchema = z.string().regex(/^\d{6}$/, 'Mã gồm 6 chữ số');
 

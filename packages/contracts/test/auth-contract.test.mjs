@@ -62,6 +62,8 @@ test('Mật khẩu: 8–128 ký tự, không trim', () => {
 test('Email + mã OTP 6 số', () => {
   assert.equal(EmailSchema.parse(' Mai@Gmail.COM '), 'mai@gmail.com');
   assert.equal(ok(EmailSchema, 'không-phải-email'), false);
+  // ký hiệu Kelvin U+212A viết thường thành 'k' ASCII => phải bị từ chối TRƯỚC khi viết thường (như UsernameSchema)
+  assert.equal(ok(EmailSchema, 'Kelvin@gmail.com'), false);
   assert.equal(ok(OtpCodeSchema, '123456'), true);
   for (const bad of ['12345', '1234567', '12345a', ' 123456']) assert.equal(ok(OtpCodeSchema, bad), false, bad);
   assert.equal(ok(EmailVerifyRequestSchema, { email: 'a@b.co', code: '12345' }), false);
