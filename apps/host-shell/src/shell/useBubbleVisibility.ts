@@ -19,6 +19,13 @@ export function nextScrollMode(prev: ScrollMode, y: number, lastY: number): Scro
 /** Bàn phím mở ⇒ visualViewport thấp hơn chiều cao nền quá 150px (thanh địa chỉ co giãn chỉ ~50–100px). */
 export const isKeyboardOpen = (viewportHeight: number, baselineHeight: number): boolean => baselineHeight - viewportHeight > KEYBOARD_PX;
 
+/** Ô nhập chữ (hiện bàn phím ảo). Có `type` không phải chữ (checkbox, nút...) thì không tính. */
+export function isTextEntry(el: Element | null): boolean {
+  if (!(el instanceof HTMLElement)) return false;
+  if (el.isContentEditable || el instanceof HTMLTextAreaElement) return true;
+  return el instanceof HTMLInputElement && !['checkbox', 'radio', 'button', 'submit', 'range', 'file', 'color', 'reset', 'image'].includes(el.type);
+}
+
 export function bubbleVisibility(s: { pathname: string; scrollMode: ScrollMode; keyboardOpen: boolean; audioBusy: boolean }): BubbleVisibility {
   if (isFocusRoute(s.pathname) || s.keyboardOpen || s.audioBusy) return 'hidden';
   return s.scrollMode;
@@ -46,14 +53,35 @@ export function useBubbleVisibility(pathname: string): BubbleVisibility {
 
   useEffect(() => {
     const vv = window.visualViewport;
-    if (!vv) return;
-    let baseline = Math.max(window.innerHeight, vv.height);
+    let baseline = vv ? Math.max(window.innerHeight, vv.height) : 0;
+    let resized = false;
+    let typing = isTextEntry(document.activeElement);
+    const update = () => setKeyboardOpen(resized || typing);
     const onResize = () => {
+      if (!vv) return;
       baseline = Math.max(baseline, vv.height);
-      setKeyboardOpen(isKeyboardOpen(vv.height, baseline));
+      resized = isKeyboardOpen(vv.height, baseline);
+      update();
     };
-    vv.addEventListener('resize', onResize);
-    return () => vv.removeEventListener('resize', onResize);
+    // Android WebView (edge-to-edge, targetSdk 35) KHÔNG co visualViewport khi bàn phím mở (đo trên AVD API 35):
+    // thêm tín hiệu "đang gõ vào ô nhập chữ" để bong bóng vẫn ẩn
+    const onFocusIn = (e: FocusEvent) => {
+      typing = isTextEntry(e.target as Element);
+      update();
+    };
+    const onFocusOut = () => {
+      typing = false;
+      update();
+    };
+    vv?.addEventListener('resize', onResize);
+    document.addEventListener('focusin', onFocusIn);
+    document.addEventListener('focusout', onFocusOut);
+    update();
+    return () => {
+      vv?.removeEventListener('resize', onResize);
+      document.removeEventListener('focusin', onFocusIn);
+      document.removeEventListener('focusout', onFocusOut);
+    };
   }, []);
 
   useEffect(() => onAudioBusyChange(setAudioBusy), []);
