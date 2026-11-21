@@ -46,6 +46,9 @@ function clearTimers(): void {
 function tryPlay(): void {
   if (!audio || !wanted || active || blocked || focusLost || hidden() || isAudioBusy()) return;
   const a = audio;
+  // Chế độ xoay vòng: đổi bài nếu đã qua mốc giờ (12h, 18h, 5h) kể từ lần chọn trước, kể cả khi quay lại từ nền
+  const want = urlFor(track());
+  if (!a.src.endsWith(want)) a.src = want;
   a.volume = volume();
   active = true;
   Promise.resolve(a.play())
@@ -64,8 +67,17 @@ function pauseNow(): void {
   audio?.pause();
 }
 
-/** Hạ dần về 0 trong FADE_MS rồi pause (nhạc không được lọt vào bản thu). */
+/** Tắt NGAY khi có hoạt động âm thanh (thu âm bắt đầu ghi lập tức, nhạc đang hạ dần vẫn lọt vào bản thu). */
 function fadeOutAndPause(): void {
+  if (!audio || !active) return;
+  if (fadeTimer) clearInterval(fadeTimer);
+  fadeTimer = null;
+  audio.volume = 0;
+  pauseNow();
+}
+
+/** (Giữ cho dừng thường) Hạ dần về 0 trong FADE_MS rồi pause. */
+export function fadeOutSoftly(): void {
   if (!audio || !active || fadeTimer) return;
   const a = audio;
   const from = a.volume;
