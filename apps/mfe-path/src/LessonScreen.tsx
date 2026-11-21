@@ -1,20 +1,23 @@
 import { lazy, Suspense, useEffect, useState } from 'react';
 import { Navigate, useNavigate, useParams } from 'react-router-dom';
-import { COURSE, findLesson, findWord, PitchReferenceFlyweight, type ToneId } from '@vietlearning/content';
+import { COURSE, dialogueForUnit, findLesson, findWord, PitchReferenceFlyweight, type ToneId } from '@vietlearning/content';
 import { useLearner, useUiLanguage } from '@vietlearning/state';
-import { prefetchPack } from '@vietlearning/exercises';
+import { prefetchPack, type DialogueOutcome } from '@vietlearning/exercises';
 import { progressStore, useProgress } from '@vietlearning/state/progress';
 import { useT } from './i18n';
 import { nextLesson } from './path/pathModel';
 import { lessonHref } from './path/lessonHref';
+import { defaultVisible, draftsEnabled } from './path/visibility';
 import { syncReminders } from './reminders';
 import { SessionRunner, type SessionOutcome } from './session/SessionRunner';
-import { Card, CuTit } from '@vietlearning/ui';
+import { Button, Card, CuTit } from '@vietlearning/ui';
 import { celebrateFinish, currentStreak } from './celebration';
 import { cardStack, LinkButton, Page } from './Page';
 
 // GĐ4: thông báo huy hiệu mới — chunk lười riêng
 const Motivation = lazy(() => import('./motivation/Motivation'));
+// Tình huống rẽ nhánh cuối unit: bộ chạy nạp lười, chỉ unit nào có tình huống mới tải
+const DialogueRunner = lazy(() => import('@vietlearning/exercises').then((m) => ({ default: m.DialogueRunner })));
 
 
 interface Finished extends SessionOutcome {
@@ -37,6 +40,7 @@ function LessonBody({ lessonId }: { lessonId: string }) {
   const navigate = useNavigate();
   const found = findLesson(lessonId);
   const [result, setResult] = useState<Finished | null>(null);
+  const [summaryShown, setSummaryShown] = useState(false);
   const done = useProgress((s) => s.lessons);
   const testedOut = useProgress((s) => s.testedOut);
   const dialect = useLearner((s) => s.preferences.dialect);
@@ -55,9 +59,32 @@ function LessonBody({ lessonId }: { lessonId: string }) {
     );
   }
   const { unit, lesson } = found;
-  // Bài nhập vai cuối unit (GĐ3) sống ở màn nhập vai: chuyển hướng qua URL
-  if (lesson.roleplay) return <Navigate replace to={lessonHref(lesson)} />;
+  // Tình huống cuối unit: chỉ mở khi có kịch bản đã duyệt (hoặc nháp ở bản dev); không thì về lộ trình, không treo phiên rỗng
+  if (lesson.roleplay && !defaultVisible(lesson)) return <Navigate replace to="/" />;
   const lessonTitle = en ? lesson.titleEn : lesson.title;
+
+  const dialogue = lesson.roleplay ? dialogueForUnit(unit.id, { includeUnreviewed: draftsEnabled() }) : undefined;
+  if (lesson.roleplay && dialogue && (!result || !summaryShown)) {
+    const finishDialogue = (o: DialogueOutcome) => {
+      const streakBefore = currentStreak();
+      // Quy ra thang 10 câu như một bài thường: `best` (điểm xưng hô) dùng cho huy hiệu “Nói được tình huống” (≥ 60%)
+      const total = 10;
+      const firstTryCorrect = Math.round(o.honorificScore * total);
+      const r = progressStore.getState().completeLesson(lessonId, { total, firstTryCorrect });
+      celebrateFinish(streakBefore, false); // âm 'hoan-thanh' đã do bộ chạy phát
+      setResult({ total, firstTryCorrect, accuracy: o.honorificScore, skipped: 0, mistakes: [], weakTones: [], ...r });
+      void syncReminders().catch(() => undefined);
+    };
+    return (
+      <Page>
+        <Suspense fallback={null}>
+          <DialogueRunner key={lessonId} dialogue={dialogue} onDone={finishDialogue} onPractice={(id) => navigate(`/hoi-thoai?tinh-huong=${encodeURIComponent(id)}`)} />
+        </Suspense>
+        {result && <Button onClick={() => setSummaryShown(true)}>{t('seeSummary')}</Button>}
+        {!dialogue.reviewed && <p className="m-0 text-center text-xs italic text-ink-muted">{t('draftContent')}</p>}
+      </Page>
+    );
+  }
 
   if (!result) {
     return (
