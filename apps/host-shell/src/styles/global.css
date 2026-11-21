@@ -13,6 +13,7 @@
   --shell-muted: var(--ct-ink-soft);
   --shell-accent: var(--ct-accent);
   --shell-accent-ink: var(--ct-accent-ink);
+  --shell-accent-text: var(--ct-accent-text);
   --tabbar-h: 64px;
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
@@ -145,7 +146,7 @@ textarea {
 }
 
 .tabbar a[aria-current='page'] {
-  color: var(--shell-accent);
+  color: var(--shell-accent-text);
 }
 
 .tabbar a[aria-current='page'] .tab-icon {
@@ -164,7 +165,7 @@ textarea {
   font-size: 26px;
   font-weight: 800;
   line-height: 1.25;
-  color: var(--shell-accent);
+  color: var(--shell-accent-text);
 }
 
 .home-head {
@@ -464,7 +465,7 @@ textarea {
 }
 .mode-tabs a[aria-current='page'] {
   background: var(--shell-surface-2);
-  color: var(--shell-accent);
+  color: var(--shell-accent-text);
 }
 
 /* ---------- Chuyển cảnh: View Transitions (≤ 200 ms) + fade dự phòng cho WebView cũ ---------- */

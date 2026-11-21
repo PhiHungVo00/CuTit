@@ -50,6 +50,7 @@
     "zod": "^3.25.76"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.14.0",
     "@capacitor/cli": "^7.6.10",
     "@playwright/test": "^1.65.1",
     "@size-limit/file": "^11.2.0",
