@@ -57,6 +57,13 @@
       "when": 1795185654397,
       "tag": "0007_ai_global_usage",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1795259828891,
+      "tag": "0008_auth_identities",
+      "breakpoints": true
     }
   ]
 }
