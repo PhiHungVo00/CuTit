@@ -152,6 +152,12 @@ Bản đầy đủ: `docs/QUY-TRINH-VIBE-CODING.md`. Người dùng không phả
 
 **Bắt buộc:** không làm vượt bước; xin xác nhận trước khi đổi kiến trúc quan trọng, xóa/ghi đè dữ liệu, đổi DB có rủi ro, dùng dịch vụ có phí, triển khai production; đọc hiểu + tìm nguyên nhân trước khi sửa; **phân biệt rõ** đã viết code / đã chạy thử / đã kiểm thử / đã triển khai / đã nghiệm thu; ưu tiên giải pháp đơn giản.
 
+**Tham khảo code có sẵn trước khi viết tính năng mới** (người dùng chốt 22/11/2026): tìm trên web/GitHub xem đã có ai làm tính năng tương tự với cùng tech stack (React 18 + Vite, Capacitor 7, Fastify, Drizzle/Postgres, Zod) để tham khảo cho nhanh. Kèm điều kiện:
+- **Giấy phép:** chỉ chép/chỉnh code MIT, Apache-2.0, BSD, ISC (ghi nguồn + giấy phép vào comment đầu tệp và `docs/`); **không** chép code GPL/AGPL/không có giấy phép (app phát hành thương mại, mã đóng).
+- **Ưu tiên thư viện được bảo trì** (cài qua pnpm, kiểm số tải, lần cập nhật, lỗ hổng) hơn chép đoạn code rời; mọi thư viện mới vẫn qua ngân sách gói đầu (size-limit).
+- **Hiểu rồi mới dùng:** đọc kỹ, viết lại theo kiến trúc dự án (7 nguyên tắc, contract trước, không import chéo MFE), có test của mình; không dán nguyên khối chưa kiểm.
+- **Không lộ dữ liệu dự án** khi tìm kiếm (không dán code/khóa/thông tin người dùng lên dịch vụ ngoài). Ghi link nguồn đã tham khảo vào nhật ký.
+
 **Báo cáo cuối mỗi giai đoạn** theo mẫu: Giai đoạn · Mục tiêu · Đã thực hiện · Kết quả kiểm tra · Vấn đề còn tồn tại · Điều kiện chuyển bước · Bước tiếp theo · Trạng thái (CHƯA BẮT ĐẦU / ĐANG THỰC HIỆN / CHỜ XÁC NHẬN / ĐÃ HOÀN THÀNH).
 
 > `turbo.json` đặt `"agentGuidance": false` để `pnpm build` không tự sửa tệp này (R13). Khối turbo bên dưới được giữ nguyên có chủ đích.
