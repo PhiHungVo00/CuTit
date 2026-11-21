@@ -112,3 +112,17 @@ test('422 (llm_rejected / llm_blocked: nhà cung cấp từ chối dữ liệu g
   assert.equal(err.kind, 'invalid-request');
   assert.match(describeGatewayError(err, 'vi'), /chưa hợp lệ/);
 });
+
+test('summarizeChat: POST /v1/chat/summarize, phản hồi kiểm theo contract (summary ≤ 600)', async () => {
+  let seen;
+  mockFetch(async (url, init) => {
+    seen = { url, body: JSON.parse(init.body) };
+    return new Response(JSON.stringify({ summary: 'Mai, xưng cháu.' }), { status: 200 });
+  });
+  const { summarizeChat } = await import('../dist/index.js');
+  const r = await summarizeChat({ sessionId: '7d444840-9dc0-11d1-b245-5ffdce74fad2', history: [{ role: 'user', text: 'chào' }], explanationLanguage: 'vi' });
+  assert.equal(r.summary, 'Mai, xưng cháu.');
+  assert.equal(seen.url, 'http://gw.test/v1/chat/summarize');
+  mockFetch(async () => new Response(JSON.stringify({ summary: 'x'.repeat(601) }), { status: 200 }));
+  await assert.rejects(summarizeChat({ sessionId: '7d444840-9dc0-11d1-b245-5ffdce74fad2', history: [{ role: 'user', text: 'a' }], explanationLanguage: 'vi' }), (e) => e.kind === 'contract');
+});
