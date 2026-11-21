@@ -163,13 +163,14 @@ test('Đăng nhập Google không Bearer: sub mới => tài khoản mới (khôn
 test('Chống chiếm tài khoản: email trùng với danh tính email của người khác nhưng sub khác => tài khoản MỚI, không vào tài khoản cũ', async () => {
   const victim = await signIn({ sub: `g-${randomUUID()}` });
   const victimId = victim.json().userId;
-  await (await db()).insert(schema.identities).values({ userId: victimId, provider: 'email', subject: 'victim@gmail.com', display: 'v***@gmail.com', emailVerified: true });
-  const attacker = await signIn({ sub: `g-${randomUUID()}`, email: 'victim@gmail.com' });
+  const email = `victim-${randomUUID()}@gmail.com`;
+  await (await db()).insert(schema.identities).values({ userId: victimId, provider: 'email', subject: email, display: 'v***@gmail.com', emailVerified: true });
+  const attacker = await signIn({ sub: `g-${randomUUID()}`, email });
   assert.equal(attacker.statusCode, 200);
   assert.notEqual(attacker.json().userId, victimId);
   // Cùng email nhưng khác sub khi đang là khách => nâng cấp chính khách, không chạm tài khoản nạn nhân
   const g = await guest(a);
-  const up = await link(g.headers, { sub: `g-${randomUUID()}`, email: 'victim@gmail.com' });
+  const up = await link(g.headers, { sub: `g-${randomUUID()}`, email });
   assert.equal(up.json().userId, g.body.userId);
 });
 
@@ -323,4 +324,17 @@ test('Tài khoản đang chờ xóa: đăng nhập Google => signed_in kèm rest
   const r = (await signIn({ sub })).json();
   assert.equal(r.userId, acc.userId);
   assert.equal(r.restorable.deleteAt, deleteAt.toISOString());
+});
+
+test('Không tải được khóa công khai Google (mạng lỗi) => 503 provider_unavailable, không 500', async () => {
+  const down = createGoogleIdentityProvider({ audiences: [CLIENT_ID], keys: async () => { throw new TypeError('fetch failed'); } });
+  const b = await makeApp(LIMITS, { db: dbp, identity: down });
+  try {
+    const n = (await b.inject({ url: '/v1/auth/nonce' })).json().nonce;
+    const r = await b.inject({ method: 'POST', url: '/v1/auth/google', payload: { nonce: n, idToken: await idToken({ nonce: n }) } });
+    assert.equal(r.statusCode, 503);
+    assert.equal(r.json().error, 'provider_unavailable');
+  } finally {
+    await b.close();
+  }
 });
