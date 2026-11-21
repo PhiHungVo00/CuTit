@@ -361,10 +361,10 @@ test.describe('M1 Trò chuyện & M7 Nhập vai', () => {
       });
     });
     await page.goto('/hoi-thoai');
-    await expect(page.getByRole('heading', { name: 'Trò chuyện' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Bé Cu Tít' })).toBeVisible();
     await assertMobileLayout(page);
     await page.getByLabel('Tin nhắn').fill('xin chao');
-    await page.getByRole('button', { name: 'Gửi' }).click();
+    await page.getByRole('button', { name: 'Gửi', exact: true }).click();
     const log = page.getByRole('log', { name: 'Hội thoại' });
     await expect(log.getByText('Chào bạn!')).toBeVisible();
     await expect(log.getByText('trả lời mẫu (chưa nối AI)')).toBeVisible();
@@ -374,10 +374,10 @@ test.describe('M1 Trò chuyện & M7 Nhập vai', () => {
 
     offline = true;
     await page.getByLabel('Tin nhắn').fill('Hôm nay tôi học bài');
-    await page.getByRole('button', { name: 'Gửi' }).click();
-    await expect(page.getByRole('alert')).toContainText('Không có kết nối mạng');
+    await page.getByRole('button', { name: 'Gửi', exact: true }).click();
+    await expect(page.getByRole('alert')).toContainText('Không kết nối được máy chủ');
     offline = false;
-    await page.getByRole('button', { name: 'Thử lại' }).click();
+    await page.getByRole('button', { name: 'Gửi lại' }).click();
     await expect(page.getByRole('alert')).toHaveCount(0);
     await expect(log.getByText('Chào bạn!')).toHaveCount(2);
     // lượt thử lại: không lặp câu của người học trong lịch sử, gửi kèm 2 lượt trước
@@ -403,11 +403,11 @@ test.describe('M1 Trò chuyện & M7 Nhập vai', () => {
     const tasks = page.getByRole('list', { name: 'Nhiệm vụ' });
     await expect(tasks.getByText('(chưa xong)')).toHaveCount(4);
     await page.getByLabel('Tin nhắn').fill('chao anh');
-    await page.getByRole('button', { name: 'Gửi' }).click();
+    await page.getByRole('button', { name: 'Gửi', exact: true }).click();
     await expect(tasks.getByText('(đã xong)')).toHaveCount(1);
     await assertMobileLayout(page);
     await page.getByLabel('Tin nhắn').fill('Cho em một bát phở bò tái chín, không hành, bao nhiêu tiền ạ?');
-    await page.getByRole('button', { name: 'Gửi' }).click();
+    await page.getByRole('button', { name: 'Gửi', exact: true }).click();
     await expect(tasks.getByText('(đã xong)')).toHaveCount(4);
     await page.getByRole('button', { name: 'Hoàn thành! Xem tổng kết' }).click();
     await expect(page.getByRole('heading', { name: 'Tổng kết: 4/4 nhiệm vụ' })).toBeVisible();

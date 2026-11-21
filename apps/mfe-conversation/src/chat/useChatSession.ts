@@ -232,7 +232,8 @@ export function useChatSession({ scenarioId, dialect, mode, onTurnDone, initialM
         // Bỏ chỗ trống của gia sư; tin của người học ở lại, đánh dấu chưa gửi được (ảnh còn trong RAM để gửi lại)
         setMessages((list) => list.filter((x) => x.id !== tutorId).map((x) => (x.id === userId ? { ...x, status: 'failed' as const, errorText: info.text, canRetry: info.retry } : x)));
         if (aborted) return; // người dùng hủy / rời màn hình
-        setError(info.text);
+        // `error` giữ câu cũ của TurnError: màn nhập vai và màn gọi (ChatPanel/CallScreen) vẫn dựa vào chữ này; chat mới dùng `errorText` theo mã
+        setError(err instanceof TurnError ? err.message : info.text);
         setErrorCode(err instanceof TurnError ? (err.code ?? err.kind) : null);
       } finally {
         EventBus.getInstance().emit('cutit:thinking', { thinking: false });
