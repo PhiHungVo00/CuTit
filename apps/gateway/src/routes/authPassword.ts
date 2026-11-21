@@ -39,7 +39,7 @@ import { otpEmail } from '../services/mail/templates.js';
  * - sai đăng nhập / mã dự phòng: khóa cặp (IP, tên) sau 5 lần/15 phút; trần IP 30 lần/15 phút; một tên sai > 50 lần/giờ
  *   từ nhiều IP => làm chậm (không khóa, để kẻ xấu không khóa được tài khoản người khác).
  * - gửi mã: mỗi email 3 thư/15 phút, mỗi IP 10 thư/giờ, trần cả app MAIL_DAILY_CAP; sai mã: 5 lần mỗi mã, 10 lần mỗi
- *   email mỗi ngày => otp_locked.
+ *   tên/email đã gõ mỗi ngày => otp_locked. Khóa gắn email và đặt lại mật khẩu tách riêng (xem `keys`).
  * Log/audit: KHÔNG bao giờ có mật khẩu, mã, tên đăng nhập hay email (bộ đếm lưu HMAC).
  */
 const MIN = 60_000;
@@ -59,10 +59,18 @@ const keys = {
   pair: (ip: string, username: string) => `login:pair:${ip}|${username}`,
   ip: (ip: string) => `login:ip:${ip}`,
   user: (username: string) => `login:user:${username}`,
-  sendEmail: (email: string) => `otp_send:email:${email}`,
+  /**
+   * Khóa OTP tách theo MỤC ĐÍCH: lượt gửi/sai của luồng gắn email (/v1/me/email/*, ai đăng nhập cũng gọi được với email
+   * bất kỳ) KHÔNG dùng chung với luồng đặt lại mật khẩu => không ai khóa/đốt lượt quên mật khẩu của người khác được.
+   */
+  sendReset: (email: string) => `otp_send:reset:${email}`,
+  sendLink: (email: string) => `otp_send:link:${email}`,
   sendIp: (ip: string) => `otp_send:ip:${ip}`,
-  failEmail: (email: string) => `otp_fail:email:${email}`
+  /** theo đúng chuỗi người gọi gõ (chuẩn hóa) => tài khoản có thật hay không đều bị khóa như nhau */
+  failReset: (typed: string) => `otp_fail:reset:${typed}`,
+  failLink: (userId: string, email: string) => `otp_fail:link:${userId}:${email}`
 };
+export { keys as authKeys };
 
 /** Thân lỗi cố định (không có `message`) => sai tên và sai mật khẩu trả về GIỐNG HỆT nhau */
 const INVALID_CREDENTIALS = { error: 'invalid_credentials' } as const;
@@ -90,7 +98,7 @@ async function sendResetCode(server: FastifyInstance, deps: RouteDeps, otp: OtpS
   if ((await counters.hit(d, keys.sendIp(ip), OTP_SEND_IP_WINDOW_MS, now)) > OTP_SEND_IP_MAX) return;
   const target = await findRecoveryTarget(d, usernameOrEmail);
   if (!target || !mail.available()) return;
-  if ((await counters.hit(d, keys.sendEmail(target.email), OTP_SEND_EMAIL_WINDOW_MS, now)) > OTP_SEND_EMAIL_MAX) return;
+  if ((await counters.hit(d, keys.sendReset(target.email), OTP_SEND_EMAIL_WINDOW_MS, now)) > OTP_SEND_EMAIL_MAX) return;
   if (!(await tryConsumeMailQuota(d, config.MAIL_DAILY_CAP, now))) {
     audit.record('auth.email_code_failed', { outcome: 'blocked', userId: target.userId, metadata: { purpose: 'reset', reason: 'daily_cap' } });
     return;
@@ -238,24 +246,30 @@ export const passwordAuthRoutes: FastifyPluginAsync<RouteDeps> = async (server, 
     const d = await db.get();
     const now = clock();
     const ctx = AuditLog.context(req);
+    // Mọi kiểm tra TRƯỚC khi tra tài khoản chỉ dựa trên chuỗi người gọi gõ => phản hồi giống hệt nhau dù tài khoản có thật
+    // hay không (không lộ qua weak_password / otp_locked)
+    const typed = body.usernameOrEmail.normalize('NFC').toLowerCase();
+    const failKey = keys.failReset(typed);
+    if ((await counters.count(d, failKey, now)) >= OTP_FAIL_EMAIL_MAX) return reply.status(400).send({ error: 'otp_locked' });
+    // Mật khẩu yếu kiểm TRƯỚC khi dùng mã (không đốt mã chỉ vì chọn mật khẩu yếu); "chứa tên" so với tên/phần trước @ đã gõ
+    if (isWeakPassword(body.newPassword, typed.includes('@') ? typed.slice(0, typed.lastIndexOf('@')) : typed)) {
+      return reply.status(400).send({ error: 'weak_password' });
+    }
     const target = await findRecoveryTarget(d, body.usernameOrEmail);
-    // Không có tài khoản/email: CÙNG thân lỗi như sai mã
-    if (!target) return reply.status(400).send({ error: 'otp_invalid' });
-    if ((await counters.count(d, keys.failEmail(target.email), now)) >= OTP_FAIL_EMAIL_MAX) return reply.status(400).send({ error: 'otp_locked' });
-    // Kiểm mật khẩu yếu TRƯỚC khi dùng mã (không đốt mã chỉ vì chọn mật khẩu yếu)
-    if (isWeakPassword(body.newPassword, target.username)) return reply.status(400).send({ error: 'weak_password' });
-    const result = await otp.verify(d, 'reset', target.email, body.code, target.userId, now);
-    if (result !== 'ok') {
-      await counters.hit(d, keys.failEmail(target.email), OTP_FAIL_EMAIL_WINDOW_MS, now);
-      audit.record('auth.password_reset', { outcome: 'failure', userId: target.userId, ctx, metadata: { method: 'email', reason: `otp_${result}` } });
+    const result = target ? await otp.verify(d, 'reset', target.email, body.code, target.userId, now) : 'invalid';
+    if (!target || result !== 'ok') {
+      await counters.hit(d, failKey, OTP_FAIL_EMAIL_WINDOW_MS, now);
+      audit.record('auth.password_reset', { outcome: 'failure', userId: target?.userId ?? null, ctx, metadata: { method: 'email', reason: `otp_${result}` } });
       return reply.status(400).send({ error: `otp_${result}` });
     }
+    // Đúng mã rồi mới so với tên đăng nhập thật (người gõ email): mã đã dùng, xin mã mới
+    if (isWeakPassword(body.newPassword, target.username)) return reply.status(400).send({ error: 'weak_password' });
     const passwordHash = await hashPassword(body.newPassword);
     await d.transaction(async (tx) => {
       await tx.update(schema.passwordCredentials).set({ passwordHash, updatedAt: now }).where(eq(schema.passwordCredentials.userId, target.userId));
       await revokeAllRefreshTokens(tx as unknown as Db, target.userId, now);
     });
-    await counters.clear(d, keys.failEmail(target.email));
+    await counters.clear(d, failKey);
     audit.record('auth.password_reset', { outcome: 'success', userId: target.userId, ctx, metadata: { method: 'email' } });
     return reply.status(204).send();
   });

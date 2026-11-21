@@ -8,9 +8,9 @@ import { schema, type Db } from '../../db/client.js';
  *
  * - Mã 6 số chỉ có ~20 bit => KHÔNG lưu sha256 trần: lưu HMAC-SHA256(AUTH_OTP_PEPPER, mục_đích:email_hmac:mã).
  *   Mục đích ('link' = gắn email, 'reset' = đặt lại mật khẩu) nằm trong HMAC => mã gắn email không dùng để đặt lại được.
- * - `subject` = HMAC(pepper, email chữ thường): bảng auth_challenges không chứa email nguyên văn.
+ * - `subject` = HMAC(pepper, mục_đích[:người_gắn]:email chữ thường): bảng không chứa email nguyên văn; mỗi khe tối đa một mã.
  * - Sống 10 phút; sai 5 lần => khóa mã (otp_locked); so sánh thời gian hằng (timingSafeEqual).
- * - Cấp mã mới XÓA mọi mã cũ cùng email trong cùng transaction (lưu ý 1 của kien-truc PR #11): nếu không, 5 lần thử
+ * - Cấp mã mới XÓA mọi mã cũ cùng khe trong cùng transaction (lưu ý 1 của kien-truc PR #11): nếu không, 5 lần thử
  *   tính theo từng dòng sẽ thành 5 × số mã.
  * - Kiểm và trừ lượt trong một transaction có `SELECT … FOR UPDATE` => hai request đồng thời không cùng dùng một mã.
  */
@@ -25,9 +25,13 @@ export const hmacHex = (pepper: string, s: string): string => createHmac('sha256
 export class OtpService {
   constructor(private readonly pepper: string) {}
 
-  /** email đã chuẩn hóa (EmailSchema: trim + chữ thường) */
-  subjectOf(email: string): string {
-    return hmacHex(this.pepper, 'email:' + email.normalize('NFC'));
+  /**
+   * `subject` của một "khe" mã: email đã chuẩn hóa + MỤC ĐÍCH (+ người gắn, với 'link'). Tách khe để người khác xin mã
+   * gắn email của nạn nhân không xóa/khóa được mã đặt lại mật khẩu của nạn nhân (cấp mới chỉ hủy mã cùng khe).
+   */
+  subjectOf(purpose: OtpPurpose, email: string, userId: string): string {
+    const slot = purpose === 'link' ? `link:${userId}:` : 'reset:';
+    return hmacHex(this.pepper, 'email:' + slot + email.normalize('NFC'));
   }
 
   private codeHash(purpose: OtpPurpose, subject: string, code: string): string {
@@ -40,7 +44,7 @@ export class OtpService {
    */
   async issue(db: Db, purpose: OtpPurpose, email: string, userId: string, now: Date): Promise<string> {
     const code = String(randomInt(0, 1_000_000)).padStart(6, '0');
-    const subject = this.subjectOf(email);
+    const subject = this.subjectOf(purpose, email, userId);
     const t = schema.authChallenges;
     await db.transaction(async (tx) => {
       await tx.delete(t).where(and(eq(t.kind, 'email_otp'), eq(t.subject, subject)));
@@ -57,7 +61,7 @@ export class OtpService {
 
   /** Kiểm mã; đúng => đánh dấu đã dùng. `userId` phải trùng người được cấp mã (sai người tính như sai mã). */
   async verify(db: Db, purpose: OtpPurpose, email: string, code: string, userId: string, now: Date): Promise<OtpResult> {
-    const subject = this.subjectOf(email);
+    const subject = this.subjectOf(purpose, email, userId);
     const expected = Buffer.from(this.codeHash(purpose, subject, code), 'hex');
     const t = schema.authChallenges;
     return db.transaction(async (tx) => {
