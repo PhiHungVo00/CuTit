@@ -1,11 +1,13 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { MemoryRouter } from 'react-router-dom';
-import { learnerStore } from '@vietlearning/state';
 import { TabBar } from './TabBar';
 
-// Ngôn ngữ mặc định lấy theo máy (runner CI là tiếng Anh) ⇒ ghim tiếng Việt cho các khẳng định nhãn.
-beforeEach(() => learnerStore.getState().setPreferences({ uiLanguage: 'vi' }));
+// Ngôn ngữ mặc định lấy theo navigator.language của máy (runner CI là tiếng Anh). renderToStaticMarkup đọc
+// trạng thái KHỞI TẠO của store (snapshot phía server), nên phải ghim ngôn ngữ trước khi module state được nạp.
+vi.hoisted(() => {
+  Object.defineProperty(globalThis, 'navigator', { value: { language: 'vi-VN' }, configurable: true });
+});
 
 const render = (path: string) =>
   renderToStaticMarkup(
