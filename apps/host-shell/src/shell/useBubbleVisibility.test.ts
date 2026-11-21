@@ -1,5 +1,6 @@
+// @vitest-environment jsdom
 import { describe, expect, it } from 'vitest';
-import { bubbleVisibility, isKeyboardOpen, nextScrollMode } from './useBubbleVisibility';
+import { bubbleVisibility, isKeyboardOpen, isTextEntry, nextScrollMode } from './useBubbleVisibility';
 
 const base = { pathname: '/', scrollMode: 'full', keyboardOpen: false, audioBusy: false } as const;
 
@@ -25,4 +26,20 @@ describe('nextScrollMode', () => {
 describe('isKeyboardOpen', () => {
   it('viewport thấp hơn nền > 150px ⇒ mở', () => expect(isKeyboardOpen(400, 800)).toBe(true));
   it('chênh ≤ 150px ⇒ chưa mở (thanh địa chỉ co giãn)', () => expect(isKeyboardOpen(700, 800)).toBe(false));
+});
+
+describe('isTextEntry', () => {
+  it('input chữ, textarea ⇒ true; checkbox, nút, null ⇒ false', () => {
+    const mk = (tag: string, type?: string) => {
+      const el = document.createElement(tag);
+      if (type) (el as HTMLInputElement).type = type;
+      return el;
+    };
+    expect(isTextEntry(mk('input'))).toBe(true);
+    expect(isTextEntry(mk('input', 'search'))).toBe(true);
+    expect(isTextEntry(mk('textarea'))).toBe(true);
+    expect(isTextEntry(mk('input', 'checkbox'))).toBe(false);
+    expect(isTextEntry(mk('button'))).toBe(false);
+    expect(isTextEntry(null)).toBe(false);
+  });
 });
