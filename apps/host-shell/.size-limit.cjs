@@ -45,13 +45,15 @@ module.exports = [
   // 3.3 → 3.4 kB (GĐ4a, 2026-11-18): điểm nạp lười huy hiệu + tổng kết tuần (+33 B lúc đo); nội dung ở chunk Motivation
   // 3.4 → 3.45 kB (R10, 2026-11-18): đo 3.40 kB (+12 B) vì client api-client giờ là chunk lười riêng => thêm một câu
   // `import … from './index-*.js'`; gói đầu đổi lại giảm 4.37 kB. Mã của PathHome không đổi
-  { name: 'GĐ1 Phần lộ trình của trang chủ (lazy)', path: 'dist/assets/PathHomeRoute-*.js', limit: '3.45 kB', gzip: true },
+    // 3.45 → 3.6 kB (Dự án 1 đợt 3, 2026-11-21): thẻ dùng Card/LinkButton chung (style nội tuyến thay lớp Tailwind), +34 B lúc đo
+  { name: 'GĐ1 Phần lộ trình của trang chủ (lazy)', path: 'dist/assets/PathHomeRoute-*.js', limit: '3.6 kB', gzip: true },
   { name: 'GĐ1 Phiên bài học (lazy)', path: 'dist/assets/LessonRoute-*.js', limit: '2.5 kB', gzip: true },
   { name: 'GĐ1 Ôn tập (lazy)', path: 'dist/assets/ReviewRoute-*.js', limit: '3 kB', gzip: true },
   { name: 'GĐ1 Kiểm tra vượt unit (lazy)', path: 'dist/assets/TestOutRoute-*.js', limit: '2 kB', gzip: true },
   { name: 'Dự án 1 Tab Luyện tập: lối vào 5 cách luyện (lazy)', path: 'dist/assets/PracticeHub-*.js', limit: '2.5 kB', gzip: true },
   { name: 'Dự án 1 Tab Bạn bè (lazy)', path: 'dist/assets/FriendsRoute-*.js', limit: '5.5 kB', gzip: true },
-  { name: 'GĐ1 Trình chạy bài + dạng bài dùng chung (lazy)', path: 'dist/assets/SessionRunner-*.js', limit: '6.5 kB', gzip: true },
+    // Dự án 1 đợt 3: Rollup đặt tên chunk theo module đầu (celebration.ts) thay vì SessionRunner; nội dung không đổi
+  { name: 'GĐ1 Trình chạy bài + dạng bài dùng chung (lazy)', path: 'dist/assets/celebration-*.js', limit: '6.5 kB', gzip: true },
   { name: 'GĐ1 Dữ liệu khóa A1 (lazy)', path: 'dist/assets/course-*.js', limit: '8.5 kB', gzip: true },
   { name: 'GĐ1 Bài luyện thanh trong phiên học (lazy khi gặp)', path: 'dist/assets/ToneExercise-*.js', limit: '2.5 kB', gzip: true },
   // GĐ3 Hội thoại AI, đo 2026-11-18 (lazy). Phần chat dùng chung M1/M7/gọi thoại tách thành chunk riêng nên M1 còn ~0.7 kB
