@@ -137,3 +137,14 @@ test('chuỗi: một nguồn 400 + một nguồn 429 => vẫn llm_busy (lỗi h�
   const err = await chain.generateJson({ system: '', turns: [], schema: {} }).catch((e) => e);
   assert.equal(err.code, 'llm_busy');
 });
+
+test('trả lời mẫu (không gọi nhà cung cấp) KHÔNG trừ trần chung: /culture/ask không khớp thẻ, /practice/generate giả lập', async () => {
+  const globalQuotaStore = new InMemoryGlobalQuotaStore();
+  const a = await makeApp({ JWT_SECRET: SECRET, GLOBAL_MAX_LLM_TOKENS_PER_DAY: '1000000' }, { llm: null, globalQuotaStore });
+  const g = await guest(a);
+  const r1 = await a.inject({ method: 'POST', url: '/v1/culture/ask', headers: g.headers, payload: { question: 'zzqxw không khớp gì cả', language: 'vi' } });
+  assert.equal(r1.statusCode, 200);
+  const r2 = await a.inject({ method: 'POST', url: '/v1/practice/generate', headers: g.headers, payload: { count: 3 } });
+  assert.ok(r2.statusCode < 500);
+  assert.equal(await globalQuotaStore.get('llm'), 0, 'trần chung chỉ dành cho lời gọi nhà cung cấp thật');
+});
