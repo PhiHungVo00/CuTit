@@ -70,7 +70,10 @@ export function createGoogleIdentityProvider(opts: GoogleProviderOptions): Ident
         }));
       } catch (err) {
         // Lỗi mạng khi tải khóa công khai: không phải lỗi của người dùng
-        if (err instanceof joseErrors.JWKSTimeout || (err instanceof Error && !(err instanceof joseErrors.JOSEError))) {
+        // JWKSTimeout; lỗi fetch (TypeError); JOSEError chung (ERR_JOSE_GENERIC) = Google trả không phải 200 / JSON hỏng.
+        // Mọi lỗi kiểm token cụ thể (chữ ký, claim, không khớp khóa…) là lớp con có mã riêng => 401.
+        const generic = err instanceof joseErrors.JOSEError && (err as { code?: string }).code === 'ERR_JOSE_GENERIC';
+        if (err instanceof joseErrors.JWKSTimeout || generic || (err instanceof Error && !(err instanceof joseErrors.JOSEError))) {
           throw new IdentityUnavailableError('jwks unavailable');
         }
         throw new IdentityTokenError((err as { code?: string }).code ?? 'verify_failed');

@@ -73,7 +73,10 @@ async function signedIn(server: Parameters<FastifyPluginAsync>[0], db: Db, userI
 
 export const identityAuthRoutes: FastifyPluginAsync<RouteDeps> = async (server, deps) => {
   // GET /v1/auth/nonce: nonce một lần (10 phút) cho Google — client đưa vào yêu cầu đăng nhập, Google ký vào ID token
-  server.get('/nonce', async () => respond(AuthNonceResponseSchema, await issueNonce(await deps.db.get())));
+  server.get('/nonce', async (_req, reply) => {
+    reply.header('cache-control', 'no-store'); // giá trị một lần: không để PWA/proxy cache trả lại nonce đã dùng
+    return respond(AuthNonceResponseSchema, await issueNonce(await deps.db.get()));
+  });
 
   // POST /v1/auth/google: đăng nhập/đăng ký bằng Google (không Bearer). Máy đang có khách dùng /v1/me/identities/google.
   server.post('/google', async (req, reply) => {

@@ -338,3 +338,41 @@ test('Không tải được khóa công khai Google (mạng lỗi) => 503 provid
     await b.close();
   }
 });
+
+test('Google trả lỗi HTTP khi tải khóa (JOSEError chung) => 503, không 401', async () => {
+  const { errors } = await import('jose');
+  const down = createGoogleIdentityProvider({ audiences: [CLIENT_ID], keys: async () => { throw new errors.JOSEError('Expected 200 OK from the JSON Web Key Set HTTP response'); } });
+  const b = await makeApp(LIMITS, { db: dbp, identity: down });
+  try {
+    const n = (await b.inject({ url: '/v1/auth/nonce' })).json().nonce;
+    const r = await b.inject({ method: 'POST', url: '/v1/auth/google', payload: { nonce: n, idToken: await idToken({ nonce: n }) } });
+    assert.equal(r.statusCode, 503);
+  } finally {
+    await b.close();
+  }
+});
+
+test('Nonce: không cache (no-store); nonce hết hạn => 401', async () => {
+  const r = await a.inject({ url: '/v1/auth/nonce' });
+  assert.equal(r.headers['cache-control'], 'no-store');
+  const body = await googleBody();
+  const d = await db();
+  const { createHash } = await import('node:crypto');
+  const h = createHash('sha256').update(body.nonce).digest('hex');
+  await d.update(schema.authChallenges).set({ expiresAt: new Date(Date.now() - 1000) }).where(eq(schema.authChallenges.keyHash, h));
+  const res = await a.inject({ method: 'POST', url: '/v1/auth/google', payload: body });
+  assert.equal(res.statusCode, 401);
+});
+
+test('Tài khoản chỉ có mật khẩu liên kết thêm Google => signed_in cùng userId, có cả hai phương thức', async () => {
+  const d = await db();
+  const g = await guest(a);
+  const uname = `u${randomUUID().slice(0, 8)}`;
+  // giả lập Task 2 đã nâng cấp khách thành tài khoản mật khẩu
+  await d.update(schema.users).set({ isGuest: false }).where(eq(schema.users.id, g.body.userId));
+  await d.insert(schema.identities).values({ userId: g.body.userId, provider: 'password', subject: uname, display: uname });
+  const r = await link(g.headers);
+  assert.equal(r.statusCode, 200, r.body);
+  assert.equal(r.json().userId, g.body.userId);
+  assert.deepEqual(r.json().providers.sort(), ['google', 'password']);
+});
