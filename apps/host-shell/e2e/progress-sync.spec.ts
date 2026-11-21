@@ -58,7 +58,7 @@ test.describe('Nối tiến độ GĐ0 ↔ GĐ1', () => {
     await p2.goto('/');
     await expect(p2.getByTestId('xp')).toHaveText(`⭐ ${xp}`);
     await expect(p2.getByTestId('streak')).toHaveText(/🔥 1/);
-    await expect(p2.getByRole('region', { name: /Chào hỏi & xưng hô/ }).getByText('1/5 bài')).toBeVisible();
+    await expect(p2.getByRole('region', { name: /Chào hỏi & xưng hô/ }).getByText('1/4 bài')).toBeVisible();
     // tải lại + đồng bộ lần nữa không cộng XP lần hai
     await p2.reload();
     await expect(p2.getByTestId('xp')).toHaveText(`⭐ ${xp}`);
@@ -78,7 +78,7 @@ test.describe('Nối tiến độ GĐ0 ↔ GĐ1', () => {
     const b = await other.newPage();
     await restore(b, code);
     await b.goto('/');
-    await expect(b.getByRole('region', { name: /Chào hỏi & xưng hô/ }).getByText('1/5 bài')).toBeVisible();
+    await expect(b.getByRole('region', { name: /Chào hỏi & xưng hô/ }).getByText('1/4 bài')).toBeVisible();
     expect(await readXp(b)).toBeGreaterThan(0);
 
     // Máy A xóa tài khoản

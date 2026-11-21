@@ -46,7 +46,7 @@ async function fakeMicSpeechThenSilence(page: Page) {
 }
 
 test.describe('GĐ3 Hội thoại AI', () => {
-  test('nhập vai cuối unit 1: “Học tiếp” → nhập vai (Gateway thật) → xong bài, +XP, unit 5/5, một chạm thêm từ mới vào ôn tập', async ({ page }) => {
+  test('nhập vai AI cuối unit 1 (đường dẫn cũ, Gateway thật) → xong bài, +XP, unit 5/5, một chạm thêm từ mới vào ôn tập', async ({ page }) => {
     test.setTimeout(60_000);
     // Ghi dữ liệu TRƯỚC khi app chạy (một lần): ghi lúc app đang chạy rồi reload thì có thể bị ghi đè
     // bởi lần lưu store đang dở (đồng bộ / kiểm tra huy hiệu lúc khởi động — GĐ4).
@@ -56,13 +56,13 @@ test.describe('GĐ3 Hội thoại AI', () => {
       const rec = { best: 1, times: 1, at: new Date().toISOString() };
       localStorage.setItem('becutit.progress', JSON.stringify({ state: { lessons: { u1l1: rec, u1l2: rec, u1l3: rec, u1l4: rec }, lessonsDone: 4 }, version: 1 }));
     });
+    // Tình huống cuối unit giờ là kịch bản không AI (tinh-huong.spec.ts); màn nhập vai AI vẫn mở được bằng đường dẫn cũ
     await page.goto('/');
     const unit1 = page.getByRole('region', { name: /Chào hỏi & xưng hô/ });
-    await expect(unit1.getByText('4/5 bài')).toBeVisible();
+    await expect(unit1.getByText('4/4 bài')).toBeVisible();
     const xpBefore = Number(((await page.getByTestId('xp').textContent()) ?? '').replace(/\D/g, ''));
 
-    await page.getByRole('link', { name: /^Học tiếp/ }).first().click();
-    await expect(page).toHaveURL(/\/nhap-vai\?kb=sc5&bai=u1l5$/);
+    await page.goto('/nhap-vai?kb=sc5&bai=u1l5');
     await expect(page.getByRole('heading', { name: /Gặp hàng xóm mới/ })).toBeVisible();
     const tasks = page.getByRole('list', { name: 'Nhiệm vụ' });
     await expect(tasks.getByText('(chưa xong)')).toHaveCount(4);
@@ -84,7 +84,7 @@ test.describe('GĐ3 Hội thoại AI', () => {
     await assertMobileLayout(page);
 
     await page.getByRole('link', { name: 'Về lộ trình' }).click();
-    await expect(unit1.getByText('5/5 bài')).toBeVisible();
+    await expect(unit1.getByText('4/4 bài')).toBeVisible();
     expect(Number(((await page.getByTestId('xp').textContent()) ?? '').replace(/\D/g, ''))).toBeGreaterThan(xpBefore);
     await expect(page.getByRole('link', { name: /^Học tiếp/ }).first()).toContainText('Số từ 1 đến 5');
   });

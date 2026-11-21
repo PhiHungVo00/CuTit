@@ -1,0 +1,380 @@
+[
+  {
+    "id": "d-u1",
+    "unit": "u1",
+    "aiScenarioId": "sc5",
+    "title": "Gặp hàng xóm mới",
+    "titleEn": "Meeting a new neighbour",
+    "reviewed": false,
+    "start": "n1",
+    "nodes": [
+      {
+        "id": "n1",
+        "cutit": "Ở hành lang, một bác hàng xóm lớn tuổi mỉm cười với bạn. Bạn chào bác thế nào?",
+        "cutitEn": "In the hallway, an older neighbour smiles at you. How do you greet them?",
+        "context": {
+          "speakerAge": 20,
+          "listenerAge": 50,
+          "relation": "social",
+          "speakerGender": "female",
+          "listenerGender": "female"
+        },
+        "a6": {
+          "speaker": "cháu",
+          "listener": "bác"
+        },
+        "options": [
+          {
+            "text": "Cháu chào bác ạ!",
+            "textEn": "Hello, auntie/uncle! (polite, as a young relative)",
+            "next": "n2",
+            "a6": {
+              "speaker": "cháu",
+              "listener": "bác"
+            }
+          },
+          {
+            "text": "Tôi chào bà.",
+            "textEn": "I greet you, madam. (too distant)",
+            "next": "n2",
+            "a6": {
+              "speaker": "tôi",
+              "listener": "bà"
+            }
+          },
+          {
+            "text": "Tao chào mày.",
+            "textEn": "Hi, you. (very rude)",
+            "next": "n2",
+            "a6": {
+              "speaker": "tao",
+              "listener": "mày"
+            }
+          }
+        ]
+      },
+      {
+        "id": "n2",
+        "cutit": "Bác nói: “Chào cháu! Cháu tên là gì?”",
+        "cutitEn": "The neighbour says: “Hello! What is your name?”",
+        "options": [
+          {
+            "text": "Cháu tên là Mai ạ.",
+            "textEn": "My name is Mai.",
+            "next": "n3"
+          },
+          {
+            "text": "Không biết.",
+            "textEn": "Don’t know.",
+            "next": "end-retry"
+          }
+        ]
+      },
+      {
+        "id": "n3",
+        "cutit": "Bác cười: “Cháu ngoan quá.” Bạn hỏi thăm bác nhé!",
+        "cutitEn": "The neighbour smiles: “What a nice child.” Ask how they are!",
+        "context": {
+          "speakerAge": 20,
+          "listenerAge": 50,
+          "relation": "social",
+          "speakerGender": "female",
+          "listenerGender": "female"
+        },
+        "a6": {
+          "speaker": "cháu",
+          "listener": "bác"
+        },
+        "options": [
+          {
+            "text": "Bác có khỏe không ạ?",
+            "textEn": "Are you well? (polite)",
+            "next": "n4",
+            "a6": {
+              "speaker": "cháu",
+              "listener": "bác"
+            }
+          },
+          {
+            "text": "Bà có khỏe không?",
+            "textEn": "Are you well, madam? (wrong pronouns)",
+            "next": "n4",
+            "a6": {
+              "speaker": "tôi",
+              "listener": "bà"
+            }
+          }
+        ]
+      },
+      {
+        "id": "n4",
+        "cutit": "Bác nói: “Bác khỏe, cảm ơn cháu.” Đến lúc chào tạm biệt.",
+        "cutitEn": "The neighbour says: “I am fine, thank you.” Time to say goodbye.",
+        "options": [
+          {
+            "text": "Cháu chào bác ạ, tạm biệt bác!",
+            "textEn": "Goodbye, auntie/uncle!",
+            "next": "end-ok"
+          },
+          {
+            "text": "Thôi.",
+            "textEn": "Enough.",
+            "next": "end-retry"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "d-u2",
+    "unit": "u2",
+    "aiScenarioId": "sc6",
+    "title": "Mua trái cây ở chợ",
+    "titleEn": "Buying fruit at the market",
+    "reviewed": false,
+    "start": "n1",
+    "nodes": [
+      {
+        "id": "n1",
+        "cutit": "Ở sạp trái cây, một chị bán hàng trạc ba mươi tuổi hỏi bạn: “Em mua gì?” Bạn nói thế nào?",
+        "cutitEn": "At the fruit stall, a woman in her thirties asks you what you want. What do you say?",
+        "context": {
+          "speakerAge": 20,
+          "listenerAge": 30,
+          "relation": "social",
+          "speakerGender": "male",
+          "listenerGender": "female"
+        },
+        "a6": {
+          "speaker": "em",
+          "listener": "chị"
+        },
+        "options": [
+          {
+            "text": "Em chào chị ạ. Em muốn mua dứa.",
+            "textEn": "Hello. I would like to buy a pineapple.",
+            "next": "n2",
+            "a6": {
+              "speaker": "em",
+              "listener": "chị"
+            }
+          },
+          {
+            "text": "Tôi muốn mua dứa, bà.",
+            "textEn": "I want to buy a pineapple, madam. (wrong pronouns)",
+            "next": "n2",
+            "a6": {
+              "speaker": "tôi",
+              "listener": "bà"
+            }
+          },
+          {
+            "text": "Cho tao dứa.",
+            "textEn": "Give me a pineapple. (rude)",
+            "next": "n2",
+            "a6": {
+              "speaker": "tao",
+              "listener": "mày"
+            }
+          }
+        ]
+      },
+      {
+        "id": "n2",
+        "cutit": "Chị hỏi: “Em mua mấy quả?” Bạn hỏi giá trước nhé.",
+        "cutitEn": "She asks how many you want. Ask the price first.",
+        "options": [
+          {
+            "text": "Dứa này bao nhiêu tiền một quả ạ?",
+            "textEn": "How much is one of these pineapples?",
+            "next": "n3"
+          },
+          {
+            "text": "Dứa này ở đâu?",
+            "textEn": "Where is this pineapple?",
+            "next": "end-retry"
+          }
+        ]
+      },
+      {
+        "id": "n3",
+        "cutit": "Chị nói: “Hai mươi nghìn một quả.” Bạn muốn mua hai quả.",
+        "cutitEn": "She says it is twenty thousand each. You want two.",
+        "options": [
+          {
+            "text": "Cho em hai quả ạ.",
+            "textEn": "Two, please.",
+            "next": "n4"
+          },
+          {
+            "text": "Em không mua.",
+            "textEn": "I am not buying.",
+            "next": "end-retry"
+          }
+        ]
+      },
+      {
+        "id": "n4",
+        "cutit": "Chị đưa dứa cho bạn. Bạn trả tiền rồi nói…",
+        "cutitEn": "She hands you the pineapples. You pay and say…",
+        "context": {
+          "speakerAge": 20,
+          "listenerAge": 30,
+          "relation": "social",
+          "speakerGender": "male",
+          "listenerGender": "female"
+        },
+        "a6": {
+          "speaker": "em",
+          "listener": "chị"
+        },
+        "options": [
+          {
+            "text": "Em cảm ơn chị ạ!",
+            "textEn": "Thank you!",
+            "next": "end-ok",
+            "a6": {
+              "speaker": "em",
+              "listener": "chị"
+            }
+          },
+          {
+            "text": "Tôi cảm ơn bà.",
+            "textEn": "I thank you, madam. (wrong pronouns)",
+            "next": "end-ok",
+            "a6": {
+              "speaker": "tôi",
+              "listener": "bà"
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "d-u3",
+    "unit": "u3",
+    "aiScenarioId": "sc7",
+    "title": "Ăn trưa rồi hỏi đường",
+    "titleEn": "Lunch, then asking the way",
+    "reviewed": false,
+    "start": "n1",
+    "nodes": [
+      {
+        "id": "n1",
+        "cutit": "Ở quán cơm, chị chủ quán trạc ba mươi tuổi hỏi: “Em dùng gì?” Bạn gọi món thế nào?",
+        "cutitEn": "At the eatery, the owner, a woman in her thirties, asks what you would like. How do you order?",
+        "context": {
+          "speakerAge": 20,
+          "listenerAge": 30,
+          "relation": "social",
+          "speakerGender": "male",
+          "listenerGender": "female"
+        },
+        "a6": {
+          "speaker": "em",
+          "listener": "chị"
+        },
+        "options": [
+          {
+            "text": "Cho em một đĩa cơm gà ạ.",
+            "textEn": "One plate of chicken rice, please.",
+            "next": "n2",
+            "a6": {
+              "speaker": "em",
+              "listener": "chị"
+            }
+          },
+          {
+            "text": "Cho tôi cơm gà, bà.",
+            "textEn": "Chicken rice for me, madam. (wrong pronouns)",
+            "next": "n2",
+            "a6": {
+              "speaker": "tôi",
+              "listener": "bà"
+            }
+          },
+          {
+            "text": "Cơm gà đi.",
+            "textEn": "Chicken rice. (rude)",
+            "next": "end-retry",
+            "a6": {
+              "speaker": "tao",
+              "listener": "mày"
+            }
+          }
+        ]
+      },
+      {
+        "id": "n2",
+        "cutit": "Chị mang cơm ra. Bạn ăn thử rồi khen.",
+        "cutitEn": "She brings the rice. You taste it and praise it.",
+        "options": [
+          {
+            "text": "Ngon quá, em cảm ơn chị!",
+            "textEn": "Delicious, thank you!",
+            "next": "n3"
+          },
+          {
+            "text": "Không ngon.",
+            "textEn": "Not tasty.",
+            "next": "end-retry"
+          }
+        ]
+      },
+      {
+        "id": "n3",
+        "cutit": "Ăn xong, bạn muốn trả tiền.",
+        "cutitEn": "You finished eating and want to pay.",
+        "options": [
+          {
+            "text": "Chị ơi, tính tiền giúp em ạ.",
+            "textEn": "Excuse me, the bill please.",
+            "next": "n4"
+          },
+          {
+            "text": "Chị ơi, cơm gà.",
+            "textEn": "Excuse me, chicken rice.",
+            "next": "end-retry"
+          }
+        ]
+      },
+      {
+        "id": "n4",
+        "cutit": "Bạn hỏi đường đến bưu điện với một anh trạc tuổi hai mươi tám đứng ngoài quán.",
+        "cutitEn": "You ask a man in his late twenties outside the way to the post office.",
+        "context": {
+          "speakerAge": 20,
+          "listenerAge": 28,
+          "relation": "social",
+          "speakerGender": "male",
+          "listenerGender": "male"
+        },
+        "a6": {
+          "speaker": "em",
+          "listener": "anh"
+        },
+        "options": [
+          {
+            "text": "Anh ơi, bưu điện ở đâu ạ?",
+            "textEn": "Excuse me, where is the post office?",
+            "next": "end-ok",
+            "a6": {
+              "speaker": "em",
+              "listener": "anh"
+            }
+          },
+          {
+            "text": "Mày ơi, bưu điện ở đâu?",
+            "textEn": "Hey you, where is the post office? (rude)",
+            "next": "end-ok",
+            "a6": {
+              "speaker": "tao",
+              "listener": "mày"
+            }
+          }
+        ]
+      }
+    ]
+  }
+]

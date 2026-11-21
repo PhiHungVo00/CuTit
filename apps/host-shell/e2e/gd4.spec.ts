@@ -46,7 +46,7 @@ test.describe('GĐ4a Huy hiệu + tổng kết tuần', () => {
     await page.getByText(/Huy hiệu \(2\/\d+\)/).click();
     const list = page.getByRole('list', { name: 'Huy hiệu' });
     await expect(list.getByRole('listitem').filter({ hasText: 'Vượt rào' })).toContainText('Đã có');
-    await expect(list.getByRole('listitem').filter({ hasText: 'Xong unit 2' })).toContainText(/0\/5 · còn 5/);
+    await expect(list.getByRole('listitem').filter({ hasText: 'Xong unit 2' })).toContainText(/0\/4 · còn 4/);
     await expect(list.getByRole('listitem').filter({ hasText: 'Sáu thanh vững' })).toContainText(/còn 6/);
     // không có huy hiệu theo số ngày, không so với người khác
     expect(await page.locator('text=/xếp hạng|leaderboard|ngày liên tục mở app/i').count()).toBe(0);

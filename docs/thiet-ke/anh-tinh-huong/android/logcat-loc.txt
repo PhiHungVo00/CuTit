@@ -1,0 +1,400 @@
+11-21 18:40:47.416   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{52cab12 com.android.internal.display.cutout.emulation.corner/10004} BLOCKED
+11-21 18:40:47.416   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{21082e3 com.android.internal.display.cutout.emulation.double/10008} BLOCKED
+11-21 18:40:47.416   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{77b14e0 com.google.android.googlequicksearchbox/10145} BLOCKED
+11-21 18:40:47.417   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{5045399 com.google.android.onetimeinitializer/10131} BLOCKED
+11-21 18:40:47.417   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{5a6665e com.google.android.ext.shared/10118} BLOCKED
+11-21 18:40:47.417   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{5be6a3f com.android.virtualmachine.res/10189} BLOCKED
+11-21 18:40:47.417   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{22c9f0c com.android.managedprovisioning.auto_generated_rro_product__/10042} BLOCKED
+11-21 18:40:47.417   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{4bd9055 com.android.carrierconfig.auto_generated_rro_vendor__/10088} BLOCKED
+11-21 18:40:47.417   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{d6e8a6a com.google.android.server.deviceconfig.resources/10193} BLOCKED
+11-21 18:40:47.417   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{e396b5b com.android.systemui.emulation.pixel_3_xl/10054} BLOCKED
+11-21 18:40:47.417   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{8a9ff8 com.android.systemui.emulation.pixel_4_xl/10058} BLOCKED
+11-21 18:40:47.417   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{993dcd1 com.android.systemui.emulation.pixel_fold/10074} BLOCKED
+11-21 18:40:47.417   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{be2e336 com.android.providers.telephony.auto_generated_characteristics_rro/10079} BLOCKED
+11-21 18:40:47.418   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{2996237 com.android.simappdialog.auto_generated_rro_product__/10051} BLOCKED
+11-21 18:40:47.418   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{4c5c3a4 com.android.htmlviewer/10121} BLOCKED
+11-21 18:40:47.418   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{ea8750d com.google.android.health.connect.backuprestore/10192} BLOCKED
+11-21 18:40:47.418   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{671fcc2 com.android.systemui.auto_generated_rro_product__/10075} BLOCKED
+11-21 18:40:47.418   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{997ead3 com.google.android.apps.messaging/10142} BLOCKED
+11-21 18:40:47.419   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{16d7610 com.google.android.soundpicker/10163} BLOCKED
+11-21 18:40:47.419   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{5f45509 com.google.android.marvin.talkbackoverlay/10090} BLOCKED
+11-21 18:40:47.419   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{8e7230e com.google.android.configupdater/10128} BLOCKED
+11-21 18:40:47.419   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{1ec612f com.android.internal.emulation.pixel_3a_xl/10015} BLOCKED
+11-21 18:40:47.422   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{9be33c com.android.internal.emulation.pixel_6_pro/10020} BLOCKED
+11-21 18:40:47.422   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{e0438c5 com.android.internal.emulation.pixel_7_pro/10027} BLOCKED
+11-21 18:40:47.422   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{e76621a com.android.internal.emulation.pixel_8_pro/10032} BLOCKED
+11-21 18:40:47.423   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{467e14b com.android.internal.emulation.pixel_9_pro/10029} BLOCKED
+11-21 18:40:47.423   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{1e1f728 com.android.internal.emulation.pixel_3a/10014} BLOCKED
+11-21 18:40:47.423   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{7749c41 com.android.internal.emulation.pixel_4a/10023} BLOCKED
+11-21 18:40:47.423   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{f8885e6 com.android.internal.emulation.pixel_6a/10022} BLOCKED
+11-21 18:40:47.423   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{bd14727 com.android.internal.emulation.pixel_7a/10024} BLOCKED
+11-21 18:40:47.423   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{af35dd4 com.android.internal.emulation.pixel_8a/10031} BLOCKED
+11-21 18:40:47.423   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{62dbb7d com.google.android.overlay.googlewebview/10038} BLOCKED
+11-21 18:40:47.423   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{471a72 com.google.android.apps.safetyhub/10139} BLOCKED
+11-21 18:40:47.423   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{e812ec3 com.google.android.hotspot2.osulogin/10199} BLOCKED
+11-21 18:40:47.423   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{7128340 com.android.simappdialog/10125} BLOCKED
+11-21 18:40:47.423   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{a5f9279 com.android.internal.display.cutout.emulation.hole/10009} BLOCKED
+11-21 18:40:47.424   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{be86bbe com.android.internal.display.cutout.emulation.tall/10012} BLOCKED
+11-21 18:40:47.424   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{5bdf41f com.android.internal.systemui.navbar.threebutton/10044} BLOCKED
+11-21 18:40:47.424   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{13c936c com.android.camera2/10147} BLOCKED
+11-21 18:40:47.424   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{d3ddd35 com.android.internal.ranchu.commonoverlay/10048} BLOCKED
+11-21 18:40:47.424   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{8bb85ca com.android.systemui.auto_generated_rro_vendor__/10086} BLOCKED
+11-21 18:40:47.424   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{ed7b33b com.google.android.deskclock/10160} BLOCKED
+11-21 18:40:47.425   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{5157a58 com.android.internal.systemui.navbar.twobutton/10043} BLOCKED
+11-21 18:40:47.425   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{d7c17b1 com.google.android.as/10135} BLOCKED
+11-21 18:40:47.426   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{f43496 com.google.android.gm/10168} BLOCKED
+11-21 18:40:47.426   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{2044817 com.android.compos.payload/10197} BLOCKED
+11-21 18:40:47.426   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{293e404 com.android.systemui.emulation.pixel_3/10053} BLOCKED
+11-21 18:40:47.426   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{7897ded com.android.systemui.emulation.pixel_4/10057} BLOCKED
+11-21 18:40:47.426   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{c370422 com.android.systemui.emulation.pixel_5/10060} BLOCKED
+11-21 18:40:47.427   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{afb4eb3 com.android.systemui.emulation.pixel_6/10061} BLOCKED
+11-21 18:40:47.427   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{6d3c70 com.android.systemui.emulation.pixel_7/10064} BLOCKED
+11-21 18:40:47.427   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{58d0be9 com.android.systemui.emulation.pixel_8/10067} BLOCKED
+11-21 18:40:47.427   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{5e5406e com.android.systemui.emulation.pixel_9/10071} BLOCKED
+11-21 18:40:47.427   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{f52230f com.android.printspooler/10124} BLOCKED
+11-21 18:40:47.427   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{941af9c com.google.android.connectivity.resources.goldfish.overlay/10087} BLOCKED
+11-21 18:40:47.427   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{3217da5 com.android.dreams.basic/10110} BLOCKED
+11-21 18:40:47.427   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{c28f57a com.google.android.networkstack.tethering.emulator/10034} BLOCKED
+11-21 18:40:47.427   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{e97e12b com.android.providers.settings.auto_generated_rro_product__/10050} BLOCKED
+11-21 18:40:47.427   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{f882988 com.google.android.as.oss/10129} BLOCKED
+11-21 18:40:47.427   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{d14f21 com.android.traceur.auto_generated_rro_product__/10081} BLOCKED
+11-21 18:40:47.427   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{3c0ef46 com.android.internal.emulation.pixel_9_pro_fold/10036} BLOCKED
+11-21 18:40:47.427   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{8316507 com.google.android.devicelockcontroller/10188} BLOCKED
+11-21 18:40:47.427   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{43a5634 com.google.android.dialer/10138} BLOCKED
+11-21 18:40:47.427   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{352bc5d com.android.internal.emulation.pixel_3/10011} BLOCKED
+11-21 18:40:47.427   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{c8cb9d2 com.android.internal.emulation.pixel_4/10017} BLOCKED
+11-21 18:40:47.427   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{2f54aa3 com.android.internal.emulation.pixel_5/10019} BLOCKED
+11-21 18:40:47.427   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{c40a1a0 com.android.internal.emulation.pixel_6/10021} BLOCKED
+11-21 18:40:47.428   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{a83c159 com.android.internal.emulation.pixel_7/10026} BLOCKED
+11-21 18:40:47.428   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{2d8a11e com.android.internal.emulation.pixel_8/10025} BLOCKED
+11-21 18:40:47.428   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{287edff com.android.internal.emulation.pixel_9/10028} BLOCKED
+11-21 18:40:47.428   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{9e37cc com.google.android.captiveportallogin/10116} BLOCKED
+11-21 18:40:47.428   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{c261a15 android.auto_generated_characteristics_rro/10083} BLOCKED
+11-21 18:40:47.428   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{969b12a com.google.android.appsearch.apk/10204} BLOCKED
+11-21 18:40:47.428   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{6776b1b com.android.musicfx/10106} BLOCKED
+11-21 18:40:47.428   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{55d04b8 com.google.android.apps.docs/10154} BLOCKED
+11-21 18:40:47.428   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{e85061 com.google.android.apps.maps/10157} BLOCKED
+11-21 18:40:47.429   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{e5b4291 com.google.android.markup/10151} BLOCKED
+11-21 18:40:47.429   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{849b5f6 com.google.android.rkpdapp/10203} BLOCKED
+11-21 18:40:47.429   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{f179df7 com.google.android.contacts/10150} BLOCKED
+11-21 18:40:47.429   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{339b464 com.android.server.telecom.auto_generated_rro_product__/10078} BLOCKED
+11-21 18:40:47.429   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{de076cd com.android.phone.auto_generated_characteristics_rro/10076} BLOCKED
+11-21 18:40:47.429   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{c533b82 com.google.android.overlay.googleconfig/10039} BLOCKED
+11-21 18:40:47.429   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{41e2293 com.android.chrome/10146} BLOCKED
+11-21 18:40:47.429   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{fb2d0 com.android.bips.auto_generated_rro_product__/10001} BLOCKED
+11-21 18:40:47.429   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{c0ab2c9 com.google.android.apps.customization.pixel/10155} BLOCKED
+11-21 18:40:47.429   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{37d8dce com.google.android.tag/10108} BLOCKED
+11-21 18:40:47.430   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{8fe54ef com.google.android.overlay.permissioncontroller/10037} BLOCKED
+11-21 18:40:47.430   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{2052bfc com.google.android.partnersetup/10136} BLOCKED
+11-21 18:40:47.430   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{82b285 com.google.android.apps.wallpaper.nexus/10153} BLOCKED
+11-21 18:40:47.430   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{1e8b8da com.google.android.apps.nexuslauncher/10176} BLOCKED
+11-21 18:40:47.430   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{b05510b com.android.theme.font.notoserifsource/10035} BLOCKED
+11-21 18:40:47.430   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{9770be8 com.google.android.safetycenter.resources/10184} BLOCKED
+11-21 18:40:47.431   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{ac0f201 com.android.internal.display.cutout.emulation.waterfall/10013} BLOCKED
+11-21 18:40:47.431   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{ba988a6 com.android.internal.systemui.navbar.transparent/10082} BLOCKED
+11-21 18:40:47.431   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{535f2e7 com.google.android.connectivity.resources/10195} BLOCKED
+11-21 18:40:47.431   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{da4fe94 com.android.providers.contacts.auto_generated_rro_product__/10002} BLOCKED
+11-21 18:40:47.431   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{f49ad3d com.google.android.feedback/10173} BLOCKED
+11-21 18:40:47.431   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{f558932 com.google.android.printservice.recommendation/10122} BLOCKED
+11-21 18:40:47.431   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{5e4d683 com.google.android.apps.photos/10166} BLOCKED
+11-21 18:40:47.432   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{1aeeae5 com.google.android.calendar/10149} BLOCKED
+11-21 18:40:47.432   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{81d7000 com.google.android.documentsui/10098} BLOCKED
+11-21 18:40:47.432   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{ca8e039 com.android.systemui.emulation.pixel_3a_xl/10056} BLOCKED
+11-21 18:40:47.432   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{d4f067e com.android.systemui.emulation.pixel_6_pro/10062} BLOCKED
+11-21 18:40:47.432   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{21457df com.android.systemui.emulation.pixel_7_pro/10065} BLOCKED
+11-21 18:40:47.432   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{ae98c2c com.android.systemui.emulation.pixel_8_pro/10068} BLOCKED
+11-21 18:40:47.432   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{42e46f5 com.android.systemui.emulation.pixel_9_pro/10070} BLOCKED
+11-21 18:40:47.433   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{29092fb com.android.carrierconfig.auto_generated_rro_product__/10003} BLOCKED
+11-21 18:40:47.433   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{d793f18 com.android.devicediagnostics.auto_generated_rro_product__/10006} BLOCKED
+11-21 18:40:47.433   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{2695d71 com.android.providers.partnerbookmarks/10123} BLOCKED
+11-21 18:40:47.434   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{7bb6756 com.android.wallpaper.livepicker/10103} BLOCKED
+11-21 18:40:47.434   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{6cb63d7 com.android.providers.telephony.auto_generated_rro_product__/10080} BLOCKED
+11-21 18:40:47.434   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{c4f34c4 com.android.phone.auto_generated_rro_vendor__/10085} BLOCKED
+11-21 18:40:47.434   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{3655fad com.android.imsserviceentitlement/10132} BLOCKED
+11-21 18:40:47.434   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{21ea2e2 com.android.internal.emulation.pixel_9_pro_xl/10030} BLOCKED
+11-21 18:40:47.434   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{9786673 com.google.android.healthconnect.controller/10191} BLOCKED
+11-21 18:40:47.434   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{76cd930 com.android.internal.emulation.pixel_2_xl/10010} BLOCKED
+11-21 18:40:47.434   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{ea549a9 com.android.internal.emulation.pixel_3_xl/10016} BLOCKED
+11-21 18:40:47.434   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{a880b2e com.android.internal.emulation.pixel_4_xl/10018} BLOCKED
+11-21 18:40:47.434   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{2e8f6cf com.android.internal.emulation.pixel_fold/10033} BLOCKED
+11-21 18:40:47.434   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{b7e585c com.android.bookmarkprovider/10111} BLOCKED
+11-21 18:40:47.434   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{6dfd765 com.google.android.overlay.pixelconfigcommon/10047} BLOCKED
+11-21 18:40:47.434   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{e0dac3a com.android.systemui.accessibility.accessibilitymenu.auto_generated_rro_product__/10000} BLOCKED
+11-21 18:40:47.434   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{52830eb com.android.systemui.emulation.pixel_3a/10055} BLOCKED
+11-21 18:40:47.434   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{1c69e48 com.android.systemui.emulation.pixel_4a/10059} BLOCKED
+11-21 18:40:47.434   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{97b84e1 com.android.systemui.emulation.pixel_6a/10063} BLOCKED
+11-21 18:40:47.434   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{31a5206 com.android.systemui.emulation.pixel_7a/10066} BLOCKED
+11-21 18:40:47.434   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{dd6f0c7 com.android.systemui.emulation.pixel_8a/10069} BLOCKED
+11-21 18:40:47.435   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{2cb56f4 com.google.android.settings.intelligence/10141} BLOCKED
+11-21 18:40:47.435   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{3cfbfc5 com.google.android.projection.gearhead/10130} BLOCKED
+11-21 18:40:47.435   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{9ca8e1d com.google.android.uwb.resources/10196} BLOCKED
+11-21 18:40:47.435   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{340dd1a com.android.cts.ctsshim/10206} BLOCKED
+11-21 18:40:47.435   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{9f98892 com.google.android.wifi.resources/10198} BLOCKED
+11-21 18:40:47.435   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{9c7d263 com.google.android.wifi.dialog/10200} BLOCKED
+11-21 18:40:47.435   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{7c0ee60 com.android.wallpaper/10179} BLOCKED
+11-21 18:40:47.435   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{2a7e3c7 com.android.microdroid.empty_payload/10190} BLOCKED
+11-21 18:40:47.436   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{406ef19 com.google.android.apps.wallpaper/10180} BLOCKED
+11-21 18:40:47.436   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{a239bde com.google.android.odad/10134} BLOCKED
+11-21 18:40:47.436   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{65b31bf com.android.settings.auto_generated_rro_product__/10049} BLOCKED
+11-21 18:40:47.436   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{6b6908c com.android.systemui.emulation.pixel_9_pro_xl/10073} BLOCKED
+11-21 18:40:47.436   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{40e63d5 com.android.companiondevicemanager.auto_generated_characteristics_rro/10005} BLOCKED
+11-21 18:40:47.436   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{84997ea com.android.internal.systemui.navbar.gestural/10045} BLOCKED
+11-21 18:40:47.437   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{c9b2adb com.google.android.apps.youtube.music/10164} BLOCKED
+11-21 18:40:47.437   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{5822978 com.android.bluetoothmidiservice/10112} BLOCKED
+11-21 18:40:47.437   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{bde6851 com.android.storagemanager.auto_generated_rro_product__/10052} BLOCKED
+11-21 18:40:47.437   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{12148b6 com.google.android.cellbroadcastreceiver/10207} BLOCKED
+11-21 18:40:47.437   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{21799b7 com.android.phone.auto_generated_rro_product__/10077} BLOCKED
+11-21 18:40:47.437   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{f6c6524 com.android.systemui.emulation.pixel_9_pro_fold/10072} BLOCKED
+11-21 18:40:47.437   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{5d0388d android.auto_generated_rro_product__/10084} BLOCKED
+11-21 18:40:47.437   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{4f13a42 com.google.android.inputmethod.latin/10156} BLOCKED
+11-21 18:40:47.437   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{b821a53 android.auto_generated_rro_vendor__/10089} BLOCKED
+11-21 18:40:47.437   593  1285 I AppsFilter: interaction: PackageSetting{bcccdf4 vn.edu.uit.becutit/10210} -> PackageSetting{99caf90 com.google.android.apps.restore/10137} BLOCKED
+11-21 18:40:47.484  3180  3180 D nativeloader: Load /data/app/~~6EnmAYk2B7PUG5iHRAIkQA==/com.google.android.webview-2VRMsz86j6YvKmSLFLmM4A==/base.apk!/lib/x86_64/libwebviewchromium.so using ns clns-8 from class loader (caller=/data/app/~~6EnmAYk2B7PUG5iHRAIkQA==/com.google.android.webview-2VRMsz86j6YvKmSLFLmM4A==/base.apk): ok
+11-21 18:40:47.486  1021  1218 I Icing   : doRemovePackageData vn.edu.uit.becutit
+11-21 18:40:47.487  3180  3180 D nativeloader: Load /system/lib64/libwebviewchromium_plat_support.so using ns clns-8 from class loader (caller=/data/app/~~6EnmAYk2B7PUG5iHRAIkQA==/com.google.android.webview-2VRMsz86j6YvKmSLFLmM4A==/base.apk): ok
+11-21 18:40:47.498  3180  3270 I chromium: [1121/184047.491215:INFO:android_webview/browser/variations/variations_seed_loader.cc:63] Failed to open file for reading.: No such file or directory (2)
+11-21 18:40:47.498  3180  3270 I chromium: [1121/184047.498956:INFO:android_webview/browser/variations/variations_seed_loader.cc:63] Failed to open file for reading.: No such file or directory (2)
+11-21 18:40:47.821   593   629 I ActivityManager: Start proc 3281:com.google.android.webview:sandboxed_process0:org.chromium.content.app.SandboxedProcessService0:0/u0ai9000 for  {vn.edu.uit.becutit/org.chromium.content.app.SandboxedProcessService0:0}
+11-21 18:40:47.931  3281  3281 I cr_WebViewApkApp: version= (812704608) minSdkVersion=29 processName=com.google.android.webview:sandboxed_process0:org.chromium.content.app.SandboxedProcessService0:0 splits=<none>
+11-21 18:40:47.983  3180  3299 W chromium: [WARNING:net/dns/dns_config_service_android.cc:69] Failed to read DnsConfig.
+11-21 18:40:48.308  1266  1477 W ziparchive: Unable to open '/data/app/~~U_IZBITTUJzHMXJV7kEC1A==/vn.edu.uit.becutit-UOG9SDDA6h-hEE4Voa_JrA==/base.apk': No such file or directory
+11-21 18:40:48.308  1266  1477 E .apps.wellbeing: Failed to open APK '/data/app/~~U_IZBITTUJzHMXJV7kEC1A==/vn.edu.uit.becutit-UOG9SDDA6h-hEE4Voa_JrA==/base.apk': I/O error
+11-21 18:40:48.313  1266  1477 W ResourcesManager: failed to preload asset path '/data/app/~~U_IZBITTUJzHMXJV7kEC1A==/vn.edu.uit.becutit-UOG9SDDA6h-hEE4Voa_JrA==/base.apk'
+11-21 18:40:48.313  1266  1477 W ResourcesManager: java.io.IOException: Failed to load asset path /data/app/~~U_IZBITTUJzHMXJV7kEC1A==/vn.edu.uit.becutit-UOG9SDDA6h-hEE4Voa_JrA==/base.apk
+11-21 18:40:48.313  1266  1477 W ziparchive: Unable to open '/data/app/~~U_IZBITTUJzHMXJV7kEC1A==/vn.edu.uit.becutit-UOG9SDDA6h-hEE4Voa_JrA==/base.apk': No such file or directory
+11-21 18:40:48.313  1266  1477 E .apps.wellbeing: Failed to open APK '/data/app/~~U_IZBITTUJzHMXJV7kEC1A==/vn.edu.uit.becutit-UOG9SDDA6h-hEE4Voa_JrA==/base.apk': I/O error
+11-21 18:40:48.313  1266  1477 E ResourcesManager: failed to add asset path '/data/app/~~U_IZBITTUJzHMXJV7kEC1A==/vn.edu.uit.becutit-UOG9SDDA6h-hEE4Voa_JrA==/base.apk'
+11-21 18:40:48.313  1266  1477 E ResourcesManager: java.io.IOException: Failed to load asset path /data/app/~~U_IZBITTUJzHMXJV7kEC1A==/vn.edu.uit.becutit-UOG9SDDA6h-hEE4Voa_JrA==/base.apk
+11-21 18:40:48.313  1266  1477 W PackageManager: Failure retrieving resources for vn.edu.uit.becutit
+11-21 18:40:48.325  3180  3180 D Capacitor: Starting BridgeActivity
+11-21 18:40:48.416  3180  3180 D Capacitor: Registering plugin instance: CapacitorCookies
+11-21 18:40:48.430  3180  3180 D Capacitor: Registering plugin instance: WebView
+11-21 18:40:48.433  3180  3180 D Capacitor: Registering plugin instance: CapacitorHttp
+11-21 18:40:48.436  3180  3180 D Capacitor: Registering plugin instance: SystemBars
+11-21 18:40:48.438  3180  3180 D Capacitor: Registering plugin instance: AppSettings
+11-21 18:40:48.442  3180  3180 D Capacitor: Registering plugin instance: AudioEnv
+11-21 18:40:48.443  3180  3180 D Capacitor: Registering plugin instance: TextToSpeech
+11-21 18:40:48.458  3180  3180 D Capacitor: Registering plugin instance: App
+11-21 18:40:48.463  3180  3180 D Capacitor: Registering plugin instance: LocalNotifications
+11-21 18:40:48.505  3180  3180 D Capacitor: Registering plugin instance: Preferences
+11-21 18:40:48.513  3180  3180 D Capacitor: Registering plugin instance: SplashScreen
+11-21 18:40:48.606  3180  3180 W Capacitor: Unable to read file at path public/plugins
+11-21 18:40:48.631  3180  3180 D Capacitor: Loading app at https://localhost
+11-21 18:40:48.826  3180  3294 D Capacitor: Handling local request: https://localhost/
+11-21 18:40:48.911  3281  3339 I chromium: [INFO:third_party/skia/src/ports/SkFontMgr_android_parser.cpp:724] [SkFontMgr Android Parser] '/product/etc/fonts_customization.xml' could not be opened
+11-21 18:40:48.911  3281  3339 I chromium: 
+11-21 18:40:48.946  3180  3180 D Capacitor: App started
+11-21 18:40:48.961  3180  3180 D Capacitor/AppPlugin: Firing change: true
+11-21 18:40:48.963  3180  3180 V Capacitor/AppPlugin: Notifying listeners for event appStateChange
+11-21 18:40:48.963  3180  3180 D Capacitor/AppPlugin: No listeners found for event appStateChange
+11-21 18:40:48.969  3180  3180 D Capacitor: App resumed
+11-21 18:40:49.319   593   914 D CoreBackPreview: Window{397609a u0 vn.edu.uit.becutit/vn.edu.uit.becutit.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@f76a277, mPriority=0, mIsAnimationCallback=false}
+11-21 18:40:49.594  3180  3303 D Capacitor: Handling local request: https://localhost/assets/app-DkEXqUOE.js
+11-21 18:40:49.620  3180  3304 D Capacitor: Handling local request: https://localhost/assets/react-DzCDEpYv.js
+11-21 18:40:49.650  3180  3305 D Capacitor: Handling local request: https://localhost/assets/index-BDBV_gt8.css
+11-21 18:40:49.693  3180  3297 D Capacitor: Handling local request: https://localhost/assets/be-vietnam-pro-latin-400-normal-PpnXBOrz.woff2
+11-21 18:40:49.809   593   615 W ziparchive: Unable to open '/data/app/~~hTxsSn7DzDCqw0Mz5JG1Vw==/vn.edu.uit.becutit-GGD9qAIMq6_Lmf2cakIQYw==/base.dm': No such file or directory
+11-21 18:40:49.811   593   615 I ActivityTaskManager: Displayed vn.edu.uit.becutit/.MainActivity for user 0: +3s941ms
+11-21 18:40:49.914  3180  3294 D Capacitor: Handling local request: https://localhost/assets/be-vietnam-pro-vietnamese-400-normal-CRcqvyg1.woff2
+11-21 18:40:50.016   593   703 I ImeTracker: vn.edu.uit.becutit:97b39263: onRequestHide at ORIGIN_SERVER reason HIDE_UNSPECIFIED_WINDOW fromUser false
+11-21 18:40:50.017   593   703 I ImeTracker: vn.edu.uit.becutit:97b39263: onCancelled at PHASE_SERVER_SHOULD_HIDE
+11-21 18:40:50.110  1245  1245 I GoogleInputMethodService: GoogleInputMethodService.onStartInput():1986 onStartInput(EditorInfo{EditorInfo{packageName=vn.edu.uit.becutit, inputType=0, inputTypeString=NULL, enableLearning=false, autoCorrection=false, autoComplete=false, imeOptions=12000000, privateImeOptions=null, actionName=UNSPECIFIED, actionLabel=null, initialSelStart=-1, initialSelEnd=-1, initialCapsMode=0, label=null, fieldId=0, fieldName=null, extras=null, hintText=null, hintLocales=[]}}, false)
+11-21 18:40:50.199   593  1621 W PackageConfigPersister: App-specific configuration not found for packageName: vn.edu.uit.becutit and userId: 0
+11-21 18:40:50.290   593  1285 D CoreBackPreview: Window{acbc5d1 u0 Splash Screen vn.edu.uit.becutit EXITING}: Setting back callback null
+11-21 18:40:50.307   593   607 W InputManager-JNI: Input channel object 'acbc5d1 Splash Screen vn.edu.uit.becutit (client)' was disposed without first being removed with the input manager!
+11-21 18:40:50.349  3180  3299 D Capacitor: Handling local request: https://localhost/assets/be-vietnam-pro-latin-800-normal-BpHZASpI.woff2
+11-21 18:40:50.647  1021  1029 W gle.android.gms: ApkAssets: Deleting an ApkAssets object '<empty> and /data/app/~~hTxsSn7DzDCqw0Mz5JG1Vw==/vn.edu.uit.becutit-GGD9qAIMq6_Lmf2cakIQYw==/base.apk' with 1 weak references
+11-21 18:40:50.957  3180  3305 D Capacitor: Handling local request: https://localhost/assets/be-vietnam-pro-vietnamese-800-normal-D4LFh2W4.woff2
+11-21 18:40:51.165   593   629 I ActivityManager: Start proc 3401:com.google.android.webview:webview_service/u0a162 for service {com.google.android.webview/org.chromium.android_webview.services.VariationsSeedServer}
+11-21 18:40:51.233  3180  3180 I Capacitor/Console: File: https://localhost/assets/react-DzCDEpYv.js - Line 180 - Msg: %cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold
+11-21 18:40:51.255  3180  3294 D Capacitor: Handling local request: https://localhost/assets/PathHomeRoute-BjZMUeat.js
+11-21 18:40:51.265  3180  3299 D Capacitor: Handling local request: https://localhost/assets/course-_YHhxcjj.js
+11-21 18:40:51.267  3180  3305 D Capacitor: Handling local request: https://localhost/assets/index-CbygINzJ.js
+11-21 18:40:51.268  3180  3299 D Capacitor: Handling local request: https://localhost/assets/reminders-0cjuT3_4.js
+11-21 18:40:51.272  3180  3303 D Capacitor: Handling local request: https://localhost/assets/Page-DgCiHWUA.js
+11-21 18:40:51.275  3180  3297 D Capacitor: Handling local request: https://localhost/assets/progress-DGGuFBzW.js
+11-21 18:40:51.278  3180  3299 D Capacitor: Handling local request: https://localhost/assets/settings-uQEf4Q3L.js
+11-21 18:40:51.286  3180  3305 D Capacitor: Handling local request: https://localhost/assets/reminders-BIyAD2gQ.js
+11-21 18:40:51.291  3180  3294 D Capacitor: Handling local request: https://localhost/assets/Card-CEZ9WIX6.js
+11-21 18:40:51.425  3180  3294 D Capacitor: Handling local request: https://localhost/assets/HomeLookup-Ve1vrOtu.js
+11-21 18:40:51.430  3180  3297 D Capacitor: Handling local request: https://localhost/assets/ListRow-hOCne90R.js
+11-21 18:40:51.497  3180  3294 D Capacitor: Handling local request: https://localhost/assets/bootstrap-D5-ItNcR.js
+11-21 18:40:51.504  3180  3299 D Capacitor: Handling local request: https://localhost/assets/index-Cj1cfgeb.js
+11-21 18:40:51.516  3180  3294 D Capacitor: Handling local request: https://localhost/assets/session-bQVxfqZ_.js
+11-21 18:40:51.527  3180  3299 D Capacitor: Handling local request: https://localhost/assets/sync-DNDgQOJQ.js
+11-21 18:40:51.531  3180  3294 D Capacitor: Handling local request: https://localhost/assets/index-C_w7vRw1.js
+11-21 18:40:51.554  3180  3294 D Capacitor: Handling local request: https://localhost/assets/index-Avm4E69Z.js
+11-21 18:40:51.565  3180  3294 D Capacitor: Handling local request: https://localhost/assets/index-BtLa39AF.js
+11-21 18:40:51.623  3180  3294 D Capacitor: Handling local request: https://localhost/icons/icon-192.png
+11-21 18:40:51.669  3180  3294 D Capacitor: Handling local request: https://localhost/icons/icon-192.png
+11-21 18:40:51.754  3180  3180 W Capacitor/Console: File: https://localhost/assets/react-DzCDEpYv.js - Line 201 - Msg: ⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition.
+11-21 18:40:51.755  3180  3180 W Capacitor/Console: File: https://localhost/assets/react-DzCDEpYv.js - Line 201 - Msg: ⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath.
+11-21 18:40:51.776  3180  3294 D Capacitor: Handling local request: https://localhost/assets/index-BpUwDVPM.js
+11-21 18:40:51.788  3180  3180 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 16876590, pluginId: SystemBars, methodName: setTheme
+11-21 18:40:51.792  3180  3180 V Capacitor: callback: 16876590, pluginId: SystemBars, methodName: setTheme, methodData: {"dark":false,"color":"#FBF3E4"}
+11-21 18:40:51.795  3180  3180 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 16876591, pluginId: SystemBars, methodName: setTheme
+11-21 18:40:51.795  3180  3180 V Capacitor: callback: 16876591, pluginId: SystemBars, methodName: setTheme, methodData: {"dark":false,"color":"#FBF3E4"}
+11-21 18:40:51.795  3180  3180 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 16876592, pluginId: App, methodName: addListener
+11-21 18:40:51.796  3180  3180 V Capacitor: callback: 16876592, pluginId: App, methodName: addListener, methodData: {"eventName":"backButton"}
+11-21 18:40:51.796  3180  3180 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 16876593, pluginId: SplashScreen, methodName: hide
+11-21 18:40:51.797  3180  3180 V Capacitor: callback: 16876593, pluginId: SplashScreen, methodName: hide, methodData: {"fadeOutDuration":150}
+11-21 18:40:51.798  3180  3180 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 16876594, pluginId: App, methodName: addListener
+11-21 18:40:51.798  3180  3180 V Capacitor: callback: 16876594, pluginId: App, methodName: addListener, methodData: {"eventName":"backButton"}
+11-21 18:40:51.798  3180  3180 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 16876595, pluginId: SplashScreen, methodName: hide
+11-21 18:40:51.799  3180  3180 V Capacitor: callback: 16876595, pluginId: SplashScreen, methodName: hide, methodData: {"fadeOutDuration":150}
+11-21 18:40:51.814  3180  3294 D Capacitor: Handling local request: https://localhost/assets/Motivation-BZTdDsww.js
+11-21 18:40:51.847  3180  3180 I Capacitor/Console: File:  - Line 333 - Msg: undefined
+11-21 18:40:51.849  3180  3180 I Capacitor/Console: File:  - Line 333 - Msg: undefined
+11-21 18:40:51.850  3180  3180 I Capacitor/Console: File:  - Line 333 - Msg: undefined
+11-21 18:40:51.851  3180  3180 I Capacitor/Console: File:  - Line 333 - Msg: undefined
+11-21 18:40:51.869  3180  3180 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 16876596, pluginId: Preferences, methodName: get
+11-21 18:40:51.869  3180  3180 V Capacitor: callback: 16876596, pluginId: Preferences, methodName: get, methodData: {"key":"becutit.auth"}
+11-21 18:40:52.049  3180  3294 D Capacitor: Handling local request: https://localhost/assets/index-CnZ3iWDO.js
+11-21 18:40:52.078  3180  3180 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 16876597, pluginId: LocalNotifications, methodName: cancel
+11-21 18:40:52.078  3180  3180 V Capacitor: callback: 16876597, pluginId: LocalNotifications, methodName: cancel, methodData: {"notifications":[{"id":7001},{"id":7002},{"id":7003},{"id":7004},{"id":7005},{"id":7006},{"id":7007}]}
+11-21 18:40:52.083  3180  3180 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 16876598, pluginId: LocalNotifications, methodName: cancel
+11-21 18:40:52.084  3180  3180 V Capacitor: callback: 16876598, pluginId: LocalNotifications, methodName: cancel, methodData: {"notifications":[{"id":7001},{"id":7002},{"id":7003},{"id":7004},{"id":7005},{"id":7006},{"id":7007}]}
+11-21 18:40:52.194  3180  3180 I Capacitor/Console: File:  - Line 333 - Msg: undefined
+11-21 18:40:52.225  3180  3420 D ProfileInstaller: Installing profile for vn.edu.uit.becutit
+11-21 18:40:52.261  3180  3180 I Capacitor/Console: File:  - Line 333 - Msg: undefined
+11-21 18:40:52.793  3180  3294 D Capacitor: Handling local request: https://localhost/assets/CuTitBubble-ClZZBHc3.js
+11-21 18:40:52.794  3180  3297 D Capacitor: Handling local request: https://localhost/assets/EventBus-CP9q-YoY.js
+11-21 18:40:52.796  3180  3297 D Capacitor: Handling local request: https://localhost/assets/focus-D-q-BSvA.js
+11-21 18:40:52.797  3180  3299 D Capacitor: Handling local request: https://localhost/assets/CuTit-wjnp8u8e.js
+11-21 18:40:52.834  3180  3294 D Capacitor: Handling local request: https://localhost/assets/BubbleIntro-DaubWCVe.js
+11-21 18:40:52.845  3180  3294 D Capacitor: Handling local request: https://localhost/assets/cutit-chan-dung-BIjtxASy.webp
+11-21 18:40:53.499  3180  3190 I edu.uit.becutit: Compiler allocated 5174KB to compile void android.view.ViewRootImpl.performTraversals()
+11-21 18:40:58.243  3180  3195 W edu.uit.becutit: ApkAssets: Deleting an ApkAssets object '<empty> and /data/app/~~6EnmAYk2B7PUG5iHRAIkQA==/com.google.android.webview-2VRMsz86j6YvKmSLFLmM4A==/base.apk' with 2 weak references
+11-21 18:40:58.244  3180  3195 W edu.uit.becutit: ApkAssets: Deleting an ApkAssets object '<empty> and /product/app/GoogleTTS/GoogleTTS.apk' with 1 weak references
+11-21 18:41:00.018  3180  3294 D Capacitor: Handling local request: https://localhost/icons/icon-192.png
+11-21 18:41:07.031  3180  3294 D Capacitor: Handling local request: https://localhost/
+11-21 18:41:07.197  3180  3294 D Capacitor: Handling local request: https://localhost/assets/app-DkEXqUOE.js
+11-21 18:41:07.213  3180  3294 D Capacitor: Handling local request: https://localhost/assets/react-DzCDEpYv.js
+11-21 18:41:07.214  3180  3297 D Capacitor: Handling local request: https://localhost/assets/index-BDBV_gt8.css
+11-21 18:41:07.214  3180  3299 D Capacitor: Handling local request: https://localhost/assets/be-vietnam-pro-latin-400-normal-PpnXBOrz.woff2
+11-21 18:41:07.214  3180  3297 D Capacitor: Handling local request: https://localhost/assets/be-vietnam-pro-vietnamese-400-normal-CRcqvyg1.woff2
+11-21 18:41:07.215  3180  3299 D Capacitor: Handling local request: https://localhost/assets/be-vietnam-pro-latin-800-normal-BpHZASpI.woff2
+11-21 18:41:07.215  3180  3297 D Capacitor: Handling local request: https://localhost/assets/be-vietnam-pro-vietnamese-800-normal-D4LFh2W4.woff2
+11-21 18:41:07.280  3180  3180 I Capacitor/Console: File: https://localhost/assets/react-DzCDEpYv.js - Line 180 - Msg: %cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold
+11-21 18:41:07.281  3180  3304 D Capacitor: Handling local request: https://localhost/assets/PathHomeRoute-BjZMUeat.js
+11-21 18:41:07.286  3180  3303 D Capacitor: Handling local request: https://localhost/assets/progress-DGGuFBzW.js
+11-21 18:41:07.287  3180  3303 D Capacitor: Handling local request: https://localhost/assets/reminders-0cjuT3_4.js
+11-21 18:41:07.287  3180  3303 D Capacitor: Handling local request: https://localhost/assets/index-CbygINzJ.js
+11-21 18:41:07.288  3180  3305 D Capacitor: Handling local request: https://localhost/assets/reminders-BIyAD2gQ.js
+11-21 18:41:07.289  3180  3305 D Capacitor: Handling local request: https://localhost/assets/Card-CEZ9WIX6.js
+11-21 18:41:07.289  3180  3304 D Capacitor: Handling local request: https://localhost/assets/Page-DgCiHWUA.js
+11-21 18:41:07.290  3180  3294 D Capacitor: Handling local request: https://localhost/assets/course-_YHhxcjj.js
+11-21 18:41:07.291  3180  3299 D Capacitor: Handling local request: https://localhost/assets/settings-uQEf4Q3L.js
+11-21 18:41:07.342  3180  3303 D Capacitor: Handling local request: https://localhost/assets/HomeLookup-Ve1vrOtu.js
+11-21 18:41:07.348  3180  3303 D Capacitor: Handling local request: https://localhost/assets/ListRow-hOCne90R.js
+11-21 18:41:07.349  3180  3303 D Capacitor: Handling local request: https://localhost/assets/bootstrap-D5-ItNcR.js
+11-21 18:41:07.350  3180  3303 D Capacitor: Handling local request: https://localhost/assets/index-Cj1cfgeb.js
+11-21 18:41:07.352  3180  3297 D Capacitor: Handling local request: https://localhost/assets/index-C_w7vRw1.js
+11-21 18:41:07.354  3180  3305 D Capacitor: Handling local request: https://localhost/assets/sync-DNDgQOJQ.js
+11-21 18:41:07.357  3180  3294 D Capacitor: Handling local request: https://localhost/assets/session-bQVxfqZ_.js
+11-21 18:41:07.379  3180  3180 W Capacitor/Console: File: https://localhost/assets/react-DzCDEpYv.js - Line 201 - Msg: ⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition.
+11-21 18:41:07.379  3180  3180 W Capacitor/Console: File: https://localhost/assets/react-DzCDEpYv.js - Line 201 - Msg: ⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath.
+11-21 18:41:07.381  3180  3294 D Capacitor: Handling local request: https://localhost/assets/index-Avm4E69Z.js
+11-21 18:41:07.386  3180  3297 D Capacitor: Handling local request: https://localhost/assets/index-BtLa39AF.js
+11-21 18:41:07.414  3180  3294 D Capacitor: Handling local request: https://localhost/icons/icon-192.png
+11-21 18:41:07.446  3180  3180 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 29331260, pluginId: SystemBars, methodName: setTheme
+11-21 18:41:07.446  3180  3180 V Capacitor: callback: 29331260, pluginId: SystemBars, methodName: setTheme, methodData: {"dark":false,"color":"#FBF3E4"}
+11-21 18:41:07.446  3180  3180 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 29331261, pluginId: SystemBars, methodName: setTheme
+11-21 18:41:07.446  3180  3180 V Capacitor: callback: 29331261, pluginId: SystemBars, methodName: setTheme, methodData: {"dark":false,"color":"#FBF3E4"}
+11-21 18:41:07.468  3180  3294 D Capacitor: Handling local request: https://localhost/assets/Motivation-BZTdDsww.js
+11-21 18:41:07.489  3180  3294 D Capacitor: Handling local request: https://localhost/assets/index-BpUwDVPM.js
+11-21 18:41:07.504  3180  3180 I Capacitor/Console: File:  - Line 333 - Msg: undefined
+11-21 18:41:07.504  3180  3180 I Capacitor/Console: File:  - Line 333 - Msg: undefined
+11-21 18:41:07.512  3180  3180 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 29331262, pluginId: App, methodName: addListener
+11-21 18:41:07.513  3180  3180 V Capacitor: callback: 29331262, pluginId: App, methodName: addListener, methodData: {"eventName":"backButton"}
+11-21 18:41:07.513  3180  3180 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 29331263, pluginId: SplashScreen, methodName: hide
+11-21 18:41:07.513  3180  3180 V Capacitor: callback: 29331263, pluginId: SplashScreen, methodName: hide, methodData: {"fadeOutDuration":150}
+11-21 18:41:07.514  3180  3180 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 29331264, pluginId: App, methodName: addListener
+11-21 18:41:07.514  3180  3180 V Capacitor: callback: 29331264, pluginId: App, methodName: addListener, methodData: {"eventName":"backButton"}
+11-21 18:41:07.514  3180  3180 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 29331265, pluginId: SplashScreen, methodName: hide
+11-21 18:41:07.515  3180  3180 V Capacitor: callback: 29331265, pluginId: SplashScreen, methodName: hide, methodData: {"fadeOutDuration":150}
+11-21 18:41:07.525  3180  3180 I Capacitor/Console: File:  - Line 333 - Msg: undefined
+11-21 18:41:07.526  3180  3180 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 29331266, pluginId: Preferences, methodName: get
+11-21 18:41:07.526  3180  3180 V Capacitor: callback: 29331266, pluginId: Preferences, methodName: get, methodData: {"key":"becutit.auth"}
+11-21 18:41:07.535  3180  3180 I Capacitor/Console: File:  - Line 333 - Msg: undefined
+11-21 18:41:07.616  3180  3294 D Capacitor: Handling local request: https://localhost/assets/index-CnZ3iWDO.js
+11-21 18:41:07.618  3180  3180 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 29331267, pluginId: Preferences, methodName: get
+11-21 18:41:07.618  3180  3180 V Capacitor: callback: 29331267, pluginId: Preferences, methodName: get, methodData: {"key":"becutit.auth"}
+11-21 18:41:07.654  3180  3180 W Capacitor/Console: File: https://localhost/assets/session-bQVxfqZ_.js - Line 1 - Msg: Mixed Content: The page at 'https://localhost/' was loaded over HTTPS, but requested an insecure resource 'http://10.0.2.2:4020/v1/auth/guest'. This content should also be served over HTTPS.
+11-21 18:41:07.665  3180  3180 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 29331268, pluginId: LocalNotifications, methodName: cancel
+11-21 18:41:07.665  3180  3180 V Capacitor: callback: 29331268, pluginId: LocalNotifications, methodName: cancel, methodData: {"notifications":[{"id":7001},{"id":7002},{"id":7003},{"id":7004},{"id":7005},{"id":7006},{"id":7007}]}
+11-21 18:41:07.667  3180  3180 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 29331269, pluginId: LocalNotifications, methodName: cancel
+11-21 18:41:07.668  3180  3180 V Capacitor: callback: 29331269, pluginId: LocalNotifications, methodName: cancel, methodData: {"notifications":[{"id":7001},{"id":7002},{"id":7003},{"id":7004},{"id":7005},{"id":7006},{"id":7007}]}
+11-21 18:41:07.707  3180  3180 I Capacitor/Console: File:  - Line 333 - Msg: undefined
+11-21 18:41:07.733  3180  3180 I Capacitor/Console: File:  - Line 333 - Msg: undefined
+11-21 18:41:07.888  3098  3108 I artd    : Dex parent of /data/app/~~hTxsSn7DzDCqw0Mz5JG1Vw==/vn.edu.uit.becutit-GGD9qAIMq6_Lmf2cakIQYw==/base.apk is not writable: Permission denied
+11-21 18:41:07.888  3098  3108 I artd    : GetBestInfo checking odex in dalvik-cache (/data/dalvik-cache/x86_64/data@app@~~hTxsSn7DzDCqw0Mz5JG1Vw==@vn.edu.uit.becutit-GGD9qAIMq6_Lmf2cakIQYw==@base.apk@classes.dex)
+11-21 18:41:07.888  3098  3108 I artd    : Loading /data/dalvik-cache/x86_64/data@app@~~hTxsSn7DzDCqw0Mz5JG1Vw==@vn.edu.uit.becutit-GGD9qAIMq6_Lmf2cakIQYw==@base.apk@classes.dex with executable: 0
+11-21 18:41:07.888  3098  3108 I artd    : OatFileAssistant test for existing oat file /data/dalvik-cache/x86_64/data@app@~~hTxsSn7DzDCqw0Mz5JG1Vw==@vn.edu.uit.becutit-GGD9qAIMq6_Lmf2cakIQYw==@base.apk@classes.dex: File /data/dalvik-cache/x86_64/data@app@~~hTxsSn7DzDCqw0Mz5JG1Vw==@vn.edu.uit.becutit-GGD9qAIMq6_Lmf2cakIQYw==@base.apk@classes.vdex does not exist.
+11-21 18:41:07.888  3098  3108 I artd    : GetBestInfo checking odex next to the dex file (/data/app/~~hTxsSn7DzDCqw0Mz5JG1Vw==/vn.edu.uit.becutit-GGD9qAIMq6_Lmf2cakIQYw==/oat/x86_64/base.odex)
+11-21 18:41:07.888  3098  3108 I artd    : Loading /data/app/~~hTxsSn7DzDCqw0Mz5JG1Vw==/vn.edu.uit.becutit-GGD9qAIMq6_Lmf2cakIQYw==/oat/x86_64/base.odex with executable: 0
+11-21 18:41:07.888  3098  3108 I artd    : OatFileAssistant test for existing oat file /data/app/~~hTxsSn7DzDCqw0Mz5JG1Vw==/vn.edu.uit.becutit-GGD9qAIMq6_Lmf2cakIQYw==/oat/x86_64/base.odex: File /data/app/~~hTxsSn7DzDCqw0Mz5JG1Vw==/vn.edu.uit.becutit-GGD9qAIMq6_Lmf2cakIQYw==/oat/x86_64/base.vdex does not exist.
+11-21 18:41:07.888  3098  3108 I artd    : GetBestInfo checking vdex in dalvik-cache (/data/dalvik-cache/x86_64/data@app@~~hTxsSn7DzDCqw0Mz5JG1Vw==@vn.edu.uit.becutit-GGD9qAIMq6_Lmf2cakIQYw==@base.apk@classes.vdex)
+11-21 18:41:07.888  3098  3108 I artd    : unable to open vdex file /data/dalvik-cache/x86_64/data@app@~~hTxsSn7DzDCqw0Mz5JG1Vw==@vn.edu.uit.becutit-GGD9qAIMq6_Lmf2cakIQYw==@base.apk@classes.vdex: File /data/dalvik-cache/x86_64/data@app@~~hTxsSn7DzDCqw0Mz5JG1Vw==@vn.edu.uit.becutit-GGD9qAIMq6_Lmf2cakIQYw==@base.apk@classes.vdex does not exist.
+11-21 18:41:07.888  3098  3108 I artd    : OatFileAssistant test for existing oat file /data/dalvik-cache/x86_64/data@app@~~hTxsSn7DzDCqw0Mz5JG1Vw==@vn.edu.uit.becutit-GGD9qAIMq6_Lmf2cakIQYw==@base.apk@classes.vdex: File /data/dalvik-cache/x86_64/data@app@~~hTxsSn7DzDCqw0Mz5JG1Vw==@vn.edu.uit.becutit-GGD9qAIMq6_Lmf2cakIQYw==@base.apk@classes.vdex does not exist.
+11-21 18:41:07.888  3098  3108 I artd    : GetBestInfo checking vdex next to the dex file (/data/app/~~hTxsSn7DzDCqw0Mz5JG1Vw==/vn.edu.uit.becutit-GGD9qAIMq6_Lmf2cakIQYw==/oat/x86_64/base.vdex)
+11-21 18:41:07.888  3098  3108 I artd    : unable to open vdex file /data/app/~~hTxsSn7DzDCqw0Mz5JG1Vw==/vn.edu.uit.becutit-GGD9qAIMq6_Lmf2cakIQYw==/oat/x86_64/base.vdex: File /data/app/~~hTxsSn7DzDCqw0Mz5JG1Vw==/vn.edu.uit.becutit-GGD9qAIMq6_Lmf2cakIQYw==/oat/x86_64/base.vdex does not exist.
+11-21 18:41:07.888  3098  3108 I artd    : OatFileAssistant test for existing oat file /data/app/~~hTxsSn7DzDCqw0Mz5JG1Vw==/vn.edu.uit.becutit-GGD9qAIMq6_Lmf2cakIQYw==/oat/x86_64/base.vdex: File /data/app/~~hTxsSn7DzDCqw0Mz5JG1Vw==/vn.edu.uit.becutit-GGD9qAIMq6_Lmf2cakIQYw==/oat/x86_64/base.vdex does not exist.
+11-21 18:41:07.888  3098  3108 I artd    : GetBestInfo checking dm (/data/app/~~hTxsSn7DzDCqw0Mz5JG1Vw==/vn.edu.uit.becutit-GGD9qAIMq6_Lmf2cakIQYw==/base.dm)
+11-21 18:41:07.888  3098  3108 W ziparchive: Unable to open '/data/app/~~hTxsSn7DzDCqw0Mz5JG1Vw==/vn.edu.uit.becutit-GGD9qAIMq6_Lmf2cakIQYw==/base.dm': No such file or directory
+11-21 18:41:07.888  3098  3108 I artd    : OatFileAssistant test for existing oat file /data/app/~~hTxsSn7DzDCqw0Mz5JG1Vw==/vn.edu.uit.becutit-GGD9qAIMq6_Lmf2cakIQYw==/base.dm: I/O error
+11-21 18:41:07.888  3098  3108 I artd    : GetBestInfo checking dm (/data/app/~~hTxsSn7DzDCqw0Mz5JG1Vw==/vn.edu.uit.becutit-GGD9qAIMq6_Lmf2cakIQYw==/base.dm)
+11-21 18:41:07.888  3098  3108 W ziparchive: Unable to open '/data/app/~~hTxsSn7DzDCqw0Mz5JG1Vw==/vn.edu.uit.becutit-GGD9qAIMq6_Lmf2cakIQYw==/base.dm': No such file or directory
+11-21 18:41:07.888  3098  3108 I artd    : OatFileAssistant test for existing oat file /data/app/~~hTxsSn7DzDCqw0Mz5JG1Vw==/vn.edu.uit.becutit-GGD9qAIMq6_Lmf2cakIQYw==/base.dm: I/O error
+11-21 18:41:08.596  3180  3297 D Capacitor: Handling local request: https://localhost/assets/CuTitBubble-ClZZBHc3.js
+11-21 18:41:08.596  3180  3299 D Capacitor: Handling local request: https://localhost/assets/EventBus-CP9q-YoY.js
+11-21 18:41:08.597  3180  3297 D Capacitor: Handling local request: https://localhost/assets/focus-D-q-BSvA.js
+11-21 18:41:08.597  3180  3299 D Capacitor: Handling local request: https://localhost/assets/CuTit-wjnp8u8e.js
+11-21 18:41:08.617  3180  3297 D Capacitor: Handling local request: https://localhost/assets/BubbleIntro-DaubWCVe.js
+11-21 18:41:08.618  3180  3294 D Capacitor: Handling local request: https://localhost/assets/cutit-chan-dung-BIjtxASy.webp
+11-21 18:41:11.196  3180  3294 D Capacitor: Handling local request: https://localhost/icons/icon-192.png
+11-21 18:41:12.727  3180  3180 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 29331270, pluginId: Preferences, methodName: get
+11-21 18:41:12.727  3180  3180 V Capacitor: callback: 29331270, pluginId: Preferences, methodName: get, methodData: {"key":"becutit.auth"}
+11-21 18:41:12.730  3180  3180 W Capacitor/Console: File: https://localhost/assets/session-bQVxfqZ_.js - Line 1 - Msg: Mixed Content: The page at 'https://localhost/' was loaded over HTTPS, but requested an insecure resource 'http://10.0.2.2:4020/v1/auth/guest'. This content should also be served over HTTPS.
+11-21 18:41:20.835  3180  3294 D Capacitor: Handling local request: https://localhost/assets/LessonRoute-t6Y6by3U.js
+11-21 18:41:20.838  3180  3294 D Capacitor: Handling local request: https://localhost/assets/celebration-C7LQm5OS.js
+11-21 18:41:20.839  3180  3294 D Capacitor: Handling local request: https://localhost/assets/build-BgGRVvDD.js
+11-21 18:41:20.840  3180  3294 D Capacitor: Handling local request: https://localhost/assets/HonorificInterpreter-C2XyzZpF.js
+11-21 18:41:20.845  3180  3297 D Capacitor: Handling local request: https://localhost/assets/dialectMap-BmSqMT8B.js
+11-21 18:41:20.850  3180  3297 D Capacitor: Handling local request: https://localhost/assets/Button-C6N-2yUp.js
+11-21 18:41:20.850  3180  3294 D Capacitor: Handling local request: https://localhost/assets/i18n-Bp2k7bvL.js
+11-21 18:41:20.850  3180  3299 D Capacitor: Handling local request: https://localhost/assets/coursePlayer-DEENgMHH.js
+11-21 18:41:20.854  3180  3305 D Capacitor: Handling local request: https://localhost/assets/feedback-Bp_gJ7Yg.js
+11-21 18:41:20.854  3180  3304 D Capacitor: Handling local request: https://localhost/assets/index-DLdspzCz.js
+11-21 18:41:20.855  3180  3303 D Capacitor: Handling local request: https://localhost/assets/speech-BFhpZq5u.js
+11-21 18:41:20.871  3180  3297 D Capacitor: Handling local request: https://localhost/assets/useSentenceBuilder-CeCgZYzi.js
+11-21 18:41:20.871  3180  3294 D Capacitor: Handling local request: https://localhost/icons/icon-192.png
+11-21 18:41:20.932  3180  3299 D Capacitor: Handling local request: https://localhost/assets/AudioCaptureBridge-DZiYLjJh.js
+11-21 18:41:20.933  3180  3294 D Capacitor: Handling local request: https://localhost/assets/index-3k9PspXR.js
+11-21 18:41:20.933  3180  3297 D Capacitor: Handling local request: https://localhost/assets/verdict-BE-ZmbDb.js
+11-21 18:41:20.934  3180  3299 D Capacitor: Handling local request: https://localhost/assets/grade-CQXDvjvn.js
+11-21 18:41:21.013  3180  3180 W Capacitor/Console: File: https://localhost/assets/coursePlayer-DEENgMHH.js - Line 2 - Msg: Mixed Content: The page at 'https://localhost/bai-hoc/u1l5' was loaded over HTTPS, but requested an insecure resource 'http://10.0.2.2:4020/audio/packs/u1-north.json'. This content should also be served over HTTPS.
+11-21 18:41:21.014  3180  3180 W Capacitor/Console: File: https://localhost/assets/coursePlayer-DEENgMHH.js - Line 2 - Msg: Mixed Content: The page at 'https://localhost/bai-hoc/u1l5' was loaded over HTTPS, but requested an insecure resource 'http://10.0.2.2:4020/audio/packs/u1-north.json'. This content should also be served over HTTPS.
+11-21 18:41:24.381  3180  3180 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 29331271, pluginId: Preferences, methodName: get
+11-21 18:41:24.381  3180  3180 V Capacitor: callback: 29331271, pluginId: Preferences, methodName: get, methodData: {"key":"becutit.auth"}
+11-21 18:41:24.385  3180  3180 W Capacitor/Console: File: https://localhost/assets/session-bQVxfqZ_.js - Line 1 - Msg: Mixed Content: The page at 'https://localhost/bai-hoc/u1l5' was loaded over HTTPS, but requested an insecure resource 'http://10.0.2.2:4020/v1/auth/guest'. This content should also be served over HTTPS.
+11-21 18:41:26.516  3180  3294 D Capacitor: Handling local request: https://localhost/assets/cutit-suy-nghi-DLJHHFGC.webp
+11-21 18:41:33.560  3180  3180 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 29331272, pluginId: LocalNotifications, methodName: cancel
+11-21 18:41:33.561  3180  3180 V Capacitor: callback: 29331272, pluginId: LocalNotifications, methodName: cancel, methodData: {"notifications":[{"id":7001},{"id":7002},{"id":7003},{"id":7004},{"id":7005},{"id":7006},{"id":7007}]}
+11-21 18:41:33.570  3180  3294 D Capacitor: Handling local request: https://localhost/assets/cutit-an-mung-9xBp0AfT.webp
+11-21 18:41:33.590  3180  3180 I Capacitor/Console: File:  - Line 333 - Msg: undefined
+11-21 18:41:35.555  3180  3180 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 29331273, pluginId: Preferences, methodName: get
+11-21 18:41:35.555  3180  3180 V Capacitor: callback: 29331273, pluginId: Preferences, methodName: get, methodData: {"key":"becutit.auth"}
+11-21 18:41:35.559  3180  3180 W Capacitor/Console: File: https://localhost/assets/session-bQVxfqZ_.js - Line 1 - Msg: Mixed Content: The page at 'https://localhost/bai-hoc/u1l5' was loaded over HTTPS, but requested an insecure resource 'http://10.0.2.2:4020/v1/auth/guest'. This content should also be served over HTTPS.
+11-21 18:41:39.382  3180  3180 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 29331274, pluginId: Preferences, methodName: get
+11-21 18:41:39.382  3180  3180 V Capacitor: callback: 29331274, pluginId: Preferences, methodName: get, methodData: {"key":"becutit.auth"}
+11-21 18:41:39.385  3180  3180 W Capacitor/Console: File: https://localhost/assets/session-bQVxfqZ_.js - Line 1 - Msg: Mixed Content: The page at 'https://localhost/bai-hoc/u1l5' was loaded over HTTPS, but requested an insecure resource 'http://10.0.2.2:4020/v1/auth/guest'. This content should also be served over HTTPS.
+11-21 18:41:54.384  3180  3180 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 29331275, pluginId: Preferences, methodName: get
+11-21 18:41:54.385  3180  3180 V Capacitor: callback: 29331275, pluginId: Preferences, methodName: get, methodData: {"key":"becutit.auth"}
+11-21 18:41:54.389  3180  3180 W Capacitor/Console: File: https://localhost/assets/session-bQVxfqZ_.js - Line 1 - Msg: Mixed Content: The page at 'https://localhost/bai-hoc/u1l5' was loaded over HTTPS, but requested an insecure resource 'http://10.0.2.2:4020/v1/auth/guest'. This content should also be served over HTTPS.
+11-21 18:41:56.299  3180  3294 D Capacitor: Handling local request: https://localhost/assets/ChatRoute-Dx9oKrlh.js
+11-21 18:41:56.299  3180  3297 D Capacitor: Handling local request: https://localhost/assets/CuTitModeBar-By_61dWK.js
+11-21 18:41:56.300  3180  3294 D Capacitor: Handling local request: https://localhost/assets/ChatPanel-B5ezb3k6.js
+11-21 18:41:56.302  3180  3294 D Capacitor: Handling local request: https://localhost/assets/useChatSession-CZXdVVqM.js
+11-21 18:41:56.319  3180  3294 D Capacitor: Handling local request: https://localhost/icons/icon-192.png
+11-21 18:41:56.523  3180  3297 D Capacitor: Handling local request: https://localhost/assets/cutit-chao-BvInQsAI.webp

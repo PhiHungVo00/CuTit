@@ -6,10 +6,10 @@ import { nextLesson, unitProgress } from './pathModel';
 const rec = { best: 1, times: 1, at: '2026-11-18T10:00:00.000Z' };
 
 describe('bài nhập vai cuối unit (GĐ3)', () => {
-  it('bài thường mở /bai-hoc, bài nhập vai mở màn nhập vai qua URL (không import chéo MFE)', () => {
+  it('mọi bài (kể cả tình huống cuối unit) mở /bai-hoc', () => {
     expect(lessonHref(findLesson('u1l1')!.lesson)).toBe('/bai-hoc/u1l1');
-    expect(lessonHref(findLesson('u1l5')!.lesson)).toBe('/nhap-vai?kb=sc5&bai=u1l5');
-    expect(lessonHref(findLesson('u3l5')!.lesson)).toBe('/nhap-vai?kb=sc7&bai=u3l5');
+    expect(lessonHref(findLesson('u1l5')!.lesson)).toBe('/bai-hoc/u1l5');
+    expect(lessonHref(findLesson('u3l5')!.lesson)).toBe('/bai-hoc/u3l5');
   });
 
   it('xong 4 bài của unit 1 => “Học tiếp” là nhập vai; unit có 5 bài', () => {
