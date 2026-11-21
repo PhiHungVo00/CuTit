@@ -1,19 +1,22 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { accuracyBySkill, cefrLabel, computeStreak, dueCards, useLearner, type SrsCard, type Skill } from '@vietlearning/state';
-import { ScreenFrame, card, linkBtn, primaryBtn } from '../common/ui';
+import { Button, Card, CuTit, Icon } from '@vietlearning/ui';
+import { ScreenFrame, linkBtn } from '../common/ui';
 import { useT } from '../i18n';
 import { ReviewSession } from './ReviewSession';
 import { formatDue, lastSevenDays, nextDue } from './stats';
 
 function Tile({ value, label }: { value: string; label: string }) {
   return (
-    <div className="flex flex-col rounded-2xl border border-line-strong bg-surface p-3">
+    <Card style={{ display: 'flex', flexDirection: 'column', padding: 12 }}>
       <span className="text-2xl font-black text-heading">{value}</span>
       <span className="text-sm text-ink-muted">{label}</span>
-    </div>
+    </Card>
   );
 }
+
+const sectionStyle = { display: 'flex', flexDirection: 'column', gap: 12 } as const;
 
 /** Màn hình M9: chuỗi ngày, thời gian học, độ chính xác theo kỹ năng, ôn thẻ SM-2 đến hạn. Dữ liệu offline trên máy. */
 export function ProgressScreen() {
@@ -54,13 +57,16 @@ export function ProgressScreen() {
             <Tile value={String(due.length)} label={t('dueTile')} />
           </div>
 
-          <section className={card} aria-labelledby="ct-srs">
+          <Card role="region" aria-labelledby="ct-srs" elevated style={sectionStyle}>
             <h2 id="ct-srs" className="m-0 text-lg font-extrabold text-ink">
               {t('srsTitle')}
             </h2>
             {totalCards === 0 ? (
               <>
-                <p className="m-0 text-[15px] text-ink-soft">{t('srsEmpty')}</p>
+                <div className="flex items-center gap-3">
+                  <CuTit mood="ngu" size={72} />
+                  <p className="m-0 text-[15px] text-ink-soft">{t('srsEmpty')}</p>
+                </div>
                 <div className="flex flex-wrap gap-2">
                   <Link to="/luyen-tap" className={linkBtn}>
                     {t('practiceLink')}
@@ -72,20 +78,26 @@ export function ProgressScreen() {
               </>
             ) : due.length > 0 ? (
               <>
-                <p className="m-0 text-[15px] text-ink-soft">{t('dueToday', { due: due.length, total: totalCards })}</p>
-                <button type="button" className={primaryBtn} onClick={() => setReviewing(due.slice(0, 20))}>
+                <div className="flex items-center gap-3">
+                  <CuTit mood="nhac-hoc" size={72} />
+                  <p className="m-0 text-[15px] text-ink-soft">{t('dueToday', { due: due.length, total: totalCards })}</p>
+                </div>
+                <Button onClick={() => setReviewing(due.slice(0, 20))} style={{ width: '100%' }}>
                   {t('reviewN', { n: Math.min(20, due.length) })}
-                </button>
+                </Button>
               </>
             ) : (
-              <p className="m-0 text-[15px] text-ink-soft">
-                {t('allDone', { n: totalCards })}
-                {upcoming ? t('nextDue', { when: formatDue(upcoming, new Date(), lang) }) : ''}
-              </p>
+              <div className="flex items-center gap-3">
+                <CuTit mood="khen" size={72} />
+                <p className="m-0 text-[15px] text-ink-soft">
+                  {t('allDone', { n: totalCards })}
+                  {upcoming ? t('nextDue', { when: formatDue(upcoming, new Date(), lang) }) : ''}
+                </p>
+              </div>
             )}
-          </section>
+          </Card>
 
-          <section className={card} aria-labelledby="ct-week">
+          <Card role="region" aria-labelledby="ct-week" elevated style={sectionStyle}>
             <h2 id="ct-week" className="m-0 text-lg font-extrabold text-ink">
               {t('weekTitle')}
             </h2>
@@ -112,9 +124,9 @@ export function ProgressScreen() {
                 </li>
               ))}
             </ul>
-          </section>
+          </Card>
 
-          <section className={card} aria-labelledby="ct-acc">
+          <Card role="region" aria-labelledby="ct-acc" elevated style={sectionStyle}>
             <h2 id="ct-acc" className="m-0 text-lg font-extrabold text-ink">
               {t('accTitle')}
             </h2>
@@ -135,10 +147,11 @@ export function ProgressScreen() {
                 ))}
               </ul>
             )}
-          </section>
+          </Card>
 
           <Link to="/bat-dau" className={`${linkBtn} justify-center`}>
-            🌱 {profile.onboarded ? t('redoPlacement') : t('doPlacement')}
+            <Icon name="luyen-tap" size={18} />
+            <span className="ml-2">{profile.onboarded ? t('redoPlacement') : t('doPlacement')}</span>
           </Link>
         </>
       )}
