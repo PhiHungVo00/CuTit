@@ -35,4 +35,20 @@ describe('sendTurn (SSE)', () => {
     expect(err).toBeInstanceOf(TurnError);
     expect(err.kind).toBe('contract');
   });
+
+  it('sự kiện SSE error llm_busy => unavailable + code llm_busy, câu "bận" theo explanationLanguage; mã khác giữ code', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => sseResponse(['data: {"type":"error","code":"llm_busy","message":"Cu Tít đang bận"}\n\n'])));
+    const en = await sendTurn({ ...req, explanationLanguage: 'en' }, () => undefined, new AbortController().signal).catch((e) => e);
+    expect(en).toBeInstanceOf(TurnError);
+    expect(en.kind).toBe('unavailable');
+    expect(en.code).toBe('llm_busy');
+    expect(en.message).toMatch(/busy/i);
+    const vi_ = await sendTurn(req, () => undefined, new AbortController().signal).catch((e) => e);
+    expect(vi_.message).toMatch(/bận/);
+
+    vi.stubGlobal('fetch', vi.fn(async () => sseResponse(['data: {"type":"error","code":"internal_error","message":"x"}\n\n'])));
+    const other = await sendTurn(req, () => undefined, new AbortController().signal).catch((e) => e);
+    expect(other.kind).toBe('server');
+    expect(other.code).toBe('internal_error');
+  });
 });

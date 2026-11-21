@@ -21,14 +21,18 @@ export const speechRoutes: FastifyPluginAsync<RouteDeps> = async (server, { pipe
 
   // POST /v1/speech/transcribe (multipart: file "audio"). Có AI => chép lời thật (không có mốc thời gian từng từ);
   // không có AI => câu mẫu, mock: true
-  server.post('/speech/transcribe', audioLimit, async (request) => {
+  server.post('/speech/transcribe', audioLimit, async (request, reply) => {
     const upload = await readAudioUpload(request);
-    await pipeline.consume(request, 'stt', Math.max(1, Math.ceil(upload.durationSec)));
+    // STT lỗi / hết chuỗi dự phòng => hoàn lại số giây đã trừ (không trừ khi AI không trả lời được)
+    const seconds = Math.max(1, Math.ceil(upload.durationSec));
     if (stt) {
-      const { text, confidence } = await stt.transcribe(upload);
-      return respond(TranscribeResponseSchema, { text, confidence, words: [], mock: false });
+      const { text, confidence, provider } = await pipeline.run(request, [['stt', seconds]], () => stt.transcribe(upload));
+      if (provider) reply.header('x-ai-provider', provider);
+      return respond(TranscribeResponseSchema, { text, confidence, words: [], mock: false, remaining: await pipeline.remaining(request) });
     }
+    await pipeline.consume(request, 'stt', seconds);
     return respond(TranscribeResponseSchema, {
+      remaining: await pipeline.remaining(request),
       mock: true,
       text: 'Xin chào bạn',
       confidence: 0.96,
@@ -77,12 +81,14 @@ export const speechRoutes: FastifyPluginAsync<RouteDeps> = async (server, { pipe
     const upload = await readAudioUpload(request);
     const expectedText = upload.fields.expectedText;
     if (!expectedText) throw new GatewayError(400, 'missing_expected_text', 'Thiếu trường expectedText (câu cần đọc)');
-    await pipeline.consume(request, 'stt', Math.max(1, Math.ceil(upload.durationSec)));
+    const seconds = Math.max(1, Math.ceil(upload.durationSec));
     const wav = upload.mimetype.includes('wav') || upload.mimetype === 'audio/wave' ? decodeWavPcm(new Uint8Array(upload.bytes.buffer, upload.bytes.byteOffset, upload.bytes.byteLength)) : null;
-    const transcript = stt ? (await stt.transcribe({ bytes: upload.bytes, mimetype: upload.mimetype })).text : null;
-    return respond(
-      AssessResponseSchema,
-      assessPronunciation({ expectedText, transcript, pcm: wav?.pcm ?? null, sampleRate: wav?.sampleRate ?? 16000 })
-    );
+    let transcript: string | null = null;
+    if (stt) transcript = (await pipeline.run(request, [['stt', seconds]], () => stt.transcribe({ bytes: upload.bytes, mimetype: upload.mimetype }))).text;
+    else await pipeline.consume(request, 'stt', seconds);
+    return respond(AssessResponseSchema, {
+      ...assessPronunciation({ expectedText, transcript, pcm: wav?.pcm ?? null, sampleRate: wav?.sampleRate ?? 16000 }),
+      remaining: await pipeline.remaining(request)
+    });
   });
 };

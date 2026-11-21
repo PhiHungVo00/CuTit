@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { RemainingSchema } from './chat.js';
 
 // POST /speech/synthesize
 export const SynthesizeRequestSchema = z.object({
@@ -36,7 +37,9 @@ export const VisionLabelResponseSchema = z.object({
     )
     .max(10),
   /** true khi nhãn do bộ giả lập trả (chưa nối dịch vụ nhận diện ảnh) */
-  mock: z.boolean().default(false)
+  mock: z.boolean().default(false),
+  /** hạn mức AI còn lại hôm nay (có khi route tiêu hạn mức) */
+  remaining: RemainingSchema.optional()
 });
 
 // POST /practice/generate
@@ -128,7 +131,9 @@ export const CultureAskResponseSchema = z.object({
   answer: z.string(),
   sources: z.array(z.string()),
   /** true = câu trả lời ghép từ thẻ theo mẫu, chưa qua LLM */
-  mock: z.boolean().default(false)
+  mock: z.boolean().default(false),
+  /** hạn mức AI còn lại hôm nay (có khi route tiêu hạn mức) */
+  remaining: RemainingSchema.optional()
 });
 
 /**
@@ -155,7 +160,9 @@ export const TranscribeResponseSchema = z.object({
   /** mốc thời gian từng từ: có thể rỗng nếu nhà cung cấp không trả */
   words: z.array(z.object({ w: z.string(), start: z.number(), end: z.number() })),
   /** true = câu mẫu, chưa nối dịch vụ nhận dạng giọng nói */
-  mock: z.boolean().default(false)
+  mock: z.boolean().default(false),
+  /** hạn mức AI còn lại hôm nay (có khi route tiêu hạn mức) */
+  remaining: RemainingSchema.optional()
 });
 
 // GET /speech/voices

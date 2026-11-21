@@ -11,11 +11,14 @@ export interface SttResult {
   confidence: number;
   /** token nhà cung cấp tính (đối soát quota), 0 nếu không có */
   tokens: number;
+  /** nguồn đã trả lời (chỉ tên, không chứa khóa) */
+  provider?: string;
 }
 
 export interface SttProvider {
   readonly name: string;
-  transcribe(audio: { bytes: Buffer; mimetype: string }): Promise<SttResult>;
+  /** `timeoutMs`: ngân sách thời gian do chuỗi dự phòng cấp cho lần gọi này */
+  transcribe(audio: { bytes: Buffer; mimetype: string; timeoutMs?: number }): Promise<SttResult>;
 }
 
 class LlmSttProvider implements SttProvider {
@@ -23,8 +26,8 @@ class LlmSttProvider implements SttProvider {
   constructor(private readonly llm: LlmProvider) {
     this.name = `${llm.name}-stt`;
   }
-  transcribe(audio: { bytes: Buffer; mimetype: string }): Promise<SttResult> {
-    return transcribe(this.llm, audio);
+  async transcribe(audio: { bytes: Buffer; mimetype: string; timeoutMs?: number }): Promise<SttResult> {
+    return { ...(await transcribe(this.llm, audio, audio.timeoutMs)), provider: this.name };
   }
 }
 
@@ -41,7 +44,7 @@ export class OpenAiCompatSttProvider implements SttProvider {
     private readonly fetchImpl: typeof fetch = fetch
   ) {}
 
-  async transcribe(audio: { bytes: Buffer; mimetype: string }): Promise<SttResult> {
+  async transcribe(audio: { bytes: Buffer; mimetype: string; timeoutMs?: number }): Promise<SttResult> {
     const form = new FormData();
     form.append('file', new Blob([new Uint8Array(audio.bytes)], { type: audio.mimetype }), 'audio.wav');
     form.append('language', this.language);

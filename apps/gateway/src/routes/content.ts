@@ -16,7 +16,7 @@ const MB = 1024 * 1024;
 const ItemIdParams = z.object({ id: z.string().regex(/^[\w-]{1,64}$/) });
 
 /** Các route nội dung (ảnh, cao độ mẫu, văn hóa). Dữ liệu người học nằm ở routes/me.ts (DB). */
-export const contentRoutes: FastifyPluginAsync<RouteDeps> = async (server, { pipeline, config, llm }) => {
+export const contentRoutes: FastifyPluginAsync<RouteDeps> = async (server, { pipeline, config, llm, vision }) => {
   // POST /v1/vision/label (ảnh base64 nên cần giới hạn body lớn hơn). Có AI => nhận diện thật; không => nhãn mẫu, mock: true
   server.post('/vision/label', { bodyLimit: config.AUDIO_BODY_LIMIT_MB * MB }, async (req, reply) => {
     const body = parseOr400(VisionLabelRequestSchema, req.body, reply);
@@ -26,12 +26,15 @@ export const contentRoutes: FastifyPluginAsync<RouteDeps> = async (server, { pip
     const isJpeg = head[0] === 0xff && head[1] === 0xd8 && head[2] === 0xff;
     const isPng = head.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]));
     if (!isJpeg && !isPng) return reply.status(415).send({ error: 'unsupported_image', message: 'Chỉ nhận ảnh JPEG hoặc PNG' });
-    await pipeline.consume(req, 'vision', 1);
-    if (llm) {
-      const { items } = await labelImage(llm, { mimeType: isJpeg ? 'image/jpeg' : 'image/png', base64: body.imageBase64 });
-      return respond(VisionLabelResponseSchema, { items, mock: false });
+    if (vision) {
+      // Hết chuỗi vision / AI lỗi => hoàn lại lượt ảnh
+      const { items, provider } = await pipeline.run(req, [['vision', 1]], () => labelImage(vision, { mimeType: isJpeg ? 'image/jpeg' : 'image/png', base64: body.imageBase64 }));
+      if (provider) reply.header('x-ai-provider', provider);
+      return respond(VisionLabelResponseSchema, { items, mock: false, remaining: await pipeline.remaining(req) });
     }
+    await pipeline.consume(req, 'vision', 1);
     return respond(VisionLabelResponseSchema, {
+      remaining: await pipeline.remaining(req),
       items: [
         { vi: 'cái cốc', en: 'cup', box: [0.1, 0.2, 0.3, 0.4] },
         { vi: 'quyển sách', en: 'book', box: [0.5, 0.5, 0.4, 0.3] },
@@ -56,15 +59,18 @@ export const contentRoutes: FastifyPluginAsync<RouteDeps> = async (server, { pip
   server.post('/culture/ask', async (req, reply) => {
     const body = parseOr400(CultureAskRequestSchema, req.body, reply);
     if (!body) return reply;
-    await pipeline.consume(req, 'llm', Math.ceil(body.question.length / 3) + 300);
+    const tokensEstimate = Math.ceil(body.question.length / 3) + 300;
     // Truy hồi thẻ (packages/content) rồi để LLM diễn giải CHỈ từ các thẻ đó (RAG). Không có thẻ khớp
     // => không gọi AI (tránh bịa). Không có AI => ghép thẻ theo mẫu, mock: true.
     const cards = searchCulture(body.question, 3);
     if (llm && cards.length) {
-      const { answer, sources } = await answerCulture(llm, body.question, cards, body.language);
-      return respond(CultureAskResponseSchema, { answer, sources, mock: false });
+      const { answer, sources, provider } = await pipeline.run(req, [['llm', tokensEstimate]], () => answerCulture(llm, body.question, cards, body.language));
+      if (provider) reply.header('x-ai-provider', provider);
+      return respond(CultureAskResponseSchema, { answer, sources, mock: false, remaining: await pipeline.remaining(req) });
     }
+    await pipeline.consume(req, 'llm', tokensEstimate, { providerCall: false });
     return respond(CultureAskResponseSchema, {
+      remaining: await pipeline.remaining(req),
       mock: cards.length > 0,
       answer: cards.length
         ? cards.map((c) => (body.language === 'en' ? `${c.titleEn}: ${c.contentEn}` : `${c.title}: ${c.content}`)).join('\n\n')

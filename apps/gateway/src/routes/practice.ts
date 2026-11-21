@@ -35,16 +35,17 @@ export const practiceRoutes: FastifyPluginAsync<RouteDeps> = async (server, { pi
     const key = explainKey(body);
     const hit = explainCache.get(key);
     if (hit) return respond(ExplainResponseSchema, { ...hit, mock: false, cached: true });
-    await pipeline.consume(req, 'llm', Math.ceil((body.question.length + body.answer.length + body.userAnswer.length) / 3) + 400);
-    const { tokens: _tokens, ...out } = await explainAnswer(llm, body);
+    const estimate = Math.ceil((body.question.length + body.answer.length + body.userAnswer.length) / 3) + 400;
+    const { tokens: _tokens, provider, ...out } = await pipeline.run(req, [['llm', estimate]], () => explainAnswer(llm, body));
+    if (provider) reply.header('x-ai-provider', provider);
     explainCache.set(key, out);
-    return respond(ExplainResponseSchema, { ...out, mock: false, cached: false });
+    return respond(ExplainResponseSchema, { ...out, mock: false, cached: false, remaining: await pipeline.remaining(req) });
   });
   // POST /v1/practice/generate (LLM sinh bài tập)
   server.post('/practice/generate', async (req, reply) => {
     const body = parseOr400(DrillGenerateRequestSchema, req.body, reply);
     if (!body) return reply;
-    await pipeline.consume(req, 'llm', body.count * 200);
+    await pipeline.consume(req, 'llm', body.count * 200, { providerCall: false });
 
     return respond(DrillListResponseSchema, [
       {

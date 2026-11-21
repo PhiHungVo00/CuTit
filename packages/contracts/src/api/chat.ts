@@ -75,8 +75,10 @@ export const ChatEventSchema = z.discriminatedUnion('type', [
     mock: z.boolean().default(false),
     /** GĐ3: từ mới trong câu trả lời (Gateway đã lọc: phải có trong reply, có nghĩa) */
     newWords: z.array(NewWordSchema).max(5).default([]),
-    /** GĐ3: số lượt hội thoại AI còn lại hôm nay (theo ngày UTC của server) */
-    turnsLeft: z.number().int().min(0).optional()
+    /** GĐ3: số lượt hội thoại AI còn lại hôm nay (theo ngày giờ Việt Nam). Giữ để tương thích; dùng `remaining.turns` */
+    turnsLeft: z.number().int().min(0).optional(),
+    /** Hạn mức còn lại hôm nay (lượt lỗi AI không bị trừ) */
+    remaining: z.lazy(() => RemainingSchema).optional()
   }),
   z.object({ type: z.literal('error'), code: z.string(), message: z.string().optional() })
 ]);
@@ -87,7 +89,8 @@ export const VoiceTurnResponseSchema = z.object({
   correctedText: z.string().optional(),
   explanation: z.string().optional(),
   audioUrl: z.string().url().optional(),
-  uiBlocks: z.array(AgentUIBlockSchema).default([])
+  uiBlocks: z.array(AgentUIBlockSchema).default([]),
+  remaining: z.lazy(() => RemainingSchema).optional()
 });
 
 export type AgentUIBlock = z.infer<typeof AgentUIBlockSchema>;
@@ -97,7 +100,19 @@ export type ChatEvent = z.infer<typeof ChatEventSchema>;
 export type ChatCorrection = z.infer<typeof ChatCorrectionSchema>;
 const QuotaCounterSchema = z.object({ used: z.number().int().min(0), limit: z.number().int().min(0) });
 
-/** GĐ3: GET /v1/quota — hạn mức AI hôm nay (ngày UTC của server; resetAt = nửa đêm UTC kế tiếp) */
+/**
+ * Số lượt/đơn vị AI CÒN LẠI hôm nay của người dùng (đã trừ phần đã dùng; không âm). Gateway đính kèm vào kết quả
+ * mọi route AI (chat/turn, speech, vision, culture, explain) để giao diện hiện "Còn N lượt" mà không gọi thêm /v1/quota.
+ * Ngày hạn mức tính theo giờ Việt Nam (UTC+7): đổi ngày lúc 00:00 giờ Việt Nam.
+ */
+export const RemainingSchema = z.object({
+  turns: z.number().int().min(0),
+  llmTokens: z.number().int().min(0),
+  sttSeconds: z.number().int().min(0),
+  visionImages: z.number().int().min(0)
+});
+
+/** GĐ3: GET /v1/quota — hạn mức AI hôm nay (ngày theo giờ Việt Nam; resetAt = 00:00 giờ Việt Nam kế tiếp) */
 export const QuotaStatusSchema = z.object({
   day: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   resetAt: z.string().datetime(),
@@ -106,14 +121,31 @@ export const QuotaStatusSchema = z.object({
   sttSeconds: QuotaCounterSchema
 });
 
-/** Thân lỗi 429 khi hết hạn mức ngày (rate-limit theo phút dùng mã khác) */
+/**
+ * Thân lỗi 429 khi hết hạn mức ngày (rate-limit theo phút dùng mã khác).
+ * `scope: 'global'` = trần dùng chung của CẢ APP hôm nay đã hết (không phải lỗi của riêng người dùng);
+ * vắng `scope` = hết hạn mức riêng của người dùng.
+ */
 export const QuotaExceededSchema = z.object({
   error: z.literal('quota_exceeded'),
   capability: z.enum(['turn', 'llm', 'stt', 'tts', 'vision']),
   resetAt: z.string().datetime(),
+  scope: z.literal('global').optional(),
+  message: z.string().optional()
+});
+
+/**
+ * Thân lỗi 503 khi AI tạm bận: MỌI nguồn trong chuỗi dự phòng đều lỗi/quá tải/ngắt mạch. Khác `quota_exceeded`:
+ * KHÔNG trừ lượt của người dùng; client hiện "Cu Tít đang bận, thử lại" kèm nút Thử lại.
+ */
+export const LlmBusySchema = z.object({
+  error: z.literal('llm_busy'),
+  /** gợi ý chờ bao lâu (giây) trước khi thử lại */
+  retryAfterSec: z.number().int().min(1).optional(),
   message: z.string().optional()
 });
 
 export type QuotaStatus = z.infer<typeof QuotaStatusSchema>;
+export type Remaining = z.infer<typeof RemainingSchema>;
 export type NewWord = z.infer<typeof NewWordSchema>;
 export type ChatHistoryItem = z.infer<typeof ChatHistoryItemSchema>;

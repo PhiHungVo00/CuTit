@@ -65,13 +65,22 @@ test('chat với AI thật: mock=false, prompt có kịch bản + ngôn ngữ gi
   assert.equal(req.turns.at(-1).parts[0].text, 'chao co');
 });
 
-test('chat: AI trả JSON sai hình dạng hoặc lỗi => vẫn trả lời bằng bộ giả lập, mock=true', async () => {
+test('chat: AI trả JSON sai hình dạng hoặc lỗi => llm_busy (KHÔNG trả lời mẫu trá hình AI); chưa cấu hình AI mới là mock', async () => {
   for (const bad of [{ reply: 42 }, new Error('boom')]) {
     const a = await app(fakeLlm(bad).provider);
     const res = await a.inject({ method: 'POST', url: '/v1/chat/turn', headers: { accept: 'text/event-stream' }, payload: { sessionId: SID, userText: 'xin chao' } });
     assert.equal(res.statusCode, 200);
-    assert.equal(events(res.body).find((e) => e.type === 'done').mock, true);
+    const evs = events(res.body);
+    assert.equal(evs.find((e) => e.type === 'done'), undefined);
+    assert.equal(evs.find((e) => e.type === 'error').code, 'llm_busy');
+    // JSON một lần: 503 llm_busy
+    const j = await a.inject({ method: 'POST', url: '/v1/chat/turn', payload: { sessionId: SID, userText: 'xin chao' } });
+    assert.equal(j.statusCode, 503);
+    assert.equal(j.json().error, 'llm_busy');
   }
+  const noAi = await app(null);
+  const res = await noAi.inject({ method: 'POST', url: '/v1/chat/turn', headers: { accept: 'text/event-stream' }, payload: { sessionId: SID, userText: 'xin chao' } });
+  assert.equal(events(res.body).find((e) => e.type === 'done').mock, true);
 });
 
 test('chat: block AI chỉ là văn bản theo trường cố định, tối đa 2, loại lạ bị bỏ', async () => {
@@ -99,7 +108,9 @@ test('vision với AI thật: gửi ảnh inline đúng MIME, bỏ trùng, mock=
   const llm = fakeLlm({ items: [{ vi: 'Cái Cốc', en: 'Cup' }, { vi: 'cái cốc', en: 'mug' }, { vi: 'quyển sách', en: 'book' }] });
   const res = await (await app(llm.provider)).inject({ method: 'POST', url: '/v1/vision/label', payload: { imageBase64: JPEG } });
   assert.equal(res.statusCode, 200);
-  assert.deepEqual(res.json(), { items: [{ vi: 'cái cốc', en: 'cup' }, { vi: 'quyển sách', en: 'book' }], mock: false });
+  const { remaining, ...visionBody } = res.json();
+  assert.deepEqual(visionBody, { items: [{ vi: 'cái cốc', en: 'cup' }, { vi: 'quyển sách', en: 'book' }], mock: false });
+  assert.equal(remaining.visionImages, 199, 'kết quả kèm số ảnh còn lại');
   assert.equal(llm.calls[0].turns[0].parts[0].inline.mimeType, 'image/jpeg');
 
   const { GatewayError } = await import('../dist/pipeline/RequestPipeline.js');
@@ -130,7 +141,7 @@ test('GeminiProvider: khóa ở header (không ở URL), lỗi nhà cung cấp k
     seen = { url, init };
     return new Response(JSON.stringify({ candidates: [{ content: { parts: [{ text: '{"a":1}' }] } }], usageMetadata: { totalTokenCount: 9 } }), { status: 200 });
   });
-  assert.deepEqual(await ok.generateJson({ system: 's', turns: [{ role: 'user', parts: [{ text: 'hi' }] }], schema: {} }), { json: { a: 1 }, tokens: 9 });
+  assert.deepEqual(await ok.generateJson({ system: 's', turns: [{ role: 'user', parts: [{ text: 'hi' }] }], schema: {} }), { json: { a: 1 }, tokens: 9, provider: 'gemini:gemini-x' });
   assert.ok(!String(seen.url).includes('k'.repeat(30)));
   assert.equal(seen.init.headers['x-goog-api-key'], 'k'.repeat(30));
 

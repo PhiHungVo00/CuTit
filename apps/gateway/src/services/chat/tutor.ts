@@ -5,6 +5,7 @@ import { SystemPromptBuilder } from '@vietlearning/prompts';
 import type { LlmProvider } from '../../providers/llm.js';
 import { mockTutorTurn, type TutorInput, type TutorResult } from './mockTutor.js';
 import { filterNewWords } from './newWords.js';
+import { GatewayError } from '../../pipeline/RequestPipeline.js';
 
 export interface LiveTutorInput extends TutorInput {
   dialect: 'north' | 'central' | 'south';
@@ -16,6 +17,8 @@ export interface LiveTutorInput extends TutorInput {
 export interface TutorTurn extends TutorResult {
   mock: boolean;
   tokens: number;
+  /** nguồn AI đã trả lời (chỉ tên); vắng khi là bộ giả lập */
+  provider?: string;
 }
 
 /** Schema đầu ra gửi cho LLM (tập con OpenAPI) — khớp với LlmTutorOutput bên dưới */
@@ -112,7 +115,14 @@ export function createTutor(llm: LlmProvider | null, log?: { warn: (o: object, m
         .build();
 
       try {
-        const { json, tokens } = await llm.generateJson({ system, turns: toTurns(input.history, input.userText), schema: OUTPUT_SCHEMA, maxOutputTokens: input.mode === 'call' ? 300 : 700 });
+        const { json, tokens, provider } = await llm.generateJson({
+          system,
+          turns: toTurns(input.history, input.userText),
+          schema: OUTPUT_SCHEMA,
+          maxOutputTokens: input.mode === 'call' ? 300 : 700,
+          // JSON sai Zod => chuỗi dự phòng thử nguồn kế (Nguyên tắc 6)
+          accept: (j) => LlmTutorOutput.safeParse(j).success
+        });
         const out = LlmTutorOutput.parse(json);
         const taskCount = scenario?.tasks.length ?? 0;
         const correction =
@@ -128,12 +138,15 @@ export function createTutor(llm: LlmProvider | null, log?: { warn: (o: object, m
           completedTasks: [...new Set(out.completedTasks.filter((t) => t >= 0 && t < taskCount))].sort((a, b) => a - b),
           newWords: filterNewWords(out.reply, out.newWords),
           mock: false,
-          tokens
+          tokens,
+          provider
         }, input);
       } catch (err) {
-        // AI lỗi/quá hạn/đầu ra sai: vẫn trả lời bằng bộ giả lập, gắn mock: true để giao diện báo trung thực
-        log?.warn({ err: (err as Error).message }, 'tutor LLM failed, falling back to mock');
-        return mock(input);
+        // Đã cấu hình AI thật mà hết chuỗi dự phòng: báo `llm_busy` (503) để giao diện hiện "Cu Tít đang bận, thử lại"
+        // và nơi gọi hoàn lại lượt. KHÔNG trả lời mẫu trá hình làm AI (mock chỉ dùng khi chưa cấu hình AI).
+        log?.warn({ err: (err as Error).message }, 'tutor LLM failed (chain exhausted)');
+        if (err instanceof GatewayError) throw err;
+        throw new GatewayError(503, 'llm_busy', 'Cu Tít đang bận, thử lại sau ít giây');
       }
     }
   };
