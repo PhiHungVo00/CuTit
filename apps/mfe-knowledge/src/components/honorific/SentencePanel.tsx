@@ -1,3 +1,4 @@
+import { Button, Icon } from '@vietlearning/ui';
 import { memo, useEffect, useState } from 'react';
 import type { HonorificInterpretationResult } from '@vietlearning/content';
 import { speechService, type SpeechFailure } from '../../services/speechSynthesis';
@@ -45,7 +46,7 @@ export const SentencePanel = memo(function SentencePanel({ result, contextLabel,
     >
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-dashed border-line pb-3">
         <h2 id="ct-sentence-title" className="flex items-center gap-2 text-sm font-extrabold uppercase tracking-wide text-heading">
-          <span aria-hidden="true">💬</span> {t('sample')}
+          {t('sample')}
         </h2>
         <span className="rounded-lg bg-surface-2 px-2 py-1 text-sm font-bold text-ink-soft">
           {result.speaker} → {result.listener}
@@ -84,18 +85,10 @@ export const SentencePanel = memo(function SentencePanel({ result, contextLabel,
       </div>
 
       <div className="flex flex-col gap-3 border-t border-line pt-3">
-        <button
-          type="button"
-          onClick={toggleSpeak}
-          aria-pressed={speaking}
-          className={[
-            'flex min-h-12 items-center justify-center gap-2 rounded-xl px-4 text-base font-extrabold transition-colors',
-            speaking ? 'bg-danger text-white' : 'bg-accent text-accent-ink'
-          ].join(' ')}
-        >
-          <span aria-hidden="true">{speaking ? '⏹️' : '🔊'}</span>
+        <Button type="button" variant={speaking ? 'danger' : 'primary'} size="lg" onClick={toggleSpeak} aria-pressed={speaking}>
+          <Icon name={speaking ? 'tat-loa' : 'loa'} size={20} />
           {speaking ? t('speaking') : t('listenSample')}
-        </button>
+        </Button>
 
         <div className="flex items-center gap-2" role="group" aria-label={t('speedGroup')}>
           <span className="text-sm font-semibold text-ink-muted">{t('speedLabel')}</span>
