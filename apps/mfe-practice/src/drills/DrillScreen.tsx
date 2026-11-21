@@ -226,7 +226,8 @@ export function DrillScreen() {
         </header>
 
         {!finished && drill && (
-          <Card key={`${seed}-${index}`} role="region" aria-labelledby="ct-drill-q" elevated style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <section key={`${seed}-${index}`} aria-labelledby="ct-drill-q">
+          <Card elevated style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             <p className="m-0 text-xs font-bold uppercase tracking-wide text-ink-muted">
               {t('itemOf', { type: t(`type.${drill.type}`), i: index + 1, n: session.length })}
             </p>
@@ -237,6 +238,7 @@ export function DrillScreen() {
             {drill.type === 'match' && <MatchView drill={drill} onDone={onDone} />}
             {drill.type === 'repeat' && <RepeatView drill={drill} onDone={onDone} />}
           </Card>
+          </section>
         )}
 
         {finished && (
