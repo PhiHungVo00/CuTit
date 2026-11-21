@@ -1,6 +1,8 @@
 import { useEffect, useRef } from 'react';
 import { PitchReferenceFlyweight } from '@vietlearning/content';
 import { useLearner } from '@vietlearning/state';
+import { Icon } from '@vietlearning/ui';
+import { answerFeedback, FeedbackMascot } from '../feedback';
 import { useT } from '../i18n';
 import { say } from '../choice/ChoiceExercise';
 import { SlowButton } from '../audio/SlowButton';
@@ -26,6 +28,11 @@ export default function ToneExercise({ item, onDone, onSkip }: { item: ToneItem;
   const best = result ? PitchReferenceFlyweight.get(result.bestMatch) : null;
 
   useEffect(() => {
+    if (v) answerFeedback(v !== 'bad');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [result]);
+
+  useEffect(() => {
     if (status === 'done' || status === 'error') feedbackRef.current?.scrollIntoView?.({ block: 'nearest', behavior: 'smooth' });
   }, [status]);
 
@@ -36,7 +43,8 @@ export default function ToneExercise({ item, onDone, onSkip }: { item: ToneItem;
           {item.word}
         </p>
         <div className="flex shrink-0 gap-2">
-          <button type="button" onClick={() => say(item.word)} className="min-h-12 shrink-0 rounded-xl border border-line bg-surface-2 px-3 text-sm font-bold text-ink">
+          <button type="button" onClick={() => say(item.word)} className="inline-flex min-h-12 shrink-0 items-center gap-1.5 rounded-xl border border-line bg-surface-2 px-3 text-sm font-bold text-ink">
+            <Icon name="loa" size={20} />
             {t('playSample')}
           </button>
           <SlowButton text={item.word} />
@@ -76,7 +84,8 @@ export default function ToneExercise({ item, onDone, onSkip }: { item: ToneItem;
         )}
         {result && v && best && (
           <div role="status" className="flex flex-col gap-2 rounded-xl border border-line bg-sunken p-3">
-            <div className="flex items-baseline justify-between gap-2">
+            <div className="flex items-center justify-between gap-2">
+              <FeedbackMascot correct={v !== 'bad'} size={48} />
               <strong className={v === 'bad' ? 'text-danger' : 'text-heading'}>{t(`verdict.${v}`)}</strong>
               <span className="text-2xl font-black text-ink">{t('toneScore', { score: result.targetScore.score })}</span>
             </div>

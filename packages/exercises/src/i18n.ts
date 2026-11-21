@@ -71,7 +71,7 @@ export const { useT, t } = defineMessages(
     right: 'Đúng rồi! ',
     wrong: 'Chưa đúng. Đáp án: “{answer}”. ',
     next: 'Tiếp →',
-    replay: '🔈 Nghe lại',
+    replay: 'Nghe lại',
     listenSlow: 'Nghe chậm',
     cantListen: '🔇 Không nghe được lúc này',
     cantSpeak: '🤫 Không nói được lúc này',
@@ -89,7 +89,7 @@ export const { useT, t } = defineMessages(
     listenSentence: 'Nghe câu',
 
     // Luyện thanh (A1/A2)
-    playSample: '🔈 Nghe mẫu',
+    playSample: 'Nghe mẫu',
     stopRec: 'Dừng ghi âm',
     startRec: 'Bắt đầu ghi âm',
     'status.idle': 'Bấm để ghi âm, đọc to một lần',
@@ -180,7 +180,7 @@ export const { useT, t } = defineMessages(
     right: 'Correct! ',
     wrong: 'Not quite. Answer: “{answer}”. ',
     next: 'Next →',
-    replay: '🔈 Play again',
+    replay: 'Play again',
     listenSlow: 'Listen slowly',
     cantListen: '🔇 Can’t listen now',
     cantSpeak: '🤫 Can’t speak now',
@@ -196,7 +196,7 @@ export const { useT, t } = defineMessages(
     correctOrder: 'Correct sentence: “{sentence}”',
     listenSentence: 'Listen to the sentence',
 
-    playSample: '🔈 Play sample',
+    playSample: 'Play sample',
     stopRec: 'Stop recording',
     startRec: 'Start recording',
     'status.idle': 'Tap to record, say it once',

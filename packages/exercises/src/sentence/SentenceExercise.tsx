@@ -1,4 +1,6 @@
 import { useEffect, useRef } from 'react';
+import { Icon } from '@vietlearning/ui';
+import { answerFeedback, FeedbackMascot } from '../feedback';
 import { ExplainButton } from '../explain/ExplainButton';
 import { useT } from '../i18n';
 import { say } from '../choice/ChoiceExercise';
@@ -68,7 +70,7 @@ export function SentenceExercise({ item, seed, onDone }: { item: BuildItem; seed
           <button type="button" onClick={b.undo} disabled={!b.canUndo} className="min-h-12 rounded-xl border border-line bg-surface-2 text-sm font-bold text-ink disabled:opacity-40">
             {t('undo')}
           </button>
-          <button type="button" onClick={() => b.check()} disabled={!b.complete} className="col-span-2 min-h-12 rounded-xl bg-accent text-base font-extrabold text-accent-ink disabled:opacity-40">
+          <button type="button" onClick={() => answerFeedback(b.check().valid)} disabled={!b.complete} className="col-span-2 min-h-12 rounded-xl bg-accent text-base font-extrabold text-accent-ink disabled:opacity-40">
             {t('check')}
           </button>
         </div>
@@ -77,11 +79,12 @@ export function SentenceExercise({ item, seed, onDone }: { item: BuildItem; seed
       <div ref={feedbackRef} className="scroll-mb-[calc(80px+env(safe-area-inset-bottom))]">
         {b.result?.valid && (
           <div role="status" className="flex flex-col gap-2 rounded-xl bg-accent-soft p-3">
+            <FeedbackMascot correct />
             <div className="flex items-center justify-between gap-2">
               <span className="text-[15px] font-bold text-heading">{t('correct', { sentence })}</span>
               <span className="flex shrink-0 gap-2">
-                <button type="button" aria-label={t('listenSentence')} onClick={() => say(sentence)} className="min-h-11 min-w-11 rounded-xl bg-surface text-lg">
-                  🔈
+                <button type="button" aria-label={t('listenSentence')} onClick={() => say(sentence)} className="grid min-h-11 min-w-11 place-items-center rounded-xl bg-surface text-ink">
+                  <Icon name="loa" size={20} />
                 </button>
                 <SlowButton text={sentence} />
               </span>
@@ -93,6 +96,7 @@ export function SentenceExercise({ item, seed, onDone }: { item: BuildItem; seed
         )}
         {b.result && !b.result.valid && (
           <div role="status" className="flex flex-col gap-2 rounded-xl bg-danger-soft p-3 text-[15px] text-danger-ink">
+            <FeedbackMascot correct={false} />
             <ul className="m-0 flex list-disc flex-col gap-1 pl-5">
               {b.result.errors.map((e) => (
                 <li key={e}>{e}</li>
