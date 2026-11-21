@@ -6,7 +6,7 @@ import multipart from '@fastify/multipart';
 import rateLimit from '@fastify/rate-limit';
 import type { GatewayConfig } from './config.js';
 import { RequestPipeline } from './pipeline/RequestPipeline.js';
-import type { GlobalQuotaStore, QuotaStore } from './pipeline/QuotaStore.js';
+import type { Clock, GlobalQuotaStore, QuotaStore } from './pipeline/QuotaStore.js';
 import { DbGlobalQuotaStore, DbQuotaStore } from './pipeline/DbQuotaStore.js';
 import { TTSCacheProxy, fileSynthesizer } from './cache/TTSCacheProxy.js';
 import { createTtsProvider, type TtsProvider } from './providers/tts.js';
@@ -62,6 +62,8 @@ export interface BuildOptions {
   quotaStore?: QuotaStore;
   /** Test tiêm kho trần toàn cục; bỏ trống = DB */
   globalQuotaStore?: GlobalQuotaStore;
+  /** Test tiêm đồng hồ cho khóa ngày hạn mức / resetAt; bỏ trống = giờ thật */
+  clock?: Clock;
   ttsCache?: TTSCacheProxy;
   /** Test tiêm nhà cung cấp giả; bỏ trống = theo cấu hình (GEMINI_API_KEY) */
   llm?: LlmProvider | null;
@@ -126,7 +128,7 @@ export async function buildApp(config: GatewayConfig, opts: BuildOptions = {}): 
     if (!opts.db) await db.close();
   });
 
-  const pipeline = new RequestPipeline(config, opts.quotaStore ?? new DbQuotaStore(db), db, audit, opts.globalQuotaStore ?? new DbGlobalQuotaStore(db));
+  const pipeline = new RequestPipeline(config, opts.quotaStore ?? new DbQuotaStore(db, opts.clock), db, audit, opts.globalQuotaStore ?? new DbGlobalQuotaStore(db, opts.clock), opts.clock);
   // Chuỗi dự phòng dựng từ LLM_CHAIN / VISION_CHAIN / STT_CHAIN (providers/registry.ts); test tiêm bản giả thì dùng bản giả
   const needChains = opts.llm === undefined || opts.stt === undefined || opts.vision === undefined;
   const chains = needChains ? createAiProviders(config, { log: app.log }) : null;

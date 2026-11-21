@@ -149,7 +149,8 @@ test('trần toàn cục: hết trần chung => 429 quota_exceeded scope=global,
   let now = at('2026-11-20T10:00:00Z');
   const globalQuotaStore = new InMemoryGlobalQuotaStore(() => now);
   const quotaStore = new InMemoryQuotaStore(() => now);
-  const a = await makeApp({ JWT_SECRET: SECRET, GLOBAL_MAX_TURNS_PER_DAY: '3', MAX_CHAT_TURNS_PER_DAY: '10' }, { llm: okLlm(), globalQuotaStore, quotaStore });
+  // cùng đồng hồ cho cả resetAt (trước đây resetAt lấy giờ thật => test chỉ xanh đúng ngày 20/11)
+  const a = await makeApp({ JWT_SECRET: SECRET, GLOBAL_MAX_TURNS_PER_DAY: '3', MAX_CHAT_TURNS_PER_DAY: '10' }, { llm: okLlm(), globalQuotaStore, quotaStore, clock: () => now });
   const u1 = await guest(a);
   const u2 = await guest(a);
   assert.equal((await turn(a, u1.headers)).statusCode, 200);

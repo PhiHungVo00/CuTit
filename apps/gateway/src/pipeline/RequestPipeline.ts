@@ -1,6 +1,6 @@
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import type { GatewayConfig } from '../config.js';
-import { quotaResetAt, type Capability, type GlobalQuotaStore, type QuotaStore } from './QuotaStore.js';
+import { quotaDay, quotaResetAt, type Capability, type Clock, type GlobalQuotaStore, type QuotaStore } from './QuotaStore.js';
 import type { Remaining } from '@vietlearning/contracts';
 import { and, eq, isNull } from 'drizzle-orm';
 import { schema, type DbProvider } from '../db/client.js';
@@ -58,7 +58,7 @@ export class RequestPipeline {
 
   private knownUsers = new Map<string, number>();
 
-  constructor(private config: GatewayConfig, private quota: QuotaStore, private db: DbProvider, private audit?: AuditLog, private globalQuota?: GlobalQuotaStore) {
+  constructor(private config: GatewayConfig, private quota: QuotaStore, private db: DbProvider, private audit?: AuditLog, private globalQuota?: GlobalQuotaStore, private clock: Clock = () => new Date()) {
     this.limits = {
       tts: config.MAX_TTS_CHARS_PER_DAY,
       stt: config.MAX_STT_SECONDS_PER_DAY,
@@ -136,46 +136,60 @@ export class RequestPipeline {
    * Trả tổng đã dùng hôm nay của người dùng.
    */
   async consume(request: FastifyRequest, capability: Capability, units: number): Promise<number> {
+    return this.charge(request, capability, units, quotaDay(this.clock()));
+  }
+
+  /** Trừ người dùng rồi trần chung, cùng một khóa ngày `day`; trần chung từ chối HOẶC lỗi => hoàn phần của người dùng */
+  private async charge(request: FastifyRequest, capability: Capability, units: number, day: string): Promise<number> {
     const id = this.principalId(request);
-    const r = await this.quota.tryConsume(id, capability, units, this.limits[capability]);
+    const r = await this.quota.tryConsume(id, capability, units, this.limits[capability], day);
     if (!r.ok) {
-      throw new GatewayError(429, 'quota_exceeded', `Đã hết hạn mức ${capability} hôm nay`, { capability, resetAt: quotaResetAt() });
+      throw new GatewayError(429, 'quota_exceeded', `Đã hết hạn mức ${capability} hôm nay`, { capability, resetAt: quotaResetAt(this.clock()) });
     }
     const globalLimit = this.globalLimits[capability] ?? 0;
     if (this.globalQuota && globalLimit > 0) {
-      const g = await this.globalQuota.tryConsume(capability, units, globalLimit);
+      let g: { ok: boolean };
+      try {
+        g = await this.globalQuota.tryConsume(capability, units, globalLimit, day);
+      } catch (err) {
+        await this.quota.refund(id, capability, units, day).catch(() => undefined);
+        throw err;
+      }
       if (!g.ok) {
-        await this.quota.refund(id, capability, units).catch(() => undefined);
-        throw new GatewayError(429, 'quota_exceeded', 'Cu Tít hôm nay đã học rất nhiều, mai quay lại nhé', { capability, resetAt: quotaResetAt(), scope: 'global' });
+        await this.quota.refund(id, capability, units, day).catch(() => undefined);
+        throw new GatewayError(429, 'quota_exceeded', 'Cu Tít hôm nay đã học rất nhiều, mai quay lại nhé', { capability, resetAt: quotaResetAt(this.clock()), scope: 'global' });
       }
     }
     return r.used;
   }
 
   /**
-   * Hoàn trả hạn mức đã trừ. Không ném lỗi. Hạn mức NGƯỜI DÙNG luôn được hoàn (AI lỗi không trừ lượt). Trần DÙNG CHUNG chỉ
-   * hoàn khi `includeGlobal`: trần này bảo vệ hạn mức của nhà cung cấp nên lần gọi đã chạm nhà cung cấp (kể cả khi lỗi/JSON sai)
+   * Hoàn trả hạn mức đã trừ vào đúng ngày `day` đã trừ (vắng = hôm nay). Không ném lỗi. Trần DÙNG CHUNG chỉ hoàn khi
+   * `includeGlobal`: trần này bảo vệ hạn mức của nhà cung cấp nên lần gọi đã chạm nhà cung cấp (kể cả khi lỗi/JSON sai)
    * vẫn được tính; chỉ hoàn khi chưa gọi nhà cung cấp nào.
    */
-  async refund(request: FastifyRequest, capability: Capability, units: number, includeGlobal = true): Promise<void> {
+  async refund(request: FastifyRequest, capability: Capability, units: number, includeGlobal = true, day?: string): Promise<void> {
     if (units <= 0) return;
-    await this.quota.refund(this.principalId(request), capability, units).catch(() => undefined);
-    if (includeGlobal && this.globalQuota && (this.globalLimits[capability] ?? 0) > 0) await this.globalQuota.refund(capability, units).catch(() => undefined);
+    await this.quota.refund(this.principalId(request), capability, units, day).catch(() => undefined);
+    if (includeGlobal && this.globalQuota && (this.globalLimits[capability] ?? 0) > 0) await this.globalQuota.refund(capability, units, day).catch(() => undefined);
   }
 
   /**
-   * Trừ nhiều khoản cùng lúc; khoản sau thất bại thì hoàn các khoản trước. Trả `hold.refund()` (chạy một lần):
-   * AI lỗi / hết chuỗi dự phòng => gọi refund => KHÔNG trừ lượt của người dùng.
+   * Trừ nhiều khoản cùng lúc (cùng một khóa ngày); khoản sau thất bại thì hoàn các khoản trước. Trả `hold.refund(cause)`
+   * (chạy một lần): AI lỗi / hết chuỗi dự phòng => hoàn => KHÔNG trừ lượt của người dùng.
+   * Ngoại lệ `llm_blocked`: nội dung NGƯỜI DÙNG gửi bị bộ lọc an toàn từ chối — lỗi do người gửi, nhà cung cấp đã tính phí
+   * và lặp lại được tùy ý => KHÔNG hoàn (nếu hoàn, một người đốt được hết trần chung của cả app mà không tốn lượt nào).
    */
   async reserve(request: FastifyRequest, charges: [Capability, number][]): Promise<{ refund: (cause?: unknown) => Promise<void> }> {
+    const day = quotaDay(this.clock());
     const done: [Capability, number][] = [];
     try {
       for (const [cap, units] of charges) {
-        await this.consume(request, cap, units);
+        await this.charge(request, cap, units, day);
         done.push([cap, units]);
       }
     } catch (err) {
-      await Promise.all(done.map(([c, u]) => this.refund(request, c, u)));
+      await Promise.all(done.map(([c, u]) => this.refund(request, c, u, true, day)));
       throw err;
     }
     let refunded = false;
@@ -183,8 +197,9 @@ export class RequestPipeline {
       refund: async (cause?: unknown) => {
         if (refunded) return;
         refunded = true;
+        if ((cause as { code?: unknown } | undefined)?.code === 'llm_blocked') return;
         const includeGlobal = !providerWasCalled(cause);
-        await Promise.all(done.map(([c, u]) => this.refund(request, c, u, includeGlobal)));
+        await Promise.all(done.map(([c, u]) => this.refund(request, c, u, includeGlobal, day)));
       }
     };
   }
@@ -200,16 +215,28 @@ export class RequestPipeline {
     }
   }
 
-  /** Hạn mức còn lại hôm nay (đính vào kết quả mọi route AI để giao diện hiện "Còn N lượt") */
-  async remaining(request: FastifyRequest): Promise<Remaining> {
-    const used = await this.quota.getAll(this.principalId(request));
-    const left = (cap: Capability) => Math.max(0, this.limits[cap] - used[cap]);
-    return { turns: left('turn'), llmTokens: left('llm'), sttSeconds: left('stt'), visionImages: left('vision') };
+  /**
+   * Hạn mức còn lại hôm nay (đính vào kết quả mọi route AI để giao diện hiện "Còn N lượt"). Không ném lỗi: đọc DB hỏng
+   * SAU khi AI đã trả lời (đã tốn phí) thì bỏ `remaining` (trường tùy chọn), không biến kết quả thành 500.
+   */
+  async remaining(request: FastifyRequest): Promise<Remaining | undefined> {
+    try {
+      const used = await this.quota.getAll(this.principalId(request));
+      const left = (cap: Capability) => Math.max(0, this.limits[cap] - used[cap]);
+      return { turns: left('turn'), llmTokens: left('llm'), sttSeconds: left('stt'), visionImages: left('vision') };
+    } catch {
+      return undefined;
+    }
   }
 
-  /** Cộng phần chênh lệch sau khi biết chi phí thật (không chặn, không ném lỗi hạn mức) */
+  /**
+   * Cộng phần chênh lệch sau khi biết chi phí thật (không chặn, không ném lỗi hạn mức). Cộng cả vào trần chung: trần token
+   * chung phải theo token THẬT nhà cung cấp tính (prompt gia sư ≈ 3 000 token/lượt, ước lượng chỉ vài trăm).
+   */
   async addUsage(request: FastifyRequest, capability: Capability, units: number): Promise<void> {
-    if (units > 0) await this.quota.add(this.principalId(request), capability, units);
+    if (units <= 0) return;
+    await this.quota.add(this.principalId(request), capability, units);
+    if (this.globalQuota && (this.globalLimits[capability] ?? 0) > 0) await this.globalQuota.add(capability, units).catch(() => undefined);
   }
 
   limit(capability: Capability): number {

@@ -29,14 +29,14 @@ export class DbQuotaStore implements QuotaStore {
     return quotaDay(this.clock());
   }
 
-  async tryConsume(id: string, cap: Capability, units: number, limit: number): Promise<{ ok: boolean; used: number }> {
-    if (!UUID.test(id)) return this.anon.tryConsume(id, cap, units, limit);
+  async tryConsume(id: string, cap: Capability, units: number, limit: number, day = this.day()): Promise<{ ok: boolean; used: number }> {
+    if (!UUID.test(id)) return this.anon.tryConsume(id, cap, units, limit, day);
     if (units > limit) return { ok: false, used: await this.get(id, cap) };
     const t = schema.aiUsage;
     const db = await this.db.get();
     const rows = await db
       .insert(t)
-      .values({ userId: id, usageDayUtc: this.day(), capability: cap, units })
+      .values({ userId: id, usageDayUtc: day, capability: cap, units })
       .onConflictDoUpdate({
         target: [t.userId, t.usageDayUtc, t.capability],
         set: { units: sql`${t.units} + ${units}`, updatedAt: sql`now()` },
@@ -56,15 +56,15 @@ export class DbQuotaStore implements QuotaStore {
       .onConflictDoUpdate({ target: [t.userId, t.usageDayUtc, t.capability], set: { units: sql`${t.units} + ${units}`, updatedAt: sql`now()` } });
   }
 
-  async refund(id: string, cap: Capability, units: number): Promise<void> {
-    if (!UUID.test(id)) return this.anon.refund(id, cap, units);
+  async refund(id: string, cap: Capability, units: number, day = this.day()): Promise<void> {
+    if (!UUID.test(id)) return this.anon.refund(id, cap, units, day);
     if (units <= 0) return;
     const t = schema.aiUsage;
-    // Chỉ hoàn vào dòng NGÀY HIỆN TẠI (qua nửa đêm giữa lúc gọi AI thì lượt cũ đã reset, không hoàn nhầm sang ngày mới)
+    // Hoàn vào dòng của NGÀY ĐÃ TRỪ (request vắt qua 00:00 VN không được trừ bớt lượt của ngày mới)
     await (await this.db.get())
       .update(t)
       .set({ units: sql`greatest(${t.units} - ${units}, 0)`, updatedAt: sql`now()` })
-      .where(and(eq(t.userId, id), eq(t.usageDayUtc, this.day()), eq(t.capability, cap)));
+      .where(and(eq(t.userId, id), eq(t.usageDayUtc, day), eq(t.capability, cap)));
   }
 
   async get(id: string, cap: Capability): Promise<number> {
@@ -98,12 +98,12 @@ export class DbGlobalQuotaStore implements GlobalQuotaStore {
     return quotaDay(this.clock());
   }
 
-  async tryConsume(cap: Capability, units: number, limit: number): Promise<{ ok: boolean; used: number }> {
+  async tryConsume(cap: Capability, units: number, limit: number, day = this.day()): Promise<{ ok: boolean; used: number }> {
     if (units > limit) return { ok: false, used: await this.get(cap) };
     const t = schema.aiGlobalUsage;
     const rows = await (await this.db.get())
       .insert(t)
-      .values({ usageDay: this.day(), capability: cap, units })
+      .values({ usageDay: day, capability: cap, units })
       .onConflictDoUpdate({
         target: [t.usageDay, t.capability],
         set: { units: sql`${t.units} + ${units}`, updatedAt: sql`now()` },
@@ -114,13 +114,22 @@ export class DbGlobalQuotaStore implements GlobalQuotaStore {
     return { ok: false, used: await this.get(cap) };
   }
 
-  async refund(cap: Capability, units: number): Promise<void> {
+  async refund(cap: Capability, units: number, day = this.day()): Promise<void> {
     if (units <= 0) return;
     const t = schema.aiGlobalUsage;
     await (await this.db.get())
       .update(t)
       .set({ units: sql`greatest(${t.units} - ${units}, 0)`, updatedAt: sql`now()` })
-      .where(and(eq(t.usageDay, this.day()), eq(t.capability, cap)));
+      .where(and(eq(t.usageDay, day), eq(t.capability, cap)));
+  }
+
+  async add(cap: Capability, units: number): Promise<void> {
+    if (units <= 0) return;
+    const t = schema.aiGlobalUsage;
+    await (await this.db.get())
+      .insert(t)
+      .values({ usageDay: this.day(), capability: cap, units })
+      .onConflictDoUpdate({ target: [t.usageDay, t.capability], set: { units: sql`${t.units} + ${units}`, updatedAt: sql`now()` } });
   }
 
   async get(cap: Capability): Promise<number> {
