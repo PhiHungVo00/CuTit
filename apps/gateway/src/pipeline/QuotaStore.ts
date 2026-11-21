@@ -9,12 +9,18 @@ export type Capability = 'stt' | 'tts' | 'llm' | 'vision' | 'turn';
 export const CAPABILITIES: readonly Capability[] = ['stt', 'tts', 'llm', 'vision', 'turn'];
 
 export interface QuotaStore {
-  /** Cộng `units` NẾU used + units ≤ limit (nguyên tử); trả kết quả và tổng sau thao tác. */
-  tryConsume(principalId: string, capability: Capability, units: number, limit: number): Promise<{ ok: boolean; used: number }>;
+  /**
+   * Cộng `units` NẾU used + units ≤ limit (nguyên tử); trả kết quả và tổng sau thao tác.
+   * `day` (khóa ngày `quotaDay`) do nơi gọi chốt một lần cho cả request; vắng = ngày hiện tại.
+   */
+  tryConsume(principalId: string, capability: Capability, units: number, limit: number, day?: string): Promise<{ ok: boolean; used: number }>;
   /** Cộng không điều kiện (bù chênh lệch token thật sau khi gọi AI). */
   add(principalId: string, capability: Capability, units: number): Promise<void>;
-  /** Hoàn trả `units` (AI lỗi => không trừ lượt). Không xuống dưới 0 và chỉ hoàn trong NGÀY HIỆN TẠI. */
-  refund(principalId: string, capability: Capability, units: number): Promise<void>;
+  /**
+   * Hoàn trả `units` (AI lỗi => không trừ lượt) vào ĐÚNG ngày đã trừ (`day`, vắng = hôm nay). Không xuống dưới 0.
+   * Request vắt qua 00:00 giờ VN: lượt của ngày cũ được hoàn vào ngày cũ, không tặng thêm lượt cho ngày mới.
+   */
+  refund(principalId: string, capability: Capability, units: number, day?: string): Promise<void>;
   get(principalId: string, capability: Capability): Promise<number>;
   /** Đã dùng hôm nay theo mọi năng lực (một truy vấn) — để tính `remaining` */
   getAll(principalId: string): Promise<Record<Capability, number>>;
@@ -22,8 +28,10 @@ export interface QuotaStore {
 
 /** Trần dùng chung toàn app (không theo người dùng) */
 export interface GlobalQuotaStore {
-  tryConsume(capability: Capability, units: number, limit: number): Promise<{ ok: boolean; used: number }>;
-  refund(capability: Capability, units: number): Promise<void>;
+  tryConsume(capability: Capability, units: number, limit: number, day?: string): Promise<{ ok: boolean; used: number }>;
+  refund(capability: Capability, units: number, day?: string): Promise<void>;
+  /** Cộng không điều kiện (token thật vượt ước lượng): trần chung phải khớp mức nhà cung cấp tính */
+  add(capability: Capability, units: number): Promise<void>;
   get(capability: Capability): Promise<number>;
 }
 
@@ -62,7 +70,8 @@ export class InMemoryQuotaStore implements QuotaStore {
     return `${id}:${cap}`;
   }
 
-  async tryConsume(id: string, cap: Capability, units: number, limit: number): Promise<{ ok: boolean; used: number }> {
+  /** Bộ đếm RAM chỉ giữ ngày hiện tại: `day` cũ hơn (request vắt qua 00:00 VN) vẫn trừ vào ngày hiện tại */
+  async tryConsume(id: string, cap: Capability, units: number, limit: number, _day?: string): Promise<{ ok: boolean; used: number }> {
     const k = this.key(id, cap);
     const used = this.counters.get(k) ?? 0;
     if (used + units > limit) return { ok: false, used };
@@ -75,8 +84,9 @@ export class InMemoryQuotaStore implements QuotaStore {
     this.counters.set(k, (this.counters.get(k) ?? 0) + units);
   }
 
-  async refund(id: string, cap: Capability, units: number): Promise<void> {
+  async refund(id: string, cap: Capability, units: number, day?: string): Promise<void> {
     const k = this.key(id, cap);
+    if (day !== undefined && day !== this.day) return; // ngày đã trừ đã qua: bộ đếm ngày đó không còn
     this.counters.set(k, Math.max(0, (this.counters.get(k) ?? 0) - units));
   }
 
@@ -115,9 +125,15 @@ export class InMemoryGlobalQuotaStore implements GlobalQuotaStore {
     return { ok: true, used: used + units };
   }
 
-  async refund(cap: Capability, units: number): Promise<void> {
+  async refund(cap: Capability, units: number, day?: string): Promise<void> {
     this.roll();
+    if (day !== undefined && day !== this.day) return;
     this.counters.set(cap, Math.max(0, (this.counters.get(cap) ?? 0) - units));
+  }
+
+  async add(cap: Capability, units: number): Promise<void> {
+    this.roll();
+    this.counters.set(cap, (this.counters.get(cap) ?? 0) + units);
   }
 
   async get(cap: Capability): Promise<number> {
