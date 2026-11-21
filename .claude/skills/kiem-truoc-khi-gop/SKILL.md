@@ -19,6 +19,7 @@ Chỉ gộp khi **mọi bước** đạt. Bước nào đỏ thì phân biệt n
 6b. **Plugin đã cài** (người dùng bật 20/11):
    - **code-review**: chạy review nhiều agent trên PR/diff trước khi gộp. Chỉ sửa phát hiện có độ tin cậy cao; phát hiện còn nghi ngờ thì ghi vào PR.
    - **Axe Accessibility**: PR có đổi giao diện thì quét màn bị ảnh hưởng (độ tương phản, nhãn, bàn phím). Lighthouse a11y phải giữ 100.
+     Không cần máy chủ MCP: `npx playwright test a11y` (e2e/a11y.spec.ts, `@axe-core/playwright`, 8 màn × sáng/tối × 2 cỡ) phải 0 vi phạm serious/critical.
    - **Android Emulator QA**: dùng kèm skill `thu-tren-emulator` để chụp màn hình, xem UI và lấy logcat.
    - **Playwright MCP**: xem nhanh hoặc chụp màn hình trong trình duyệt. e2e chính thức vẫn chạy bằng `@playwright/test` của repo.
    - **Security review**: plugin tự cảnh báo khi sửa code và khi commit. Cảnh báo nào đụng auth/Gateway thì chuyển cho `kien-truc` xem.

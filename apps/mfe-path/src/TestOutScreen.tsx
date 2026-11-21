@@ -1,12 +1,15 @@
 import { lazy, Suspense, useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
+import { haptic, playSfx } from '@vietlearning/shared/audio';
 import { COURSE } from '@vietlearning/content';
 import { useUiLanguage } from '@vietlearning/state';
 import { progressStore } from '@vietlearning/state/progress';
 import { useT } from './i18n';
 import { TEST_OUT_PASS } from './path/pathModel';
 import { SessionRunner } from './session/SessionRunner';
-import { card, Page, primaryBtn, secondaryBtn } from './ui';
+import { Button, Card, CuTit } from '@vietlearning/ui';
+import { celebrateFinish, currentStreak } from './celebration';
+import { cardStack, fullWidth, LinkButton, Page } from './Page';
 
 // GĐ4: thông báo huy hiệu mới — chunk lười riêng
 const Motivation = lazy(() => import('./motivation/Motivation'));
@@ -34,7 +37,7 @@ function TestOutBody({ unitId }: { unitId: string }) {
     return (
       <Page>
         <p role="alert" className="m-0 text-ink">{t('notFound')}</p>
-        <Link to="/" className={primaryBtn}>{t('backToPath')}</Link>
+        <LinkButton to="/">{t('backToPath')}</LinkButton>
       </Page>
     );
   }
@@ -53,7 +56,13 @@ function TestOutBody({ unitId }: { unitId: string }) {
           onClose={() => navigate('/')}
           onFinish={(o) => {
             const passed = o.total > 0 && o.accuracy >= TEST_OUT_PASS;
+            const streakBefore = currentStreak();
             const xp = passed ? progressStore.getState().passTestOut(unit.id) : 0;
+            if (passed) celebrateFinish(streakBefore);
+            else {
+              playSfx('sai');
+              haptic('loi');
+            }
             setPhase({ pct: Math.round(o.accuracy * 100), passed, xp });
           }}
         />
@@ -68,11 +77,12 @@ function TestOutBody({ unitId }: { unitId: string }) {
         <p className="m-0 text-[15px] text-ink-soft">{t('testOutIntro', { n: unit.testOut.length, pct: pass })}</p>
       </header>
       {typeof phase === 'object' && (
-        <section role="status" className={`${card} text-center`}>
+        <Card role="status" elevated style={{ ...cardStack, alignItems: 'center', textAlign: 'center' }}>
+          <CuTit mood={phase.passed ? 'an-mung' : 'dong-vien'} size={96} />
           <p className="m-0 text-lg font-bold text-heading">
             {phase.passed ? t('testOutPassed', { pct: phase.pct, xp: phase.xp }) : t('testOutFailed', { pct: phase.pct })}
           </p>
-        </section>
+        </Card>
       )}
       {typeof phase === 'object' && phase.passed && (
         <Suspense fallback={null}>
@@ -80,20 +90,19 @@ function TestOutBody({ unitId }: { unitId: string }) {
         </Suspense>
       )}
       {(phase === 'intro' || (typeof phase === 'object' && !phase.passed)) && (
-        <button
-          type="button"
-          className={primaryBtn}
+        <Button
+          style={fullWidth}
           onClick={() => {
             setAttempt((a) => a + 1);
             setPhase('run');
           }}
         >
           {phase === 'intro' ? t('testOutStart') : t('testOutAgain')}
-        </button>
+        </Button>
       )}
-      <Link to="/" className={secondaryBtn}>
+      <LinkButton to="/" variant="secondary">
         {t('backToPath')}
-      </Link>
+      </LinkButton>
     </Page>
   );
 }

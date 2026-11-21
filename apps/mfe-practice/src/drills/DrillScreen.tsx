@@ -1,5 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { answerFeedback, FeedbackMascot } from '@vietlearning/exercises';
+import { haptic, playSfx } from '@vietlearning/shared/audio';
+import { Button, Card, CuTit, Icon } from '@vietlearning/ui';
 import { dueCards, learnerStore, useLearner } from '@vietlearning/state';
 import { SlowListen, say as sayAt } from '../listen';
 import { generateSession, type ChoiceDrill, type MatchDrill, type RepeatDrill } from './generateDrills';
@@ -22,9 +25,10 @@ function ChoiceView({ drill, onDone }: { drill: ChoiceDrill; onDone: Done }) {
     <div className="flex flex-col gap-3">
       {drill.speak && (
         <div className="flex gap-2 self-start">
-          <button type="button" onClick={() => say(drill.speak!)} className="min-h-12 rounded-xl border border-line bg-surface-2 px-4 font-bold text-ink">
+          <Button variant="secondary" onClick={() => say(drill.speak!)}>
+            <Icon name="loa" size={20} />
             {t('replay')}
-          </button>
+          </Button>
           <SlowListen text={drill.speak} base={BASE} />
         </div>
       )}
@@ -36,7 +40,10 @@ function ChoiceView({ drill, onDone }: { drill: ChoiceDrill; onDone: Done }) {
               key={o}
               type="button"
               disabled={chosen !== null}
-              onClick={() => setChosen(o)}
+              onClick={() => {
+                setChosen(o);
+                answerFeedback(o === drill.answer);
+              }}
               lang="vi"
               className={[
                 'min-h-14 rounded-xl border-2 px-2 text-lg font-bold',
@@ -50,11 +57,14 @@ function ChoiceView({ drill, onDone }: { drill: ChoiceDrill; onDone: Done }) {
       </div>
       {chosen !== null && (
         <div role="status" className={['rounded-xl p-3 text-[15px]', correct ? 'bg-accent-soft text-heading' : 'bg-danger-soft text-danger-ink'].join(' ')}>
-          <strong>{correct ? t('right') : t('wrong', { answer: drill.answer })}</strong>
+          <div className="flex items-center gap-3">
+            <FeedbackMascot correct={correct} />
+            <strong>{correct ? t('right') : t('wrong', { answer: drill.answer })}</strong>
+          </div>
           {drill.explanation}
-          <button type="button" onClick={() => onDone(correct ? 5 : 1, correct, drill.answer)} className="mt-2 block min-h-12 w-full rounded-xl bg-accent font-extrabold text-accent-ink">
+          <Button style={{ width: '100%', marginTop: 8 }} onClick={() => onDone(correct ? 5 : 1, correct, drill.answer)}>
             {t('next')}
-          </button>
+          </Button>
         </div>
       )}
     </div>
@@ -74,6 +84,7 @@ function MatchView({ drill, onDone }: { drill: MatchDrill; onDone: Done }) {
     const pair = drill.pairs.find((p) => p.left === left)!;
     if (pair.right === r) setMatched((m) => [...m, left]);
     else setMistakes((x) => x + 1);
+    answerFeedback(pair.right === r);
     setLeft(null);
   };
 
@@ -114,9 +125,9 @@ function MatchView({ drill, onDone }: { drill: MatchDrill; onDone: Done }) {
       </div>
       {mistakes > 0 && <p className="m-0 text-sm text-danger">{t('matchMistakes', { n: mistakes })}</p>}
       {finished && (
-        <button type="button" onClick={() => onDone(mistakes === 0 ? 5 : mistakes === 1 ? 3 : 1, mistakes === 0, drill.pairs.map((p) => `${p.left} = ${p.right}`).join(', '))} className="min-h-12 rounded-xl bg-accent font-extrabold text-accent-ink">
+        <Button onClick={() => onDone(mistakes === 0 ? 5 : mistakes === 1 ? 3 : 1, mistakes === 0, drill.pairs.map((p) => `${p.left} = ${p.right}`).join(', '))}>
           {t('next')}
-        </button>
+        </Button>
       )}
     </div>
   );
@@ -124,6 +135,10 @@ function MatchView({ drill, onDone }: { drill: MatchDrill; onDone: Done }) {
 
 function RepeatView({ drill, onDone }: { drill: RepeatDrill; onDone: Done }) {
   const t = useT();
+  const rate = (quality: number, correct: boolean) => {
+    answerFeedback(correct);
+    onDone(quality, correct, drill.text);
+  };
   return (
     <div className="flex flex-col gap-3">
       <p lang="vi" className="m-0 rounded-xl bg-sunken p-3 text-xl font-extrabold text-ink">
@@ -131,22 +146,21 @@ function RepeatView({ drill, onDone }: { drill: RepeatDrill; onDone: Done }) {
       </p>
       <p className="m-0 text-sm text-ink-soft">{drill.translation}</p>
       <div className="flex gap-2 self-start">
-        <button type="button" onClick={() => say(drill.text)} className="min-h-12 rounded-xl border border-line bg-surface-2 px-4 font-bold text-ink">
+        <Button variant="secondary" onClick={() => say(drill.text)}>
+          <Icon name="loa" size={20} />
           {t('playSample')}
-        </button>
+        </Button>
         <SlowListen text={drill.text} base={BASE} />
       </div>
       <p className="m-0 text-sm text-ink-muted">{t('repeatHint')}</p>
       <div className="grid grid-cols-3 gap-2" role="group" aria-label={t('selfRate')}>
-        <button type="button" onClick={() => onDone(2, false, drill.text)} className="min-h-12 rounded-xl border border-line bg-danger-soft font-bold text-danger-ink">
+        <Button variant="danger" onClick={() => rate(2, false)}>
           {t('hard')}
-        </button>
-        <button type="button" onClick={() => onDone(4, true, drill.text)} className="min-h-12 rounded-xl border border-line bg-surface-2 font-bold text-ink">
+        </Button>
+        <Button variant="secondary" onClick={() => rate(4, true)}>
           {t('ok')}
-        </button>
-        <button type="button" onClick={() => onDone(5, true, drill.text)} className="min-h-12 rounded-xl bg-accent font-bold text-accent-ink">
-          {t('easy')}
-        </button>
+        </Button>
+        <Button onClick={() => rate(5, true)}>{t('easy')}</Button>
       </div>
     </div>
   );
@@ -179,7 +193,11 @@ export function DrillScreen() {
   const finished = index >= session.length;
 
   useEffect(() => {
-    if (finished) addStudyTime((Date.now() - startedAt) / 1000);
+    if (finished) {
+      addStudyTime((Date.now() - startedAt) / 1000);
+      playSfx('hoan-thanh');
+      haptic('thanh-cong');
+    }
   }, [finished, addStudyTime, startedAt]);
 
   const onDone: Done = (quality, correct, back) => {
@@ -197,8 +215,9 @@ export function DrillScreen() {
         <header className="flex flex-col gap-2 border-b-2 border-line pb-4">
           <div className="flex items-center justify-between gap-2">
             <h1 className="m-0 text-[26px] font-black leading-tight tracking-tight text-heading">{t('drillTitle')}</h1>
-            <Link to="/ghep-cau" className="flex min-h-11 items-center rounded-xl border border-line-strong bg-surface px-3 text-sm font-bold text-ink no-underline">
+            <Link to="/ghep-cau" className="flex min-h-11 items-center gap-1 rounded-xl border border-line-strong bg-surface px-3 text-sm font-bold text-ink no-underline">
               {t('sentenceLink')}
+              <Icon name="mui-ten-phai" size={16} />
             </Link>
           </div>
           <div className="h-2 overflow-hidden rounded-full bg-surface-2" role="progressbar" aria-label={t('sessionProgress')} aria-valuemin={0} aria-valuemax={session.length} aria-valuenow={Math.min(index, session.length)}>
@@ -207,7 +226,8 @@ export function DrillScreen() {
         </header>
 
         {!finished && drill && (
-          <section key={`${seed}-${index}`} aria-labelledby="ct-drill-q" className="flex flex-col gap-3 rounded-2xl border border-line-strong bg-surface p-4 shadow-card">
+          <section key={`${seed}-${index}`} aria-labelledby="ct-drill-q">
+          <Card elevated style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             <p className="m-0 text-xs font-bold uppercase tracking-wide text-ink-muted">
               {t('itemOf', { type: t(`type.${drill.type}`), i: index + 1, n: session.length })}
             </p>
@@ -217,30 +237,28 @@ export function DrillScreen() {
             {(drill.type === 'quiz' || drill.type === 'fill' || drill.type === 'listen') && <ChoiceView drill={drill} onDone={onDone} />}
             {drill.type === 'match' && <MatchView drill={drill} onDone={onDone} />}
             {drill.type === 'repeat' && <RepeatView drill={drill} onDone={onDone} />}
+          </Card>
           </section>
         )}
 
         {finished && (
-          <section role="status" className="flex flex-col items-center gap-3 rounded-2xl border border-line-strong bg-surface p-6 text-center shadow-card">
-            <span aria-hidden="true" className="text-5xl">
-              {score >= session.length - 1 ? '🏮' : '🎋'}
-            </span>
+          <Card role="status" elevated style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, textAlign: 'center' }}>
+            <CuTit mood="an-mung" size={120} />
             <h2 className="m-0 text-xl font-black text-ink">
               {t('sessionDone', { score, n: session.length })}
             </h2>
             <p className="m-0 text-[15px] text-ink-soft">{t('sessionDoneHint')}</p>
-            <button
-              type="button"
+            <Button
+              style={{ width: '100%' }}
               onClick={() => {
                 setSeed((s) => s + 1);
                 setIndex(0);
                 setScore(0);
               }}
-              className="min-h-12 w-full rounded-xl bg-accent font-extrabold text-accent-ink"
             >
               {t('newSession')}
-            </button>
-          </section>
+            </Button>
+          </Card>
         )}
       </div>
     </div>

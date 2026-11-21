@@ -63,9 +63,6 @@ export const { useT, t } = defineMessages(
 
     // M9
     progressTitle: 'Tiến độ học',
-    friendsTitle: 'Học cùng bạn bè',
-    friendsHint: 'Cùng một người bạn đặt mục tiêu phút học mỗi tuần và giữ chuỗi tuần chung. Không có bảng xếp hạng.',
-    friendsOpen: 'Mở bạn học',
     settingsLink: '⚙️ Tùy chỉnh',
     'skill.pronunciation': 'Phát âm',
     'skill.honorific': 'Xưng hô',
@@ -107,7 +104,7 @@ export const { useT, t } = defineMessages(
     reviewDoneHint: 'Thẻ quên sẽ quay lại vào ngày mai; thẻ nhớ được giãn lịch dài dần theo SM-2.',
     done: 'Xong',
     reviewProgress: 'Ôn tập · Thẻ {i}/{total}',
-    listen: '🔈 Nghe',
+    listen: 'Nghe',
     listenSlow: 'Nghe chậm',
     flip: 'Lật thẻ',
     gradeQ: 'Bạn nhớ thẻ này thế nào?',
@@ -242,9 +239,6 @@ export const { useT, t } = defineMessages(
     back: '← Back',
 
     progressTitle: 'My progress',
-    friendsTitle: 'Learn with friends',
-    friendsHint: 'Set a weekly minutes goal with a friend and keep a shared weekly streak. No leaderboards.',
-    friendsOpen: 'Open study buddies',
     settingsLink: '⚙️ Settings',
     'skill.pronunciation': 'Pronunciation',
     'skill.honorific': 'Pronouns',
@@ -285,7 +279,7 @@ export const { useT, t } = defineMessages(
     reviewDoneHint: 'Forgotten cards come back tomorrow; remembered ones are spaced further apart (SM-2).',
     done: 'Done',
     reviewProgress: 'Review · Card {i}/{total}',
-    listen: '🔈 Listen',
+    listen: 'Listen',
     listenSlow: 'Listen slowly',
     flip: 'Show answer',
     gradeQ: 'How well did you remember this card?',

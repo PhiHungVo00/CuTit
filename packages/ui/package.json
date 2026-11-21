@@ -2,6 +2,7 @@
   "name": "@vietlearning/ui",
   "version": "1.0.0",
   "type": "module",
+  "sideEffects": false,
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
@@ -13,7 +14,12 @@
     "./agent-blocks": {
       "types": "./dist/agent-blocks/index.d.ts",
       "default": "./dist/agent-blocks/index.js"
-    }
+    },
+    "./mascot": {
+      "types": "./dist/mascot/CuTit.d.ts",
+      "default": "./dist/mascot/CuTit.js"
+    },
+    "./mascot.css": "./src/mascot/cutit.css"
   },
   "scripts": {
     "build": "tsc -b",
@@ -21,13 +27,19 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@vietlearning/contracts": "workspace:*",
+    "@vietlearning/state": "workspace:*",
     "clsx": "^2.1.1",
-    "tailwind-merge": "^2.6.0",
-    "@vietlearning/contracts": "workspace:*"
+    "tailwind-merge": "^2.6.0"
   },
   "devDependencies": {
-    "typescript": "^5.7.3",
+    "@testing-library/dom": "10.4.2",
+    "@testing-library/react": "16.3.3",
     "@types/react": "^18.3.31",
+    "@types/react-dom": "^18.3.7",
+    "jsdom": "^25.0.1",
+    "react-dom": "^18.3.1",
+    "typescript": "^5.7.3",
     "vitest": "^3.2.7"
   },
   "peerDependencies": {

@@ -24,7 +24,7 @@ const loadSystemBars = () =>
 export function applySystemBars(theme: 'dark' | 'light'): void {
   if (!isNativeApp || getPlatform() !== 'android') return;
   loadSystemBars()
-    .then(() => systemBars!.setTheme({ dark: theme === 'dark', color: theme === 'dark' ? '#16100B' : '#F6F3EC' }))
+    .then(() => systemBars!.setTheme({ dark: theme === 'dark', color: theme === 'dark' ? '#1F1710' : '#FBF3E4' }))
     .catch((err) => console.warn('[Native] Không đổi được màu thanh hệ thống', err));
 }
 

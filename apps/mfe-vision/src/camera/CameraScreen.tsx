@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type ChangeEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { canOpenAppSettings, openAppSettings } from '@vietlearning/native';
 import { learnerStore, useLearner } from '@vietlearning/state';
+import { Button, CuTit, Icon } from '@vietlearning/ui';
 import { SlowListen, say as sayAt } from '../listen';
 import { fileToJpegBase64, toJpegBase64 } from './image';
 import { t as tCam, useT } from '../i18n';
@@ -19,7 +20,7 @@ type Phase =
   | { kind: 'result'; preview: string; labels: Label[]; mock: boolean }
   | { kind: 'error'; message: string; preview?: string; settings?: boolean };
 
-const btn = 'min-h-12 w-full rounded-xl px-4 font-extrabold';
+const full = { width: '100%' } as const;
 const BASE = 0.85;
 const say = (text: string) => sayAt(text, BASE);
 
@@ -138,7 +139,8 @@ export function CameraScreen() {
       <div className="mx-auto flex max-w-[560px] flex-col gap-4">
         <header className="flex items-center justify-between gap-2 border-b-2 border-line pb-4">
           <h1 className="m-0 text-[26px] font-black leading-tight tracking-tight text-heading">{t('title')}</h1>
-          <Link to="/ho-so" className="flex min-h-11 items-center rounded-xl border border-line-strong bg-surface px-3 text-sm font-bold text-ink no-underline">
+          <Link to="/ho-so" className="flex min-h-11 items-center gap-1 rounded-xl border border-line-strong bg-surface px-3 text-sm font-bold text-ink no-underline">
+            <Icon name="ho-so" size={18} />
             {t('cardsLink')}
           </Link>
         </header>
@@ -155,28 +157,30 @@ export function CameraScreen() {
 
         {phase.kind === 'live' ? (
           <div className="flex flex-col gap-2">
-            <button type="button" className={`${btn} bg-accent text-accent-ink`} onClick={() => void capture()}>
+            <Button style={full} onClick={() => void capture()}>
+              <Icon name="camera" size={20} />
               {t('capture')}
-            </button>
-            <button
-              type="button"
-              className={`${btn} border border-line-strong bg-surface-2 text-ink`}
+            </Button>
+            <Button
+              variant="secondary"
+              style={full}
               onClick={() => {
                 stopCamera();
                 setPhase({ kind: 'idle' });
               }}
             >
               {t('cameraOff')}
-            </button>
+            </Button>
           </div>
         ) : (
           <div className="flex flex-col gap-2">
-            <button type="button" className={`${btn} bg-accent text-accent-ink`} disabled={phase.kind === 'starting' || phase.kind === 'analyzing'} onClick={openCamera}>
+            <Button style={full} disabled={phase.kind === 'starting' || phase.kind === 'analyzing'} onClick={openCamera}>
+              <Icon name="camera" size={20} />
               {phase.kind === 'result' || phase.kind === 'error' ? t('another') : t('openCamera')}
-            </button>
-            <button type="button" className={`${btn} border border-line-strong bg-surface-2 text-ink`} disabled={phase.kind === 'analyzing'} onClick={pickPhoto}>
+            </Button>
+            <Button variant="secondary" style={full} disabled={phase.kind === 'analyzing'} onClick={pickPhoto}>
               {t('pick')}
-            </button>
+            </Button>
             <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={(e) => void onFile(e)} aria-hidden="true" tabIndex={-1} />
           </div>
         )}
@@ -191,11 +195,10 @@ export function CameraScreen() {
               {t('privacyPolicy')}
             </Link>
             <div className="grid grid-cols-2 gap-2">
-              <button type="button" onClick={() => setAsk(null)} className="min-h-12 rounded-xl border border-line-strong bg-surface px-3 font-bold text-ink">
+              <Button variant="secondary" onClick={() => setAsk(null)}>
                 {t('consentNo')}
-              </button>
-              <button
-                type="button"
+              </Button>
+              <Button
                 onClick={() => {
                   const next = ask;
                   learnerStore.getState().giveConsent('camera');
@@ -203,10 +206,9 @@ export function CameraScreen() {
                   if (next === 'camera') void startCamera();
                   else fileRef.current?.click();
                 }}
-                className="min-h-12 rounded-xl bg-accent px-3 font-extrabold text-accent-ink"
               >
                 {t('consentAgree')}
-              </button>
+              </Button>
             </div>
           </div>
         )}
@@ -215,7 +217,7 @@ export function CameraScreen() {
 
         {phase.kind === 'analyzing' && (
           <p role="status" className="m-0 flex items-center gap-2 text-[15px] text-ink-muted">
-            <span aria-hidden="true" className="inline-block size-4 animate-spin rounded-full border-2 border-current border-t-transparent motion-reduce:animate-none" />
+            <CuTit mood="suy-nghi" size={56} />
             {t('analyzing')}
           </p>
         )}
@@ -224,9 +226,10 @@ export function CameraScreen() {
           <div role="alert" className="flex flex-col gap-2 rounded-xl bg-danger-soft p-3 text-danger-ink">
             <p className="m-0 text-[15px]">{phase.message}</p>
             {phase.settings && canOpenAppSettings() && (
-              <button type="button" className={`${btn} border border-line-strong bg-surface text-ink`} onClick={() => void openAppSettings()}>
+              <Button variant="secondary" style={full} onClick={() => void openAppSettings()}>
+                <Icon name="cai-dat" size={18} />
                 {t('openSettings')}
-              </button>
+              </Button>
             )}
           </div>
         )}
@@ -250,13 +253,13 @@ export function CameraScreen() {
                         {l.en}
                       </span>
                     </span>
-                    <button type="button" onClick={() => say(l.vi)} aria-label={t('listenTo', { word: l.vi })} className="min-h-11 min-w-11 rounded-xl border border-line bg-surface px-3 font-bold text-ink">
-                      🔈
-                    </button>
+                    <Button variant="secondary" onClick={() => void say(l.vi)} aria-label={t('listenTo', { word: l.vi })}>
+                      <Icon name="loa" size={18} />
+                    </Button>
                     <SlowListen text={l.vi} base={BASE} className="min-h-11 min-w-11 rounded-xl border border-line bg-surface px-3 text-lg" />
-                    <button type="button" disabled={saved} onClick={() => save(l)} className="min-h-11 rounded-xl border border-line bg-surface px-3 text-sm font-bold text-ink disabled:opacity-60">
+                    <Button variant="secondary" disabled={saved} onClick={() => save(l)}>
                       {saved ? t('saved') : t('save')}
-                    </button>
+                    </Button>
                   </li>
                 );
               })}

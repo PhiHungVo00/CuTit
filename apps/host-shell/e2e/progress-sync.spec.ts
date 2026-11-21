@@ -18,7 +18,7 @@ async function serverProgress(api: APIRequestContext, recoveryCode: string) {
 }
 
 async function recoveryCode(page: Page): Promise<string> {
-  await page.goto('/tuy-chinh');
+  await page.goto('/cai-dat/tai-khoan');
   const create = page.getByRole('button', { name: 'Tạo tài khoản và mã khôi phục ngay' });
   const code = page.getByTestId('recovery-code');
   await expect(create.or(code)).toBeVisible();
@@ -28,7 +28,7 @@ async function recoveryCode(page: Page): Promise<string> {
 }
 
 async function restore(page: Page, code: string) {
-  await page.goto('/tuy-chinh');
+  await page.goto('/cai-dat/tai-khoan');
   await page.getByLabel('Mã khôi phục từ máy khác').fill(code);
   await page.getByRole('button', { name: 'Khôi phục trên máy này' }).click();
   await expect(page.getByText(/✓ Đã khôi phục/)).toBeVisible({ timeout: 15_000 });
@@ -82,7 +82,7 @@ test.describe('Nối tiến độ GĐ0 ↔ GĐ1', () => {
     expect(await readXp(b)).toBeGreaterThan(0);
 
     // Máy A xóa tài khoản
-    await page.goto('/tuy-chinh');
+    await page.goto('/cai-dat/tai-khoan');
     await page.getByRole('button', { name: 'Xóa tài khoản và dữ liệu…' }).click();
     await page.getByRole('button', { name: 'Xóa vĩnh viễn' }).click();
     await expect(page.getByText('✓ Đã xóa tài khoản và dữ liệu.')).toBeVisible({ timeout: 15_000 });
@@ -102,7 +102,7 @@ test.describe('Nối tiến độ GĐ0 ↔ GĐ1', () => {
   });
 
   test('trang chính sách quyền riêng tư: mở từ Tùy chỉnh, có nhãn bản nháp, song ngữ', async ({ page }) => {
-    await page.goto('/tuy-chinh');
+    await page.goto('/cai-dat/quyen-rieng-tu');
     await page.getByRole('link', { name: 'Đọc chính sách quyền riêng tư' }).click();
     await expect(page).toHaveURL(/\/quyen-rieng-tu$/);
     await expect(page.getByRole('heading', { level: 1, name: 'Chính sách quyền riêng tư' })).toBeVisible();
@@ -129,12 +129,18 @@ test.describe('Nối tiến độ GĐ0 ↔ GĐ1', () => {
       sessionStorage.setItem('seeded', '1');
       localStorage.setItem('becutit.learner', JSON.stringify({ state: { consents: { voice: true, camera: true } }, version: 1 }));
     });
-    await page.goto('/tuy-chinh');
-    await expect(page.getByTestId('consent-voice')).toHaveText('Đã đồng ý');
-    await expect(page.getByTestId('consent-camera')).toHaveText('Đã đồng ý');
-    await page.getByRole('button', { name: 'Rút lại đồng ý' }).first().click();
-    await expect(page.getByTestId('consent-voice')).toHaveText(/Chưa đồng ý/);
-    await expect(page.getByTestId('consent-camera')).toHaveText('Đã đồng ý');
+    await page.goto('/cai-dat/quyen-rieng-tu');
+    // Cài đặt mới: mỗi đồng ý là một công tắc (đang bật = "Đã đồng ý"); tắt = rút lại, chỉ rút, không cấp lại ở đây
+    const voice = page.getByRole('switch', { name: /Giọng nói/ });
+    const camera = page.getByRole('switch', { name: /Camera từ vựng/ });
+    await expect(voice).toBeChecked();
+    await expect(camera).toBeChecked();
+    await expect(page.getByText('Đã đồng ý', { exact: true })).toHaveCount(2);
+    await voice.click();
+    await expect(voice).not.toBeChecked();
+    await expect(voice).toBeDisabled();
+    await expect(page.getByText(/Chưa đồng ý/)).toHaveCount(1);
+    await expect(camera).toBeChecked();
     const stored = await page.evaluate(() => JSON.parse(localStorage.getItem('becutit.learner')!).state.consents);
     expect(stored).toEqual({ camera: true });
   });

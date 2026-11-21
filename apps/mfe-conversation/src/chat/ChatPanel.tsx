@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { canOpenAppSettings, openAppSettings } from '@vietlearning/native';
 import { useLearner } from '@vietlearning/state';
+import { Button, CuTit, Icon } from '@vietlearning/ui';
 import { SlowListen, say as sayAt } from '../listen';
 import { VoiceConsent } from './VoiceConsent';
 import { AgentBlockView } from './AgentBlockView';
@@ -16,7 +17,7 @@ const say = (text: string) => sayAt(text, BASE);
 const BUSY_STATES = new Set(['UPLOADING', 'STREAMING', 'PLAYING']);
 
 /** Khung chat dùng chung cho M1 (tự do) và M7 (nhập vai). Nhập bằng chữ; câu trả lời có nút nghe. */
-export function ChatPanel({ session, placeholder, emptyHint, tutorName }: { session: Session; placeholder: string; emptyHint: string; tutorName: string }) {
+export function ChatPanel({ session, placeholder, emptyHint, tutorName, avatar = true }: { session: Session; placeholder: string; emptyHint: string; tutorName: string; /** hiện Bé Cu Tít cạnh tin nhắn (tắt khi NPC là nhân vật khác) */ avatar?: boolean }) {
   const t = useT();
   const { messages, busy, turnState, error, send, retry, cancel } = session;
   const [draft, setDraft] = useState('');
@@ -32,6 +33,7 @@ export function ChatPanel({ session, placeholder, emptyHint, tutorName }: { sess
     inputRef.current?.focus();
   });
   const recording = voice.status === 'recording';
+  const lastTutorId = [...messages].reverse().find((m) => m.role === 'tutor')?.id;
   // Quyền riêng tư: lần đầu dùng micro, nói rõ giọng nói được gửi đi đâu rồi mới ghi âm
   const voiceConsent = useLearner((s) => s.consents.voice === true);
   const [askVoiceConsent, setAskVoiceConsent] = useState(false);
@@ -62,7 +64,12 @@ export function ChatPanel({ session, placeholder, emptyHint, tutorName }: { sess
   return (
     <div className="flex flex-col gap-3">
       <div role="log" aria-label={t('log')} className="flex min-h-40 flex-col gap-3">
-        {messages.length === 0 && <p className="m-0 rounded-xl bg-surface-2 p-3 text-[15px] text-ink-soft">{emptyHint}</p>}
+        {messages.length === 0 && (
+          <div className="flex items-center gap-3 rounded-xl bg-surface-2 p-3">
+            {avatar && <CuTit mood={recording ? 'nghe' : 'chao'} size={56} />}
+            <p className="m-0 text-[15px] text-ink-soft">{emptyHint}</p>
+          </div>
+        )}
         {messages.map((m) =>
           m.role === 'user' ? (
             <div key={m.id} className="flex max-w-[85%] flex-col gap-1 self-end">
@@ -79,7 +86,9 @@ export function ChatPanel({ session, placeholder, emptyHint, tutorName }: { sess
               )}
             </div>
           ) : (
-            <div key={m.id} className="flex max-w-[90%] flex-col gap-2 self-start">
+            <div key={m.id} className="flex max-w-[90%] items-start gap-2 self-start">
+              {avatar && <CuTit mood={recording && m.id === lastTutorId ? 'nghe' : 'chan-dung'} size={40} />}
+              <div className="flex min-w-0 flex-col gap-2">
               <div className="rounded-2xl rounded-bl-md border border-line-strong bg-surface px-3 py-2">
                 <p className="m-0 text-xs font-bold text-ink-muted">
                   {tutorName}
@@ -91,13 +100,15 @@ export function ChatPanel({ session, placeholder, emptyHint, tutorName }: { sess
               </div>
               {!m.pending && m.text && (
                 <div className="flex gap-2 self-start">
-                  <button type="button" onClick={() => say(m.text)} className="min-h-11 rounded-xl border border-line bg-surface-2 px-3 text-sm font-bold text-ink">
+                  <Button variant="secondary" onClick={() => void say(m.text)}>
+                    <Icon name="loa" size={18} />
                     {t('listen')}
-                  </button>
+                  </Button>
                   <SlowListen text={m.text} base={BASE} className="min-h-11 min-w-11 rounded-xl border border-line bg-surface-2 px-3 text-base" />
                 </div>
               )}
               {m.blocks?.map((b) => <AgentBlockView key={b.id} block={b} />)}
+              </div>
             </div>
           )
         )}
@@ -111,9 +122,9 @@ export function ChatPanel({ session, placeholder, emptyHint, tutorName }: { sess
       {error && (
         <div role="alert" className="flex flex-col gap-2 rounded-xl bg-danger-soft p-3 text-danger-ink">
           <p className="m-0 text-[15px]">{error}</p>
-          <button type="button" onClick={retry} className="min-h-12 rounded-xl border border-line-strong bg-surface px-4 font-bold text-ink">
+          <Button variant="secondary" onClick={retry}>
             {t('retry')}
-          </button>
+          </Button>
         </div>
       )}
 
@@ -134,26 +145,26 @@ export function ChatPanel({ session, placeholder, emptyHint, tutorName }: { sess
           className="min-h-12 min-w-0 flex-1 rounded-xl border border-line bg-surface-2 px-3 text-[16px] text-ink"
         />
         {!busy && (
-          <button
-            type="button"
+          <Button
+            variant={recording ? 'danger' : 'secondary'}
             onClick={onMic}
-            disabled={voice.status === 'starting' || voice.status === 'transcribing'}
+            busy={voice.status === 'starting' || voice.status === 'transcribing'}
             aria-pressed={recording}
             aria-label={recording ? t('stopRec') : t('speak')}
-            className={`relative min-h-12 min-w-12 rounded-xl border px-3 text-lg font-bold disabled:opacity-50 ${recording ? 'border-danger bg-danger-soft text-danger-ink' : 'border-line-strong bg-surface-2 text-ink'}`}
+            style={{ position: 'relative', minWidth: 48, padding: '0 12px' }}
           >
-            <span aria-hidden="true">{voice.status === 'transcribing' ? '⏳' : recording ? '⏹' : '🎤'}</span>
-            {recording && <span aria-hidden="true" className="absolute inset-x-1 bottom-1 h-1 origin-left rounded bg-danger" style={{ transform: `scaleX(${Math.max(0.08, voice.level)})` }} />}
-          </button>
+            {recording ? t('stop') : t('micShort')}
+            {recording && <span aria-hidden="true" className="absolute inset-x-1 bottom-1 h-1 origin-left rounded bg-white" style={{ transform: `scaleX(${Math.max(0.08, voice.level)})` }} />}
+          </Button>
         )}
         {busy ? (
-          <button type="button" onClick={cancel} className="min-h-12 rounded-xl border border-line-strong bg-surface-2 px-4 font-bold text-ink">
+          <Button variant="secondary" onClick={cancel}>
             {t('stop')}
-          </button>
+          </Button>
         ) : (
-          <button type="submit" disabled={!draft.trim()} className="min-h-12 rounded-xl bg-accent px-4 font-extrabold text-accent-ink disabled:opacity-50">
+          <Button type="submit" disabled={!draft.trim()}>
             {t('send')}
-          </button>
+          </Button>
         )}
       </form>
       {busy && (
@@ -181,9 +192,9 @@ export function ChatPanel({ session, placeholder, emptyHint, tutorName }: { sess
         <div role="alert" className="flex flex-col gap-2 rounded-xl bg-danger-soft p-3 text-danger-ink">
           <p className="m-0 text-[15px]">{t(`voice.${voice.error}`)}</p>
           {voice.error === 'permission-denied' && canOpenAppSettings() && (
-            <button type="button" onClick={() => void openAppSettings()} className="min-h-12 rounded-xl border border-line-strong bg-surface px-4 font-bold text-ink">
+            <Button variant="secondary" onClick={() => void openAppSettings()}>
               {t('openSettings')}
-            </button>
+            </Button>
           )}
         </div>
       )}

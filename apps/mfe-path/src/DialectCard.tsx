@@ -1,3 +1,4 @@
+import { Icon } from '@vietlearning/ui';
 import { DIALECT_DICTIONARY, type Dialect } from '@vietlearning/content';
 import { playText } from '@vietlearning/exercises';
 import { useLearner } from '@vietlearning/state';
@@ -36,7 +37,10 @@ export default function DialectCard({ ids }: { ids: readonly string[] }) {
                   aria-label={t('dialectPlay', { word: e[r], region: t(`region.${r}`) })}
                   className={['min-h-11 w-full rounded-lg px-1 text-left', r === mine ? 'font-extrabold text-heading' : 'text-ink'].join(' ')}
                 >
-                  🔈 {e[r]}
+                  <span className="inline-flex items-center gap-1">
+                    <Icon name="loa" size={16} />
+                    {e[r]}
+                  </span>
                 </button>
               </td>
             ))}

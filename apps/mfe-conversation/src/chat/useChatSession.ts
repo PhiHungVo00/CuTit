@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { AgentUIBlock, ChatCorrection, ChatHistoryItem, NewWord } from '@vietlearning/contracts/api';
+import { EventBus } from '@vietlearning/shared';
 import { learnerStore } from '@vietlearning/state';
 import { sanitizeAgentBlocks } from '@vietlearning/ui/agent-blocks';
 import { TurnStateMachine, type TurnState } from '../state/TurnStateMachine';
@@ -91,6 +92,8 @@ export function useChatSession({ scenarioId, dialect, mode, onTurnDone }: UseCha
       const controller = new AbortController();
       abortRef.current = controller;
       m.transition('UPLOADING');
+      // Host (bong bóng Cu Tít) nghe sự kiện này để hiện "đang suy nghĩ"
+      EventBus.getInstance().emit('cutit:thinking', { thinking: true });
 
       let buffer = '';
       let frame = 0;
@@ -152,6 +155,7 @@ export function useChatSession({ scenarioId, dialect, mode, onTurnDone }: UseCha
         setError(err instanceof TurnError ? err.message : tConv('errGeneric'));
         setErrorCode(err instanceof TurnError ? (err.code ?? err.kind) : null);
       } finally {
+        EventBus.getInstance().emit('cutit:thinking', { thinking: false });
         if (abortRef.current === controller) abortRef.current = null;
       }
     },

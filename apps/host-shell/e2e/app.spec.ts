@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { installFakeMicStartHook } from './fake-mic';
 
 /** Không có tràn ngang + mọi nút/link trong <main> chạm được (>= 44px chiều cao). */
 async function assertMobileLayout(page: Page) {
@@ -19,14 +20,15 @@ async function assertMobileLayout(page: Page) {
 }
 
 test.describe('Khung app', () => {
-  test('trang chủ: liệt kê 6 màn hình, thanh tab, bố cục mobile chuẩn', async ({ page }) => {
+  test('trang chủ: thanh 4 tab, lối vào tra cứu, bố cục mobile chuẩn', async ({ page }) => {
     await page.goto('/');
     await expect(page.getByRole('heading', { name: 'Học Tiếng Việt Cùng Bé Cu Tít' })).toBeVisible();
     await expect(page.getByRole('navigation', { name: 'Điều hướng chính' })).toBeVisible();
     await assertMobileLayout(page);
-    // GĐ1: 12 công cụ chuyển từ trang chủ sang tab Khám phá (trang chủ nay là lộ trình)
-    await page.getByRole('navigation').getByRole('link', { name: /Khám phá/ }).click();
-    await expect(page.locator('.screen-card')).toHaveCount(12);
+    // Dự án 1: màn Khám phá được thay bằng tab Luyện tập (5 cách luyện); tra cứu nằm cuối tab Học
+    await expect(page.getByRole('link', { name: /Ma trận xưng hô/ })).toBeVisible();
+    await page.getByRole('navigation').getByRole('link', { name: 'Luyện tập' }).click();
+    await expect(page.locator('.list-card a')).toHaveCount(5);
     await assertMobileLayout(page);
   });
 
@@ -35,7 +37,7 @@ test.describe('Khung app', () => {
     page.on('request', (r) => loaded.push(r.url()));
     await page.goto('/');
     expect(loaded.some((u) => /HonorificScreen|ToneLabRoute/.test(u))).toBe(false);
-    await page.getByRole('navigation').getByRole('link', { name: /Xưng hô/ }).click();
+    await page.getByRole('link', { name: /Ma trận xưng hô/ }).click();
     await expect(page.getByRole('heading', { name: 'Ma trận đại từ xưng hô' })).toBeVisible();
     expect(loaded.some((u) => /HonorificScreen/.test(u))).toBe(true);
     expect(loaded.some((u) => /ToneLabRoute/.test(u))).toBe(false);
@@ -53,17 +55,12 @@ test.describe('M3 Ma trận xưng hô', () => {
     await assertMobileLayout(page);
   });
 
-  test('giao diện sáng: áp dụng cả thanh tab, giữ lựa chọn, còn sau khi tải lại', async ({ page }) => {
+  test('không còn công tắc sáng/tối ở màn Xưng hô (giao diện chỉ đổi ở Cài đặt)', async ({ page }) => {
     await page.goto('/xung-ho');
-    await page.getByRole('radio', { name: 'Nhỏ hơn' }).click();
-    const sentence = await page.locator('blockquote').first().textContent();
-    await page.getByRole('radio', { name: /Tre trúc/ }).click();
-    await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
-    await expect(page.locator('blockquote').first()).toHaveText(sentence ?? '');
-    await page.reload();
-    await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
-    const tabBg = await page.locator('.tabbar').evaluate((el) => getComputedStyle(el).backgroundColor);
-    expect(tabBg).toBe('rgb(246, 243, 236)');
+    await expect(page.getByRole('heading', { name: 'Ma trận đại từ xưng hô' })).toBeVisible();
+    await expect(page.getByRole('radiogroup', { name: 'Giao diện' })).toHaveCount(0);
+    await expect(page.getByRole('radio', { name: /Gỗ mộc|Tre trúc/ })).toHaveCount(0);
+    await expect(page.getByRole('img', { name: /Bé Cu Tít/ }).first()).toBeVisible();
   });
 
   test('bảng 20 cặp: tìm không dấu, Esc đóng và trả focus, Áp dụng đưa cặp lên', async ({ page }) => {
@@ -287,6 +284,8 @@ test.describe('M9 Tiến độ & M12 Tùy chỉnh', () => {
       );
     });
     await page.goto('/ho-so');
+    await page.getByRole('link', { name: /Tiến độ/ }).click(); // tab Hồ sơ → dòng Tiến độ
+    await expect(page).toHaveURL(/\/tien-do$/);
     await expect(page.getByRole('heading', { name: 'Tiến độ học' })).toBeVisible();
     await expect(page.getByText('3 ngày', { exact: true })).toBeVisible();
     await expect(page.getByText('17 phút', { exact: true })).toBeVisible();
@@ -322,7 +321,7 @@ test.describe('M9 Tiến độ & M12 Tùy chỉnh', () => {
       puts.push(route.request().postDataJSON());
       await route.fulfill({ json: route.request().postDataJSON() });
     });
-    await page.goto('/tuy-chinh');
+    await page.goto('/cai-dat/hoc');
     await expect(page.getByText('Giọng Bắc (máy chủ)')).toBeVisible();
     await assertMobileLayout(page);
     await page.getByText('Miền Nam', { exact: true }).click();
@@ -494,23 +493,26 @@ test.describe('M4 Camera từ vựng', () => {
 
 test.describe('M2 Luyện thanh điệu', () => {
   test('micro giả lập giọng đi lên => chấm đúng thanh sắc (AudioWorklet → resample → Worker)', async ({ page }) => {
+    await installFakeMicStartHook(page);
     await page.addInitScript(() => {
       navigator.mediaDevices.getUserMedia = async () => {
         const ctx = new AudioContext();
         const osc = ctx.createOscillator();
         osc.type = 'sawtooth';
         const g = ctx.createGain();
-        const t = ctx.currentTime;
-        osc.frequency.setValueAtTime(150, t);
-        osc.frequency.setValueAtTime(150, t + 0.25);
-        osc.frequency.linearRampToValueAtTime(280, t + 1.05);
-        g.gain.setValueAtTime(0, t);
-        g.gain.linearRampToValueAtTime(0.4, t + 0.25);
-        g.gain.setValueAtTime(0.4, t + 1.05);
-        g.gain.linearRampToValueAtTime(0, t + 1.1);
         const dest = ctx.createMediaStreamDestination();
         osc.connect(g).connect(dest);
-        osc.start();
+        (dest.stream as MediaStream & { __start?: () => void }).__start = () => {
+          const t = ctx.currentTime;
+          osc.frequency.setValueAtTime(150, t);
+          osc.frequency.setValueAtTime(150, t + 0.25);
+          osc.frequency.linearRampToValueAtTime(280, t + 1.05);
+          g.gain.setValueAtTime(0, t);
+          g.gain.linearRampToValueAtTime(0.4, t + 0.25);
+          g.gain.setValueAtTime(0.4, t + 1.05);
+          g.gain.linearRampToValueAtTime(0, t + 1.1);
+          osc.start();
+        };
         return dest.stream;
       };
     });
@@ -549,14 +551,18 @@ test.describe('Hiệu năng trên máy yếu (CPU chậm 4×) @perf', () => {
     test.skip(browserName !== 'chromium' || info.project.name !== 'perf', 'chỉ đo trên Chromium, một cấu hình');
     const cdp = await page.context().newCDPSession(page);
     await page.goto('/');
+    await expect(page.getByRole('link', { name: /Ma trận xưng hô/ })).toBeVisible();
     await cdp.send('Emulation.setCPUThrottlingRate', { rate: 4 });
     const t0 = Date.now();
-    await page.getByRole('navigation').getByRole('link', { name: /Xưng hô/ }).click();
+    await page.getByRole('link', { name: /Ma trận xưng hô/ }).click();
     await expect(page.getByRole('heading', { name: 'Ma trận đại từ xưng hô' })).toBeVisible();
     const ms = Date.now() - t0;
     console.log(`  Mở M3 với CPU chậm 4×: ${ms} ms`);
     expect(ms).toBeLessThan(1500);
 
+    // Chuyển cảnh giữa hai màn (View Transition ≤ 200 ms, dự án 1 đợt 2) là hoạt ảnh CÓ CHỦ ĐÍCH và phủ lên trang;
+    // phép đo này là độ trễ của MỘT LẦN CHẠM, nên đợi hoạt ảnh hữu hạn kết thúc rồi mới chạm (trần 300 ms giữ nguyên).
+    await page.waitForFunction(() => document.getAnimations().every((a) => a.effect?.getComputedTiming().iterations === Infinity));
     const t1 = Date.now();
     await page.getByRole('radio', { name: 'Lớn hơn' }).click();
     await expect(page.getByRole('radio', { name: 'Lớn hơn' })).toHaveAttribute('aria-checked', 'true');
@@ -594,7 +600,8 @@ test.describe('Giao diện tiếng Anh (người nước ngoài)', () => {
       ['/ghep-cau', 'Sentence builder'],
       ['/nhap-vai', 'Role-play'],
       ['/camera', 'Camera vocabulary'],
-      ['/ho-so', 'My progress'],
+      ['/ho-so', 'Profile'],
+      ['/tien-do', 'My progress'],
       ['/tuy-chinh', 'Settings'],
       ['/bat-dau', 'Get started']
     ];
