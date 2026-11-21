@@ -10,12 +10,12 @@ export type Theme = 'dark' | 'light';
 export const AGE_STEPS: AgeStep[] = [0, 1, 2, 3];
 export const CONTEXT_STEPS: ContextStep[] = [0, 1, 2];
 
-export const RELATIONS: { id: RelationCategory; icon: string }[] = [
-  { id: 'kin', icon: '🏡' },
-  { id: 'social', icon: '🤝' },
-  { id: 'traditional', icon: '🏛️' },
-  { id: 'teacher_student', icon: '📚' },
-  { id: 'work', icon: '💼' }
+export const RELATIONS: { id: RelationCategory }[] = [
+  { id: 'kin' },
+  { id: 'social' },
+  { id: 'traditional' },
+  { id: 'teacher_student' },
+  { id: 'work' }
 ];
 
 export const USER_GENDERS: Gender[] = ['male', 'female'];

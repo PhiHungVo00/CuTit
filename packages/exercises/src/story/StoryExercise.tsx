@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { learnerStore } from '@vietlearning/state';
 import { playText, stopPlayback } from '../audio/coursePlayer';
+import { Icon } from '@vietlearning/ui';
+import { answerFeedback, FeedbackMascot } from '../feedback';
 import { useT } from '../i18n';
 import type { ExerciseItem, ExerciseResult } from '../types';
 
@@ -61,7 +63,7 @@ export default function StoryExercise({ item, onDone, onSkip }: { item: StoryIte
       {item.lines.map((l, i) => (
         <li key={i} className="flex items-start gap-2 rounded-xl bg-sunken p-2">
           <button type="button" aria-label={t('storyLine', { i: i + 1 })} onClick={() => playOne(l.text)} className="grid min-h-11 min-w-11 shrink-0 place-items-center rounded-lg border border-line bg-surface text-lg">
-            🔈
+            <Icon name="loa" size={20} />
           </button>
           <span className="flex flex-col">
             <span className="text-xs font-bold text-ink-muted">{l.speaker}</span>
@@ -128,6 +130,7 @@ export default function StoryExercise({ item, onDone, onSkip }: { item: StoryIte
 
   const choose = (o: string) => {
     setChosen(o);
+    answerFeedback(o === q.answer);
     setResults((r) => [...r, o === q.answer]);
   };
 
@@ -164,7 +167,10 @@ export default function StoryExercise({ item, onDone, onSkip }: { item: StoryIte
       </div>
       {chosen !== null && (
         <div ref={feedbackRef} role="status" className={['scroll-mb-[calc(80px+env(safe-area-inset-bottom))] rounded-xl p-3 text-[15px]', correct ? 'bg-accent-soft text-heading' : 'bg-danger-soft text-danger-ink'].join(' ')}>
-          <strong>{correct ? t('right') : t('wrong', { answer: q.answer })}</strong>
+          <div className="flex items-center gap-3">
+            <FeedbackMascot correct={correct} />
+            <strong>{correct ? t('right') : t('wrong', { answer: q.answer })}</strong>
+          </div>
           {last && <span className="block">{t('storyScore', { r: right, n: item.questions.length })}</span>}
           <button type="button" onClick={next} className="mt-2 block min-h-12 w-full rounded-xl bg-accent font-extrabold text-accent-ink">
             {t('next')}

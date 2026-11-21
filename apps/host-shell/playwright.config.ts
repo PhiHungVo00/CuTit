@@ -22,6 +22,9 @@ export default defineConfig({
   testDir: './e2e',
   timeout: 30_000,
   fullyParallel: false,
+  // 1 worker: các ca micro giả (AudioWorklet, thời gian thực) và đồng bộ chập chờn khi 2 trình duyệt tranh CPU/thiết bị âm
+  // thanh (đo: ~1/3 lượt chạy cả bộ đỏ một ca ngẫu nhiên ở 2 worker, 0/4 ở 1 worker). Đổi lại bộ e2e chạy ~4,3 phút thay vì ~2.
+  workers: 1,
   retries: process.env.CI ? 1 : 0,
   reporter: [['list']],
   use: {

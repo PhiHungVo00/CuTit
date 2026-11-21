@@ -1,3 +1,4 @@
+import { Icon } from '@vietlearning/ui';
 import { useState } from 'react';
 import { getLocalReminders, type LocalReminders } from '@vietlearning/native';
 import { clampReminderHour, GOAL_OPTIONS, progressStore, useProgress } from '@vietlearning/state/progress';
@@ -34,7 +35,10 @@ export function GoalPanel({ reminders = getLocalReminders() }: { reminders?: Loc
 
   return (
     <details className="rounded-2xl border border-line-strong bg-surface p-4 shadow-card">
-      <summary className="flex min-h-11 cursor-pointer items-center font-bold text-ink">⚙️ {t('goalSettings')}</summary>
+      <summary className="flex min-h-11 cursor-pointer items-center gap-2 font-bold text-ink">
+        <Icon name="cai-dat" size={20} />
+        {t('goalSettings')}
+      </summary>
       <fieldset className="mt-3 flex flex-col gap-2 border-0 p-0">
         <legend className="mb-2 text-sm font-bold text-ink-soft">{t('goalPick')}</legend>
         <div className="grid grid-cols-2 gap-2 min-[360px]:grid-cols-4">
@@ -62,7 +66,7 @@ export function GoalPanel({ reminders = getLocalReminders() }: { reminders?: Loc
       {reminders.supported() && (
         <section aria-labelledby="ct-reminder" className="mt-4 flex flex-col gap-2">
           <h3 id="ct-reminder" className="m-0 text-sm font-bold text-ink-soft">
-            🔔 {t('reminderTitle')}
+            {t('reminderTitle')}
           </h3>
           <p className="m-0 text-sm text-ink-soft">{t('reminderHint')}</p>
           {reminder.enabled ? (

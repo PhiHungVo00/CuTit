@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CEFR, cefrLabel, learnerStore, useLearner, type Dialect, type UiLanguage } from '@vietlearning/state';
-import { ChoiceGroup, ScreenFrame, card, primaryBtn, secondaryBtn } from '../common/ui';
+import { Button, Card, CuTit } from '@vietlearning/ui';
+import { ChoiceGroup, ScreenFrame } from '../common/ui';
 import { useT } from '../i18n';
 import { describePlacementError, newSessionId, placementNext, type PlacementFailure, type PlacementQuestion } from './placementClient';
 
@@ -103,7 +104,7 @@ export function OnboardingScreen() {
         <span className="text-sm font-bold text-ink-muted">{t('stepOf', { n: STEP_NO[step.kind] })}</span>
       </div>
 
-      <section className={card} aria-live="polite">
+      <Card role="region" aria-live="polite" elevated style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         {step.kind === 'goal' && (
           <>
             <ChoiceGroup name="uilang" legend={t('uiLangLegend')} value={uiLanguage} options={UI_LANGS} onChange={(v) => learnerStore.getState().setPreferences({ uiLanguage: v })} />
@@ -115,9 +116,9 @@ export function OnboardingScreen() {
               options={GOALS.map((g) => ({ value: g, label: t(`goal.${g}`), hint: GOALS_WITH_HINT.has(g) ? t(`goal.${g}.hint` as 'goal.daily.hint') : undefined }))}
               onChange={setGoal}
             />
-            <button type="button" className={primaryBtn} disabled={!goal} onClick={() => setStep({ kind: 'lang' })}>
+            <Button disabled={!goal} onClick={() => setStep({ kind: 'lang' })} style={{ width: '100%' }}>
               {t('next')}
-            </button>
+            </Button>
           </>
         )}
 
@@ -126,9 +127,9 @@ export function OnboardingScreen() {
             {heading(t('langQ'))}
             <p className="m-0 text-[15px] text-ink-soft">{t('langWhy')}</p>
             <ChoiceGroup name="lang" legend={t('langLegend')} value={lang} options={[...LANGS, { value: 'other', label: t('langOther') }]} onChange={setLang} />
-            <button type="button" className={primaryBtn} disabled={!lang} onClick={() => setStep({ kind: 'dialect' })}>
+            <Button disabled={!lang} onClick={() => setStep({ kind: 'dialect' })} style={{ width: '100%' }}>
               {t('next')}
-            </button>
+            </Button>
           </>
         )}
 
@@ -143,25 +144,25 @@ export function OnboardingScreen() {
               options={DIALECTS.map((d) => ({ value: d, label: t(`dialect.${d}`), hint: t(`dialect.${d}.hint`) }))}
               onChange={setDialect}
             />
-            <button type="button" className={primaryBtn} disabled={!dialect} onClick={() => setStep({ kind: 'level' })}>
+            <Button disabled={!dialect} onClick={() => setStep({ kind: 'level' })} style={{ width: '100%' }}>
               {t('next')}
-            </button>
+            </Button>
           </>
         )}
 
         {step.kind === 'level' && (
           <>
             {heading(t('levelQ'))}
-            <button type="button" className={primaryBtn} onClick={() => void runQuiz(newSessionId())}>
+            <Button onClick={() => void runQuiz(newSessionId())} style={{ width: '100%' }}>
               {t('takeTest')}
-            </button>
+            </Button>
             <p className="m-0 text-sm text-ink-muted">{t('testHint')}</p>
-            <button type="button" className={secondaryBtn} onClick={() => setStep({ kind: 'manual' })}>
+            <Button variant="secondary" onClick={() => setStep({ kind: 'manual' })} style={{ width: '100%' }}>
               {t('pickLevel')}
-            </button>
-            <button type="button" className={secondaryBtn} onClick={() => setStep({ kind: 'result', level: 1, fromTest: false })}>
+            </Button>
+            <Button variant="secondary" onClick={() => setStep({ kind: 'result', level: 1, fromTest: false })} style={{ width: '100%' }}>
               {t('beginner')}
-            </button>
+            </Button>
           </>
         )}
 
@@ -175,16 +176,16 @@ export function OnboardingScreen() {
             {step.question && (
               <div className="grid gap-2" role="group" aria-label={t('choices')}>
                 {step.question.options.map((o, i) => (
-                  <button
+                  <Button
                     key={o}
-                    type="button"
+                    variant="secondary"
                     lang="vi"
                     disabled={step.busy}
                     onClick={() => void runQuiz(step.sessionId, { questionId: step.question!.id, choice: i }, step.question)}
-                    className="min-h-14 rounded-xl border-2 border-line bg-surface-2 px-3 text-left text-lg font-bold text-ink disabled:opacity-60"
+                    style={{ justifyContent: 'flex-start', textAlign: 'left', minHeight: 56, fontSize: '1.1rem' }}
                   >
                     {o}
-                  </button>
+                  </Button>
                 ))}
               </div>
             )}
@@ -199,16 +200,16 @@ export function OnboardingScreen() {
                 <p className="m-0 text-[15px]">{step.error.message}</p>
                 {step.question && (
                   // Gọi lại không kèm trả lời => Gateway gửi lại câu đang chờ (không mất tiến độ nếu câu trả lời chưa tới máy chủ)
-                  <button type="button" className={primaryBtn} onClick={() => void runQuiz(step.sessionId, undefined, step.question)}>
+                  <Button onClick={() => void runQuiz(step.sessionId, undefined, step.question)} style={{ width: '100%' }}>
                     {t('retry')}
-                  </button>
+                  </Button>
                 )}
-                <button type="button" className={secondaryBtn} onClick={() => void runQuiz(newSessionId())}>
+                <Button variant="secondary" onClick={() => void runQuiz(newSessionId())} style={{ width: '100%' }}>
                   {t('restart')}
-                </button>
-                <button type="button" className={secondaryBtn} onClick={() => leaveQuiz({ kind: 'manual' })}>
+                </Button>
+                <Button variant="secondary" onClick={() => leaveQuiz({ kind: 'manual' })} style={{ width: '100%' }}>
                   {t('pickLevelShort')}
-                </button>
+                </Button>
               </div>
             )}
           </>
@@ -224,33 +225,31 @@ export function OnboardingScreen() {
               options={CEFR.map((c, i) => ({ value: String(i + 1), label: c, hint: t(levelKey(i + 1)) }))}
               onChange={setManualLevel}
             />
-            <button type="button" className={primaryBtn} disabled={!manualLevel} onClick={() => setStep({ kind: 'result', level: Number(manualLevel), fromTest: false })}>
+            <Button disabled={!manualLevel} onClick={() => setStep({ kind: 'result', level: Number(manualLevel), fromTest: false })} style={{ width: '100%' }}>
               {t('next')}
-            </button>
+            </Button>
           </>
         )}
 
         {step.kind === 'result' && (
           <div className="flex flex-col items-center gap-3 text-center">
-            <span aria-hidden="true" className="text-5xl">
-              🏮
-            </span>
+            <CuTit mood="khen" size={120} />
             {heading(t('yourLevel', { level: cefrLabel(step.level) }))}
             <p className="m-0 text-[15px] text-ink-soft">
               {t(levelKey(step.level))}. {step.fromTest ? t('fromTest') : ''}
               {t('adapts')}
             </p>
-            <button type="button" className={primaryBtn} onClick={() => finish(step.level)}>
+            <Button onClick={() => finish(step.level)} style={{ width: '100%' }}>
               {t('startLearning')}
-            </button>
+            </Button>
           </div>
         )}
-      </section>
+      </Card>
 
       {step.kind !== 'goal' && (
-        <button type="button" className={secondaryBtn} onClick={back}>
+        <Button variant="secondary" onClick={back} style={{ width: '100%' }}>
           {t('back')}
-        </button>
+        </Button>
       )}
     </ScreenFrame>
   );

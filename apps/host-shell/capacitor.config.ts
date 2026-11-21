@@ -25,7 +25,7 @@ const config: CapacitorConfig = {
     SplashScreen: {
       launchShowDuration: 0, // ẩn thủ công ngay khi React đã vẽ xong (main.tsx)
       launchAutoHide: false,
-      backgroundColor: '#16100B',
+      backgroundColor: '#FBF3E4',
       showSpinner: false
     }
   }

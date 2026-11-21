@@ -24,7 +24,7 @@ public class SystemBarsPlugin extends Plugin {
     @PluginMethod
     public void setTheme(PluginCall call) {
         boolean dark = Boolean.TRUE.equals(call.getBoolean("dark", true));
-        String colorHex = call.getString("color", dark ? "#16100B" : "#F6F3EC");
+        String colorHex = call.getString("color", dark ? "#1F1710" : "#FBF3E4");
         final int color;
         try {
             color = Color.parseColor(colorHex);

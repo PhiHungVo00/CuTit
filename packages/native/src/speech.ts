@@ -1,4 +1,5 @@
 import { Capacitor } from '@capacitor/core';
+import { acquireAudio } from '@vietlearning/shared/audio/focus';
 
 /**
  * Năng lực "đọc văn bản tiếng Việt trên thiết bị" (Nguyên tắc 4: gọi speech.speak,
@@ -51,6 +52,8 @@ class TurnGuard {
 
 class NativeSpeech implements DeviceSpeech {
   private guard = new TurnGuard();
+  /** Giữ "đang đọc" với điều phối âm thanh (nhạc nền tự dừng); luôn nhả khi xong/lỗi/hủy/bị thay. */
+  private hold: (() => void) | null = null;
   private supportCache = new Map<string, boolean>();
 
   /**
@@ -79,26 +82,36 @@ class NativeSpeech implements DeviceSpeech {
   async speak(text: string, options: SpeakOptions = {}): Promise<void> {
     const lang = options.lang ?? VI;
     const token = this.guard.next();
-    const { tts } = await this.plugin();
-    await tts.stop().catch(() => undefined);
-
-    if (!(await this.isAvailable(lang))) {
-      throw new SpeechError('no-vietnamese-voice', 'Thiết bị chưa cài giọng đọc tiếng Việt');
-    }
-    if (!this.guard.isCurrent(token)) throw new SpeechError('interrupted');
-
+    this.hold?.(); // lượt cũ bị thay
+    const release = acquireAudio('speech');
+    this.hold = release;
     try {
-      await tts.speak({ text, lang, rate: options.rate ?? 1.0, pitch: 1.0, volume: 1.0, category: 'playback' });
-    } catch (err) {
+      const { tts } = await this.plugin();
+      await tts.stop().catch(() => undefined);
+
+      if (!(await this.isAvailable(lang))) {
+        throw new SpeechError('no-vietnamese-voice', 'Thiết bị chưa cài giọng đọc tiếng Việt');
+      }
       if (!this.guard.isCurrent(token)) throw new SpeechError('interrupted');
-      throw new SpeechError('failed', err instanceof Error ? err.message : String(err));
+
+      try {
+        await tts.speak({ text, lang, rate: options.rate ?? 1.0, pitch: 1.0, volume: 1.0, category: 'playback' });
+      } catch (err) {
+        if (!this.guard.isCurrent(token)) throw new SpeechError('interrupted');
+        throw new SpeechError('failed', err instanceof Error ? err.message : String(err));
+      }
+      // Plugin resolve cả khi bị stop(): phân biệt bằng token
+      if (!this.guard.isCurrent(token)) throw new SpeechError('interrupted');
+    } finally {
+      release();
+      if (this.hold === release) this.hold = null;
     }
-    // Plugin resolve cả khi bị stop(): phân biệt bằng token
-    if (!this.guard.isCurrent(token)) throw new SpeechError('interrupted');
   }
 
   async stop(): Promise<void> {
     this.guard.invalidate();
+    this.hold?.();
+    this.hold = null;
     const { tts } = await this.plugin();
     await tts.stop().catch(() => undefined);
   }
@@ -106,6 +119,7 @@ class NativeSpeech implements DeviceSpeech {
 
 class WebSpeech implements DeviceSpeech {
   private guard = new TurnGuard();
+  private hold: (() => void) | null = null;
   private voicesReady: Promise<SpeechSynthesisVoice[]> | null = null;
 
   private get synth(): SpeechSynthesis | null {
@@ -147,32 +161,42 @@ class WebSpeech implements DeviceSpeech {
 
     const lang = options.lang ?? VI;
     const token = this.guard.next();
-    synth.cancel();
+    this.hold?.(); // lượt cũ bị thay
+    const release = acquireAudio('speech');
+    this.hold = release;
+    try {
+      synth.cancel();
 
-    const voice = await this.findVoice(lang);
-    if (!this.guard.isCurrent(token)) throw new SpeechError('interrupted');
-    if (!voice) throw new SpeechError('no-vietnamese-voice', 'Trình duyệt không có giọng đọc tiếng Việt');
+      const voice = await this.findVoice(lang);
+      if (!this.guard.isCurrent(token)) throw new SpeechError('interrupted');
+      if (!voice) throw new SpeechError('no-vietnamese-voice', 'Trình duyệt không có giọng đọc tiếng Việt');
 
-    await new Promise<void>((resolve, reject) => {
-      const u = new SpeechSynthesisUtterance(text);
-      u.lang = voice.lang;
-      u.voice = voice;
-      u.rate = options.rate ?? 1.0;
-      u.onend = () => (this.guard.isCurrent(token) ? resolve() : reject(new SpeechError('interrupted')));
-      u.onerror = (e) => {
-        // cancel() bắn 'interrupted'/'canceled' cho lượt cũ: KHÔNG coi là lỗi cần dự phòng
-        if (!this.guard.isCurrent(token) || e.error === 'interrupted' || e.error === 'canceled') {
-          reject(new SpeechError('interrupted'));
-        } else {
-          reject(new SpeechError('failed', e.error));
-        }
-      };
-      synth.speak(u);
-    });
+      await new Promise<void>((resolve, reject) => {
+        const u = new SpeechSynthesisUtterance(text);
+        u.lang = voice.lang;
+        u.voice = voice;
+        u.rate = options.rate ?? 1.0;
+        u.onend = () => (this.guard.isCurrent(token) ? resolve() : reject(new SpeechError('interrupted')));
+        u.onerror = (e) => {
+          // cancel() bắn 'interrupted'/'canceled' cho lượt cũ: KHÔNG coi là lỗi cần dự phòng
+          if (!this.guard.isCurrent(token) || e.error === 'interrupted' || e.error === 'canceled') {
+            reject(new SpeechError('interrupted'));
+          } else {
+            reject(new SpeechError('failed', e.error));
+          }
+        };
+        synth.speak(u);
+      });
+    } finally {
+      release();
+      if (this.hold === release) this.hold = null;
+    }
   }
 
   async stop(): Promise<void> {
     this.guard.invalidate();
+    this.hold?.();
+    this.hold = null;
     this.synth?.cancel();
   }
 }

@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useLearner } from '@vietlearning/state';
+import { Icon } from '@vietlearning/ui';
 import { ChatPanel } from './ChatPanel';
 import { useChatSession } from './useChatSession';
 import { useT } from '../i18n';
@@ -16,16 +17,19 @@ export function ChatScreen() {
       <div className="mx-auto flex max-w-[560px] flex-col gap-4">
         <header className="flex items-center justify-between gap-2 border-b-2 border-line pb-4">
           <h1 className="m-0 text-[26px] font-black leading-tight tracking-tight text-heading">{t('chatTitle')}</h1>
-          <Link to="/nhap-vai" className="flex min-h-11 items-center rounded-xl border border-line-strong bg-surface px-3 text-sm font-bold text-ink no-underline">
+          <Link to="/nhap-vai" className="flex min-h-11 items-center gap-1 rounded-xl border border-line-strong bg-surface px-3 text-sm font-bold text-ink no-underline">
+            <Icon name="nhap-vai" size={18} />
             {t('roleplayLink')}
           </Link>
         </header>
         <Link to="/goi-thoai" className="flex min-h-14 items-center justify-center gap-2 rounded-2xl bg-accent px-4 text-lg font-extrabold text-accent-ink no-underline shadow-card">
+          <Icon name="goi" size={22} />
           {t('callLink')}
         </Link>
         <ChatPanel
           session={session}
           tutorName={tutorName}
+          avatar={persona !== 'co_giao'}
           placeholder={t('chatPlaceholder')}
           emptyHint={t('chatEmpty', { name: tutorName })}
         />
