@@ -8,7 +8,8 @@ import { lessonStatuses, nextLesson, unitProgress } from './path/pathModel';
 import { lessonAfter, lessonHref } from './path/lessonHref';
 import { GoalPanel } from './GoalPanel';
 import { startGoalWatch, syncReminders } from './reminders';
-import { card, primaryBtn } from './ui';
+import { Card, Icon } from '@vietlearning/ui';
+import { cardStack, LinkButton } from './Page';
 
 // Thẻ miền (GĐ2) chỉ tải khi người học mở
 const DialectCard = lazy(() => import('./DialectCard'));
@@ -85,10 +86,10 @@ export function PathHome() {
         <Motivation part="notice" />
       </Suspense>
 
-      <Link to={lessonHref(next)} className={`${primaryBtn} min-h-16 flex-col gap-0 text-lg`}>
+      <LinkButton to={lessonHref(next)} style={{ minHeight: 64, flexDirection: 'column', fontSize: '1.125rem' }}>
         <span>{isNew ? t('startFirst') : t('continue')}</span>
-        <span className="text-sm font-semibold opacity-90">{t('continueSub', { unit: en ? nextUnit.titleEn : nextUnit.title, lesson: en ? next.titleEn : next.title })}</span>
-      </Link>
+        <span className="text-sm font-semibold">{t('continueSub', { unit: en ? nextUnit.titleEn : nextUnit.title, lesson: en ? next.titleEn : next.title })}</span>
+      </LinkButton>
       {skip && (
         <Link to={lessonHref(skip)} className="-mt-2 flex min-h-11 items-center justify-center text-sm font-bold text-ink-soft underline">
           {t('skipRoleplay', { lesson: en ? skip.titleEn : skip.title })}
@@ -97,9 +98,12 @@ export function PathHome() {
 
       <Link to="/on-tap" className="flex min-h-14 items-center justify-between gap-3 rounded-2xl border border-line-strong bg-surface px-4 py-2 text-ink no-underline shadow-card">
         <span className="font-bold">
-          🔁 {t('reviewToday')} ({due})
+          {t('reviewToday')} ({due})
         </span>
-        <span className="text-sm text-ink-soft">{due > 0 ? t('reviewCount', { n: due }) : t('reviewNone')}</span>
+        <span className="flex items-center gap-1 text-sm text-ink-soft">
+          {due > 0 ? t('reviewCount', { n: due }) : t('reviewNone')}
+          <Icon name="mui-ten-phai" size={18} />
+        </span>
       </Link>
 
       <section aria-labelledby="ct-week" className="flex flex-col gap-2">
@@ -136,7 +140,7 @@ export function PathHome() {
         {COURSE.units.map((u) => {
           const p = unitProgress(u, lessons, testedOut);
           return (
-            <section key={u.id} aria-labelledby={`ct-${u.id}`} className={card}>
+            <Card key={u.id} role="region" aria-labelledby={`ct-${u.id}`} elevated style={cardStack}>
               <div className="flex items-center justify-between gap-2">
                 <h3 id={`ct-${u.id}`} className="m-0 text-base font-extrabold text-ink">
                   <span aria-hidden="true">{u.icon} </span>
@@ -174,12 +178,12 @@ export function PathHome() {
               ) : (
                 p.done < p.total && (
                   <Link to={`/kiem-tra/${u.id}`} className="flex min-h-11 items-center justify-center rounded-xl border border-dashed border-line-strong px-3 text-sm font-bold text-ink no-underline">
-                    🎯 {t('testOut')}
+                    {t('testOut')}
                   </Link>
                 )
               )}
               {u.dialectNotes && u.dialectNotes.length > 0 && <DialectDetails ids={u.dialectNotes} />}
-            </section>
+            </Card>
           );
         })}
         <p className="m-0 text-xs italic text-ink-muted">{t('draftContent')}</p>
@@ -195,7 +199,7 @@ function DialectDetails({ ids }: { ids: readonly string[] }) {
   const [open, setOpen] = useState(false);
   return (
     <details onToggle={(e) => setOpen((e.currentTarget as HTMLDetailsElement).open)} className="rounded-xl border border-line px-3">
-      <summary className="flex min-h-11 cursor-pointer items-center text-sm font-bold text-ink">🗺️ {t('dialectCard')}</summary>
+      <summary className="flex min-h-11 cursor-pointer items-center text-sm font-bold text-ink">{t('dialectCard')}</summary>
       {open && (
         <Suspense fallback={<div aria-busy="true" className="h-24" />}>
           <DialectCard ids={ids} />

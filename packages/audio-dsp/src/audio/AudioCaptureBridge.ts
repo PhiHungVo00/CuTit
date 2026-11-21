@@ -7,6 +7,7 @@
  * nên chưa cần plugin thu âm native riêng. Nếu sau này cần (vd. ghi khi tắt màn hình), thêm một
  * driver mới cài cùng interface này.
  */
+import { acquireAudio } from '@vietlearning/shared/audio/focus';
 import { concatChunks, downsample } from './resample.js';
 
 export interface RecordingResult {
@@ -122,17 +123,43 @@ export class WebAudioDriver implements AudioPlatformDriver {
 
 /** Phần trừu tượng của Bridge: nơi gọi chỉ biết record()/finish(), không biết nền tảng. */
 export class AudioCaptureBridge {
+  /**
+   * Báo điều phối âm thanh NGAY khi bắt đầu thu (trước cả hộp thoại xin quyền micro) để nhạc nền hạ xuống
+   * và không lọt vào bản thu; nhả khi finish/cancel/lỗi.
+   */
+  private hold: (() => void) | null = null;
+
   constructor(private readonly driver: AudioPlatformDriver = new WebAudioDriver()) {}
 
-  record(onLevel?: (rms: number) => void): Promise<void> {
-    return this.driver.start(onLevel);
+  private release(): void {
+    this.hold?.();
+    this.hold = null;
   }
 
-  finish(): Promise<RecordingResult> {
-    return this.driver.stop();
+  async record(onLevel?: (rms: number) => void): Promise<void> {
+    this.release();
+    this.hold = acquireAudio('record');
+    try {
+      await this.driver.start(onLevel);
+    } catch (err) {
+      this.release();
+      throw err;
+    }
+  }
+
+  async finish(): Promise<RecordingResult> {
+    try {
+      return await this.driver.stop();
+    } finally {
+      this.release();
+    }
   }
 
   cancel(): void {
-    this.driver.cancel();
+    try {
+      this.driver.cancel();
+    } finally {
+      this.release();
+    }
   }
 }

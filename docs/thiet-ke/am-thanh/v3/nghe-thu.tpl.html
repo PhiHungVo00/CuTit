@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Nghe thử âm thanh bản 3 – Bé Cu Tít</title>
+<style>
+:root{--bg:#fbf6e9;--fg:#2b2a24;--mut:#6b6757;--card:#fff;--line:#e3dcc3;--ac:#3f7d3a;--ac2:#c0782a}
+@media (prefers-color-scheme:dark){:root{--bg:#1d1c17;--fg:#ece8d8;--mut:#a6a28f;--card:#27261f;--line:#3a382d;--ac:#7fc17a;--ac2:#e0a35c}}
+*{box-sizing:border-box}body{margin:0;font:16px/1.5 system-ui,sans-serif;background:var(--bg);color:var(--fg);padding:16px;max-width:880px;margin-inline:auto}
+h1{font-size:1.4rem;margin:.2em 0}h2{font-size:1.1rem;margin:1.6em 0 .4em;border-bottom:2px solid var(--line);padding-bottom:.2em}
+p.n{color:var(--mut);margin:.2em 0 .6em;font-size:.92rem}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px 12px;margin:6px 0}
+.row .t{flex:1 1 220px;min-width:0}.row b{display:block}.row small{color:var(--mut)}
+button{font:inherit;border:0;border-radius:8px;background:var(--ac);color:#fff;padding:6px 14px;cursor:pointer}
+button.alt{background:var(--ac2)}button.stop{background:#8a8a80}
+.tag{font-size:.75rem;background:var(--line);border-radius:6px;padding:1px 6px;margin-left:6px}
+label{font-size:.9rem}input[type=range]{width:140px}
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:8px}@media(max-width:560px){.pair{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<h1>Nghe thử âm thanh bản 3 – Bé Cu Tít</h1>
+<p class="n">Mở thẳng tệp này trong Chrome (không cần máy chủ). Mỗi nút phát một âm; bấm lại để dừng. Âm quê nguồn CC0/công cộng, xem README.</p>
+
+<h2>1. Bộ đã chọn (9 âm hiệu ứng)</h2><div id="chon"></div>
+<h2>2. Âm làng quê thật</h2>
+<p class="n">Cắt từ bản ghi CC0/công cộng. “Chuông trâu” và “mõ trâu” là tự tổng hợp (chưa có bản ghi CC0 đọc được giấy phép).</p><div id="que"></div>
+<h2>3. Bản lai: âm đã chọn + lớp quê khẽ</h2>
+<p class="n">Bên trái: bản gốc đã chọn. Bên phải: bản lai.</p><div id="lai"></div>
+<h2>4. Nhạc nền (vòng lặp liền mạch)</h2>
+<p class="n">Âm lượng nền mặc định thấp. Nút “Giả lập Cu Tít nói” hạ nền xuống 20% khi đọc mẫu rồi trả lại, đúng luật đề xuất trong README.</p>
+<div class="row"><label>Âm lượng nền <input id="vol" type="range" min="0" max="100" value="35"> <span id="volv">35%</span></label>
+<label><input id="loop" type="checkbox" checked> Lặp</label>
+<button class="alt" id="duck">Giả lập Cu Tít nói</button></div>
+<div id="nen"></div>
+<p class="n" id="mode"></p>
+
+<script>
+const META=/*META*/[];
+const LAB={"cham-nut":"Chạm nút","dung":"Đúng","sai":"Sai","hoan-thanh":"Hoàn thành bài","chuoi-ngay":"Lên chuỗi ngày","mo-bong-bong":"Mở bong bóng","cutit-noi":"Cu Tít nói","thong-bao":"Thông báo","chuyen-tab":"Chuyển tab"};
+const QUE={"ga-gay-small":["Gà gáy (nhỏ)","Chuỗi ngày buổi sáng / chào buổi sáng"],"ga-gay-medium":["Gà gáy (vừa)","Mở app buổi sáng, màn Chào"],"chim-rip-rit":["Chim ríu rít","Hoàn thành bài, thưởng sao"],"ech-1":["Ếch kêu","Màn Cu Tít nghịch (dễ thương)"],"ech-2":["Nhái ộp","Câu sai nhẹ kiểu hài, tùy chọn"],"gio-lua":["Gió lùa (thay cho gió tre)","Nền chuyển cảnh / màn chờ"],"nuoc-suoi":["Nước suối/ruộng","Nền màn Văn hóa, màn chờ"],"chuong-trau":["Chuông trâu (tổng hợp)","Mở bong bóng, nhận quà"],"mo-trau":["Mõ trâu (tổng hợp)","Thông báo nhắc học"]};
+const LAI={"hoan-thanh-chim":"hoan-thanh","chuoi-ngay-ga":"chuoi-ngay","chuoi-ngay-chim":"chuoi-ngay"};
+const NEN={"sang-lang":"Sáng làng","chieu-dong":"Chiều đồng","trau-ve":"Trâu về"};
+let cur=null,curBtn=null;
+function el(h){const d=document.createElement('div');d.innerHTML=h.trim();return d.firstChild}
+function play(src,btn){
+  if(cur){cur.pause();if(curBtn){curBtn.textContent='Phát';curBtn.classList.remove('stop')}const same=curBtn===btn;cur=null;curBtn=null;if(same)return}
+  const a=new Audio(src);a.onended=()=>{btn.textContent='Phát';btn.classList.remove('stop');cur=null;curBtn=null};
+  a.play();cur=a;curBtn=btn;btn.textContent='Dừng';btn.classList.add('stop')}
+function simple(id,list){const box=document.getElementById(id);for(const [dir,name,title,sub] of list){
+  const r=el(`<div class="row"><div class="t"><b>${title}</b><small>${sub||''}</small></div><button>Phát</button></div>`);
+  const b=r.querySelector('button');b.onclick=()=>play(dir+'/'+name+'.ogg',b);box.appendChild(r)}}
+simple('chon',Object.entries(LAB).map(([k,v])=>['chon',k,v,k+'.ogg']));
+simple('que',META.filter(m=>m.nhom==='que').map(m=>['que',m.ten,(QUE[m.ten]||[m.ten])[0]+' <span class="tag">'+m.ms+' ms</span>','Gắn: '+(QUE[m.ten]||['',''])[1]+' · '+m.ghi]));
+(function(){const box=document.getElementById('lai');for(const m of META.filter(m=>m.nhom==='lai')){
+  const base=LAI[m.ten];
+  const r=el(`<div class="pair"><div class="row"><div class="t"><b>${LAB[base]} (gốc)</b></div><button>Phát</button></div><div class="row"><div class="t"><b>${m.ten}</b><small>${m.ghi}</small></div><button class="alt">Phát</button></div></div>`);
+  const bs=r.querySelectorAll('button');bs[0].onclick=()=>play('chon/'+base+'.ogg',bs[0]);bs[1].onclick=()=>play('lai/'+m.ten+'.ogg',bs[1]);box.appendChild(r)}})();
+// nhạc nền: <audio loop> luôn chạy; nếu mở qua http(s) thì dùng Web Audio để vòng liền mạch hoàn toàn
+const vol=document.getElementById('vol'),volv=document.getElementById('volv'),loop=document.getElementById('loop');
+let ctx=null,gain=null,node=null,nenBtn=null,nenAudio=null,duckT=null;
+const useWA=location.protocol.startsWith('http');
+document.getElementById('mode').textContent=useWA?'Chế độ Web Audio: vòng lặp liền mạch tuyệt đối.':'Mở từ tệp: dùng thẻ audio, có thể hở rất ngắn (vài chục ms) ở điểm lặp; trong app dùng Web Audio để liền hẳn.';
+function setVol(){const v=vol.value/100;volv.textContent=vol.value+'%';if(gain)gain.gain.value=v;if(nenAudio)nenAudio.volume=v}
+vol.oninput=setVol;
+loop.onchange=()=>{if(node)node.loop=loop.checked;if(nenAudio)nenAudio.loop=loop.checked};
+function stopNen(){if(node){try{node.stop()}catch(e){}node=null}if(nenAudio){nenAudio.pause();nenAudio=null}if(nenBtn){nenBtn.textContent='Phát';nenBtn.classList.remove('stop');nenBtn=null}}
+async function playNen(name,btn){const same=nenBtn===btn;stopNen();if(same)return;nenBtn=btn;btn.textContent='Dừng';btn.classList.add('stop');
+  const src='nen/'+name+'.ogg';
+  if(useWA){try{ctx=ctx||new AudioContext();gain=ctx.createGain();gain.gain.value=vol.value/100;gain.connect(ctx.destination);
+    const buf=await ctx.decodeAudioData(await (await fetch(src)).arrayBuffer());node=ctx.createBufferSource();node.buffer=buf;node.loop=loop.checked;node.connect(gain);node.start();return}catch(e){}}
+  nenAudio=new Audio(src);nenAudio.loop=loop.checked;nenAudio.volume=vol.value/100;nenAudio.play()}
+(function(){const box=document.getElementById('nen');for(const m of META.filter(m=>m.nhom==='nen')){
+  const r=el(`<div class="row"><div class="t"><b>${NEN[m.ten]} <span class="tag">${m.giay} s · ${m.bpm} bpm · ${m.kb} kB</span></b><small>${m.ghi}</small></div><button>Phát</button></div>`);
+  const b=r.querySelector('button');b.onclick=()=>playNen(m.ten,b);box.appendChild(r)}})();
+document.getElementById('duck').onclick=()=>{const base=vol.value/100;const set=v=>{if(gain)gain.gain.setTargetAtTime(v,ctx.currentTime,.1);if(nenAudio)nenAudio.volume=v};
+  set(base*.2);const a=new Audio('chon/cutit-noi.ogg');a.play();clearTimeout(duckT);duckT=setTimeout(()=>set(base),1500)};
+</script>
+</body>
+</html>

@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { PitchReferenceFlyweight, TONE_SETS, type ToneId } from '@vietlearning/content';
 import { playText, prefetchPack } from '@vietlearning/exercises';
+import { playSfx } from '@vietlearning/shared/audio';
 import { useLearner } from '@vietlearning/state';
+import { Button, CuTit, Icon } from '@vietlearning/ui';
 import { useProgress } from '@vietlearning/state/progress';
 import { useT } from './i18n';
 import { gymStore, useGymByDay } from './gymStore';
@@ -9,7 +11,6 @@ import { START_MS, TONES, catchToneRound, minimalPairQuestion, nextTimeLimit, to
 
 type Tab = 'pairs' | 'catch' | 'progress';
 const btn = 'min-h-12 rounded-xl border border-line bg-surface px-3 text-base font-bold text-ink disabled:opacity-60';
-const primary = 'min-h-12 rounded-xl bg-accent px-4 font-extrabold text-accent-ink';
 
 /** seed cố định qua ?seed= (e2e), không có thì theo thời gian */
 function initialSeed(): number {
@@ -36,6 +37,7 @@ function MinimalPairs({ seed }: { seed: number }) {
   const choose = (tone: ToneId) => {
     if (chosen) return;
     setChosen(tone);
+    playSfx(tone === q.answer ? 'dung' : 'sai');
     gymStore.record(q.answer, tone === q.answer);
   };
   const set = TONE_SETS.find((s) => s.id === q.setId)!;
@@ -43,9 +45,10 @@ function MinimalPairs({ seed }: { seed: number }) {
     <div className="flex flex-col gap-3">
       <div className="flex items-center justify-between gap-2">
         <p className="m-0 text-lg font-extrabold text-ink">{t('pairsQ')}</p>
-        <button type="button" className={btn} onClick={() => void playText(q.word)}>
+        <Button variant="secondary" onClick={() => void playText(q.word)}>
+          <Icon name="loa" size={18} />
           {t('listen')}
-        </button>
+        </Button>
       </div>
       <div role="group" aria-label={t('options')} className="grid grid-cols-3 gap-2" lang="vi">
         {q.options.map((o) => (
@@ -63,22 +66,23 @@ function MinimalPairs({ seed }: { seed: number }) {
       <p className="m-0 text-xs text-ink-muted">{t('noAudio')}</p>
       {chosen && (
         <div role="status" className="flex flex-col gap-2 rounded-xl border border-line bg-sunken p-3">
-          <strong className={chosen === q.answer ? 'text-heading' : 'text-danger'}>{chosen === q.answer ? t('right') : t('wrong', { word: q.word })}</strong>
+          <div className="flex items-center gap-2">
+            <CuTit mood={chosen === q.answer ? 'khen' : 'dong-vien'} size={56} />
+            <strong className={chosen === q.answer ? 'text-heading' : 'text-danger'}>{chosen === q.answer ? t('right') : t('wrong', { word: q.word })}</strong>
+          </div>
           <ul className="m-0 list-none p-0 text-sm text-ink-soft">
             {q.options.map((o) => (
               <li key={o.tone}>{t('meaning', { word: o.vi, tone: toneName(o.tone), en: set.forms[o.tone]!.en })}</li>
             ))}
           </ul>
-          <button
-            type="button"
-            className={primary}
+          <Button
             onClick={() => {
               setChosen(null);
               setI((x) => x + 1);
             }}
           >
             {t('nextQ')}
-          </button>
+          </Button>
         </div>
       )}
     </div>
@@ -123,6 +127,7 @@ function CatchTone({ seed }: { seed: number }) {
     if (answer || !item) return;
     const ok = tone === item.tone;
     setAnswer({ tone, ok });
+    playSfx(ok ? 'dung' : 'sai');
     if (ok) setCorrect((c) => c + 1);
     gymStore.record(item.tone, ok);
     setLimit((l) => nextTimeLimit(l, ok));
@@ -137,9 +142,7 @@ function CatchTone({ seed }: { seed: number }) {
             {t('catchDone', { c: correct, n: ROUND, s: (limit / 1000).toFixed(1) })}
           </p>
         )}
-        <button
-          type="button"
-          className={primary}
+        <Button
           onClick={() => {
             if (done) setGame((g) => g + 1);
             setI(0);
@@ -150,7 +153,7 @@ function CatchTone({ seed }: { seed: number }) {
           }}
         >
           {done ? t('again') : t('catchStart')}
-        </button>
+        </Button>
       </div>
     );
   }
@@ -159,9 +162,10 @@ function CatchTone({ seed }: { seed: number }) {
     <div className="flex flex-col gap-3">
       <div className="flex items-center justify-between gap-2">
         <p className="m-0 text-lg font-extrabold text-ink">{t('catchQ', { i: i + 1, n: ROUND })}</p>
-        <button type="button" className={btn} onClick={() => void playText(item.word)}>
+        <Button variant="secondary" onClick={() => void playText(item.word)}>
+          <Icon name="loa" size={18} />
           {t('listen')}
-        </button>
+        </Button>
       </div>
       <div className="h-2 overflow-hidden rounded-full bg-surface-2" role="progressbar" aria-label={t('timeLeft')} aria-valuemin={0} aria-valuemax={limit} aria-valuenow={Math.round(answer ? 0 : left)}>
         <div className="h-full bg-accent" style={{ width: `${answer ? 0 : (left / limit) * 100}%` }} />
@@ -175,19 +179,20 @@ function CatchTone({ seed }: { seed: number }) {
       </div>
       {answer && (
         <div role="status" className="flex flex-col gap-2 rounded-xl border border-line bg-sunken p-3">
-          <strong className={answer.ok ? 'text-heading' : 'text-danger'}>
-            {answer.tone === null ? t('timeout', { word: item.word, tone: toneName(item.tone) }) : t(answer.ok ? 'catchRight' : 'catchWrong', { word: item.word, tone: toneName(item.tone) })}
-          </strong>
-          <button
-            type="button"
-            className={primary}
+          <div className="flex items-center gap-2">
+            <CuTit mood={answer.ok ? 'khen' : 'dong-vien'} size={56} />
+            <strong className={answer.ok ? 'text-heading' : 'text-danger'}>
+              {answer.tone === null ? t('timeout', { word: item.word, tone: toneName(item.tone) }) : t(answer.ok ? 'catchRight' : 'catchWrong', { word: item.word, tone: toneName(item.tone) })}
+            </strong>
+          </div>
+          <Button
             onClick={() => {
               setAnswer(null);
               setI((x) => x + 1);
             }}
           >
             {t('nextQ')}
-          </button>
+          </Button>
         </div>
       )}
     </div>

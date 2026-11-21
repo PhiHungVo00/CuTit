@@ -1,5 +1,6 @@
 import { useMemo, useRef, useState, type FormEvent } from 'react';
 import { CULTURE_CARDS, foldVietnamese, searchCulture, type CultureCard } from '@vietlearning/content';
+import { Button, Card, CuTit } from '@vietlearning/ui';
 import { learnerStore, useLearner, type UiLanguage } from '@vietlearning/state';
 import { t as tK, useT } from '../../i18n';
 
@@ -91,9 +92,9 @@ export function CultureGuideScreen() {
           <p className="m-0 text-[15px] text-ink-soft">{t('cultureIntro')}</p>
         </header>
 
-        <section aria-labelledby="ct-ask" className="flex flex-col gap-3 rounded-2xl border border-line-strong bg-surface p-4 shadow-card">
+        <Card role="region" aria-labelledby="ct-ask" elevated style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           <h2 id="ct-ask" className="m-0 flex items-center gap-2 text-lg font-extrabold">
-            <span aria-hidden="true">🏮</span> {t('askTitle')}
+            {t('askTitle')}
           </h2>
           <form onSubmit={onAsk} className="flex flex-col gap-2">
             <label htmlFor="ct-question" className="sr-only">
@@ -108,13 +109,9 @@ export function CultureGuideScreen() {
               placeholder={t('askPlaceholder')}
               className="w-full resize-none rounded-xl border border-line bg-sunken p-3 text-base text-ink placeholder:text-ink-muted focus:border-accent focus:outline-none"
             />
-            <button
-              type="submit"
-              disabled={askState.status === 'loading' || question.trim().length < 3}
-              className="min-h-12 rounded-xl bg-accent px-4 text-base font-extrabold text-accent-ink disabled:opacity-50"
-            >
+            <Button type="submit" busy={askState.status === 'loading'} disabled={question.trim().length < 3}>
               {askState.status === 'loading' ? t('searching') : t('ask')}
-            </button>
+            </Button>
           </form>
           {askState.status === 'done' && (
             <div role="status" className="flex flex-col gap-2 rounded-xl bg-sunken p-3">
@@ -138,7 +135,7 @@ export function CultureGuideScreen() {
               {askState.message}
             </p>
           )}
-        </section>
+        </Card>
 
         <section aria-labelledby="ct-cards" className="flex flex-col gap-3">
           <h2 id="ct-cards" className="sr-only">
@@ -146,15 +143,12 @@ export function CultureGuideScreen() {
           </h2>
           <label className="relative block">
             <span className="sr-only">{t('searchCards')}</span>
-            <span aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2">
-              🔍
-            </span>
             <input
               type="search"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder={t('searchCardsPlaceholder')}
-              className="min-h-11 w-full rounded-xl border border-line bg-surface pl-10 pr-3 text-base text-ink placeholder:text-ink-muted focus:border-accent focus:outline-none"
+              className="min-h-11 w-full rounded-xl border border-line bg-surface px-3 text-base text-ink placeholder:text-ink-muted focus:border-accent focus:outline-none"
             />
           </label>
           <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1" role="group" aria-label={t('filter')}>
@@ -177,6 +171,12 @@ export function CultureGuideScreen() {
           <p className="m-0 text-sm text-ink-muted" aria-live="polite">
             {t('cardCount', { n: cards.length })}
           </p>
+          {cards.length === 0 && (
+            <div className="flex flex-col items-center gap-2 py-6 text-center">
+              <CuTit mood="suy-nghi" size={96} />
+              <p className="m-0 text-[15px] text-ink-soft">{t('noCards')}</p>
+            </div>
+          )}
           <ul className="m-0 flex list-none flex-col gap-3 p-0">
             {cards.map((c: CultureCard) => (
               <li

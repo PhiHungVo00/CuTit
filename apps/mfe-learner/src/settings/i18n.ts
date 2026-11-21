@@ -1,0 +1,129 @@
+import { defineMessages } from '@vietlearning/state';
+
+/** Chuỗi riêng của Hồ sơ, mục lục Cài đặt và các nhóm mới. Chuỗi cũ (giọng đọc, đồng ý, tài khoản…) vẫn ở ../i18n. */
+export const { useT, t } = defineMessages(
+  {
+    // Hồ sơ
+    profileTitle: 'Hồ sơ',
+    statsLabel: 'Số liệu của bạn',
+    statStreak: 'Chuỗi ngày',
+    statMinutes: 'Phút học',
+    statWords: 'Từ đã thuộc',
+    statBadges: 'Huy hiệu',
+    daysN: '{n} ngày',
+    minutesN: '{n} phút',
+    rowProgress: 'Tiến độ học',
+    rowProgressHint: 'Ôn thẻ, phút học 7 ngày, độ chính xác',
+    rowFriends: 'Bạn học',
+    rowFriendsHint: 'Nhiệm vụ tuần chung, không xếp hạng',
+    rowPlacement: 'Xếp lớp',
+    rowPlacementDo: 'Làm quen & xếp lớp',
+    rowPlacementRedo: 'Làm lại bài xếp lớp',
+    rowSettings: 'Cài đặt',
+    rowSettingsHint: 'Giao diện, âm thanh, tài khoản',
+
+    // Mục lục Cài đặt
+    settingsTitle: 'Cài đặt',
+    settingsBack: '← Cài đặt',
+    'group.giao-dien': 'Giao diện',
+    'group.giao-dien.hint': 'Sáng, tối hoặc theo máy',
+    'group.ngon-ngu': 'Ngôn ngữ',
+    'group.ngon-ngu.hint': 'Ngôn ngữ của ứng dụng',
+    'group.hoc': 'Học',
+    'group.hoc.hint': 'Phương ngữ, giọng đọc, gia sư',
+    'group.am-thanh': 'Âm thanh',
+    'group.am-thanh.hint': 'Âm hiệu ứng, rung, nhạc nền',
+    'group.chuyen-dong': 'Chuyển động',
+    'group.chuyen-dong.hint': 'Giảm hiệu ứng chuyển cảnh',
+    'group.quyen-rieng-tu': 'Quyền riêng tư',
+    'group.quyen-rieng-tu.hint': 'Đồng ý micro, camera, chính sách',
+    'group.tai-khoan': 'Tài khoản',
+    'group.tai-khoan.hint': 'Mã khôi phục, đồng bộ, xóa tài khoản',
+    unknownGroup: 'Không có nhóm cài đặt này.',
+
+    // Giao diện
+    themeLegend: 'Giao diện màu',
+    'theme.light': 'Sáng',
+    'theme.dark': 'Tối',
+    'theme.system': 'Theo máy',
+    deviceOnly: 'Cài đặt này chỉ áp dụng trên máy này.',
+
+    // Âm thanh
+    sfx: 'Âm hiệu ứng',
+    haptics: 'Rung',
+    music: 'Nhạc nền',
+    musicTrackLegend: 'Bài nhạc nền',
+    'track.rotate': 'Tự đổi theo giờ',
+    'track.sang-lang': 'Sáng làng',
+    'track.chieu-dong': 'Chiều đồng',
+    'track.trau-ve': 'Trâu về',
+    musicVolume: 'Âm lượng nhạc nền',
+
+    // Chuyển động
+    reducedMotion: 'Giảm chuyển động',
+    reducedMotionHint: 'Tắt chuyển cảnh và hiệu ứng động. Cũng tự bật khi máy đã đặt giảm chuyển động.',
+
+    // Bạn bè
+    friendsScreenTitle: 'Bạn bè',
+    friendsEmpty: 'Mời một người bạn để cùng đặt mục tiêu phút học mỗi tuần nhé!'
+  },
+  {
+    profileTitle: 'Profile',
+    statsLabel: 'Your numbers',
+    statStreak: 'Day streak',
+    statMinutes: 'Minutes studied',
+    statWords: 'Words learned',
+    statBadges: 'Badges',
+    daysN: '{n} days',
+    minutesN: '{n} min',
+    rowProgress: 'Learning progress',
+    rowProgressHint: 'Review cards, 7-day minutes, accuracy',
+    rowFriends: 'Study buddies',
+    rowFriendsHint: 'Shared weekly quest, no ranking',
+    rowPlacement: 'Placement',
+    rowPlacementDo: 'Get started & placement test',
+    rowPlacementRedo: 'Retake the placement test',
+    rowSettings: 'Settings',
+    rowSettingsHint: 'Appearance, sound, account',
+
+    settingsTitle: 'Settings',
+    settingsBack: '← Settings',
+    'group.giao-dien': 'Appearance',
+    'group.giao-dien.hint': 'Light, dark or follow the device',
+    'group.ngon-ngu': 'Language',
+    'group.ngon-ngu.hint': 'App language',
+    'group.hoc': 'Learning',
+    'group.hoc.hint': 'Dialect, voice, tutor',
+    'group.am-thanh': 'Sound',
+    'group.am-thanh.hint': 'Sound effects, vibration, music',
+    'group.chuyen-dong': 'Motion',
+    'group.chuyen-dong.hint': 'Reduce transition effects',
+    'group.quyen-rieng-tu': 'Privacy',
+    'group.quyen-rieng-tu.hint': 'Mic and camera consent, policy',
+    'group.tai-khoan': 'Account',
+    'group.tai-khoan.hint': 'Recovery code, sync, delete account',
+    unknownGroup: 'There is no such settings group.',
+
+    themeLegend: 'Colour theme',
+    'theme.light': 'Light',
+    'theme.dark': 'Dark',
+    'theme.system': 'System',
+    deviceOnly: 'This setting only applies on this device.',
+
+    sfx: 'Sound effects',
+    haptics: 'Vibration',
+    music: 'Background music',
+    musicTrackLegend: 'Background track',
+    'track.rotate': 'Change with the time of day',
+    'track.sang-lang': 'Village morning',
+    'track.chieu-dong': 'Afternoon fields',
+    'track.trau-ve': 'Buffalo home',
+    musicVolume: 'Music volume',
+
+    reducedMotion: 'Reduce motion',
+    reducedMotionHint: 'Turns off transitions and animations. Also on automatically when the device asks for reduced motion.',
+
+    friendsScreenTitle: 'Friends',
+    friendsEmpty: 'Invite a friend to set a weekly minutes goal together!'
+  }
+);

@@ -1,4 +1,5 @@
 import { memo } from 'react';
+import { CuTit } from '@vietlearning/ui';
 import { useT } from '../i18n';
 
 export interface CuTitWisdomCardProps {
@@ -16,12 +17,7 @@ export const CuTitWisdomCard = memo(function CuTitWisdomCard({ wisdom, explanati
       className="[contain-intrinsic-size:auto_520px] [content-visibility:auto] flex flex-col gap-4 rounded-2xl border border-line-strong bg-surface-2 p-4 shadow-card"
     >
       <div className="flex items-center gap-3">
-        <div
-          aria-hidden="true"
-          className="grid size-12 shrink-0 place-items-center rounded-full border-2 border-heading bg-accent text-2xl"
-        >
-          🏮
-        </div>
+        <CuTit mood="chan-dung" size={56} />
         <div>
           <h2 id="ct-wisdom-title" className="m-0 text-base font-extrabold text-ink">
             {t('wisdomTitle')}
@@ -33,9 +29,6 @@ export const CuTitWisdomCard = memo(function CuTitWisdomCard({ wisdom, explanati
       </div>
 
       <blockquote className="m-0 flex gap-3 rounded-xl border border-line bg-sunken p-3">
-        <span aria-hidden="true" className="text-xl leading-tight">
-          🎋
-        </span>
         <div>
           <div className="text-xs font-extrabold uppercase tracking-wide text-heading">{t('oldSaying')}</div>
           <p className="m-0 text-[15px] font-semibold italic leading-relaxed text-ink">“{wisdom}”</p>

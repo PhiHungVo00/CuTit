@@ -67,7 +67,8 @@ test.describe('GĐ1 Lộ trình', () => {
     await expect(unit1.getByText('4/5 bài')).toBeVisible();
 
     // Lần đầu chọn đại nên chắc chắn có câu sai => “Lỗi gần đây” có ngay; thẻ SM-2 (A4) đến hạn từ ngày mai
-    await page.getByRole('navigation').getByRole('link', { name: /Ôn tập/ }).click();
+    await page.getByRole('navigation').getByRole('link', { name: 'Luyện tập' }).click();
+    await page.getByRole('link', { name: /Ôn tập hôm nay/ }).click();
     await expect(page.getByRole('heading', { level: 1, name: 'Ôn tập' })).toBeVisible();
     await expect(page.getByRole('heading', { name: /Lỗi gần đây \([1-9]\d*\)/ })).toBeVisible();
     await assertMobileLayout(page);
@@ -114,7 +115,7 @@ test.describe('GĐ1 Lộ trình', () => {
     expect(await page.locator('text=/tim|năng lượng|hearts|energy/i').count()).toBe(0);
   });
 
-  test('tab Khám phá giữ đủ 12 công cụ; trang chủ có skeleton rồi lộ trình', async ({ page }) => {
+  test('tab Luyện tập có 5 lối vào; trang chủ có skeleton rồi lộ trình', async ({ page }) => {
     // Làm chậm chunk lộ trình để thấy khung xương (skeleton) trong lúc tải
     await page.route('**/assets/PathHomeRoute-*.js', async (route) => {
       await new Promise((r) => setTimeout(r, 800));
@@ -125,9 +126,9 @@ test.describe('GĐ1 Lộ trình', () => {
     await expect(page.getByRole('link', { name: /Bắt đầu bài đầu tiên/ })).toBeVisible();
     await expect(page.getByRole('link', { name: /Ôn hôm nay \(0\)/ })).toBeVisible();
     await assertMobileLayout(page);
-    await page.goto('/kham-pha');
-    await expect(page.getByRole('heading', { level: 1, name: 'Khám phá' })).toBeVisible();
-    await expect(page.locator('.screen-card')).toHaveCount(12);
+    await page.goto('/luyen-tap-chung');
+    await expect(page.getByRole('heading', { level: 1, name: 'Luyện tập' })).toBeVisible();
+    await expect(page.locator('.list-card a')).toHaveCount(5);
   });
 });
 
@@ -149,11 +150,12 @@ test.describe('GĐ1 Lộ trình — giao diện tiếng Anh', () => {
     await assertMobileLayout(page);
     await page.getByRole('link', { name: 'Back to path' }).click();
     await expect(page.getByTestId('xp')).not.toHaveText('⭐ 0');
-    await page.getByRole('navigation', { name: 'Main navigation' }).getByRole('link', { name: /Review/ }).click();
+    await page.getByRole('navigation', { name: 'Main navigation' }).getByRole('link', { name: 'Practice' }).click();
+    await page.getByRole('link', { name: /Review today/ }).click();
     await expect(page.getByRole('heading', { level: 1, name: 'Review' })).toBeVisible();
     await assertMobileLayout(page);
-    await page.getByRole('navigation', { name: 'Main navigation' }).getByRole('link', { name: /Explore/ }).click();
-    await expect(page.getByRole('heading', { level: 1, name: 'Explore' })).toBeVisible();
+    await page.getByRole('navigation', { name: 'Main navigation' }).getByRole('link', { name: 'Practice' }).click();
+    await expect(page.getByRole('heading', { level: 1, name: 'Practice' })).toBeVisible();
     await assertMobileLayout(page);
   });
 });

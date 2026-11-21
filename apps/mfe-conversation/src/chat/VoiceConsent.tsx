@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { learnerStore } from '@vietlearning/state';
+import { Button, Icon } from '@vietlearning/ui';
 import { useT } from '../i18n';
 
 /**
@@ -10,7 +11,8 @@ export function VoiceConsent({ text, onAgree, onCancel }: { text: string; onAgre
   const t = useT();
   return (
     <div role="dialog" aria-labelledby="ct-voice-privacy" className="flex flex-col gap-2 rounded-xl border border-line-strong bg-surface-2 p-3">
-      <p id="ct-voice-privacy" className="m-0 text-[15px] font-bold text-ink">
+      <p id="ct-voice-privacy" className="m-0 flex items-center gap-2 text-[15px] font-bold text-ink">
+        <Icon name="khoa" size={18} />
         {t('voicePrivacyTitle')}
       </p>
       <p className="m-0 text-sm text-ink-soft">{text}</p>
@@ -18,19 +20,17 @@ export function VoiceConsent({ text, onAgree, onCancel }: { text: string; onAgre
         {t('privacyPolicy')}
       </Link>
       <div className="grid grid-cols-2 gap-2">
-        <button type="button" onClick={onCancel} className="min-h-12 rounded-xl border border-line-strong bg-surface px-3 font-bold text-ink">
+        <Button variant="secondary" onClick={onCancel}>
           {t('notNow')}
-        </button>
-        <button
-          type="button"
+        </Button>
+        <Button
           onClick={() => {
             learnerStore.getState().giveConsent('voice');
             onAgree();
           }}
-          className="min-h-12 rounded-xl bg-accent px-3 font-extrabold text-accent-ink"
         >
           {t('agreeRecord')}
-        </button>
+        </Button>
       </div>
     </div>
   );

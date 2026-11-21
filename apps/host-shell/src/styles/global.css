@@ -13,6 +13,7 @@
   --shell-muted: var(--ct-ink-soft);
   --shell-accent: var(--ct-accent);
   --shell-accent-ink: var(--ct-accent-ink);
+  --shell-accent-text: var(--ct-accent-text);
   --tabbar-h: 64px;
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
@@ -107,6 +108,10 @@ textarea {
   padding-bottom: calc(var(--tabbar-h) + var(--safe-bottom));
 }
 
+.shell-main.focus {
+  padding-bottom: var(--safe-bottom);
+}
+
 .tabbar {
   position: fixed;
   inset: auto 0 0 0;
@@ -141,7 +146,7 @@ textarea {
 }
 
 .tabbar a[aria-current='page'] {
-  color: var(--shell-accent);
+  color: var(--shell-accent-text);
 }
 
 .tabbar a[aria-current='page'] .tab-icon {
@@ -160,7 +165,7 @@ textarea {
   font-size: 26px;
   font-weight: 800;
   line-height: 1.25;
-  color: var(--shell-accent);
+  color: var(--shell-accent-text);
 }
 
 .home-head {
@@ -341,4 +346,160 @@ textarea {
   color: inherit;
   font-weight: 700;
   cursor: pointer;
+}
+
+/* ---------- Danh sách hàng (ListRow trong thẻ bo góc) ---------- */
+.list-card {
+  overflow: hidden;
+  border: 1px solid var(--shell-border);
+  border-radius: 20px;
+  background: var(--shell-surface);
+}
+.list-card > div:last-child a {
+  border-bottom: 0 !important;
+}
+
+.lookup-title {
+  margin: 24px 0 8px;
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--ct-heading);
+}
+
+/* ---------- Bong bóng Cu Tít (phía trên thanh tab, góc phải) ---------- */
+.cutit-bubble {
+  position: fixed;
+  z-index: 40;
+  right: calc(12px + var(--safe-right));
+  bottom: calc(var(--tabbar-h) + var(--safe-bottom) + 12px);
+  width: 60px;
+  height: 60px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 3px solid #fff;
+  border-radius: 50%;
+  background: var(--ct-accent);
+  box-shadow: 0 4px 12px rgb(0 0 0 / 0.25);
+  cursor: pointer;
+  transition: width var(--ct-motion-base), height var(--ct-motion-base), opacity var(--ct-motion-base);
+}
+.cutit-bubble.mini {
+  width: 40px;
+  height: 40px;
+  opacity: 0.85;
+}
+.bubble-intro {
+  position: fixed;
+  z-index: 41;
+  right: calc(12px + var(--safe-right));
+  bottom: calc(var(--tabbar-h) + var(--safe-bottom) + 84px);
+  max-width: min(260px, calc(100vw - 24px));
+  padding: 12px 14px;
+  border: 1px solid var(--shell-border);
+  border-radius: 16px;
+  background: var(--shell-surface);
+  color: var(--shell-text);
+  box-shadow: 0 4px 12px rgb(0 0 0 / 0.25);
+  font-size: 14px;
+}
+.bubble-intro p {
+  margin: 0 0 8px;
+}
+.bubble-intro button {
+  min-height: 40px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--shell-accent);
+  color: var(--shell-accent-ink);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* ---------- Thanh đầu màn Cu Tít (quay lại + đổi chế độ) ---------- */
+.mode-bar {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: calc(6px + var(--safe-top)) calc(8px + var(--safe-right)) 6px calc(8px + var(--safe-left));
+  background: var(--shell-bg);
+  border-bottom: 1px solid var(--shell-border);
+}
+.mode-back {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--shell-text);
+  cursor: pointer;
+}
+.mode-tabs {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  gap: 4px;
+}
+.mode-tabs a {
+  flex: 1;
+  min-width: 0;
+  min-height: 44px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  border-radius: 12px;
+  color: var(--shell-muted);
+  text-decoration: none;
+  font-size: 11px;
+  font-weight: 600;
+}
+.mode-tabs a[aria-current='page'] {
+  background: var(--shell-surface-2);
+  color: var(--shell-accent-text);
+}
+
+/* ---------- Chuyển cảnh: View Transitions (≤ 200 ms) + fade dự phòng cho WebView cũ ---------- */
+@keyframes ct-route-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+html.route-fade .shell-main {
+  animation: ct-route-fade 150ms ease-out;
+}
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 160ms;
+}
+/* Giảm chuyển động (hệ điều hành hoặc công tắc trong Cài đặt) tắt cả chuyển cảnh lẫn fade */
+@media (prefers-reduced-motion: reduce) {
+  html.route-fade .shell-main {
+    animation: none;
+  }
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
+}
+html[data-reduced-motion='true'].route-fade .shell-main {
+  animation: none;
+}
+html[data-reduced-motion='true']::view-transition-group(*),
+html[data-reduced-motion='true']::view-transition-old(*),
+html[data-reduced-motion='true']::view-transition-new(*) {
+  animation: none !important;
 }

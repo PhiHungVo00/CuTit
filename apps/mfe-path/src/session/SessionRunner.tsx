@@ -3,6 +3,7 @@ import type { ExerciseRef } from '@vietlearning/content';
 import { buildItem, ExerciseView, type ExerciseItem, type ExerciseResult } from '@vietlearning/exercises';
 import { learnerStore, type Skill } from '@vietlearning/state';
 import { progressStore } from '@vietlearning/state/progress';
+import { Button, Icon } from '@vietlearning/ui';
 import { useT } from '../i18n';
 import { answer, current, startSession, summarize, type SessionState } from './lessonSession';
 
@@ -95,9 +96,9 @@ export function SessionRunner({
   return (
     <div className="flex flex-col gap-4">
       <header className="flex items-center gap-3">
-        <button type="button" onClick={onClose} aria-label={t('close')} className="grid min-h-11 min-w-11 place-items-center rounded-xl border border-line bg-surface text-lg font-bold text-ink">
-          {t('closeShort')}
-        </button>
+        <Button variant="secondary" onClick={onClose} aria-label={t('close')} style={{ minWidth: 44, minHeight: 44, padding: 0 }}>
+          <Icon name="quay-lai" size={22} />
+        </Button>
         <div
           className="h-3 flex-1 overflow-hidden rounded-full bg-surface-2"
           role="progressbar"

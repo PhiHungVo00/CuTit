@@ -12,10 +12,18 @@ module.exports = [
     // 68.5 → 64.5 kB (R10, 2026-11-18): đo 68.49 → 64.12 kB. @capacitor/core ra khỏi gói đầu (nhận biết nền tảng
     // bằng native/platform.ts) và client api-client (request/SSE/lỗi) thành chunk lười; gói đầu chỉ giữ
     // `@vietlearning/api-client/config`. Dư ~0.4 kB. Đo lại theo module: pnpm --filter @vietlearning/host-shell analyze
-    limit: '64.5 kB', gzip: true
+    // 64.5 → 67.5 kB (dự án 1 đợt 2, 2026-11-20; trần tối đa spec mục 8.1): thanh 4 tab + bản đồ route (navMap),
+    // deviceSettings + ràng buộc giao diện/nhạc, bộ icon (paths), bong bóng Cu Tít (khung), chuyển cảnh. Đã giữ ngoài gói đầu:
+    // điều phối âm thanh (nạp lười ở lần chạm đầu), CuTit/ListRow ở chunk riêng, "Tra cứu" của tab Học (lazy);
+    // thêm "sideEffects": false cho @vietlearning/ui để Rollup bỏ phần không dùng.
+    limit: '67.5 kB', gzip: true
   },
   // 7.5 → 7.8 kB (GĐ2, 2026-11-18): lớp Tailwind mới của nói lại câu / phòng tập thanh / thẻ miền (+13 B lúc đo)
-  { name: 'CSS toàn app (Tailwind + tokens)', path: 'dist/assets/*.css', limit: '7.8 kB', gzip: true },
+  // 7.8 → 8.1 kB (dự án 1 đợt 1, 2026-11-20): token Cu Tít sáng/tối, bán kính/bóng/thời lượng chuyển động,
+  // CSS của CuTit (chuyển động theo trạng thái). Đo sau gộp: 7.83 kB; chừa ~0.3 kB cho đợt 2 (thanh tab, bong bóng).
+  // 8.1 → 8.4 kB (dự án 1 đợt 2, 2026-11-20): bong bóng Cu Tít + lời giới thiệu, thanh đổi chế độ màn Cu Tít, danh sách hàng,
+  // chuyển cảnh/fade và luật giảm chuyển động (đo 8.35 kB)
+  { name: 'CSS toàn app (Tailwind + tokens)', path: 'dist/assets/*.css', limit: '8.4 kB', gzip: true },
   { name: 'M3 Ma trận xưng hô (lazy)', path: 'dist/assets/HonorificScreen-*.js', limit: '15 kB', gzip: true },
   { name: 'M3 Bảng 20 cặp + Radix Dialog (lazy khi mở)', path: 'dist/assets/HonorificExplorerDrawer-*.js', limit: '18 kB', gzip: true },
   { name: 'M2 Luyện thanh điệu (lazy)', path: 'dist/assets/ToneLabRoute-*.js', limit: '9 kB', gzip: true },
@@ -24,8 +32,11 @@ module.exports = [
   { name: 'M5 Luyện tập (lazy)', path: 'dist/assets/DrillRoute-*.js', limit: '8 kB', gzip: true },
   { name: 'M8 Ghép câu (lazy)', path: 'dist/assets/SentenceRoute-*.js', limit: '6 kB', gzip: true },
   { name: 'M11 Làm quen & xếp lớp (lazy)', path: 'dist/assets/OnboardingRoute-*.js', limit: '5 kB', gzip: true },
-  { name: 'M9 Tiến độ + ôn thẻ (lazy)', path: 'dist/assets/ProgressRoute-*.js', limit: '5 kB', gzip: true },
-  { name: 'M12 Tùy chỉnh (lazy)', path: 'dist/assets/PreferencesRoute-*.js', limit: '5 kB', gzip: true },
+  // Dự án 1 đợt 2 (2026-11-20): tab Hồ sơ (phương án B) thay màn Tiến độ; Cài đặt mục lục + 7 trang con thay M12;
+  // Bạn bè là màn thật (FriendsPanel chuyển từ Tiến độ sang, nằm trong chunk FriendsRoute nên không còn mục riêng). Kế hoạch cho phép ≤ 6 kB mỗi màn. Đo: Cài đặt 5,3 kB, Bạn bè 4,97 kB.
+  { name: 'M9 Tiến độ chi tiết: ôn SM-2, 7 ngày, độ chính xác (lazy; đo 2,8 kB)', path: 'dist/assets/ProgressRoute-*.js', limit: '3.5 kB', gzip: true },
+  { name: 'M9 Hồ sơ (lazy)', path: 'dist/assets/ProfileRoute-*.js', limit: '5 kB', gzip: true },
+  { name: 'M12 Cài đặt mục lục + trang con (lazy)', path: 'dist/assets/SettingsRoute-*.js', limit: '6 kB', gzip: true },
   { name: 'M1 Trò chuyện (lazy)', path: 'dist/assets/ChatRoute-*.js', limit: '6 kB', gzip: true },
   { name: 'M7 Nhập vai (lazy)', path: 'dist/assets/RoleplayRoute-*.js', limit: '6 kB', gzip: true },
   { name: 'M4 Camera từ vựng (lazy)', path: 'dist/assets/CameraRoute-*.js', limit: '5 kB', gzip: true },
@@ -34,12 +45,15 @@ module.exports = [
   // 3.3 → 3.4 kB (GĐ4a, 2026-11-18): điểm nạp lười huy hiệu + tổng kết tuần (+33 B lúc đo); nội dung ở chunk Motivation
   // 3.4 → 3.45 kB (R10, 2026-11-18): đo 3.40 kB (+12 B) vì client api-client giờ là chunk lười riêng => thêm một câu
   // `import … from './index-*.js'`; gói đầu đổi lại giảm 4.37 kB. Mã của PathHome không đổi
-  { name: 'GĐ1 Phần lộ trình của trang chủ (lazy)', path: 'dist/assets/PathHomeRoute-*.js', limit: '3.45 kB', gzip: true },
+    // 3.45 → 3.6 kB (Dự án 1 đợt 3, 2026-11-21): thẻ dùng Card/LinkButton chung (style nội tuyến thay lớp Tailwind), +34 B lúc đo
+  { name: 'GĐ1 Phần lộ trình của trang chủ (lazy)', path: 'dist/assets/PathHomeRoute-*.js', limit: '3.6 kB', gzip: true },
   { name: 'GĐ1 Phiên bài học (lazy)', path: 'dist/assets/LessonRoute-*.js', limit: '2.5 kB', gzip: true },
   { name: 'GĐ1 Ôn tập (lazy)', path: 'dist/assets/ReviewRoute-*.js', limit: '3 kB', gzip: true },
   { name: 'GĐ1 Kiểm tra vượt unit (lazy)', path: 'dist/assets/TestOutRoute-*.js', limit: '2 kB', gzip: true },
-  { name: 'GĐ1 Khám phá: 12 công cụ (lazy)', path: 'dist/assets/Explore-*.js', limit: '2.5 kB', gzip: true },
-  { name: 'GĐ1 Trình chạy bài + dạng bài dùng chung (lazy)', path: 'dist/assets/SessionRunner-*.js', limit: '6.5 kB', gzip: true },
+  { name: 'Dự án 1 Tab Luyện tập: lối vào 5 cách luyện (lazy)', path: 'dist/assets/PracticeHub-*.js', limit: '2.5 kB', gzip: true },
+  { name: 'Dự án 1 Tab Bạn bè (lazy)', path: 'dist/assets/FriendsRoute-*.js', limit: '5.5 kB', gzip: true },
+    // Dự án 1 đợt 3: Rollup đặt tên chunk theo module đầu (celebration.ts) thay vì SessionRunner; nội dung không đổi
+  { name: 'GĐ1 Trình chạy bài + dạng bài dùng chung (lazy)', path: 'dist/assets/celebration-*.js', limit: '6.5 kB', gzip: true },
   { name: 'GĐ1 Dữ liệu khóa A1 (lazy)', path: 'dist/assets/course-*.js', limit: '8.5 kB', gzip: true },
   { name: 'GĐ1 Bài luyện thanh trong phiên học (lazy khi gặp)', path: 'dist/assets/ToneExercise-*.js', limit: '2.5 kB', gzip: true },
   // GĐ3 Hội thoại AI, đo 2026-11-18 (lazy). Phần chat dùng chung M1/M7/gọi thoại tách thành chunk riêng nên M1 còn ~0.7 kB
@@ -56,7 +70,5 @@ module.exports = [
   { name: 'GĐ2 Phát âm thanh dựng sẵn theo miền', path: 'dist/assets/coursePlayer-*.js', limit: '1.5 kB', gzip: true },
   // GĐ4a (đo 2026-11-18): huy hiệu theo thành thạo + tổng kết tuần + thông báo nhẹ, lazy
   { name: 'GĐ4 Huy hiệu + tổng kết tuần (lazy)', path: 'dist/assets/Motivation-*.js', limit: '3.5 kB', gzip: true },
-  { name: 'GĐ2 A7 đổi từ theo miền', path: 'dist/assets/dialectMap-*.js', limit: '2 kB', gzip: true },
-  // GĐ4c Bạn học hợp tác (đo 2026-11-18: 4.52 kB, gồm contract Zod /v1/friends + chuỗi vi/en), lazy khi bấm mở ở M9
-  { name: 'GĐ4c Bạn học: mã mời + nhiệm vụ tuần chung (lazy)', path: 'dist/assets/FriendsPanel-*.js', limit: '5 kB', gzip: true }
+  { name: 'GĐ2 A7 đổi từ theo miền', path: 'dist/assets/dialectMap-*.js', limit: '2 kB', gzip: true }
 ];

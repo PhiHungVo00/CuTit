@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { installFakeMicStartHook } from './fake-mic';
 
 /** GĐ2 — nói lại câu (A3) và phòng tập thanh điệu. Chạy cả Pixel 7 và màn 320 px. */
 
@@ -19,27 +20,30 @@ async function assertMobileLayout(page: Page) {
 
 /** Micro giả lập: hai âm tiết (sóng răng cưa đi lên rồi đi xuống) lặp lại, như e2e M2 */
 async function fakeMic(page: Page) {
+  await installFakeMicStartHook(page);
   await page.addInitScript(() => {
     navigator.mediaDevices.getUserMedia = async () => {
       const ctx = new AudioContext();
       const osc = ctx.createOscillator();
       osc.type = 'sawtooth';
       const g = ctx.createGain();
-      const t = ctx.currentTime;
-      for (let k = 0; k < 6; k++) {
-        const s = t + k * 1.2;
-        osc.frequency.setValueAtTime(160, s);
-        osc.frequency.linearRampToValueAtTime(260, s + 0.4);
-        osc.frequency.setValueAtTime(220, s + 0.6);
-        osc.frequency.linearRampToValueAtTime(140, s + 1.0);
-        g.gain.setValueAtTime(0.4, s);
-        g.gain.setValueAtTime(0, s + 0.45);
-        g.gain.setValueAtTime(0.4, s + 0.6);
-        g.gain.setValueAtTime(0, s + 1.05);
-      }
       const dest = ctx.createMediaStreamDestination();
       osc.connect(g).connect(dest);
-      osc.start();
+      (dest.stream as MediaStream & { __start?: () => void }).__start = () => {
+        const t = ctx.currentTime;
+        for (let k = 0; k < 6; k++) {
+          const s = t + k * 1.2;
+          osc.frequency.setValueAtTime(160, s);
+          osc.frequency.linearRampToValueAtTime(260, s + 0.4);
+          osc.frequency.setValueAtTime(220, s + 0.6);
+          osc.frequency.linearRampToValueAtTime(140, s + 1.0);
+          g.gain.setValueAtTime(0.4, s);
+          g.gain.setValueAtTime(0, s + 0.45);
+          g.gain.setValueAtTime(0.4, s + 0.6);
+          g.gain.setValueAtTime(0, s + 1.05);
+        }
+        osc.start();
+      };
       return dest.stream;
     };
   });
@@ -142,9 +146,9 @@ test.describe('GĐ2 Nói lại câu (A3)', () => {
 });
 
 test.describe('GĐ2 Phòng tập thanh điệu', () => {
-  test('nghe phân biệt → bắt thanh 10 câu → biểu đồ tiến bộ 6 thanh; mở được từ Khám phá', async ({ page }) => {
+  test('nghe phân biệt → bắt thanh 10 câu → biểu đồ tiến bộ 6 thanh; mở được từ tab Luyện tập', async ({ page }) => {
     test.setTimeout(60_000);
-    await page.goto('/kham-pha');
+    await page.goto('/luyen-tap-chung');
     await page.getByRole('link', { name: /Phòng tập thanh điệu/ }).click();
     await expect(page).toHaveURL(/\/phong-thanh$/);
     await page.goto('/phong-thanh?seed=5');

@@ -6,12 +6,27 @@
   "types": "./dist/index.d.ts",
   "scripts": {
     "build": "tsc -b",
-    "dev": "tsc -b -w"
+    "dev": "tsc -b -w",
+    "test": "node --test \"test/**/*.test.mjs\""
   },
   "dependencies": {
     "@vietlearning/contracts": "workspace:*"
   },
   "devDependencies": {
     "typescript": "^5.7.3"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./audio": {
+      "types": "./dist/audio/index.d.ts",
+      "default": "./dist/audio/index.js"
+    },
+    "./audio/focus": {
+      "types": "./dist/audio/focus.d.ts",
+      "default": "./dist/audio/focus.js"
+    }
   }
 }
