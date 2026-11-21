@@ -658,14 +658,17 @@ test.describe('Giao diện tiếng Anh (người nước ngoài)', () => {
       await route.fulfill({ json: { text: 'Cho tôi một bát phở', confidence: 0.9, words: [], mock: false } });
     });
     await page.goto('/hoi-thoai');
-    await page.getByRole('button', { name: 'Speak' }).click();
-    // Lần đầu: thông báo quyền riêng tư, chưa ghi âm cho tới khi đồng ý
-    await expect(page.getByRole('dialog', { name: /Where does your voice go/ })).toBeVisible();
+    const mic = page.getByRole('button', { name: 'Hold to talk' });
+    await mic.dispatchEvent('pointerdown');
+    // Lần đầu: hộp đồng ý AI, chưa ghi âm cho tới khi đồng ý
+    await expect(page.getByRole('dialog', { name: /Which AI services/ })).toBeVisible();
     expect(upload).toBeNull();
-    await page.getByRole('button', { name: 'OK, record' }).click();
-    await expect(page.getByRole('button', { name: 'Stop recording' })).toBeVisible();
+    await page.getByRole('button', { name: 'Got it, continue' }).click();
+    // giữ lại lần nữa sau khi đồng ý
+    await mic.dispatchEvent('pointerdown');
+    await expect(page.getByRole('status').filter({ hasText: 'Listening' })).toBeVisible();
     await page.waitForTimeout(900);
-    await page.getByRole('button', { name: 'Stop recording' }).click();
+    await mic.dispatchEvent('pointerup');
     await expect(page.getByLabel('Message')).toHaveValue('Cho tôi một bát phở');
     await expect(page.getByText('Check the recognised text, then tap Send.')).toBeVisible();
     expect(upload!.type).toMatch(/multipart\/form-data/);

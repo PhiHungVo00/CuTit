@@ -22,6 +22,8 @@ export function Composer({ busy, remaining, placeholder, ensureConsent, onSend, 
   const [note, setNote] = useState('');
   const [photoError, setPhotoError] = useState<string | null>(null);
   const fromVoice = useRef(false);
+  /** ngón tay còn đang giữ nút micro (hoặc bàn phím đã bật); hộp đồng ý hiện giữa chừng thì phải giữ lại lần nữa */
+  const holding = useRef(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const voice = useVoiceInput(({ text, mock }) => {
     fromVoice.current = true;
@@ -56,10 +58,12 @@ export function Composer({ busy, remaining, placeholder, ensureConsent, onSend, 
   const startTalk = async () => {
     if (recording || busy || noSpeech) return;
     if (!(await ensureConsent('voice'))) return;
+    if (!holding.current) return;
     setNote('');
     void voice.start();
   };
   const stopTalk = () => {
+    holding.current = false;
     if (recording) void voice.stop();
   };
   const onMicKey = (e: KeyboardEvent) => {
@@ -67,7 +71,10 @@ export function Composer({ busy, remaining, placeholder, ensureConsent, onSend, 
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
       if (recording) stopTalk();
-      else void startTalk();
+      else {
+        holding.current = true;
+        void startTalk();
+      }
     }
   };
 
@@ -124,7 +131,10 @@ export function Composer({ busy, remaining, placeholder, ensureConsent, onSend, 
           title={t('holdToTalk')}
           aria-pressed={recording}
           disabled={busy || noSpeech}
-          onPointerDown={() => void startTalk()}
+          onPointerDown={() => {
+            holding.current = true;
+            void startTalk();
+          }}
           onPointerUp={stopTalk}
           onPointerCancel={stopTalk}
           onPointerLeave={stopTalk}
