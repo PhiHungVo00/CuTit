@@ -1,3 +1,4 @@
+import './cutit.css';
 import { defineMessages } from '@vietlearning/state';
 
 export type CuTitMood = 'chao' | 'khen' | 'an-mung' | 'dong-vien' | 'suy-nghi' | 'nghe' | 'noi' | 'nhac-hoc' | 'buon' | 'ngu' | 'chan-dung';
