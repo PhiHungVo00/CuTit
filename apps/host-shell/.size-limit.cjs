@@ -23,7 +23,9 @@ module.exports = [
   // CSS của CuTit (chuyển động theo trạng thái). Đo sau gộp: 7.83 kB; chừa ~0.3 kB cho đợt 2 (thanh tab, bong bóng).
   // 8.1 → 8.4 kB (dự án 1 đợt 2, 2026-11-20): bong bóng Cu Tít + lời giới thiệu, thanh đổi chế độ màn Cu Tít, danh sách hàng,
   // chuyển cảnh/fade và luật giảm chuyển động (đo 8.35 kB)
-  { name: 'CSS toàn app (Tailwind + tokens)', path: 'dist/assets/*.css', limit: '8.4 kB', gzip: true },
+  // 8.4 → 8.7 kB (P0-1 soi FE, 2026-11-21): cutit.css thực sự được nạp (trước đó bị bỏ sót nên đo thiếu ~0.25 kB). Nằm trong tệp CSS
+  // lười đi cùng chunk CuTit, KHÔNG vào CSS tải đầu (index-*.css giữ nguyên); đo tổng 8.6 kB.
+  { name: 'CSS toàn app (Tailwind + tokens)', path: 'dist/assets/*.css', limit: '8.7 kB', gzip: true },
   { name: 'M3 Ma trận xưng hô (lazy)', path: 'dist/assets/HonorificScreen-*.js', limit: '15 kB', gzip: true },
   { name: 'M3 Bảng 20 cặp + Radix Dialog (lazy khi mở)', path: 'dist/assets/HonorificExplorerDrawer-*.js', limit: '18 kB', gzip: true },
   { name: 'M2 Luyện thanh điệu (lazy)', path: 'dist/assets/ToneLabRoute-*.js', limit: '9 kB', gzip: true },

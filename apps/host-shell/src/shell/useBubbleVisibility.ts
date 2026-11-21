@@ -26,8 +26,9 @@ export function isTextEntry(el: Element | null): boolean {
   return el instanceof HTMLInputElement && !['checkbox', 'radio', 'button', 'submit', 'range', 'file', 'color', 'reset', 'image'].includes(el.type);
 }
 
+/** Làm quen (/bat-dau) ẩn bong bóng nhưng giữ thanh tab (bước 1 không có nút Quay lại). */
 export function bubbleVisibility(s: { pathname: string; scrollMode: ScrollMode; keyboardOpen: boolean; audioBusy: boolean }): BubbleVisibility {
-  if (isFocusRoute(s.pathname) || s.keyboardOpen || s.audioBusy) return 'hidden';
+  if (isFocusRoute(s.pathname) || s.pathname === '/bat-dau' || s.keyboardOpen || s.audioBusy) return 'hidden';
   return s.scrollMode;
 }
 
