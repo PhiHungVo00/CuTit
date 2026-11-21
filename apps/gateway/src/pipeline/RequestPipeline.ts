@@ -57,6 +57,9 @@ function providerWasCalled(cause: unknown): boolean {
  */
 const NO_REFUND = new Set(['llm_blocked', 'llm_rejected']);
 
+/** API còn mở cho tài khoản đang chờ xóa: tự khôi phục hoặc "Xóa ngay" */
+const PENDING_ALLOWED = new Set(['POST /v1/me/restore', 'DELETE /v1/me']);
+
 export class RequestPipeline {
   private readonly limits: Record<Capability, number>;
   /** trần dùng chung toàn app (0 = không giới hạn); tts không có trần chung (không tốn hạn mức nhà cung cấp AI) */
@@ -100,8 +103,14 @@ export class RequestPipeline {
         return;
       }
       // Tài khoản đã xóa (DELETE /v1/me) => access token còn hạn cũng không dùng được nữa
-      if (!(await this.userExists(sub))) {
+      const state = await this.userState(sub);
+      if (state === 'gone') {
         reply.status(401).send({ error: 'account_deleted' });
+        return;
+      }
+      // Đang chờ xóa (30 ngày): khóa mọi API, trừ khôi phục / xóa ngay
+      if (state === 'pending' && !PENDING_ALLOWED.has(`${request.method} ${request.url.split('?')[0]}`)) {
+        reply.status(403).send({ error: 'account_pending_deletion' });
         return;
       }
       request.principal = { id: sub, anonymous: false };
@@ -116,18 +125,25 @@ export class RequestPipeline {
     request.principal = { id: `anon:${request.ip}`, anonymous: true };
   };
 
-  private async userExists(id: string): Promise<boolean> {
+  /** Giờ của pipeline (đồng hồ tiêm được) — route dùng chung để test mốc thời gian không chờ thật */
+  now(): Date {
+    return this.clock();
+  }
+
+  /** active = dùng bình thường; pending = chờ xóa còn hạn (khôi phục được); gone = không còn / quá hạn xóa. Chỉ nhớ `active`. */
+  private async userState(id: string): Promise<'active' | 'pending' | 'gone'> {
     const until = this.knownUsers.get(id);
-    if (until && until > Date.now()) return true;
+    if (until && until > Date.now()) return 'active';
     const db = await this.db.get();
     const [row] = await db
-      .select({ id: schema.users.id })
+      .select({ id: schema.users.id, deleteAt: schema.users.deleteAt })
       .from(schema.users)
       .where(and(eq(schema.users.id, id), isNull(schema.users.deletedAt)));
-    if (!row) return false;
+    if (!row) return 'gone';
+    if (row.deleteAt) return row.deleteAt.getTime() > this.clock().getTime() ? 'pending' : 'gone';
     if (this.knownUsers.size > 50_000) this.knownUsers.clear();
     this.knownUsers.set(id, Date.now() + USER_CACHE_MS);
-    return true;
+    return 'active';
   }
 
   /** Gọi sau khi xóa tài khoản để token cũ bị từ chối ngay (một instance; nhiều instance: trễ ≤ 60 s) */
