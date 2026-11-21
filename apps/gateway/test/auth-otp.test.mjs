@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { and, eq } from 'drizzle-orm';
 import { createDbProvider, schema } from '../dist/db/client.js';
 import { loadConfig } from '../dist/config.js';
+import { quotaDay } from '../dist/pipeline/QuotaStore.js';
 import { makeApp } from './helpers.mjs';
 
 /** Xem auth-password.test.mjs: TEST_DATABASE_URL => chạy thêm trên Postgres thật, tên/email có hậu tố ngẫu nhiên */
@@ -35,10 +36,24 @@ function fakeMail({ available = true } = {}) {
   };
 }
 
+/** Thư đã gửi hôm nay trong DB (Postgres dùng chung giữa các lần chạy => trần MAIL_DAILY_CAP tính thêm phần này) */
+async function mailSentToday(dbp) {
+  const d = await dbp.get();
+  const rows = await d.select().from(schema.aiGlobalUsage).where(and(eq(schema.aiGlobalUsage.capability, 'mail'), eq(schema.aiGlobalUsage.usageDay, quotaDay(new Date()))));
+  return rows[0]?.units ?? 0;
+}
+
 async function makeAuthApp(env = {}, opts = {}) {
   const dbp = createDbProvider(PG ? { DATABASE_URL: PG, PGLITE_DIR: 'memory://' } : { PGLITE_DIR: 'memory://' });
   let now = Date.now();
-  const app = await makeApp({ ...ENV, ...env }, { db: dbp, clock: () => new Date(now), ...opts });
+  const cap = env.MAIL_DAILY_CAP && PG ? { MAIL_DAILY_CAP: String(Number(env.MAIL_DAILY_CAP) + (await mailSentToday(dbp))) } : {};
+  const app = await makeApp({ ...ENV, ...env, ...cap }, { db: dbp, clock: () => new Date(now), ...opts });
+  if (PG) {
+    // bộ đếm theo IP là toàn cục => mỗi app một IP riêng
+    const ip = `10.${1 + Math.floor(Math.random() * 250)}.${1 + Math.floor(Math.random() * 250)}.${1 + Math.floor(Math.random() * 250)}`;
+    const inject = app.inject.bind(app);
+    app.inject = (o) => inject({ remoteAddress: ip, ...o });
+  }
   app.dbForTest = () => dbp.get();
   app.advance = (ms) => {
     now += ms;
