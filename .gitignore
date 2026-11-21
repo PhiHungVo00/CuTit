@@ -52,6 +52,8 @@ __pycache__/
 # Claude Code: worktree tạm và cấu hình cá nhân (không commit)
 .claude/worktrees/
 .claude/settings.local.json
+.claude/data/
+.playwright-mcp/
 
 # bản phác brainstorm (cục bộ)
 .superpowers/
