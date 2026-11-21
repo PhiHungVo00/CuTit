@@ -15,7 +15,7 @@ afterEach(() => {
   learnerStore.getState().reset();
 });
 
-describe('Nút 🐢 đọc chậm (việc sót GĐ4a)', () => {
+describe('Nút đọc chậm (việc sót GĐ4a)', () => {
   it('đọc lại bằng TTS của máy ở 0,75× tốc độ gốc của màn (nhân tốc độ M12)', () => {
     render(<SlowListen text="xin chào" base={0.85} />);
     fireEvent.click(screen.getByRole('button', { name: 'Nghe chậm “xin chào”' }));
@@ -37,6 +37,6 @@ describe('Nút 🐢 đọc chậm (việc sót GĐ4a)', () => {
   it('tiếng Anh', () => {
     learnerStore.getState().setPreferences({ uiLanguage: 'en' });
     render(<SlowListen text="xin chào" base={0.85} />);
-    expect(screen.getByRole('button', { name: 'Listen slowly to “xin chào”' }).textContent).toContain('🐢');
+    expect(screen.getByRole('button', { name: 'Listen slowly to “xin chào”' }).textContent).toContain('0.75×');
   });
 });

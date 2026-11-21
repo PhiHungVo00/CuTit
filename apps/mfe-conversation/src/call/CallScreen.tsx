@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { canOpenAppSettings, openAppSettings } from '@vietlearning/native';
 import { useLearner } from '@vietlearning/state';
+import { Button, CuTit, Icon } from '@vietlearning/ui';
 import { VoiceConsent } from '../chat/VoiceConsent';
 import { t as tConv, useT } from '../i18n';
 import { buildSummary } from '../summary/summaryItems';
@@ -9,6 +10,7 @@ import { SessionSummary } from '../summary/SessionSummary';
 import { useCall } from './useCall';
 
 const pill = 'min-h-12 rounded-xl border border-line-strong bg-surface-2 px-3 text-sm font-bold text-ink';
+const full = { width: '100%' } as const;
 
 /** Màn gọi thoại với Bé Cu Tít (GĐ3): nói → STT → LLM → đọc trả lời, phụ đề, nói chậm, gõ thay nói. */
 export function CallScreen() {
@@ -19,7 +21,8 @@ export function CallScreen() {
       <div className="mx-auto flex max-w-[560px] flex-col gap-4">
         <header className="flex items-center justify-between gap-2 border-b-2 border-line pb-4">
           <h1 className="m-0 text-[26px] font-black leading-tight tracking-tight text-heading">{t('callTitle')}</h1>
-          <Link to="/hoi-thoai" className="flex min-h-11 items-center rounded-xl border border-line-strong bg-surface px-3 text-sm font-bold text-ink no-underline">
+          <Link to="/hoi-thoai" className="flex min-h-11 items-center gap-1 rounded-xl border border-line-strong bg-surface px-3 text-sm font-bold text-ink no-underline">
+            <Icon name="chat" size={18} />
             {t('chatLink')}
           </Link>
         </header>
@@ -62,9 +65,7 @@ function Call({ onAgain }: { onAgain: () => void }) {
   if (phase === 'idle') {
     return (
       <section className="flex flex-col items-center gap-3 rounded-2xl border border-line-strong bg-surface p-5 text-center shadow-card">
-        <span aria-hidden="true" className="text-6xl">
-          🐣
-        </span>
+        <CuTit mood="chao" size={112} />
         <p className="m-0 text-[15px] text-ink-soft">{t('callIntro')}</p>
         {askConsent ? (
           <VoiceConsent
@@ -77,12 +78,13 @@ function Call({ onAgain }: { onAgain: () => void }) {
           />
         ) : (
           <div className="flex w-full flex-col gap-2">
-            <button type="button" onClick={() => start('voice')} className="min-h-14 rounded-2xl bg-accent px-4 text-lg font-extrabold text-accent-ink">
+            <Button size="lg" style={full} onClick={() => start('voice')}>
+              <Icon name="goi" size={22} />
               {t('callStart')}
-            </button>
-            <button type="button" onClick={() => start('text')} className={pill}>
+            </Button>
+            <Button variant="secondary" style={full} onClick={() => start('text')}>
               {t('typeInstead')}
-            </button>
+            </Button>
           </div>
         )}
         {turnsNote}
@@ -106,9 +108,10 @@ function Call({ onAgain }: { onAgain: () => void }) {
         {state.reason === 'max-turns' && <p className="m-0 text-sm text-ink-soft">{t('callMaxTurns')}</p>}
         <SessionSummary items={buildSummary(corrections, words, (s) => tConv('youSaid', { text: s }))} />
         {state.reason !== 'quota' && (
-          <button type="button" onClick={onAgain} className="min-h-12 rounded-xl bg-accent px-4 font-extrabold text-accent-ink">
+          <Button style={full} onClick={onAgain}>
+            <Icon name="goi" size={20} />
             {t('callAgain')}
-          </button>
+          </Button>
         )}
         <Link to="/" className={`${pill} flex items-center justify-center no-underline`}>
           {t('backHome')}
@@ -134,9 +137,7 @@ function Call({ onAgain }: { onAgain: () => void }) {
   return (
     <>
       <section className="flex flex-col items-center gap-2 rounded-2xl border border-line-strong bg-surface p-4 text-center shadow-card">
-        <span aria-hidden="true" className={`text-6xl ${phase === 'speaking' ? 'animate-pulse' : ''}`}>
-          🐣
-        </span>
+        <CuTit mood={phase === 'speaking' ? 'noi' : phase === 'thinking' ? 'suy-nghi' : phase === 'listening' ? 'nghe' : 'chao'} size={112} />
         <p role="status" aria-live="polite" className="m-0 text-[16px] font-bold text-ink" data-testid="call-status">
           {status}
         </p>
@@ -151,22 +152,18 @@ function Call({ onAgain }: { onAgain: () => void }) {
               {t(`voice.${state.micError}` as 'voice.failed')} {t('micToText')}
             </p>
             {state.micError === 'permission-denied' && canOpenAppSettings() && (
-              <button type="button" onClick={() => void openAppSettings()} className="min-h-12 rounded-xl border border-line-strong bg-surface px-4 font-bold text-ink">
+              <Button variant="secondary" onClick={() => void openAppSettings()}>
                 {t('openSettings')}
-              </button>
+              </Button>
             )}
           </div>
         )}
         {phase === 'paused' && (
           <div className="flex w-full flex-col gap-2">
             {state.error && state.pendingText ? (
-              <button type="button" onClick={() => dispatch({ type: 'RETRY' })} className="min-h-12 rounded-xl bg-accent px-4 font-extrabold text-accent-ink">
-                {t('retry')}
-              </button>
+              <Button onClick={() => dispatch({ type: 'RETRY' })}>{t('retry')}</Button>
             ) : (
-              <button type="button" onClick={() => dispatch({ type: 'RESUME' })} className="min-h-12 rounded-xl bg-accent px-4 font-extrabold text-accent-ink">
-                {t('callResume')}
-              </button>
+              <Button onClick={() => dispatch({ type: 'RESUME' })}>{t('callResume')}</Button>
             )}
           </div>
         )}
@@ -200,31 +197,32 @@ function Call({ onAgain }: { onAgain: () => void }) {
             enterKeyHint="send"
             className="min-h-12 min-w-0 flex-1 rounded-xl border border-line bg-surface-2 px-3 text-[16px] text-ink"
           />
-          <button type="submit" disabled={!draft.trim()} className="min-h-12 rounded-xl bg-accent px-4 font-extrabold text-accent-ink disabled:opacity-50">
+          <Button type="submit" disabled={!draft.trim()}>
             {t('send')}
-          </button>
+          </Button>
         </form>
       )}
 
       <div className="grid grid-cols-2 gap-2">
-        <button type="button" aria-pressed={slow} onClick={() => (slow ? setSlow(false) : replaySlow())} disabled={phase === 'thinking'} className={`${pill} disabled:opacity-50`}>
+        <Button variant="secondary" aria-pressed={slow} onClick={() => (slow ? setSlow(false) : replaySlow())} disabled={phase === 'thinking'}>
           {slow ? t('slowOn') : t('slowDown')}
-        </button>
-        <button type="button" aria-pressed={subtitles} onClick={() => setSubtitles((v) => !v)} className={pill}>
+        </Button>
+        <Button variant="secondary" aria-pressed={subtitles} onClick={() => setSubtitles((v) => !v)}>
           {subtitles ? t('subtitlesOn') : t('subtitlesOff')}
-        </button>
+        </Button>
         {state.input === 'voice' ? (
-          <button type="button" onClick={toText} disabled={phase === 'thinking' || phase === 'speaking'} className={`${pill} disabled:opacity-50`}>
+          <Button variant="secondary" onClick={toText} disabled={phase === 'thinking' || phase === 'speaking'}>
             {t('typeInstead')}
-          </button>
+          </Button>
         ) : (
-          <button type="button" onClick={toVoice} disabled={phase === 'thinking' || phase === 'speaking'} className={`${pill} disabled:opacity-50`}>
+          <Button variant="secondary" onClick={toVoice} disabled={phase === 'thinking' || phase === 'speaking'}>
             {t('speakInstead')}
-          </button>
+          </Button>
         )}
-        <button type="button" onClick={() => dispatch({ type: 'HANG_UP' })} className="min-h-12 rounded-xl border border-danger bg-danger-soft px-3 text-sm font-extrabold text-danger-ink">
+        <Button variant="danger" onClick={() => dispatch({ type: 'HANG_UP' })}>
+          <Icon name="goi" size={18} />
           {t('hangUp')}
-        </button>
+        </Button>
       </div>
 
       {subtitles ? (
