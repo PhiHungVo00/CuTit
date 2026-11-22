@@ -41,6 +41,14 @@ test('password.ts: argon2id đúng tham số OWASP (m=19456, t=2, p=1), verify �
   assert.equal(await verifyPassword('không-phải-hash', PW), false);
 });
 
+test('password.ts: mật khẩu có dấu gõ dạng NFD (tổ hợp) vẫn khớp hash tạo từ NFC (rà kien-truc RA-DOT2)', async () => {
+  const nfc = 'Mèo con đáng yêu'.normalize('NFC');
+  const nfd = nfc.normalize('NFD');
+  assert.notEqual(nfc, nfd);
+  assert.equal(await verifyPassword(await hashPassword(nfc), nfd), true);
+  assert.equal(await verifyPassword(await hashPassword(nfd), nfc), true);
+});
+
 test('password.ts: chặn mật khẩu phổ biến (kể cả thêm số/ký hiệu ở đuôi, hoa thường) và trùng tên đăng nhập', () => {
   assert.equal(isWeakPassword('password123', 'mai.le'), true);
   assert.equal(isWeakPassword('PASSWORD', 'mai.le'), true);
