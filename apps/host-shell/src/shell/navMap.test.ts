@@ -21,6 +21,7 @@ describe('tabOf', () => {
     ['/cai-dat', 'ho-so'],
     ['/cai-dat/am-thanh', 'ho-so'],
     ['/bat-dau', 'ho-so'],
+    ['/dang-nhap', 'ho-so'],
     ['/quyen-rieng-tu', 'ho-so']
   ])('%s ⇒ %s', (p, tab) => expect(tabOf(p)).toBe(tab));
 

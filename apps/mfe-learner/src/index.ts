@@ -4,4 +4,6 @@ export { ProgressScreen } from './progress/ProgressScreen';
 export { ProfileScreen } from './profile/ProfileScreen';
 export { SettingsIndex, SettingsGroup, PreferencesScreen, type SettingsGroupId } from './settings/SettingsIndex';
 export { FriendsScreen } from './friends/FriendsScreen';
+export { AuthScreen } from './account/AuthScreen';
+export { SignInInvite } from './account/SignInInvite';
 export { SETTINGS_GROUPS } from './settings/groups';
