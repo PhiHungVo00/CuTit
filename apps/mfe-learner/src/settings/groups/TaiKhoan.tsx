@@ -1,43 +1,15 @@
-import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { AccountPanel } from '../../account/AccountPanel';
-import { defaultDeps, type AuthDeps } from '../../account/deps';
-import { useT as useAccountT } from '../../account/i18n';
-import { card, primaryBtn } from '../../common/ui';
-import { AccountSection, type AccountDeps } from '../../preferences/AccountSection';
+import { lazy, Suspense } from 'react';
+import type { AccountDeps } from '../../preferences/AccountSection';
+import type { AuthDeps } from '../../account/deps';
+
+// Dự án 3: toàn bộ giao diện tài khoản nạp LƯỜI (chunk riêng) để mục lục Cài đặt giữ trong ngân sách bundle
+const AccountGroup = lazy(() => import('../../account/AccountGroup').then((m) => ({ default: m.AccountGroup })));
 
 /** Cài đặt › Tài khoản: tài khoản thật => AccountPanel; khách => lời mời đăng nhập + mã khôi phục/đồng bộ như trước. */
-export function TaiKhoan({ deps, authDeps = defaultDeps }: { deps?: AccountDeps; authDeps?: AuthDeps }) {
-  const t = useAccountT();
-  const navigate = useNavigate();
-  const [kind, setKind] = useState<'guest' | 'account' | null>(null);
-
-  useEffect(() => {
-    let live = true;
-    void authDeps
-      .session()
-      .then((s) => s.info())
-      .then((i) => live && setKind(i?.kind === 'account' ? 'account' : 'guest'))
-      .catch(() => live && setKind('guest'));
-    return () => {
-      live = false;
-    };
-  }, [authDeps]);
-
-  if (kind === null) return null;
-  if (kind === 'account') return <AccountPanel deps={authDeps} />;
+export function TaiKhoan({ deps, authDeps }: { deps?: AccountDeps; authDeps?: AuthDeps }) {
   return (
-    <>
-      <section className={card} aria-labelledby="ct-guest-acct">
-        <h2 id="ct-guest-acct" className="m-0 text-lg font-extrabold text-ink">
-          {t('guestAcctTitle')}
-        </h2>
-        <p className="m-0 text-[15px] text-ink-soft">{t('guestAcctBody')}</p>
-        <button type="button" className={primaryBtn} onClick={() => navigate('/dang-nhap')}>
-          {t('profileSignIn')}
-        </button>
-      </section>
-      <AccountSection deps={deps} />
-    </>
+    <Suspense fallback={null}>
+      <AccountGroup deps={deps} authDeps={authDeps} />
+    </Suspense>
   );
 }

@@ -110,7 +110,7 @@ export function PasswordField({
             onClick={() => setShown((s) => !s)}
             className="min-h-12 min-w-14 rounded-xl border border-line-strong bg-surface-2 px-3 text-sm font-bold text-ink"
           >
-            {shown ? '🙈' : '👁'}
+            {shown ? t('hideWord') : t('showWord')}
           </button>
         }
       />
