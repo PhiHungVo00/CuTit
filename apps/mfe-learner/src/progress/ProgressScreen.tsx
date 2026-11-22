@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { accuracyBySkill, cefrLabel, computeStreak, dueCards, useLearner, type SrsCard, type Skill } from '@vietlearning/state';
-import { Button, Card, CuTit, Icon } from '@vietlearning/ui';
+import { Button, Card, CuTit, EmptyState, Icon } from '@vietlearning/ui';
 import { ScreenFrame, linkBtn } from '../common/ui';
 import { useT } from '../i18n';
 import { ReviewSession } from './ReviewSession';
@@ -101,29 +101,46 @@ export function ProgressScreen() {
             <h2 id="ct-week" className="m-0 text-lg font-extrabold text-ink">
               {t('weekTitle')}
             </h2>
-            {/* Một chuỗi số liệu => không cần chú giải; danh sách ẩn bên dưới là bản bảng cho trình đọc màn hình */}
-            <div className="flex h-32 items-end gap-2 border-b border-line" aria-hidden="true">
-              {week.map((d) => (
-                <div key={d.key} className="flex h-full flex-1 flex-col items-center justify-end gap-1" title={`${d.label}: ${t('minutes', { n: d.minutes })}`}>
-                  {(d.isToday || d.minutes === max) && d.minutes > 0 && <span className="text-xs font-bold text-ink-soft">{d.minutes}</span>}
-                  <div className="w-full max-w-7 rounded-t-[4px] bg-accent" style={{ height: `${(d.minutes / max) * 100}%`, minHeight: d.minutes > 0 ? 3 : 0 }} />
+            {weekMinutes === 0 ? (
+              <EmptyState
+                mood="chao"
+                size={72}
+                as="h3"
+                title={t('weekEmptyTitle')}
+                body={t('weekEmptyBody')}
+                action={
+                  <Link to="/" className={`${linkBtn} justify-center`}>
+                    {t('startNow')}
+                  </Link>
+                }
+              />
+            ) : (
+              <>
+                {/* Một chuỗi số liệu => không cần chú giải; danh sách ẩn bên dưới là bản bảng cho trình đọc màn hình */}
+                <div className="flex h-32 items-end gap-2 border-b border-line" aria-hidden="true">
+                  {week.map((d) => (
+                    <div key={d.key} className="flex h-full flex-1 flex-col items-center justify-end gap-1" title={`${d.label}: ${t('minutes', { n: d.minutes })}`}>
+                      {(d.isToday || d.minutes === max) && d.minutes > 0 && <span className="text-xs font-bold text-ink-soft">{d.minutes}</span>}
+                      <div className="w-full max-w-7 rounded-t-[4px] bg-accent" style={{ height: `${(d.minutes / max) * 100}%`, minHeight: d.minutes > 0 ? 3 : 0 }} />
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-            <div className="flex gap-2" aria-hidden="true">
-              {week.map((d) => (
-                <span key={d.key} className={['flex-1 text-center text-xs', d.isToday ? 'font-bold text-ink' : 'text-ink-muted'].join(' ')}>
-                  {d.label}
-                </span>
-              ))}
-            </div>
-            <ul className="sr-only">
-              {week.map((d) => (
-                <li key={d.key}>
-                  {d.label}: {t('minutes', { n: d.minutes })}
-                </li>
-              ))}
-            </ul>
+                <div className="flex gap-2" aria-hidden="true">
+                  {week.map((d) => (
+                    <span key={d.key} className={['flex-1 text-center text-xs', d.isToday ? 'font-bold text-ink' : 'text-ink-muted'].join(' ')}>
+                      {d.label}
+                    </span>
+                  ))}
+                </div>
+                <ul className="sr-only">
+                  {week.map((d) => (
+                    <li key={d.key}>
+                      {d.label}: {t('minutes', { n: d.minutes })}
+                    </li>
+                  ))}
+                </ul>
+              </>
+            )}
           </Card>
 
           <Card role="region" aria-labelledby="ct-acc" elevated style={sectionStyle}>

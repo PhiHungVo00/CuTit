@@ -86,6 +86,10 @@ export const { useT, t } = defineMessages(
 
     // Ôn tập
     reviewTitle: 'Ôn tập',
+    reviewEmptyTitle: 'Chưa có gì để ôn',
+    reviewEmptyBody: 'Làm bài đầu tiên rồi quay lại: câu sai sẽ vào đây để bạn ôn đúng lúc sắp quên.',
+    reviewAllDoneTitle: 'Hôm nay ôn xong rồi!',
+    reviewAllDoneBody: 'Giỏi quá! Quay lại sau để ôn những thẻ mới đến hạn.',
     reviewIntro: 'Ôn đúng lúc sắp quên (SM-2), làm lại câu sai gần đây, luyện thanh còn yếu.',
     dueTitle: 'Thẻ đến hạn',
     dueStart: 'Ôn {n} thẻ',
@@ -197,6 +201,10 @@ export const { useT, t } = defineMessages(
     nextLesson: 'Continue: {lesson}',
 
     reviewTitle: 'Review',
+    reviewEmptyTitle: 'Nothing to review yet',
+    reviewEmptyBody: 'Do your first lesson and come back: questions you miss land here so you review them just before you forget.',
+    reviewAllDoneTitle: 'All reviewed for today!',
+    reviewAllDoneBody: 'Great job! Come back later for cards that become due.',
     reviewIntro: 'Review just before you forget (SM-2), redo recent mistakes, practise your weakest tone.',
     dueTitle: 'Cards due',
     dueStart: 'Review {n} cards',
