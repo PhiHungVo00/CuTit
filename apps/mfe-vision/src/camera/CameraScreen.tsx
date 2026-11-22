@@ -189,11 +189,15 @@ export function CameraScreen() {
             <p id="ct-camera-consent" className="m-0 text-[15px] font-bold text-ink">
               {t('consentTitle')}
             </p>
-            <p className="m-0 text-sm text-ink-soft">{t('consentBody')}</p>
+            <p className="m-0 text-sm text-ink-soft">{t('consentShort')}</p>
+            <details className="text-sm text-ink-soft">
+              <summary className="flex min-h-11 cursor-pointer items-center font-bold text-ink">{t('consentDetails')}</summary>
+              <p className="m-0 pb-2">{t('consentBody')}</p>
+            </details>
             <Link to="/quyen-rieng-tu" className="self-start text-sm font-bold text-ink underline">
               {t('privacyPolicy')}
             </Link>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="sticky bottom-0 grid grid-cols-2 gap-2 bg-surface-2 pb-1 pt-2">
               <Button variant="secondary" onClick={() => setAsk(null)}>
                 {t('consentNo')}
               </Button>
