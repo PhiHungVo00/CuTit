@@ -38,4 +38,21 @@ describe('VoiceConsent (hộp đồng ý micro dùng chung cho chat, nhập vai,
     expect(onAgree).toHaveBeenCalled();
     expect(learnerStore.getState().consents.voice).toBe(true);
   });
+
+  it('rút gọn: 2 dòng tóm tắt hiện sẵn, đoạn đầy đủ gập trong “Chi tiết”; nút chính dính đáy', () => {
+    learnerStore.getState().setPreferences({ uiLanguage: 'vi' });
+    show();
+    expect(screen.getByText(/gửi qua máy chủ Bé Cu Tít tới Google Gemini/)).toBeTruthy();
+    const details = screen.getByText('Chi tiết').closest('details')!;
+    expect(details.open).toBe(false);
+    expect(details.textContent).toContain('Âm thanh gửi qua Gateway.');
+    const agree = screen.getByRole('button', { name: 'Đồng ý, ghi âm' });
+    expect(agree.parentElement!.className).toContain('sticky');
+  });
+
+  it('tóm tắt và “Details” bằng tiếng Anh', () => {
+    learnerStore.getState().setPreferences({ uiLanguage: 'en' });
+    show();
+    expect(screen.getByText('Details')).toBeTruthy();
+  });
 });
