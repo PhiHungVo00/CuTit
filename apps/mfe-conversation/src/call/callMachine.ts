@@ -20,10 +20,18 @@ export interface CallState {
   reason: EndReason | null;
   /** true = lượt đang gửi là gửi LẠI câu cũ sau lỗi (dùng session.retry, không thêm dòng mới) */
   retry: boolean;
+  /** true = gọi video (camera đang bật, mỗi lượt nói kèm 1 ảnh); false = gọi thường */
+  video: boolean;
+  /** lý do camera đã tắt giữa cuộc gọi (để hiện thông báo), null = chưa tắt */
+  cameraNote: CameraOffReason | null;
 }
 
+export type CameraOffReason = 'permission-denied' | 'user' | 'failed';
+
 export type CallAction =
-  | { type: 'START' }
+  | { type: 'START'; video?: boolean }
+  /** camera bị từ chối / người dùng tắt / lỗi ⇒ sang gọi thường, cuộc gọi tiếp tục */
+  | { type: 'CAMERA_OFF'; reason: CameraOffReason }
   | { type: 'HEARD'; text: string }
   | { type: 'NO_SPEECH' }
   | { type: 'SEND_TYPED'; text: string }
@@ -40,7 +48,7 @@ export type CallAction =
   | { type: 'TURN_FAILED'; quota: boolean; message: string }
   | { type: 'HANG_UP' };
 
-export const initialCall: CallState = { phase: 'idle', input: 'voice', turns: 0, pendingText: null, error: null, micError: null, reason: null, retry: false };
+export const initialCall: CallState = { phase: 'idle', input: 'voice', turns: 0, pendingText: null, error: null, micError: null, reason: null, retry: false, video: false, cameraNote: null };
 
 const waitForLearner = (s: CallState): CallState => ({ ...s, phase: s.input === 'voice' ? 'listening' : 'typing' });
 
@@ -52,7 +60,9 @@ export function callReducer(s: CallState, a: CallAction): CallState {
 
   switch (a.type) {
     case 'START':
-      return s.phase === 'idle' ? waitForLearner({ ...s, error: null }) : s;
+      return s.phase === 'idle' ? waitForLearner({ ...s, error: null, video: a.video === true }) : s;
+    case 'CAMERA_OFF':
+      return s.video ? { ...s, video: false, cameraNote: a.reason } : s;
     case 'HEARD':
       return s.phase === 'listening' ? { ...s, phase: 'thinking', pendingText: a.text, error: null, retry: false } : s;
     case 'SEND_TYPED':
