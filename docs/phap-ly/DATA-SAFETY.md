@@ -1,5 +1,7 @@
 # Khai báo Google Play — mục An toàn dữ liệu (Data safety) — BẢN NHÁP
 
+> **Cập nhật 21/11/2026 (dự án 2, Cu Tít AI):** nhà cung cấp AI nay là Google (Gemini), **Groq**, **OpenRouter** (chuỗi dự phòng); thêm **ảnh/khung hình gọi video**, **lịch sử chat chỉ trên máy**. Xem mục 4 cuối tệp.
+
 > Dùng khi đưa app lên Google Play (việc phát hành đang hoãn). Đối chiếu mã nguồn ngày 19/11/2026 — **khai lại nếu mã đổi** (thêm SDK, thêm bảng, đổi nhà cung cấp AI).
 > Thuật ngữ theo trang trợ giúp Play Console `support.google.com/googleplay/android-developer/answer/10787469` và yêu cầu xóa tài khoản `…/answer/13327111` (đã đọc 19/11/2026) — **đọc lại bản hiện hành khi khai**:
 > - **Collected (thu thập)** = dữ liệu được gửi ra khỏi thiết bị (kể cả tới máy chủ của chính mình). Dữ liệu chỉ ở trên máy thì không phải khai.
@@ -25,11 +27,11 @@
 | Personal info | **User IDs** | Có | Không | Không | Bắt buộc | App functionality, Account management | UUID ngẫu nhiên của tài khoản khách; không email/SĐT |
 | Personal info | Email, Phone, Address, … | Không | — | — | — | — | |
 | Location | Approximate / Precise | Không | — | — | — | — | IP chỉ dùng cho giới hạn tần suất, không suy ra vị trí |
-| Audio | **Voice or sound recordings** | Có | Không | **Có\*** (Gateway không lưu) | Tùy chọn (hỏi đồng ý `voice`) | App functionality | Gửi tới Google Gemini để chuyển thành chữ/chấm phát âm |
-| Photos and videos | **Photos** | Có | Không | **Có\*** | Tùy chọn (hỏi đồng ý `camera`) | App functionality | Ảnh ≤ 640 px gửi tới Google Gemini để nhận diện đồ vật |
+| Audio | **Voice or sound recordings** | Có | Không | **Có\*** (Gateway không lưu) | Tùy chọn (hỏi đồng ý `voice`) | App functionality | Gửi tới Google Gemini hoặc Groq (Whisper) để chuyển thành chữ/chấm phát âm; tin giọng nói ≤ 15 s |
+| Photos and videos | **Photos** | Có | Không | **Có\*** | Tùy chọn (hỏi đồng ý `camera`) | App functionality | Ảnh JPEG cạnh dài ≤ 768 px (chat, Camera từ vựng) và **một khung hình mỗi lượt nói khi gọi video** gửi tới Google Gemini (nhận diện/mô tả); **OpenRouter** cũng nhận khi nằm trong chuỗi ảnh `VISION_CHAIN` (cấu hình mẫu `.env.example` có) Không gửi video liên tục nên không khai “Videos” |
 | Messages | Other in-app messages | Không | — | — | — | — | App không có nhắn tin giữa người dùng |
 | App activity | **App interactions** | Có | Không | Không | Bắt buộc | App functionality, Analytics (cho chính người học: thống kê tiến độ) | Kết quả bài làm, thời gian học, XP, tiến độ bài, huy hiệu, thẻ ôn |
-| App activity | **Other user-generated content** | Có | Không | **Có\*** | Tùy chọn | App functionality | Tin nhắn với gia sư AI, câu hỏi văn hóa — gửi tới Gemini, không lưu ở Gateway |
+| App activity | **Other user-generated content** | Có | Không | **Có\*** | Tùy chọn | App functionality | Tin nhắn với gia sư AI (kèm ≤ 10 lượt gần nhất + tóm tắt ≤ 600 ký tự), câu hỏi văn hóa — gửi tới Gemini/Groq/OpenRouter, không lưu ở Gateway. Lịch sử chat lưu IndexedDB **trên máy**, không gửi lên máy chủ ⇒ không khai |
 | App activity | In-app search history, Installed apps, Other actions | Không | — | — | — | — | Tìm kiếm trong Cẩm nang văn hóa chạy trên máy |
 | App info and performance | Crash logs, Diagnostics | `[CẦN ĐIỀN]` | Không | — | — | — | Hiện không có SDK báo lỗi. Nhật ký máy chủ (thời gian, đường dẫn, IP) — Play không có loại “IP”; nếu hosting lưu log lâu dài, cân nhắc khai “Diagnostics” |
 | Device or other IDs | | Không | — | — | — | — | Không dùng Advertising ID |
@@ -44,3 +46,9 @@ Không khai “Advertising or marketing”, “Personalization” cho bên thứ
 - Nếu sau này thêm Firebase/Crashlytics/Analytics, **phải** khai lại (SDK đó thu thập Device IDs, Crash logs…).
 - Nếu bật TTS bằng Gemini (`TTS_PROVIDER=gemini`), văn bản bài học (không phải dữ liệu người dùng) được gửi đi — không phải khai.
 - Nếu đổi nhà cung cấp AI (Nguyên tắc 4) thì cập nhật cả chính sách, hồ sơ `DANH-GIA-TAC-DONG.md` mục B (bên nhận mới) và mục này.
+
+## 4. Thay đổi 21/11/2026 — việc cần quyết khi khai thật
+- **Nhà cung cấp mới (Groq, OpenRouter):** vẫn là “nhà cung cấp dịch vụ xử lý thay mặt” (không khai *Shared*) **chỉ khi** có điều khoản xử lý dữ liệu ràng buộc họ làm theo chỉ dẫn của dự án. Gói miễn phí của OpenRouter/Groq có thể lưu và dùng dữ liệu cải thiện dịch vụ ⇒ khó coi là “xử lý tạm thời”. **Khuyến nghị: đánh “Không” cho Processed ephemerally** ở âm thanh, ảnh, tin nhắn tới khi có gói trả phí/ZDR `[CẦN ĐIỀN]`.
+- OpenRouter chuyển tiếp tới nhà vận hành mô hình khác (bên thứ ba thứ hai) — nếu giữ trong chuỗi khi phát hành, ghi nhận trong hồ sơ `DANH-GIA-TAC-DONG.md` mục B và cân nhắc đặt cờ ZDR/không huấn luyện (xem `THAM-KHAO-MAU.md`).
+- Khai “Collected” cho **Photos** có thể tăng vì khung hình gọi video; khai “Optional” (có công tắc camera trong hộp đồng ý).
+- Hộp đồng ý và chính sách khớp nhau: hộp “Quyền khi nói chuyện với Cu Tít” (Task 5) liệt kê Google (Gemini), Groq, OpenRouter; `consents.aiProvidersVersion` = `AI_PROVIDERS_VERSION` (hiện 2) buộc hỏi lại khi danh sách đổi.

@@ -1,12 +1,6 @@
 import { CallScreen } from '@vietlearning/mfe-conversation';
-import { CuTitModeBar } from '../shell/CuTitModeBar';
 
-/** Route bọc mỏng để chunk lazy có tên ổn định "CallRoute". Host thêm thanh đổi chế độ Cu Tít. */
+/** Route bọc mỏng để chunk lazy có tên ổn định "CallRoute". Màn gọi tự có đầu màn; `?video=0|1` do màn gọi đọc. */
 export default function CallRoute() {
-  return (
-    <>
-      <CuTitModeBar />
-      <CallScreen />
-    </>
-  );
+  return <CallScreen />;
 }
