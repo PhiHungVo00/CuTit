@@ -260,7 +260,9 @@ export const passwordAuthRoutes: FastifyPluginAsync<RouteDeps> = async (server, 
     if (!target || result !== 'ok') {
       await counters.hit(d, failKey, OTP_FAIL_EMAIL_WINDOW_MS, now);
       audit.record('auth.password_reset', { outcome: 'failure', userId: target?.userId ?? null, ctx, metadata: { method: 'email', reason: `otp_${result}` } });
-      return reply.status(400).send({ error: `otp_${result}` });
+      // Luôn otp_invalid ra ngoài: chỉ tài khoản CÓ mã đang chờ mới ra được otp_locked/otp_expired => lộ tài khoản nào tồn
+      // tại sau /forgot (rà kien-truc RA-DOT2). Khóa 10 lần/ngày theo chuỗi đã gõ (ở trên) vẫn trả otp_locked như nhau.
+      return reply.status(400).send({ error: 'otp_invalid' });
     }
     // Đúng mã rồi mới so với tên đăng nhập thật (người gõ email): mã đã dùng, xin mã mới
     if (isWeakPassword(body.newPassword, target.username)) return reply.status(400).send({ error: 'weak_password' });
