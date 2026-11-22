@@ -4,6 +4,9 @@ import { defineMessages } from '@vietlearning/state';
 export const { useT, t } = defineMessages(
   {
     appTitle: 'Học Tiếng Việt Cùng Bé Cu Tít',
+    homeTitle: 'Chào bạn!',
+    homeLead: 'Mỗi ngày một bài ngắn: bấm “Học tiếp” để bắt đầu.',
+    homeLevel: 'Trình độ {level} · ',
     learn: 'Học',
     tabPractice: 'Luyện tập',
     tabFriends: 'Bạn bè',
@@ -22,6 +25,9 @@ export const { useT, t } = defineMessages(
   },
   {
     appTitle: 'Learn Vietnamese with Cu Tít',
+    homeTitle: 'Hi there!',
+    homeLead: 'One short lesson a day: tap “Continue” to start.',
+    homeLevel: 'Level {level} · ',
     learn: 'Learn',
     tabPractice: 'Practice',
     tabFriends: 'Friends',
