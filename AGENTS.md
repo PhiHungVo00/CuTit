@@ -122,7 +122,7 @@ Effort chọn theo **rủi ro và mức mơ hồ**, không theo độ dài. Bố
 - `dung-am-thanh`
 - `chup-man-hinh-app`
 
-**Plugin đã cài:** code-review, Android Emulator QA, Playwright MCP, security review, TypeScript LSP (cách dùng trong skill `kiem-truoc-khi-gop`). Trợ năng dùng công cụ miễn phí trong repo (`@axe-core/playwright` ở `e2e/a11y.spec.ts`, Lighthouse) thay plugin Axe trả phí (gỡ 22/11). Nguyên tắc UI/UX + bảng kiểm PR: `docs/thiet-ke/NGUYEN-TAC-UI-UX.md`.
+**Plugin đã cài:** code-review, Android Emulator QA, Playwright MCP, security review, TypeScript LSP (cách dùng trong skill `kiem-truoc-khi-gop`). Trợ năng dùng công cụ miễn phí trong repo (`@axe-core/playwright` ở `e2e/a11y.spec.ts`, Lighthouse) thay plugin Axe trả phí (gỡ 22/11). Nguyên tắc thiết kế UI/UX (dùng khi thiết kế, không phải bước kiểm): `docs/thiet-ke/NGUYEN-TAC-UI-UX.md`.
 
 **Hook** (`.claude/settings.json`):
 - chặn sửa migration đã phát hành;
@@ -142,7 +142,7 @@ Bản đầy đủ: `docs/QUY-TRINH-VIBE-CODING.md`. Người dùng không phả
 
 | Giai đoạn | Ở dự án này làm bằng |
 |---|---|
-| 1 Yêu cầu · 2 Kiến trúc · 3 Database · 4 Giao diện | skill `superpowers:brainstorming` ⇒ spec `docs/superpowers/specs/` (có mục phương án, mục tiêu/không làm, người đọc độc lập rà) ⇒ người dùng duyệt |
+| 1 Yêu cầu · 2 Kiến trúc · 3 Database · 4 Giao diện | skill `superpowers:brainstorming` ⇒ spec `docs/superpowers/specs/` (có mục phương án, mục tiêu/không làm, người đọc độc lập rà) ⇒ người dùng duyệt. Giai đoạn 4 thiết kế màn/bản phác theo `docs/thiet-ke/NGUYEN-TAC-UI-UX.md` |
 | 5 Thiết lập dự án | monorepo sẵn có; `.env.example` không chứa khóa; bí mật ở `~/.becutit/gateway.env` |
 | 6 Lập trình từng chức năng | `superpowers:writing-plans` ⇒ kế hoạch `docs/superpowers/plans/` chia đợt ⇒ phiên con TDD, commit nhỏ |
 | 7 Bảo mật | 7 nguyên tắc mục 2; `kien-truc` xem lại khi đụng DB/auth; plugin security review |
