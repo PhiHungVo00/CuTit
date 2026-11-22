@@ -13,14 +13,20 @@ const ARGON2ID = 2;
  */
 const OPTIONS = { algorithm: ARGON2ID, memoryCost: 19456, timeCost: 2, parallelism: 1 } as const;
 
+/**
+ * Chuẩn hóa Unicode NFC trước khi băm/kiểm (NIST SP 800-63B 5.1.1.2): mật khẩu có dấu tiếng Việt gõ bằng bộ gõ dựng
+ * sẵn (NFC) hay tổ hợp (NFD, ví dụ một số bàn phím/Unikey) phải cho cùng một chuỗi băm.
+ */
+const normalize = (password: string): string => password.normalize('NFC');
+
 export function hashPassword(password: string): Promise<string> {
-  return hash(password, OPTIONS);
+  return hash(normalize(password), OPTIONS);
 }
 
 /** Sai mật khẩu hoặc hash hỏng => false (không ném) */
 export async function verifyPassword(passwordHash: string, password: string): Promise<boolean> {
   try {
-    return await verify(passwordHash, password);
+    return await verify(passwordHash, normalize(password));
   } catch {
     return false;
   }
