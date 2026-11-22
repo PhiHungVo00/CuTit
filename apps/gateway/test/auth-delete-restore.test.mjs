@@ -361,3 +361,56 @@ test('Họ token khác của cùng người (máy khác) không bị thu hồi k
     await close();
   }
 });
+
+// ---------- Đăng nhập / đăng ký với tài khoản chờ xóa (rà kien-truc PR #18, mục 3) ----------
+
+const PW = 'ca-phe-sua-da-42';
+
+test('/login: trong 30 ngày => signed_in kèm restorable; quá hạn (job chưa chạy) => invalid_credentials giống hệt sai mật khẩu', async () => {
+  const { app, advance, close } = await setup();
+  try {
+    const reg = await app.inject({ method: 'POST', url: '/v1/auth/register', payload: { username: 'mai.le', password: PW } });
+    assert.equal(reg.statusCode, 200, reg.body);
+    const { accessToken, userId } = reg.json();
+    const del = await app.inject({ method: 'DELETE', url: '/v1/me', headers: bearer(accessToken), payload: { mode: 'grace' } });
+    assert.equal(del.statusCode, 200, del.body);
+
+    advance(29 * DAY);
+    const inGrace = await app.inject({ method: 'POST', url: '/v1/auth/login', payload: { username: 'mai.le', password: PW } });
+    assert.equal(inGrace.statusCode, 200, inGrace.body);
+    assert.equal(inGrace.json().userId, userId);
+    assert.equal(inGrace.json().restorable.deleteAt, del.json().deleteAt);
+
+    advance(2 * DAY); // đã quá hạn 30 ngày, job dọn chưa chạy
+    const late = await app.inject({ method: 'POST', url: '/v1/auth/login', payload: { username: 'mai.le', password: PW } });
+    const wrong = await app.inject({ method: 'POST', url: '/v1/auth/login', payload: { username: 'mai.le', password: PW + 'x' } });
+    assert.equal(late.statusCode, 401);
+    assert.equal(late.body, wrong.body, 'thân lỗi giống hệt sai mật khẩu');
+    assert.equal(late.json().error, 'invalid_credentials');
+    assert.equal(late.json().restorable, undefined);
+  } finally {
+    await close();
+  }
+});
+
+test('/register kèm Bearer khách đang chờ xóa: 403 account_pending_deletion, không nâng cấp; quá hạn => 401 account_deleted', async () => {
+  const { app, db, advance, close } = await setup();
+  try {
+    const A = await guest(app);
+    await app.inject({ method: 'DELETE', url: '/v1/me', headers: A.headers, payload: { mode: 'grace' } });
+    const tok = accessFor(app, A.body.userId);
+    const r = await app.inject({ method: 'POST', url: '/v1/auth/register', headers: bearer(tok), payload: { username: 'tom.nguyen', password: PW } });
+    assert.equal(r.statusCode, 403, r.body);
+    assert.equal(r.json().error, 'account_pending_deletion');
+    const [u] = await db.select().from(schema.users).where(eq(schema.users.id, A.body.userId));
+    assert.equal(u.isGuest, true, 'vẫn là khách');
+    assert.equal((await db.select().from(schema.identities).where(eq(schema.identities.subject, 'tom.nguyen'))).length, 0);
+
+    advance(31 * DAY);
+    const late = await app.inject({ method: 'POST', url: '/v1/auth/register', headers: bearer(accessFor(app, A.body.userId)), payload: { username: 'tom.nguyen', password: PW } });
+    assert.equal(late.statusCode, 401);
+    assert.equal(late.json().error, 'account_deleted');
+  } finally {
+    await close();
+  }
+});

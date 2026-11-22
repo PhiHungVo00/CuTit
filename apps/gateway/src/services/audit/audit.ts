@@ -35,6 +35,15 @@ const METADATA = {
   'account.deleted': z.object({ reason: reason.optional() }),
   'account.deletion_scheduled': z.object({}),
   'account.restored': z.object({}),
+  // Dự án 3 Task 2 (mật khẩu/OTP) — KHÔNG bao giờ ghi email, tên đăng nhập, mật khẩu, mã vào metadata
+  'auth.register': z.object({ upgraded: z.boolean() }),
+  'auth.signin': z.object({ provider: z.enum(['google', 'password', 'email']), reason: reason.optional() }),
+  'auth.password_changed': z.object({}),
+  'auth.password_reset': z.object({ method: z.enum(['email', 'backup']), reason: reason.optional() }),
+  'auth.email_code_sent': z.object({ purpose: z.enum(['link', 'reset']) }),
+  'auth.email_code_failed': z.object({ purpose: z.enum(['link', 'reset']), reason }),
+  'auth.identity_linked': z.object({ provider: z.enum(['google', 'password', 'email']) }),
+  'auth.backup_code_rotated': z.object({}),
   'friends.invite_created': z.object({}),
   'friends.invite_accepted': z.object({ reason: reason.optional() })
 } as const;

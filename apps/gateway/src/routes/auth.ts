@@ -14,12 +14,18 @@ import { classifyRefreshFailure, formatRecoveryCode, issueTokens, newRecoveryCod
 import { AuditLog } from '../services/audit/audit.js';
 import { isDeletedCredential } from '../services/learner/repo.js';
 import { logoutByRefreshToken } from '../services/auth/lifecycle.js';
+import { tombstoneReason } from '../services/auth/accounts.js';
+import { passwordAuthRoutes } from './authPassword.js';
 
 /**
  * /v1/auth/* — KHÔNG đi qua hook xác thực (đây là nơi lấy token), nhưng bị giới hạn theo IP
  * (đăng ký ở app.ts) vì mỗi tài khoản khách mới là một hạn mức AI mới.
  */
-export const authRoutes: FastifyPluginAsync<RouteDeps> = async (server, { db, audit }) => {
+export const authRoutes: FastifyPluginAsync<RouteDeps> = async (server, deps) => {
+  const { db, audit } = deps;
+  // Dự án 3 Task 2: đăng ký/đăng nhập mật khẩu, quên/đặt lại mật khẩu (routes/authPassword.ts, cùng prefix + giới hạn IP)
+  await server.register(passwordAuthRoutes, deps);
+
   // POST /v1/auth/guest: tạo tài khoản khách, trả token + mã khôi phục (một lần duy nhất)
   server.post('/guest', async (req) => {
     const d = await db.get();
@@ -60,14 +66,16 @@ export const authRoutes: FastifyPluginAsync<RouteDeps> = async (server, { db, au
     const [user] = await d
       .select({ id: schema.users.id })
       .from(schema.users)
-      .where(and(eq(schema.users.recoveryCodeHash, sha256(body.recoveryCode)), isNull(schema.users.deletedAt)));
+      .where(and(eq(schema.users.recoveryCodeHash, sha256(body.recoveryCode)), isNull(schema.users.deletedAt), eq(schema.users.isGuest, true)));
     const ctx = AuditLog.context(req);
     if (!user) {
-      const deleted = await isDeletedCredential(d, sha256(body.recoveryCode));
-      const reason = deleted ? 'account_deleted' : 'invalid_recovery_code';
+      // Dự án 3: mã của khách ĐÃ NÂNG CẤP => account_upgraded (mời đăng nhập, KHÔNG xóa dữ liệu máy như account_deleted);
+      // đã gộp vào tài khoản khác => account_merged (Task 5 ghi bia mộ này)
+      const tomb = await tombstoneReason(d, sha256(body.recoveryCode));
+      const reason = tomb === 'upgraded' ? 'account_upgraded' : tomb === 'merged' ? 'account_merged' : tomb ? 'account_deleted' : 'invalid_recovery_code';
       audit.record('auth.recover', { outcome: 'failure', ctx, metadata: { reason } });
       audit.noteAuthFailure(ctx, reason);
-      return reply.status(401).send({ error: deleted ? 'account_deleted' : 'invalid_recovery_code' });
+      return reply.status(401).send({ error: reason });
     }
     const tokens = await issueTokens(server, d, user.id);
     audit.record('auth.recover', { outcome: 'success', userId: user.id, ctx });
