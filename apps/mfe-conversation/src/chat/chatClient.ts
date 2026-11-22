@@ -30,7 +30,7 @@ export type DoneEvent = Extract<ChatEvent, { type: 'done' }>;
 
 export class TurnError extends Error {
   constructor(
-    public readonly kind: 'offline' | 'timeout' | 'quota' | 'unavailable' | 'incomplete' | 'server' | 'contract' | 'unauthorized' | 'invalid-request',
+    public readonly kind: 'offline' | 'timeout' | 'quota' | 'unavailable' | 'incomplete' | 'server' | 'contract' | 'unauthorized' | 'update-required' | 'invalid-request',
     message: string,
     /** mã lỗi Gateway (vd. quota_exceeded = hết lượt AI hôm nay, khác rate-limit theo phút) */
     public readonly code?: string,
