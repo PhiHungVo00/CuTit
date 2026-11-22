@@ -1,6 +1,6 @@
 import { lazy, Suspense } from 'react';
 import { Link } from 'react-router-dom';
-import { cefrLabel, learnerStore, useLearner } from '@vietlearning/state';
+import { useLearner } from '@vietlearning/state';
 import { SCREENS, prefetchScreen } from '../routes';
 import { useT } from '../i18n';
 
@@ -21,6 +21,7 @@ function PathSkeleton() {
   return (
     <div aria-busy="true" role="status" aria-label={t('pathLoading')} className="flex flex-col gap-4">
       <div className="h-16 animate-pulse rounded-xl bg-surface-2" />
+      <div className="h-8 animate-pulse rounded-xl bg-surface-2" />
       <div className="h-16 animate-pulse rounded-xl bg-surface-2" />
       <div className="h-14 animate-pulse rounded-2xl bg-surface-2" />
       <div className="h-48 animate-pulse rounded-2xl bg-surface-2" />
@@ -31,27 +32,9 @@ function PathSkeleton() {
 export function Home() {
   const profile = useLearner((s) => s.profile);
   const t = useT();
-  const lang = useLearner((s) => s.preferences.uiLanguage);
   const onboarding = SCREENS.find((s) => s.path === '/bat-dau');
   return (
     <div className="home">
-      <div className="home-head">
-        <h1>{t('appTitle')}</h1>
-        <button
-          type="button"
-          className="lang-switch"
-          lang={lang === 'vi' ? 'en' : 'vi'}
-          aria-label={t('langSwitchLabel')}
-          onClick={() => learnerStore.getState().setPreferences({ uiLanguage: lang === 'vi' ? 'en' : 'vi' })}
-        >
-          🌐 {t('langSwitch')}
-        </button>
-      </div>
-      <p className="lead">
-        {profile.onboarded ? t('homeLevel', { level: cefrLabel(profile.level) }) : ''}
-        {t('homeLead')}
-      </p>
-
       {/* Banner nằm CÙNG khối Suspense với lộ trình: hiện cùng lúc, không bị lộ trình (cao hơn khung chờ) đẩy xuống
           sau khi tải => không gây xê dịch bố cục (CLS 0,111 trên Lighthouse trước đây) */}
       <Suspense fallback={<PathSkeleton />}>
