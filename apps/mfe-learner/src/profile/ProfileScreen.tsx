@@ -6,6 +6,7 @@ import { useProgress } from '@vietlearning/state/progress';
 import { ScreenFrame } from '../common/ui';
 import { Rows } from '../settings/parts';
 import { useT } from '../settings/i18n';
+import { SignInInvite } from '../account/SignInInvite';
 
 /** Thẻ "đã thuộc": đã lặp đúng từ 3 lần (SM-2 repetitions >= 3) */
 const MASTERED_REPS = 3;
@@ -46,6 +47,7 @@ export function ProfileScreen() {
         <Stat label={t('statWords')} value={String(words)} />
         <Stat label={t('statBadges')} value={String(badgeCount)} />
       </ul>
+      <SignInInvite always />
       <Rows>
         {row('hoc', t('rowProgress'), t('rowProgressHint'), '/tien-do')}
         {row('ban-be', t('rowFriends'), t('rowFriendsHint'), '/ban-be')}

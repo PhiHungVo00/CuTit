@@ -36,7 +36,7 @@ Từ 18/11, mọi lần push lên `main` đều đỏ, dù trên máy dev Window
 |---|---|---|
 | `verify` | Có | install → `pnpm build` → `pnpm test` → `lint:boundaries` → `size` → e2e chỉ hai project điện thoại `pixel-7` và `android-nho-320` (Gateway thật, PGlite, `GEMINI_API_KEY` rỗng). Khi lỗi thì lưu trace. |
 | `performance` | **Không** (`continue-on-error`, R12) | Build host-shell và gateway → e2e project `perf` (`--no-deps`) → Lighthouse (trung vị 3 lần; chạy cả khi bước trước đỏ). Job đỏ vẫn hiện đỏ để thấy kết quả thật. |
-| `android-apk` (CD) | Có, khi chạy | JDK 21 (`setup-java` temurin, cache gradle), Android SDK có sẵn trên runner, build web với `VITE_GATEWAY_URL=http://10.0.2.2:4000` (Gateway trên máy chạy emulator), rồi `cap sync android` → `./gradlew assembleDebug`. Kiểm APK có `assets/public/index.html`, rồi upload artifact **`app-debug`** (giữ 30 ngày). |
+| `android-apk` (CD) | Có, khi chạy | JDK 21 (`setup-java` temurin, cache gradle), Android SDK có sẵn trên runner, build web với `VITE_GATEWAY_URL=http://10.0.2.2:4000` (Gateway trên máy chạy emulator), rồi `cap sync android` → `./gradlew assemblePlayDebug assembleApkDebug`. Kiểm APK có `assets/public/index.html`, rồi upload hai artifact **`app-play-debug`** và **`app-apk-debug`** (giữ 30 ngày). |
 
 - **Khi nào job APK chạy:** khi push lên `main`, hoặc PR có **nhãn `apk`**.
   - Yêu cầu gốc nói “chỉ khi push main”, nhưng điều kiện nghiệm thu lại là “job APK xanh trên PR”.

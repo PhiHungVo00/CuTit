@@ -11,6 +11,11 @@ export interface KeyValue {
 }
 
 interface GatewayConfig {
+  /** Dự án 8: số build + kênh gửi kèm mọi request (không có => không gửi header) */
+  appBuild?: number;
+  appChannel?: 'web' | 'play' | 'apk';
+  /** Gọi tối đa một lần mỗi lần chạy khi Gateway trả 426 */
+  onUpdateRequired?: (info: { minBuild: number; channel: 'web' | 'play' | 'apk' }) => void;
   baseUrl: string;
   getToken?: () => string | null | Promise<string | null>;
   /** Gọi khi Gateway trả 401: làm mới phiên; true => gửi lại request đúng MỘT lần */

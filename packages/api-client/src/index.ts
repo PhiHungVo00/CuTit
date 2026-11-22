@@ -8,7 +8,7 @@
  * Host gọi configureGateway() một lần lúc khởi động.
  */
 import type { ZodTypeAny, z } from 'zod';
-import { ChatSummarizeResponseSchema, type ChatSummarizeRequest, type ChatSummarizeResponse } from '@vietlearning/contracts/api';
+import { APP_BUILD_HEADER, APP_CHANNEL_HEADER, AppUpdateRequiredErrorSchema, ChatSummarizeResponseSchema, type ChatSummarizeRequest, type ChatSummarizeResponse } from '@vietlearning/contracts/api';
 import { gatewayConfig } from './config.js';
 
 export type GatewayErrorKind =
@@ -17,6 +17,7 @@ export type GatewayErrorKind =
   | 'unauthorized' // 401
   | 'quota' // 429
   | 'unavailable' // 503: nhà cung cấp AI chưa cấu hình / tạm ngưng
+  | 'update-required' // 426: bản app quá cũ
   | 'invalid-request' // 400, 413, 415
   | 'contract' // phản hồi không khớp contract
   | 'server'; // 5xx khác
@@ -46,6 +47,7 @@ const ERROR_TEXT: Record<'vi' | 'en', Partial<Record<GatewayErrorKind | 'rate' |
     busy: 'Cu Tít đang bận một chút. Bạn thử lại sau ít giây nhé (lượt của bạn chưa bị trừ).',
     globalQuota: 'Hôm nay Cu Tít đã học cùng rất nhiều bạn. Mai quay lại nhé!',
     unavailable: 'Tính năng AI đang tạm ngưng. Vui lòng thử lại sau.',
+    'update-required': 'Cần cập nhật ứng dụng để tiếp tục.',
     'invalid-request': 'Dữ liệu gửi lên chưa hợp lệ.',
     server: 'Có lỗi ở máy chủ. Vui lòng thử lại.'
   },
@@ -58,6 +60,7 @@ const ERROR_TEXT: Record<'vi' | 'en', Partial<Record<GatewayErrorKind | 'rate' |
     busy: 'Cu Tít is busy for a moment. Please try again in a few seconds (your turn was not used).',
     globalQuota: 'Cu Tít has been helping lots of learners today. Come back tomorrow!',
     unavailable: 'The AI feature is temporarily unavailable. Please try again later.',
+    'update-required': 'Please update the app to continue.',
     'invalid-request': 'The request was not valid.',
     server: 'Something went wrong on the server. Please try again.'
   }
@@ -88,10 +91,14 @@ export interface RequestOptions<S extends ZodTypeAny> {
   signal?: AbortSignal;
 }
 
+/** onUpdateRequired chỉ gọi một lần mỗi lần chạy (biến module, dự án 8) */
+let updateNotified = false;
+
 function kindForStatus(status: number): GatewayErrorKind {
   if (status === 401) return 'unauthorized';
   if (status === 429) return 'quota';
   if (status === 503) return 'unavailable';
+  if (status === 426) return 'update-required';
   // 422: nhà cung cấp AI từ chối dữ liệu gửi lên (llm_rejected) hoặc nội dung (llm_blocked) — không phải lỗi máy chủ
   if (status === 400 || status === 413 || status === 415 || status === 422) return 'invalid-request';
   return 'server';
@@ -99,6 +106,9 @@ function kindForStatus(status: number): GatewayErrorKind {
 
 async function send(path: string, method: string, body: unknown, signal?: AbortSignal, accept = 'application/json', retried = false): Promise<Response> {
   const headers: Record<string, string> = { Accept: accept };
+  const { appBuild, appChannel } = gatewayConfig();
+  if (appBuild !== undefined) headers[APP_BUILD_HEADER] = String(appBuild);
+  if (appChannel) headers[APP_CHANNEL_HEADER] = appChannel;
   const token = await gatewayConfig().getToken?.();
   if (token) headers.Authorization = `Bearer ${token}`;
   let payload: BodyInit | undefined;
@@ -125,6 +135,14 @@ async function send(path: string, method: string, body: unknown, signal?: AbortS
         if (json && typeof json === 'object' && !Array.isArray(json)) details = json as Record<string, unknown>;
       } catch {
         /* thân lỗi không phải JSON */
+      }
+      if (res.status === 426 && !updateNotified) {
+        const info = AppUpdateRequiredErrorSchema.safeParse(details);
+        const cb = gatewayConfig().onUpdateRequired;
+        if (cb && info.success) {
+          updateNotified = true;
+          cb({ minBuild: info.data.minBuild, channel: info.data.channel });
+        }
       }
       const code = typeof details?.error === 'string' ? details.error : undefined;
       throw new GatewayRequestError(kindForStatus(res.status), `Gateway trả ${res.status}`, res.status, code, details);

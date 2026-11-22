@@ -14,7 +14,10 @@ const SCREENS: [string, string][] = [
   ['tien-do', '/tien-do'],
   ['cai-dat-muc-luc', '/cai-dat'],
   ['cai-dat-giao-dien', '/cai-dat/giao-dien'],
-  ['chat', '/hoi-thoai']
+  ['chat', '/hoi-thoai'],
+  // Dự án 3: đăng nhập/đăng ký + Cài đặt › Tài khoản của khách
+  ['dang-nhap', '/dang-nhap'],
+  ['cai-dat-tai-khoan', '/cai-dat/tai-khoan']
 ];
 
 for (const theme of ['light', 'dark'] as const) {
