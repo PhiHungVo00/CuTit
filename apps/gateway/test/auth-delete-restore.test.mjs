@@ -241,6 +241,22 @@ test('Job dọn: chưa đủ 30 ngày không xóa; đủ hạn xóa cứng + bia
   }
 });
 
+test('Job dọn xóa auth_challenges hết hạn quá 1 ngày, giữ dòng còn hạn/mới hết hạn (rà kien-truc RA-DOT2)', async () => {
+  const { db, close } = await setup();
+  try {
+    await db.insert(schema.authChallenges).values([
+      { kind: 'oidc_nonce', keyHash: 'ra-old', expiresAt: new Date(T0.getTime() - 2 * DAY) },
+      { kind: 'rate_counter', keyHash: 'ra-recent', expiresAt: new Date(T0.getTime() - 1000) },
+      { kind: 'oidc_nonce', keyHash: 'ra-live', expiresAt: new Date(T0.getTime() + 600_000) }
+    ]);
+    await purgeExpiredAccounts(db, T0);
+    const left = (await db.select().from(schema.authChallenges)).map((c) => c.keyHash).filter((k) => k.startsWith('ra-')).sort();
+    assert.deepEqual(left, ['ra-live', 'ra-recent']);
+  } finally {
+    await close();
+  }
+});
+
 test('Dọn bia mộ theo expires_at (không theo deleted_at); null giữ mãi; tên đăng nhập giữ chỗ hết hạn thì thả', async () => {
   const { db, close } = await setup();
   try {
@@ -295,6 +311,20 @@ test('logout {everywhere:true} thu hồi mọi họ token của người đó, k
       assert.equal((await app.inject({ method: 'POST', url: '/v1/auth/refresh', payload: { refreshToken: rt } })).statusCode, 401);
     }
     assert.equal((await app.inject({ method: 'POST', url: '/v1/auth/refresh', payload: { refreshToken: other.body.refreshToken } })).statusCode, 200);
+  } finally {
+    await close();
+  }
+});
+
+test('logout {everywhere:true} bằng token ĐÃ XOAY VÒNG không đăng xuất máy khác (rà kien-truc RA-DOT2)', async () => {
+  const { app, close } = await setup();
+  try {
+    const A = await guest(app);
+    const B = (await app.inject({ method: 'POST', url: '/v1/auth/recover', payload: { recoveryCode: A.body.recoveryCode } })).json();
+    await app.inject({ method: 'POST', url: '/v1/auth/refresh', payload: { refreshToken: A.body.refreshToken } }); // token cũ của máy A
+    const r = await app.inject({ method: 'POST', url: '/v1/auth/logout', payload: { refreshToken: A.body.refreshToken, everywhere: true } });
+    assert.equal(r.statusCode, 204);
+    assert.equal((await app.inject({ method: 'POST', url: '/v1/auth/refresh', payload: { refreshToken: B.refreshToken } })).statusCode, 200, 'máy B vẫn đăng nhập');
   } finally {
     await close();
   }
