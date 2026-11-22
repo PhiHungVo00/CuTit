@@ -1,7 +1,7 @@
 import type { AuthSession } from '@vietlearning/api-client/session';
 import type { SyncEngine } from '@vietlearning/state/sync';
 import { learnerStore } from '@vietlearning/state';
-import { progressStore } from '@vietlearning/state/progress';
+import { progressStore, totalXp } from '@vietlearning/state/progress';
 import { isGoogleSignInAvailable } from '@vietlearning/native';
 
 /** Phụ thuộc nạp lười (chunk riêng) — test tiêm bản giả. */
@@ -19,7 +19,8 @@ export interface AuthDeps {
 export function localProgressExists(): boolean {
   const l = learnerStore.getState();
   const p = progressStore.getState();
-  return Object.keys(l.srs).length > 0 || l.attempts.length > 0 || Object.keys(l.activity).length > 0 || p.lessonsDone > 0;
+  // Không tính `activity` (giây học): bộ đếm giờ ghi cả khi chỉ mở màn, nên máy nào cũng "có tiến độ" sau ít phút
+  return Object.keys(l.srs).length > 0 || l.attempts.length > 0 || p.lessonsDone > 0 || totalXp(p.xpByDay) > 0;
 }
 
 export const defaultDeps: AuthDeps = {
