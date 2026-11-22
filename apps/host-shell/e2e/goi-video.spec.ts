@@ -35,9 +35,7 @@ async function fakeMic(page: import('@playwright/test').Page, opts: { denyCamera
 }
 
 test.describe('Task 7 gọi video', () => {
-  // Cần PR chat (Task 5–6) gộp trước: useChatSession.send(text, { image }) chưa có trên main. Đã kiểm tay với bản vá tạm: đạt. Gỡ fixme sau khi gộp.
   test('mỗi câu nói gửi kèm đúng 1 ảnh; nhãn "đang xem"; ghi rõ luật lượt', async ({ page }) => {
-    test.fixme(true, 'chờ PR chat Task 5–6');
     test.setTimeout(90_000);
     await fakeMic(page);
     const bodies: { mode?: string; imageBase64?: string }[] = [];
