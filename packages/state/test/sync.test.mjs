@@ -286,3 +286,15 @@ test('transport ném update-required => tự tạm dừng (không thử lại m�
   assert.equal(tr.calls, 1, 'lần thứ hai không gọi transport');
   resumeSync();
 });
+
+test('pauseSync: pullAndReplace không chạy switchAccount và không gọi transport (Codex #29)', async () => {
+  const { pauseSync, resumeSync } = await import('../dist/sync.js');
+  const tr = fakeTransport();
+  const { engine } = start(tr);
+  pauseSync('update-required');
+  let switched = false;
+  await assert.rejects(engine.pullAndReplace(async () => void (switched = true)), (e) => e.kind === 'update-required');
+  assert.equal(switched, false);
+  assert.equal(tr.batches.length, 0);
+  resumeSync();
+});

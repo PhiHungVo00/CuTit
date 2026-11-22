@@ -710,6 +710,8 @@ export function startSync(opts: SyncOptions): SyncEngine {
   const engine = {
     flush,
     async pullAndReplace(switchAccount?: () => Promise<unknown>) {
+      // Đang bắt buộc cập nhật: /v1/sync sẽ bị 426 NGAY SAU khi đã đổi tài khoản => không bắt đầu
+      if (pausedReason) throw Object.assign(new Error('sync paused'), { kind: pausedReason });
       switching = true;
       clearTimeout(timer);
       try {
