@@ -390,3 +390,105 @@ test('Tài khoản chỉ có mật khẩu liên kết thêm Google => signed_in 
   assert.equal(r.json().userId, g.body.userId);
   assert.deepEqual(r.json().providers.sort(), ['google', 'password']);
 });
+
+// ---------- Giao với Task 4 (xóa mềm 30 ngày / xóa cứng, PR #13) ----------
+const DAY_MS = 24 * 3600 * 1000;
+
+test('Google vào tài khoản ĐÃ QUÁ HẠN xóa (job dọn chưa chạy) => 401 invalid_credentials như /login, không tạo tài khoản mới', async () => {
+  const sub = `g-${randomUUID()}`;
+  const acc = (await signIn({ sub })).json();
+  const d = await db();
+  await d.update(schema.users).set({ deleteAt: new Date(Date.now() - 1000) }).where(eq(schema.users.id, acc.userId));
+  const before = (await d.select({ id: schema.users.id }).from(schema.users)).length;
+  const r = await signIn({ sub });
+  assert.equal(r.statusCode, 401, r.body);
+  assert.equal(r.json().error, 'invalid_credentials');
+  assert.equal((await d.select({ id: schema.users.id }).from(schema.users)).length, before, 'không tạo user mới');
+});
+
+test('Khách bấm Google của tài khoản ĐÃ QUÁ HẠN xóa => 409 identity_in_use (không 401 để client khỏi tự gửi lại), khách còn nguyên', async () => {
+  const sub = `g-${randomUUID()}`;
+  const acc = (await signIn({ sub })).json();
+  const d = await db();
+  await d.update(schema.users).set({ deleteAt: new Date(Date.now() - 1000) }).where(eq(schema.users.id, acc.userId));
+  const g = await guest(a);
+  const r = await link(g.headers, { sub });
+  assert.equal(r.statusCode, 409, r.body);
+  assert.equal(r.json().error, 'identity_in_use');
+  const [still] = await d.select({ id: schema.users.id }).from(schema.users).where(eq(schema.users.id, g.body.userId));
+  assert.ok(still, 'khách không bị xóa');
+});
+
+test('Khách rỗng bấm Google của tài khoản ĐANG CHỜ xóa => signed_in tài khoản đó kèm restorable (như /login)', async () => {
+  const sub = `g-${randomUUID()}`;
+  const acc = (await signIn({ sub })).json();
+  const deleteAt = new Date(Date.now() + 10 * DAY_MS);
+  await (await db()).update(schema.users).set({ deleteAt }).where(eq(schema.users.id, acc.userId));
+  const g = await guest(a);
+  const r = await link(g.headers, { sub });
+  assert.equal(r.statusCode, 200, r.body);
+  assert.equal(r.json().userId, acc.userId);
+  assert.equal(r.json().restorable.deleteAt, deleteAt.toISOString());
+});
+
+test('Tài khoản đã xóa mềm: liên kết/liệt kê/gỡ danh tính => 403 account_pending_deletion; quá hạn => 401 account_deleted', async () => {
+  const g = await guest(a);
+  const linked = await link(g.headers);
+  assert.equal(linked.statusCode, 200, linked.body);
+  const h = bearer(linked.json().accessToken);
+  const ids = (await a.inject({ url: '/v1/me/identities', headers: h })).json().identities;
+  const del = await a.inject({ method: 'DELETE', url: '/v1/me', headers: h, payload: { mode: 'grace' } });
+  assert.equal(del.statusCode, 200, del.body);
+  const calls = async () => [
+    await a.inject({ method: 'POST', url: '/v1/me/identities/google', headers: h, payload: await googleBody() }),
+    await a.inject({ url: '/v1/me/identities', headers: h }),
+    await a.inject({ method: 'DELETE', url: `/v1/me/identities/${ids[0].id}`, headers: h })
+  ];
+  for (const r of await calls()) {
+    assert.equal(r.statusCode, 403, r.body);
+    assert.equal(r.json().error, 'account_pending_deletion');
+  }
+  await (await db()).update(schema.users).set({ deleteAt: new Date(Date.now() - 1000) }).where(eq(schema.users.id, g.body.userId));
+  for (const r of await calls()) {
+    assert.equal(r.statusCode, 401, r.body);
+    assert.equal(r.json().error, 'account_deleted');
+  }
+});
+
+test('Dịch vụ liên kết/gỡ tự từ chối người gọi đang chờ xóa (đua với DELETE /v1/me sau khi pipeline đã cho qua)', async () => {
+  const { linkGoogle, unlinkIdentity } = await import('../dist/services/auth/link.js');
+  const g = await guest(a);
+  const linked = (await link(g.headers)).json();
+  const d = await db();
+  const [idRow] = await d.select({ id: schema.identities.id }).from(schema.identities).where(eq(schema.identities.userId, g.body.userId));
+  await d.update(schema.users).set({ deleteAt: new Date(Date.now() + DAY_MS) }).where(eq(schema.users.id, linked.userId));
+  const v = { subject: `g-${randomUUID()}`, emailMasked: null, emailVerified: true };
+  assert.equal((await linkGoogle(d, linked.userId, v)).kind, 'pending_deletion');
+  assert.equal((await unlinkIdentity(d, linked.userId, idRow.id)).kind, 'pending_deletion');
+  const left = await d.select().from(schema.identities).where(eq(schema.identities.userId, linked.userId));
+  assert.equal(left.length, 1, 'không thêm/không gỡ gì');
+});
+
+test('Xóa cứng (ngay, hoặc job dọn sau 30 ngày) => dọn cả danh tính Google; cùng Google đăng nhập lại => tài khoản MỚI', async () => {
+  const { purgeExpiredAccounts } = await import('../dist/services/auth/lifecycle.js');
+  const d = await db();
+  // xóa ngay
+  const sub1 = `g-${randomUUID()}`;
+  const acc1 = (await signIn({ sub: sub1 })).json();
+  const del = await a.inject({ method: 'DELETE', url: '/v1/me', headers: bearer(acc1.accessToken), payload: { mode: 'now' } });
+  assert.equal(del.statusCode, 200, del.body);
+  const gone1 = await d.select().from(schema.identities).where(and(eq(schema.identities.provider, 'google'), eq(schema.identities.subject, sub1)));
+  assert.equal(gone1.length, 0, 'danh tính Google bị dọn khi xóa ngay');
+  const again = (await signIn({ sub: sub1 })).json();
+  assert.notEqual(again.userId, acc1.userId);
+  // job dọn
+  const sub2 = `g-${randomUUID()}`;
+  const acc2 = (await signIn({ sub: sub2 })).json();
+  await d.update(schema.users).set({ deleteAt: new Date(Date.now() - 1000) }).where(eq(schema.users.id, acc2.userId));
+  await purgeExpiredAccounts(d, new Date());
+  const gone2 = await d.select().from(schema.identities).where(eq(schema.identities.userId, acc2.userId));
+  assert.equal(gone2.length, 0, 'danh tính Google bị dọn bởi job');
+  const fresh = await signIn({ sub: sub2 });
+  assert.equal(fresh.statusCode, 200, fresh.body);
+  assert.notEqual(fresh.json().userId, acc2.userId);
+});
