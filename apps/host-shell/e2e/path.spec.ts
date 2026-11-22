@@ -135,7 +135,7 @@ test.describe('GĐ1 Lộ trình — giao diện tiếng Anh', () => {
 
   test('English UI: home, lesson, summary, review không tràn ở màn nhỏ', async ({ page }) => {
     await page.goto('/');
-    await expect(page.getByRole('heading', { name: 'Learn Vietnamese with Cu Tít' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Hi there!' })).toBeVisible();
     await expect(page.getByRole('link', { name: /Start your first lesson/ })).toBeVisible();
     await assertMobileLayout(page);
     await page.getByRole('link', { name: /Start your first lesson/ }).click();

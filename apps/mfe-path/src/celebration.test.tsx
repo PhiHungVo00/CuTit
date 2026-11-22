@@ -89,7 +89,7 @@ describe('màn xong bài (P1-2)', () => {
   it('XP đếm từ 0 lên đích (chữ cho trình đọc màn hình luôn là số cuối)', () => {
     renderLesson();
     fireEvent.click(screen.getByRole('button', { name: 'xong' }));
-    const live = screen.getByTestId('xp-final').textContent;
+    const live = screen.getByTestId('xp-final').getAttribute('aria-label');
     expect(live).toMatch(/^\+\d+ XP$/);
     expect(screen.getByTestId('xp-count').textContent).toBe('0');
     act(() => void vi.advanceTimersByTime(800));
