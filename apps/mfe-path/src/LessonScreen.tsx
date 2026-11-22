@@ -12,6 +12,7 @@ import { syncReminders } from './reminders';
 import { SessionRunner, type SessionOutcome } from './session/SessionRunner';
 import { Button, Card, CuTit } from '@vietlearning/ui';
 import { celebrateFinish, currentStreak } from './celebration';
+import { useCountUp } from './useCountUp';
 import { cardStack, LinkButton, Page } from './Page';
 
 // GĐ4: thông báo huy hiệu mới — chunk lười riêng
@@ -114,17 +115,7 @@ function LessonBody({ lessonId }: { lessonId: string }) {
 
   return (
     <Page>
-      <Card role="status" aria-labelledby="ct-sum" elevated style={{ ...cardStack, alignItems: 'center', textAlign: 'center' }}>
-        <CuTit mood="an-mung" size={120} />
-        <h1 id="ct-sum" className="m-0 text-xl font-black text-heading">
-          {t('summaryTitle', { lesson: lessonTitle })}
-        </h1>
-        <p className="m-0 text-3xl font-black text-accent">{t('summaryXp', { n: result.xp })}</p>
-        <p className="m-0 text-[15px] text-ink">{t('summaryAccuracy', { pct })}</p>
-        {result.skipped > 0 && <p className="m-0 text-sm text-ink-soft">{t('summarySkipped', { n: result.skipped })}</p>}
-        {result.freezeEarned && <p className="m-0 text-sm font-bold text-heading">{t('summaryFreeze')}</p>}
-        {result.mistakes.length > 0 && <p className="m-0 text-sm text-ink-soft">{t('summaryMistakes')}</p>}
-      </Card>
+      <SummaryCard result={result} lessonTitle={lessonTitle} pct={pct} />
 
       <Suspense fallback={null}>
         <Motivation part="notice" />
@@ -159,5 +150,40 @@ function LessonBody({ lessonId }: { lessonId: string }) {
         {!unit.reviewed && <p className="m-0 text-center text-xs italic text-ink-muted">{t('draftContent')}</p>}
       </div>
     </Page>
+  );
+}
+
+/** Thẻ tổng kết: XP đếm 0→n (600ms); độ chính xác chỉ hiện khi có ≥ 1 câu đúng ngay lần đầu, không thì mời ôn lại */
+function SummaryCard({ result, lessonTitle, pct }: { result: Finished; lessonTitle: string; pct: number }) {
+  const t = useT();
+  const xp = useCountUp(result.xp);
+  const mistakes = result.mistakes.length;
+  return (
+    <Card role="status" aria-labelledby="ct-sum" elevated style={{ ...cardStack, alignItems: 'center', textAlign: 'center' }}>
+      <CuTit mood="an-mung" size={120} />
+      <h1 id="ct-sum" className="m-0 text-xl font-black text-heading">
+        {t('summaryTitle', { lesson: lessonTitle })}
+      </h1>
+      <p className="m-0 text-3xl font-black text-accent">
+        <span className="sr-only" data-testid="xp-final">
+          {t('summaryXp', { n: result.xp })}
+        </span>
+        <span aria-hidden="true">
+          +<span data-testid="xp-count">{xp}</span> XP
+        </span>
+      </p>
+      {result.firstTryCorrect >= 1 && <p className="m-0 text-[15px] text-ink">{t('summaryAccuracy', { pct })}</p>}
+      {result.skipped > 0 && <p className="m-0 text-sm text-ink-soft">{t('summarySkipped', { n: result.skipped })}</p>}
+      {result.freezeEarned && <p className="m-0 text-sm font-bold text-heading">{t('summaryFreeze')}</p>}
+      {mistakes > 0 && result.firstTryCorrect >= 1 && <p className="m-0 text-sm text-ink-soft">{t('summaryMistakes')}</p>}
+      {mistakes > 0 && result.firstTryCorrect < 1 && (
+        <>
+          <p className="m-0 text-[15px] font-bold text-ink">{t('summaryReview', { n: mistakes })}</p>
+          <LinkButton to="/on-tap" variant="secondary">
+            {t('summaryReviewBtn')}
+          </LinkButton>
+        </>
+      )}
+    </Card>
   );
 }

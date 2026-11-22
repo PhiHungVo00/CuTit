@@ -184,7 +184,7 @@ export default function SpeakExercise({ item, onDone, onSkip, assess }: { item: 
           </p>
         )}
         {result && grade && (
-          <div role="status" className="flex flex-col gap-2 rounded-xl border border-line bg-sunken p-3">
+          <div role="status" className="ct-feedback flex flex-col gap-2 rounded-xl border border-line bg-sunken p-3">
             {!result.mock && (
               <div className="flex items-center justify-between gap-2">
                 <FeedbackMascot correct={grade.correct} size={48} />
