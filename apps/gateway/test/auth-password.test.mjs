@@ -297,12 +297,17 @@ test('Đổi mật khẩu (Bearer): mật khẩu cũ sai => invalid_credentials;
   }
 });
 
-test('Tạo mã dự phòng mới (Bearer): mã cũ hết hiệu lực; khách => 409', async () => {
+test('Tạo mã dự phòng mới (Bearer): đòi mật khẩu hiện tại; mã cũ hết hiệu lực; khách => 409', async () => {
   const a = await makeAuthApp();
   try {
     const reg = (await post(a, '/v1/auth/register', { username: U('ma.moi'), password: PW })).json();
     const headers = { authorization: `Bearer ${reg.accessToken}` };
-    const r = await post(a, '/v1/me/backup-code', {}, { headers });
+    // access token lộ KHÔNG đủ để lấy mã dự phòng mới (rà kien-truc PR #18 mục 1): thiếu mật khẩu => 400, sai => 401
+    assert.equal((await post(a, '/v1/me/backup-code', {}, { headers })).statusCode, 400);
+    const wrong = await post(a, '/v1/me/backup-code', { currentPassword: 'sai-roi-nhe' }, { headers });
+    assert.equal(wrong.statusCode, 401);
+    assert.equal(wrong.json().error, 'invalid_credentials');
+    const r = await post(a, '/v1/me/backup-code', { currentPassword: PW }, { headers });
     assert.equal(r.statusCode, 200, r.body);
     const old = await post(a, '/v1/auth/password/reset-backup', { username: U('ma.moi'), backupCode: reg.backupCode, newPassword: 'goi-cuon-tom-1' });
     assert.equal(old.statusCode, 401);
@@ -310,7 +315,28 @@ test('Tạo mã dự phòng mới (Bearer): mã cũ hết hiệu lực; khách =
     const [cred] = await d.select().from(schema.passwordCredentials).where(eq(schema.passwordCredentials.userId, reg.userId));
     assert.equal(cred.backupCodeHash, sha256(r.json().backupCode.replace(/-/g, '')));
     const g = await guest(a);
-    assert.equal((await post(a, '/v1/me/backup-code', {}, { headers: g.headers })).statusCode, 409);
+    assert.equal((await post(a, '/v1/me/backup-code', { currentPassword: 'gi-cung-duoc' }, { headers: g.headers })).statusCode, 409);
+  } finally {
+    await a.close();
+  }
+});
+
+test('Bearer + mật khẩu hiện tại: sai 5 lần (cộng dồn đổi mật khẩu/mã dự phòng/gắn email) => rate_limited, kể cả khi sau đó gõ đúng', async () => {
+  const a = await makeAuthApp();
+  try {
+    const reg = (await post(a, '/v1/auth/register', { username: U('khoa.me'), password: PW })).json();
+    const headers = { authorization: `Bearer ${reg.accessToken}` };
+    const tries = [
+      ['/v1/me/password', { currentPassword: 'sai-1', newPassword: 'com-tam-suon-1' }],
+      ['/v1/me/backup-code', { currentPassword: 'sai-2' }],
+      ['/v1/me/email/start', { email: 'khoa.me@example.com', currentPassword: 'sai-3' }],
+      ['/v1/me/backup-code', { currentPassword: 'sai-4' }],
+      ['/v1/me/password', { currentPassword: 'sai-5', newPassword: 'com-tam-suon-1' }]
+    ];
+    for (const [url, body] of tries) assert.equal((await post(a, url, body, { headers })).statusCode, 401, url);
+    const locked = await post(a, '/v1/me/backup-code', { currentPassword: PW }, { headers });
+    assert.equal(locked.statusCode, 429);
+    assert.equal(locked.json().error, 'rate_limited');
   } finally {
     await a.close();
   }
