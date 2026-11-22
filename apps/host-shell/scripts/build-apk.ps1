@@ -8,7 +8,7 @@
 
   Dùng:  pnpm --filter @vietlearning/host-shell android:apk:win       (debug)
          pnpm --filter @vietlearning/host-shell android:release:win   (release, CHƯA ký)
-  Tùy chọn: -Drive X:  -JavaHome "C:\...\jdk-21"  -SkipWeb  -Release
+  Tùy chọn: -Drive X:  -JavaHome "C:\...\jdk-21"  -SkipWeb  -Release  -Flavor play|apk (mặc định play; dự án 8: hai kênh phân phối)
 
   Release: NODE_ENV=production => capacitor.config tắt debug WebView và mixed content;
   bắt buộc VITE_GATEWAY_URL là https (http bị chặn khi tắt mixed content). Ký app: xem nhật ký mục 5.
@@ -17,7 +17,8 @@ param(
   [string]$Drive = 'B:',
   [string]$JavaHome = '',
   [switch]$SkipWeb,
-  [switch]$Release
+  [switch]$Release,
+  [ValidateSet('play','apk')][string]$Flavor = 'play'
 )
 $ErrorActionPreference = 'Stop'
 
@@ -97,14 +98,15 @@ if ($needsSubst) {
 try {
   Push-Location (Join-Path $buildRoot 'apps\host-shell\android')
   # --no-daemon: daemon sống tiếp sẽ giữ ổ ảo và ống dẫn output, làm script treo
-  $task = if ($Release) { 'assembleRelease' } else { 'assembleDebug' }
+  $flavorCap = (Get-Culture).TextInfo.ToTitleCase($Flavor)
+  $task = if ($Release) { "assemble${flavorCap}Release" } else { "assemble${flavorCap}Debug" }
   .\gradlew.bat $task --no-daemon --console=plain
   if ($LASTEXITCODE) { throw 'Gradle build lỗi' }
   $apk = if ($Release) {
     # Chưa có cấu hình ký => Gradle xuất bản chưa ký; ký bằng keystore của nhóm trước khi phát hành
-    Join-Path $hostShell 'android\app\build\outputs\apk\release\app-release-unsigned.apk'
+    Join-Path $hostShell "android\app\build\outputs\apk\$Flavor\release\app-$Flavor-release-unsigned.apk"
   } else {
-    Join-Path $hostShell 'android\app\build\outputs\apk\debug\app-debug.apk'
+    Join-Path $hostShell "android\app\build\outputs\apk\$Flavor\debug\app-$Flavor-debug.apk"
   }
   Write-Host "`nAPK: $apk ($([math]::Round((Get-Item $apk).Length / 1MB, 1)) MB)"
 } finally {
