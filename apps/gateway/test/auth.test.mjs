@@ -31,7 +31,7 @@ test('Khách: tạo tài khoản => token dùng được, mã khôi phục dạn
   }
 });
 
-test('Refresh: xoay vòng — token mới dùng được, token cũ dùng lại => 401', async () => {
+test('Refresh: xoay vòng — token mới dùng được, token cũ dùng lại => 401 và thu hồi cả họ', async () => {
   const a = await makeApp();
   try {
     const { body } = await guest(a);
@@ -42,7 +42,8 @@ test('Refresh: xoay vòng — token mới dùng được, token cũ dùng lại 
     const reuse = await a.inject({ method: 'POST', url: '/v1/auth/refresh', payload: { refreshToken: body.refreshToken } });
     assert.equal(reuse.statusCode, 401);
     const r2 = await a.inject({ method: 'POST', url: '/v1/auth/refresh', payload: { refreshToken: r1.json().refreshToken } });
-    assert.equal(r2.statusCode, 200);
+    // Dự án 3: dùng lại token đã xoay vòng = dấu hiệu bị lộ => thu hồi CẢ HỌ, token mới cũng chết (đăng nhập lại)
+    assert.equal(r2.statusCode, 401);
   } finally {
     await a.close();
   }
