@@ -122,7 +122,6 @@ export function PathHome() {
         <h2 id="ct-path" className="m-0 text-lg font-black text-heading">
           {t('pathTitle')}
         </h2>
-        <p className="m-0 text-xs text-ink-soft">{t('pathNote')}</p>
         {COURSE.units.map((u) => {
           const p = unitProgress(u, lessons, testedOut);
           return (
@@ -172,6 +171,8 @@ export function PathHome() {
             </Card>
           );
         })}
+        {/* Ghi chú đặt cuối bản đồ (không ở đầu): khối chữ của chunk lười lọt màn đầu sẽ thành LCP muộn khi chữ có sẵn ngắn hơn (bản en trên CI: 3 s) */}
+        <p className="m-0 text-xs text-ink-soft">{t('pathNote')}</p>
         <p className="m-0 text-xs italic text-ink-muted">{t('draftContent')}</p>
       </section>
 

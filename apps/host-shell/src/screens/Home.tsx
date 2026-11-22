@@ -45,7 +45,7 @@ export function Home() {
         <h1 className="min-w-0 flex-1">{t('homeTitle')}</h1>
       </header>
       {/* Dòng dẫn rộng hết lề: là khối chữ lớn nhất trong màn đầu nên LCP vẫn là chữ thường trực (không phải chữ trong chunk lười) */}
-      <p className="m-0 mb-5 mt-2 text-base leading-6 text-ink-soft">
+      <p className="m-0 mb-5 mt-2 text-lg leading-7 text-ink-soft">
         {profile.onboarded ? t('homeLevel', { level: cefrLabel(profile.level) }) : ''}
         {t('homeLead')}
       </p>
