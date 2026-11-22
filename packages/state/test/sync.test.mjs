@@ -250,3 +250,51 @@ test('Đồng ý có trên máy nhưng chưa lên server (bóng chưa có) => v�
   assert.equal(s().consents.voice, true, 'ảnh chụp sau lô có voice => máy vẫn giữ đồng ý');
   assert.equal(server.get('voice').version, '2');
 });
+
+test('pauseSync: không gọi transport (kể cả kéo định kỳ), sự kiện vẫn vào hàng đợi; resumeSync => đẩy', async () => {
+  const { pauseSync, resumeSync } = await import('../dist/sync.js');
+  const tr = fakeTransport();
+  const { engine } = start(tr, memStorage(), true);
+  await new Promise((r) => setTimeout(r, 20)); // chờ lần flush khởi động
+  const base = tr.batches.length;
+  const stopPull = engine.startPeriodicPull(10);
+  pauseSync('update-required');
+  s().setPreferences({ speed: 1.25 });
+  assert.equal(engine.status().pending, 1);
+  assert.equal(await engine.flush(), false);
+  await new Promise((r) => setTimeout(r, 60)); // vài nhịp kéo định kỳ
+  assert.equal(tr.batches.length, base, 'không gọi transport khi tạm dừng');
+  assert.equal(engine.status().pending, 1);
+  stopPull();
+  resumeSync();
+  assert.equal(await engine.flush(), true);
+  assert.equal(tr.batches.length, base + 1);
+  assert.equal(engine.status().pending, 0);
+});
+
+test('transport ném update-required => tự tạm dừng (không thử lại mỗi ~60 s)', async () => {
+  const { resumeSync } = await import('../dist/sync.js');
+  const tr = fakeTransport();
+  const { engine } = start(tr);
+  tr.push = async () => {
+    tr.calls = (tr.calls ?? 0) + 1;
+    throw Object.assign(new Error('426'), { kind: 'update-required' });
+  };
+  s().setPreferences({ speed: 1.5 });
+  assert.equal(await engine.flush(), false);
+  assert.equal(await engine.flush(), false);
+  assert.equal(tr.calls, 1, 'lần thứ hai không gọi transport');
+  resumeSync();
+});
+
+test('pauseSync: pullAndReplace không chạy switchAccount và không gọi transport (Codex #29)', async () => {
+  const { pauseSync, resumeSync } = await import('../dist/sync.js');
+  const tr = fakeTransport();
+  const { engine } = start(tr);
+  pauseSync('update-required');
+  let switched = false;
+  await assert.rejects(engine.pullAndReplace(async () => void (switched = true)), (e) => e.kind === 'update-required');
+  assert.equal(switched, false);
+  assert.equal(tr.batches.length, 0);
+  resumeSync();
+});
