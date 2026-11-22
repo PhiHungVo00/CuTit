@@ -8,6 +8,7 @@ beforeEach(() => learnerStore.getState().setPreferences({ uiLanguage: 'vi' }));
 
 afterEach(() => {
   cleanup();
+  localStorage.clear();
   learnerStore.getState().reset();
   learnerStore.getState().setPreferences({ uiLanguage: 'vi' });
 });
@@ -15,6 +16,28 @@ afterEach(() => {
 const type = (label: RegExp | string, value: string) => fireEvent.change(screen.getByLabelText(label), { target: { value } });
 
 describe('AuthScreen', () => {
+  it('Google lần đầu trên máy: hỏi xác nhận tuổi TRƯỚC khi mở Google; chưa tick thì không gọi', async () => {
+    const f = makeDeps();
+    renderAt(<AuthScreen deps={f.deps} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Tiếp tục với Google' }));
+    expect(await screen.findByText('Xác nhận tuổi')).toBeTruthy();
+    const go = screen.getByRole('button', { name: 'Tiếp tục với Google' }) as HTMLButtonElement;
+    expect(go.disabled).toBe(true);
+    expect(f.session.signInWithGoogle).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByLabelText(/Tôi xác nhận mình đủ 16 tuổi/));
+    fireEvent.click(go);
+    await waitFor(() => expect(f.session.signInWithGoogle).toHaveBeenCalledTimes(1));
+  });
+
+  it('đã xác nhận tuổi trên máy (đăng nhập Google lại): không hỏi nữa', async () => {
+    localStorage.setItem('becutit.age-confirmed', '1');
+    const f = makeDeps();
+    renderAt(<AuthScreen deps={f.deps} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Tiếp tục với Google' }));
+    await waitFor(() => expect(f.session.signInWithGoogle).toHaveBeenCalledTimes(1));
+    expect(screen.queryByText('Xác nhận tuổi')).toBeNull();
+  });
+
   it('có nút Google, hai tab, hiện/ẩn mật khẩu và link Quên mật khẩu (vi)', async () => {
     renderAt(<AuthScreen deps={makeDeps().deps} />);
     expect(screen.getByRole('button', { name: 'Tiếp tục với Google' })).toBeTruthy();
@@ -111,6 +134,7 @@ describe('AuthScreen', () => {
   });
 
   it('Google trả needs_merge => hộp 2 nút; "Gộp" chạy mergeInto, "Chỉ dùng tài khoản" chạy pullAndReplace', async () => {
+    localStorage.setItem('becutit.age-confirmed', '1');
     const f = makeDeps({ progress: true });
     f.session.signInWithGoogle.mockResolvedValueOnce({ status: 'needs_merge', mergeTicket: 't'.repeat(20), target: { createdAt: '2026-11-01T00:00:00.000Z', hasProgress: true } } as never);
     renderAt(<AuthScreen deps={f.deps} />);
@@ -123,6 +147,7 @@ describe('AuthScreen', () => {
   });
 
   it('Google trả needs_merge => "Chỉ dùng tiến độ của tài khoản" bỏ tiến độ máy (discard_device + pullAndReplace)', async () => {
+    localStorage.setItem('becutit.age-confirmed', '1');
     const f = makeDeps({ progress: true });
     f.session.signInWithGoogle.mockResolvedValueOnce({ status: 'needs_merge', mergeTicket: 't'.repeat(20), target: { createdAt: '2026-11-01T00:00:00.000Z', hasProgress: true } } as never);
     renderAt(<AuthScreen deps={f.deps} />);
