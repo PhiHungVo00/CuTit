@@ -288,8 +288,14 @@ export function createAuthSession(opts: SessionOptions = {}): AuthSession {
   /** Bearer của khách đang có trên máy; không có phiên/đã là tài khoản => undefined (không tạo khách chỉ để đăng ký) */
   async function guestBearer(): Promise<string | undefined> {
     const st = await load();
-    if (!st || st.kind === 'account') return undefined;
-    return (await getToken()) ?? undefined;
+    // Đã chặn (merged-elsewhere / signed-out): đăng nhập lại không kèm Bearer — đây là lối ra duy nhất của trạng thái chặn
+    if (!st || st.kind === 'account' || blocked) return undefined;
+    try {
+      return (await getToken()) ?? undefined;
+    } catch (err) {
+      if (blocked) return undefined; // vừa phát hiện account_merged (vd. mở lại app): đăng nhập như máy chưa có phiên
+      throw err;
+    }
   }
 
   /** Gọi /v1/me/* có Bearer, gửi lại MỘT lần khi 401 (access token hết hạn) */
