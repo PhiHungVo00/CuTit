@@ -28,7 +28,7 @@
 | Personal info | Email, Phone, Address, … | Không | — | — | — | — | |
 | Location | Approximate / Precise | Không | — | — | — | — | IP chỉ dùng cho giới hạn tần suất, không suy ra vị trí |
 | Audio | **Voice or sound recordings** | Có | Không | **Có\*** (Gateway không lưu) | Tùy chọn (hỏi đồng ý `voice`) | App functionality | Gửi tới Google Gemini hoặc Groq (Whisper) để chuyển thành chữ/chấm phát âm; tin giọng nói ≤ 15 s |
-| Photos and videos | **Photos** | Có | Không | **Có\*** | Tùy chọn (hỏi đồng ý `camera`) | App functionality | Ảnh JPEG cạnh dài ≤ 768 px (chat, Camera từ vựng) và **một khung hình mỗi lượt nói khi gọi video** gửi tới Google Gemini (nhận diện/mô tả). Không gửi video liên tục nên không khai “Videos” |
+| Photos and videos | **Photos** | Có | Không | **Có\*** | Tùy chọn (hỏi đồng ý `camera`) | App functionality | Ảnh JPEG cạnh dài ≤ 768 px (chat, Camera từ vựng) và **một khung hình mỗi lượt nói khi gọi video** gửi tới Google Gemini (nhận diện/mô tả); **OpenRouter** cũng nhận khi nằm trong chuỗi ảnh `VISION_CHAIN` (cấu hình mẫu `.env.example` có) Không gửi video liên tục nên không khai “Videos” |
 | Messages | Other in-app messages | Không | — | — | — | — | App không có nhắn tin giữa người dùng |
 | App activity | **App interactions** | Có | Không | Không | Bắt buộc | App functionality, Analytics (cho chính người học: thống kê tiến độ) | Kết quả bài làm, thời gian học, XP, tiến độ bài, huy hiệu, thẻ ôn |
 | App activity | **Other user-generated content** | Có | Không | **Có\*** | Tùy chọn | App functionality | Tin nhắn với gia sư AI (kèm ≤ 10 lượt gần nhất + tóm tắt ≤ 600 ký tự), câu hỏi văn hóa — gửi tới Gemini/Groq/OpenRouter, không lưu ở Gateway. Lịch sử chat lưu IndexedDB **trên máy**, không gửi lên máy chủ ⇒ không khai |

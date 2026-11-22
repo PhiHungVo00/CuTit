@@ -151,7 +151,7 @@ Người đã đồng ý `voice` v1 trên máy trước 19/11/2026 không bị h
 
 | Mục | Thay đổi |
 |---|---|
-| Bên nhận | Thêm **Groq, Inc.** (chat chữ, chép lời giọng nói; không nhận ảnh) `[CẦN ĐIỀN: địa chỉ pháp lý, điều khoản gói đang dùng]` và **OpenRouter** (dự phòng; chuyển tiếp tới nhà vận hành mô hình khác — bên nhận thứ hai chưa biết trước `[CẦN ĐIỀN]`). Google (Gemini) vẫn nhận chữ, ảnh, khung hình, giọng nói |
+| Bên nhận | Thêm **Groq, Inc.** (chat chữ, chép lời giọng nói; không nhận ảnh) `[CẦN ĐIỀN: địa chỉ pháp lý, điều khoản gói đang dùng]` và **OpenRouter** (dự phòng chữ và — khi nằm trong `VISION_CHAIN` — ảnh/khung hình gọi video; chuyển tiếp tới nhà vận hành mô hình khác — bên nhận thứ hai chưa biết trước `[CẦN ĐIỀN]`). Google (Gemini) vẫn nhận chữ, ảnh, khung hình, giọng nói |
 | Loại dữ liệu | Thêm: **khung hình camera mỗi lượt nói khi gọi video** (JPEG ≤ 768 px, không phải video liên tục); tin nhắn kèm ≤ 10 lượt gần nhất và đoạn **tóm tắt ≤ 600 ký tự do AI tạo** từ cuộc trò chuyện; tin giọng nói ≤ 15 s |
 | Lưu trữ phía nhận | Gateway vẫn không lưu nội dung. Phía nhà cung cấp: gói miễn phí có thể lưu và dùng cải thiện dịch vụ — **chính sách đã nói thẳng điều này**; `[CẦN ĐIỀN]` điều khoản từng gói |
 | Dữ liệu mới trên máy (không gửi đi) | Lịch sử chat chỉ chữ trong IndexedDB, ≤ 500 cuộc. **Chưa thấy mã xóa lịch sử khi “Xóa tài khoản”** (xóa nằm ở màn lịch sử chat và khi gỡ app) ⇒ việc cần làm, xem mục C.7 |
