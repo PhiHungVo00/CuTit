@@ -61,6 +61,15 @@ describe('useCall — gọi video theo lượt', () => {
     expect(send).toHaveBeenCalledWith('Xin chào', { image: { base64: 'IMG', previewUrl: 'data:x' } });
   });
 
+  it('gõ thay nói trong gọi video (không qua micro) ⇒ vẫn chụp 1 khung lúc gửi và kèm ảnh', async () => {
+    const hook = await startVideo();
+    await act(async () => onHeard({ text: 'Xin chào', mock: false }));
+    await act(async () => undefined);
+    expect(grabFrame).toHaveBeenCalledTimes(1);
+    expect(send).toHaveBeenCalledWith('Xin chào', { image: { base64: 'IMG', previewUrl: 'data:x' } });
+    void hook;
+  });
+
   it('gọi thường: không bao giờ grabFrame, gửi không kèm ảnh', async () => {
     const hook = await startVideo({ video: false });
     setStatus(hook, 'recording');
