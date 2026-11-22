@@ -1,10 +1,10 @@
-# Nguyên tắc UI/UX của Bé Cu Tít (4 nhóm, có số đo)
+# Nguyên tắc thiết kế UI/UX của Bé Cu Tít (4 nhóm, có số đo)
 
 > Ngày 22/11/2026. Viết lại từ 4 nhóm người dùng đưa vào, đối chiếu chuẩn công khai (WCAG 2.2, Material, Apple HIG, NN/g) và **đo trên code hiện tại**.
-> Mục đích: mọi phiên làm giao diện dùng chung một bảng kiểm. Mỗi luật có **con số** và **cách kiểm**, không chỉ là tên định luật.
+> **Dùng ở khâu THIẾT KẾ** (giai đoạn 4: dựng bản phác `docs/thiet-ke/ban-phac/`, viết spec giao diện, chọn bố cục/màu/chữ), **không phải khâu kiểm thử**. Người thiết kế màn (người hoặc phiên AI) dựa vào đây để ra quyết định; cột "Con số" là giá trị mặc định khi thiết kế. Kiểm thử trợ năng tự động vẫn làm riêng bằng `e2e/a11y.spec.ts` + Lighthouse (skill `kiem-truoc-khi-gop`).
 > Liên quan: `docs/thiet-ke/soi-fe/BAO-CAO.md` (soi FE đợt 2), `docs/thiet-ke/KIEM-KE-GIAO-DIEN.md`, token ở `packages/ui/src/theme.css`.
 
-Câu hỏi gốc khi nhìn một màn: **(1) mắt rơi vào đâu trước? (2) cái gì đi với cái gì? (3) có phải đoán không? (4) có khựng ở bước nào không?**
+Câu hỏi gốc khi **thiết kế** một màn: **(1) mắt rơi vào đâu trước? (2) cái gì đi với cái gì? (3) có phải đoán không? (4) có khựng ở bước nào không?**
 
 ---
 
@@ -12,7 +12,7 @@ Câu hỏi gốc khi nhìn một màn: **(1) mắt rơi vào đâu trước? (2)
 
 Gom từ: phân cấp thị giác, tương phản, 1/3, phối màu 60–30–10.
 
-| Luật | Con số áp vào app | Cách kiểm |
+| Luật | Con số khi thiết kế | Cách tự soát bản phác |
 |---|---|---|
 | **Một điểm nhấn chính mỗi màn** | Mỗi màn có đúng 1 nút chính dùng `--ct-accent`. Hành động khác dùng nút viền hoặc nút chữ | Chụp màn, nheo mắt (hoặc làm mờ 8px): còn nhận ra nút chính không |
 | **60–30–10** | 60% nền `canvas/surface` (kem hoặc nâu ấm), 30% chữ và đường kẻ `ink/line`, **≤10% màu nhấn** (`accent`, `gold`, chip). Màu nhấn không dùng làm nền khối lớn | Ảnh chụp: diện tích màu nhấn ≤ 1/10 khung |
@@ -27,7 +27,7 @@ Gom từ: phân cấp thị giác, tương phản, 1/3, phối màu 60–30–10
 
 Gom từ: gần gũi, khoảng trắng, Gestalt, Miller (chia cụm), lưới 8pt.
 
-| Luật | Con số áp vào app | Cách kiểm |
+| Luật | Con số khi thiết kế | Cách tự soát bản phác |
 |---|---|---|
 | **Lưới 8pt (nửa bước 4)** | Khoảng cách chỉ dùng 4, 8, 12, 16, 24, 32, 48 px (Tailwind `1, 2, 3, 4, 6, 8, 12`). Không dùng 5, 7, 10, 14 | grep `p-/gap-/m-` lạ trong diff |
 | **Gần trong nhóm, xa giữa nhóm** | Trong nhóm 8–12px, giữa các nhóm ≥ **24px** (tỉ lệ ≥ 2:1) | Ảnh chụp: thấy được ranh giới nhóm mà không cần đường kẻ |
@@ -42,7 +42,7 @@ Gom từ: gần gũi, khoảng trắng, Gestalt, Miller (chia cụm), lưới 8p
 
 Gom từ: căn chỉnh, lặp lại và nhất quán, định luật Jakob, tỷ lệ vàng.
 
-| Luật | Con số áp vào app | Cách kiểm |
+| Luật | Con số khi thiết kế | Cách tự soát bản phác |
 |---|---|---|
 | **Một trục căn trái** | Chữ thân và tiêu đề căn trái theo lề 16px (điện thoại). Căn giữa chỉ dùng cho màn trống, màn chúc mừng, hộp thoại ngắn | Ảnh chụp: các mép trái thẳng hàng |
 | **Thành phần dùng chung** | Nút, thẻ, chip, ô nhập, EmptyState lấy từ `packages/ui`. **Không tự viết lại trong từng MFE** (kiểm kê 20/11: mỗi MFE tự viết `card`/`primaryBtn`) | Review diff: không có class nút hay thẻ mới tự chế |
@@ -56,7 +56,7 @@ Gom từ: căn chỉnh, lặp lại và nhất quán, định luật Jakob, tỷ
 
 Gom từ: Fitts, Hick, typography.
 
-| Luật | Con số áp vào app | Cách kiểm |
+| Luật | Con số khi thiết kế | Cách tự soát bản phác |
 |---|---|---|
 | **Vùng chạm** | Mục tiêu chạm ≥ **44×44px** (Apple; dự án đang dùng `min-h-11` = 44px); nút chính **48px** (`min-h-12`, Material 48dp). Sàn pháp lý WCAG 2.5.8 AA là 24×24 CSS px; 44 là mức AAA (2.5.5) | axe `target-size`; e2e đo `boundingBox` nút chính |
 | **Khoảng giữa hai mục chạm** | ≥ **8px** (Material) | Ảnh chụp, DevTools |
@@ -70,9 +70,9 @@ Gom từ: Fitts, Hick, typography.
 
 ---
 
-## Bảng kiểm 12 dòng cho mỗi PR có đổi giao diện
+## 12 câu tự hỏi khi chốt một bản thiết kế màn
 
-Dán vào mô tả PR, đánh dấu từng dòng:
+Dùng khi dựng bản phác hoặc viết mục giao diện trong spec, trước khi đưa người dùng duyệt (đưa vào mục "Giao diện" của spec những dòng còn phải đánh đổi):
 
 1. [ ] Mỗi màn có **một** nút chính; nheo mắt vẫn thấy nó trước.
 2. [ ] Màu nhấn ≤ 10% diện tích; màu đúng nghĩa (đúng/sai/thưởng).
