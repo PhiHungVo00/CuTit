@@ -150,7 +150,7 @@ export function Alert({ kind = 'error', children }: { kind?: 'error' | 'ok' | 'i
   );
 }
 
-type Ctx = 'auth' | 'backup' | 'password' | 'email';
+type Ctx = 'auth' | 'backup' | 'password' | 'email' | 'reset';
 
 /**
  * Lỗi Gateway/client => câu cho người dùng. `null` = im lặng (người dùng tự hủy hộp Google).
@@ -160,6 +160,8 @@ export function authError(err: unknown, t: T, ctx: Ctx = 'auth'): string | null 
   const e = err as { kind?: string; code?: string } | null;
   const code = e?.code;
   if (code === 'google_cancelled') return null;
+  // Đặt lại mật khẩu bằng mã email: mọi lỗi liên quan mã chỉ một câu (không lộ tài khoản có tồn tại / mã đã bị khóa)
+  if (ctx === 'reset' && (code === 'otp_invalid' || code === 'otp_expired' || code === 'otp_locked' || code === 'invalid_credentials')) return t('errOtp');
   if (e?.kind === 'offline' || e?.kind === 'timeout') return t('errNetwork');
   if (code === 'invalid_credentials') return ctx === 'backup' ? t('errBackupBad') : ctx === 'auth' ? t('errCredentials') : t('errCurrentPassword');
   if (code === 'username_taken') return t('errUsernameTaken');

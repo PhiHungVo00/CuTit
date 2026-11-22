@@ -43,7 +43,7 @@ export function ForgotPassword({ deps = defaultDeps, onBack }: { deps?: AuthDeps
     );
   }
 
-  const run = async (fn: () => Promise<void>, ctx: 'backup' | 'auth' | 'email' = 'auth') => {
+  const run = async (fn: () => Promise<void>, ctx: 'backup' | 'auth' | 'email' | 'reset' = 'auth') => {
     if (busy) return;
     setBusy(true);
     setError(null);
@@ -77,7 +77,7 @@ export function ForgotPassword({ deps = defaultDeps, onBack }: { deps?: AuthDeps
     void run(async () => {
       await (await deps.session()).resetPasswordWithEmail(who.trim(), code, pw);
       setDone({});
-    });
+    }, 'reset');
   };
 
   return (

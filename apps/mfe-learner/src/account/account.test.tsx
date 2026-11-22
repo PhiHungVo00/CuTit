@@ -70,6 +70,22 @@ describe('ForgotPassword', () => {
   });
 });
 
+describe('ForgotPassword: lỗi mã đặt lại không lộ trạng thái', () => {
+  it.each(['otp_invalid', 'otp_expired', 'otp_locked', 'invalid_credentials'])('đặt lại bằng email, lỗi %s => cùng một câu', async (code) => {
+    const f = makeDeps({ mail: true });
+    f.session.resetPasswordWithEmail.mockRejectedValueOnce(Object.assign(new Error('x'), { kind: 'invalid-request', code }));
+    renderAt(<ForgotPassword deps={f.deps} onBack={() => undefined} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Mã gửi qua email' }));
+    type('Tên đăng nhập hoặc email', 'ai-do');
+    fireEvent.submit(screen.getByLabelText('Tên đăng nhập hoặc email').closest('form')!);
+    await screen.findByText(/Nếu thông tin đúng, mã đã được gửi/);
+    type('Mã 6 số', '123456');
+    type('Mật khẩu mới', 'mat-khau-moi-123');
+    fireEvent.submit(screen.getByLabelText('Mã 6 số').closest('form')!);
+    expect(await screen.findByText('Mã không đúng hoặc đã hết hạn, hãy xin mã mới.')).toBeTruthy();
+  });
+});
+
 describe('SignInInvite', () => {
   it('khách chưa xong bài nào: không hiện; xong bài đầu tiên: hiện; "Để sau" tắt và nhớ', async () => {
     const f = makeDeps();
