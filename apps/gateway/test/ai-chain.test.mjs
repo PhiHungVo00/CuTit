@@ -340,3 +340,81 @@ test('chuỗi thực tế groq,groq,gemini: hai nguồn nhanh 429 xong thì Gemi
   assert.equal(r.provider, 'gemini');
   assert.equal(seen[0], 9000 - 800, 'nguồn cuối nhận toàn bộ ngân sách còn lại, không bị trừ phần chừa');
 });
+
+// ---- VISION-DP: chuỗi Vision gemini → groq → openrouter (ảnh trong chat / gọi video) ----
+const VISION_SPEC = 'gemini,groq:qwen/qwen3.8-27b,openrouter:google/gemma-4-31b-it:free,openrouter:nvidia/nemotron-3.5-super-vl:free';
+const visionCfg = () => cfg({ GEMINI_API_KEY: 'k'.repeat(30), GROQ_API_KEY: 'g'.repeat(20), OPENROUTER_API_KEY: 'o'.repeat(20), VISION_CHAIN: VISION_SPEC });
+const IMG_REQ = { ...REQ, turns: [{ role: 'user', parts: [{ inline: { mimeType: 'image/jpeg', base64: 'QUJD' } }, { text: 'Đây là gì?' }] }] };
+const hostOf = (u) => new URL(String(u)).host;
+
+test('vision: Gemini 503 => Groq trả lời; ảnh gửi đúng dạng image_url data URI; nhãn nguồn = groq:<model>', async () => {
+  const seen = [];
+  const fetchImpl = async (url, init) => {
+    const h = hostOf(url);
+    seen.push([h, init?.body ? JSON.parse(init.body) : null]);
+    if (h.includes('googleapis')) return new Response('{}', { status: 503 });
+    return okBody('{"object":"táo"}');
+  };
+  const r = createAiProviders(visionCfg(), { fetchImpl });
+  assert.equal(r.skipped.length, 0);
+  const out = await r.vision.generateJson(IMG_REQ);
+  assert.equal(out.provider, 'groq:qwen/qwen3.8-27b');
+  assert.deepEqual(out.json, { object: 'táo' });
+  assert.deepEqual(seen.map((s) => s[0]), ['generativelanguage.googleapis.com', 'api.groq.com']);
+  const groqBody = seen[1][1];
+  assert.equal(groqBody.model, 'qwen/qwen3.8-27b');
+  assert.deepEqual(groqBody.messages[1].content[0], { type: 'image_url', image_url: { url: 'data:image/jpeg;base64,QUJD' } });
+  assert.deepEqual(groqBody.response_format, { type: 'json_object' });
+});
+
+test('vision: Gemini timeout + Groq 429 => OpenRouter (gemma) trả lời; nhãn nguồn đúng', async () => {
+  const hosts = [];
+  const fetchImpl = async (url) => {
+    const h = hostOf(url);
+    hosts.push(h);
+    if (h.includes('googleapis')) { const e = new Error('t'); e.name = 'TimeoutError'; throw e; }
+    if (h.includes('groq')) return new Response('{}', { status: 429 });
+    return okBody('{"object":"nhà"}');
+  };
+  const r = createAiProviders(visionCfg(), { fetchImpl });
+  const out = await r.vision.generateJson(IMG_REQ);
+  assert.equal(out.provider, 'openrouter:google/gemma-4-31b-it:free');
+  assert.deepEqual(hosts, ['generativelanguage.googleapis.com', 'api.groq.com', 'openrouter.ai']);
+});
+
+test('vision: gemma 429 => nemotron (dự phòng thứ hai của OpenRouter); content rỗng (chỉ suy luận) => llm_bad_output => nguồn kế', async () => {
+  const models = [];
+  const fetchImpl = async (url, init) => {
+    const h = hostOf(url);
+    if (h.includes('googleapis') || h.includes('groq')) return new Response('{}', { status: 503 });
+    const m = JSON.parse(init.body).model;
+    models.push(m);
+    if (m.startsWith('google/')) return new Response('{}', { status: 429 });
+    return okBody('{"object":"cốc"}');
+  };
+  const r = createAiProviders(visionCfg(), { fetchImpl });
+  assert.equal((await r.vision.generateJson(IMG_REQ)).provider, 'openrouter:nvidia/nemotron-3.5-super-vl:free');
+  assert.deepEqual(models, ['google/gemma-4-31b-it:free', 'nvidia/nemotron-3.5-super-vl:free']);
+
+  const empty = createAiProviders(visionCfg(), {
+    fetchImpl: async (url) => (hostOf(url).includes('openrouter') ? okBody('') : new Response('{}', { status: 503 }))
+  });
+  await assert.rejects(empty.vision.generateJson(IMG_REQ), (e) => e.code === 'llm_busy');
+});
+
+test('vision: lỗi hết cả chuỗi => llm_busy (503) — route chat hoàn quota (đã có test ở chat-image-summary)', async () => {
+  const r = createAiProviders(visionCfg(), { fetchImpl: async () => new Response('{}', { status: 503 }) });
+  await assert.rejects(r.vision.generateJson(IMG_REQ), (e) => e instanceof GatewayError && e.statusCode === 503 && e.code === 'llm_busy');
+});
+
+test('vision: mặc định (không đặt VISION_CHAIN) = gemini + nguồn miễn phí có khóa; thiếu khóa thì không thêm (không cảnh báo thừa)', () => {
+  const all = createAiProviders(cfg({ GEMINI_API_KEY: 'k'.repeat(30), GROQ_API_KEY: 'g'.repeat(20), OPENROUTER_API_KEY: 'o'.repeat(20) }));
+  assert.equal(all.vision.name, `chain(${VISION_SPEC.replace("gemini,", "gemini:gemini-3.5-flash-lite,")})`);
+  assert.equal(all.skipped.length, 0);
+  const onlyGemini = createAiProviders(cfg({ GEMINI_API_KEY: 'k'.repeat(30) }));
+  assert.match(onlyGemini.vision.name, /^chain\(gemini/);
+  assert.ok(!onlyGemini.vision.name.includes('groq'));
+  const groqOnly = createAiProviders(cfg({ GROQ_API_KEY: 'g'.repeat(20) }));
+  assert.equal(groqOnly.vision.name, 'chain(groq:qwen/qwen3.8-27b)');
+  assert.equal(createAiProviders(cfg({})).vision, null);
+});

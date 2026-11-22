@@ -290,6 +290,9 @@ importers:
       '@capacitor/splash-screen':
         specifier: ^7.0.5
         version: 7.0.5(@capacitor/core@7.6.10)
+      '@capgo/capacitor-social-login':
+        specifier: 7.19.0
+        version: 7.19.0(@capacitor/core@7.6.10)
       '@fontsource/be-vietnam-pro':
         specifier: ^5.3.0
         version: 5.3.0
@@ -932,6 +935,9 @@ importers:
       '@capacitor/local-notifications':
         specifier: ^7.0.7
         version: 7.0.7(@capacitor/core@7.6.10)
+      '@capgo/capacitor-social-login':
+        specifier: 7.19.0
+        version: 7.19.0(@capacitor/core@7.6.10)
       '@vietlearning/shared':
         specifier: workspace:*
         version: link:../shared
@@ -1589,6 +1595,11 @@ packages:
 
   '@capacitor/splash-screen@7.0.5':
     resolution: {integrity: sha512-bPG2SamFL7VT5I3XsgsGgJhkiyxq3OXCOVKEDupSieVdtEiG7j2vLbSD0xL+91zteF/qLuxsjbugGy5LD8mS2A==}
+    peerDependencies:
+      '@capacitor/core': '>=7.0.0'
+
+  '@capgo/capacitor-social-login@7.19.0':
+    resolution: {integrity: sha512-awLwfvfbl8YibSLk5OecGaEmOyUtg0eI3MMCMuGI+Z8llv9avon0FbWfchKWTd4t+HEuxeKFp2x1fdMgDUFaVg==}
     peerDependencies:
       '@capacitor/core': '>=7.0.0'
 
@@ -6544,6 +6555,10 @@ snapshots:
       '@capacitor/core': 7.6.10
 
   '@capacitor/splash-screen@7.0.5(@capacitor/core@7.6.10)':
+    dependencies:
+      '@capacitor/core': 7.6.10
+
+  '@capgo/capacitor-social-login@7.19.0(@capacitor/core@7.6.10)':
     dependencies:
       '@capacitor/core': 7.6.10
 
