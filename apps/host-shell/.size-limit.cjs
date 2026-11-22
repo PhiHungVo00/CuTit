@@ -25,7 +25,7 @@ module.exports = [
   // chuyển cảnh/fade và luật giảm chuyển động (đo 8.35 kB)
   // 8.4 → 8.7 kB (P0-1 soi FE, 2026-11-21): cutit.css thực sự được nạp (trước đó bị bỏ sót nên đo thiếu ~0.25 kB). Nằm trong tệp CSS
   // lười đi cùng chunk CuTit, KHÔNG vào CSS tải đầu (index-*.css giữ nguyên); đo tổng 8.6 kB.
-  { name: 'CSS toàn app (Tailwind + tokens)', path: 'dist/assets/*.css', limit: '8.7 kB', gzip: true },
+  { name: 'CSS toàn app (Tailwind + tokens)', path: 'dist/assets/*.css', limit: '8.9 kB', gzip: true }, // DA2-T5-6: màn chat Messenger thêm lớp tiện ích (đo 8.76 kB)
   { name: 'M3 Ma trận xưng hô (lazy)', path: 'dist/assets/HonorificScreen-*.js', limit: '15 kB', gzip: true },
   { name: 'M3 Bảng 20 cặp + Radix Dialog (lazy khi mở)', path: 'dist/assets/HonorificExplorerDrawer-*.js', limit: '18 kB', gzip: true },
   { name: 'M2 Luyện thanh điệu (lazy)', path: 'dist/assets/ToneLabRoute-*.js', limit: '9 kB', gzip: true },
@@ -61,7 +61,7 @@ module.exports = [
   // GĐ3 Hội thoại AI, đo 2026-11-18 (lazy). Phần chat dùng chung M1/M7/gọi thoại tách thành chunk riêng nên M1 còn ~0.7 kB
   // Task 7 (2026-11-21): +video (khung camera, chụp theo lượt, 14 chuỗi vi+en) nên nâng 5 → 6,5 kB; đo 6,14 kB
   { name: 'GĐ3 Gọi thoại với Cu Tít (lazy)', path: 'dist/assets/CallRoute-*.js', limit: '6.5 kB', gzip: true },
-  { name: 'GĐ3 Hội thoại dùng chung: phiên chat + nhập giọng (lazy)', path: 'dist/assets/useChatSession-*.js', limit: '10 kB', gzip: true },
+  { name: 'GĐ3 Hội thoại dùng chung: phiên chat + nhập giọng (lazy)', path: 'dist/assets/useChatSession-*.js', limit: '12 kB', gzip: true }, // DA2-T5-6: gộp khung chat, ô soạn, lịch sử, hộp đồng ý AI (đo 11.17 kB; vẫn lazy)
   { name: 'GĐ3 Tổng kết + thêm ôn tập (lazy)', path: 'dist/assets/SessionSummary-*.js', limit: '1.5 kB', gzip: true },
   { name: 'Worker phân tích cao độ A1/A2', path: 'dist/assets/pitch.worker-*.js', limit: '5 kB', gzip: true },
   // GĐ2 (đo 2026-11-18), mọi chunk đều lazy
