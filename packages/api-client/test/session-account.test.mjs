@@ -99,6 +99,40 @@ test('401 account_merged (khách đã gộp vào tài khoản ở máy khác) =>
   assert.equal(calls.length, 1);
 });
 
+test('Sau merged-elsewhere: đăng nhập Google / đăng ký vẫn chạy (không Bearer của khách đã gộp), không bị chặn', async () => {
+  const store = memStore({ [AUTH_STORAGE_KEY]: stored(GUEST) });
+  const calls = fakeGateway({
+    '/v1/auth/refresh': () => json({ error: 'account_merged' }, 401),
+    '/v1/auth/nonce': () => json({ nonce: 'n'.repeat(32), expiresIn: 300 }),
+    '/v1/auth/google': () => json(signedIn(5, { userId: uid(2), providers: ['google'] })),
+    '/v1/auth/register': () => json({ ...signedIn(6, { userId: uid(3) }), backupCode: 'AAAA-BBBB-CCCC-DDDD' })
+  });
+  const s = createAuthSession(opts(store, { getGoogleIdToken: async () => 'id-token-xxxxxxxx' }));
+  const ev = events(s);
+  await assert.rejects(s.getToken(), (e) => e.code === 'account_merged');
+  const r = await s.signInWithGoogle();
+  assert.equal(r.status, 'signed_in');
+  const g = calls.find((c) => c.path === '/v1/auth/google');
+  assert.ok(g && !g.headers.Authorization, 'đăng nhập không kèm Bearer của khách đã gộp');
+  assert.equal(JSON.parse(store.m.get(AUTH_STORAGE_KEY)).kind, 'account');
+  assert.equal(await s.getToken(), 'access-5-xxxxxxxx');
+  assert.deepEqual(ev.map((e) => e.reason), ['merged-elsewhere', 'signed-in']);
+
+  // đăng ký trên máy merged-elsewhere khác cũng không bị chặn
+  const store2 = memStore({ [AUTH_STORAGE_KEY]: stored(GUEST) });
+  const s2 = createAuthSession(opts(store2));
+  await assert.rejects(s2.getToken());
+  await s2.register('ten_moi', 'Mat-khau-dai-du-123');
+  const reg = calls.find((c) => c.path === '/v1/auth/register');
+  assert.ok(reg && !reg.headers.Authorization);
+
+  // mở lại app (chặn chỉ nằm trong RAM): bấm Google ngay, refresh trả account_merged => vẫn đăng nhập được
+  const store3 = memStore({ [AUTH_STORAGE_KEY]: stored(GUEST) });
+  const s3 = createAuthSession(opts(store3, { getGoogleIdToken: async () => 'id-token-xxxxxxxx' }));
+  assert.equal((await s3.signInWithGoogle()).status, 'signed_in');
+  assert.equal(JSON.parse(store3.m.get(AUTH_STORAGE_KEY)).kind, 'account');
+});
+
 test('recover trả account_upgraded/account_merged => mời đăng nhập, không tạo khách mới', async () => {
   const store = memStore({ [AUTH_STORAGE_KEY]: stored(GUEST) });
   const calls = fakeGateway({
