@@ -17,7 +17,7 @@ export function VoiceConsent({ text, onAgree, onCancel }: { text: string; onAgre
       </p>
       <p className="m-0 text-sm text-ink-soft">{t('voicePrivacyShort')}</p>
       <details className="text-sm text-ink-soft">
-        <summary className="flex min-h-11 cursor-pointer items-center font-bold text-ink">{t('consentDetails')}</summary>
+        <summary className="flex min-h-11 cursor-pointer items-center font-bold text-ink">{t('consentDetails')} <span aria-hidden="true">▾</span></summary>
         <p className="m-0 pb-2">{text}</p>
       </details>
       <Link to="/quyen-rieng-tu" className="self-start text-sm font-bold text-ink underline">
