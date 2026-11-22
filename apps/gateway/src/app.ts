@@ -28,6 +28,9 @@ import { friendsRoutes } from './routes/friends.js';
 import { identityAuthRoutes, identityRoutes } from './routes/identities.js';
 import { createIdentityProviderFromEnv, type IdentityProvider } from './providers/identity.js';
 import { authMeRoutes } from './routes/authMe.js';
+import { appVersionRoutes } from './routes/appVersion.js';
+import { createAppVersionStore } from './services/appVersion/store.js';
+import { updateGate } from './services/appVersion/updateGate.js';
 import { createMailProvider, type MailProvider } from './services/mail/MailProvider.js';
 import { createDbProvider, type DbProvider } from './db/client.js';
 import { AuditLog, purgeAuditEvents } from './services/audit/audit.js';
@@ -210,9 +213,32 @@ export async function buildApp(config: GatewayConfig, opts: BuildOptions = {}): 
     { prefix: '/v1/auth' }
   );
 
+  // Dự án 8: GET /v1/app/version công khai (scope riêng như /v1/auth, giới hạn theo IP). Đọc cấu hình lúc dựng app:
+  // tệp sai => ném, Gateway không khởi động. Đăng ký TRƯỚC scope /v1 (không dính hook 426/xác thực của nó).
+  const appVersions = createAppVersionStore({
+    file: config.APP_VERSIONS_FILE,
+    ttlMs: config.APP_VERSIONS_TTL_MS,
+    apkHosts: config.apkDownloadHosts,
+    log: app.log
+  });
+  await app.register(
+    async (appScope) => {
+      await appScope.register(rateLimit, {
+        max: config.APP_VERSION_RATE_LIMIT_PER_MINUTE,
+        timeWindow: '1 minute',
+        keyGenerator: (req) => req.ip,
+        onExceeded: (req) => audit.noteRateLimited(AuditLog.context(req), req.url.split('?')[0])
+      });
+      await appScope.register(appVersionRoutes, { store: appVersions });
+    },
+    { prefix: '/v1/app' }
+  );
+
   // Mọi route nghiệp vụ khác nằm trong scope /v1 có hook xác thực + rate limit theo người dùng
   await app.register(
     async (v1) => {
+      // Dự án 8: chặn bản app dưới minBuild bằng 426, TRƯỚC xác thực (không gắn ở /v1/auth — xem spec 5.3)
+      v1.addHook('onRequest', updateGate(appVersions));
       v1.addHook('onRequest', pipeline.authenticate);
       await v1.register(rateLimit, {
         max: config.RATE_LIMIT_PER_MINUTE,
