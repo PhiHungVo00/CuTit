@@ -16,7 +16,7 @@
  *   (không tạo khách mới trong cùng lần gọi — request đang chờ gửi lại sẽ không rơi vào tài khoản mới).
  *   App xóa dữ liệu trên máy; lần gọi sau mới tạo khách mới như người dùng mới.
  */
-import type { ZodTypeAny, z } from 'zod';
+import { z, type ZodTypeAny } from 'zod';
 import {
   AuthGuestResponseSchema,
   AuthNonceResponseSchema,
@@ -24,7 +24,8 @@ import {
   AuthSignInResponseSchema,
   AuthSignedInSchema,
   AuthTokensSchema,
-  DeleteMeResponseSchema,
+  BackupCodeResponseSchema,
+  DeleteMeResultSchema,
   IdentityListResponseSchema,
   formatRecoveryCode,
   type AuthProvider,
@@ -104,19 +105,38 @@ export interface AuthSession {
   /** Gateway trả 401: bỏ access token, lấy token mới. true => nên gửi lại request */
   handleUnauthorized(): Promise<boolean>;
   /** Thông tin đã lưu trên máy (không gọi mạng) */
-  info(): Promise<{ userId: string; recoveryCode: string | null } | null>;
+  info(): Promise<{ userId: string; recoveryCode: string | null; kind: 'guest' | 'account'; providers: AuthProvider[] } | null>;
   /** Nhập mã khôi phục trên máy mới => chuyển sang tài khoản đó */
   recover(code: string): Promise<string>;
-  /** Xóa tài khoản trên server rồi xóa phiên trên máy */
-  deleteAccount(): Promise<void>;
+  /**
+   * Xóa tài khoản trên server rồi xóa phiên trên máy. mode 'grace' = khóa ngay, xóa hẳn sau 30 ngày (khôi phục được);
+   * 'now' (mặc định, như trước dự án 3) = xóa hẳn ngay. Trả hạn xóa (grace) hoặc null.
+   */
+  deleteAccount(mode?: 'grace' | 'now'): Promise<{ deleteAt: string | null }>;
   /** Tên đăng nhập/mật khẩu. Đang là khách => nâng cấp chính khách đó (giữ userId). backupCode chỉ hiện một lần */
   register(username: string, password: string): Promise<AuthRegisterResponse>;
   login(username: string, password: string): Promise<AuthSignedIn>;
   /** Google: đang là khách => liên kết/nâng cấp (có thể needs_merge); chưa có phiên => đăng nhập */
   signInWithGoogle(): Promise<SignInResult>;
   merge(mergeTicket: string, strategy: 'merge' | 'discard_device'): Promise<AuthSignedIn>;
-  /** Khôi phục tài khoản đang chờ xóa (sau khi đăng nhập có `restorable`) */
-  restore(): Promise<AuthSignedIn>;
+  /** Khôi phục tài khoản đang chờ xóa (sau khi đăng nhập có `restorable`). Token giữ nguyên; server chỉ bỏ hạn xóa */
+  restore(): Promise<void>;
+  /** Quên mật khẩu (luôn thành công về mặt hiển thị: server không lộ tài khoản có hay không). Không cần phiên */
+  forgotPassword(usernameOrEmail: string): Promise<void>;
+  /** Đặt lại bằng mã 6 số gửi qua email. Sai/hết hạn đều `otp_invalid` (server cố ý không phân biệt) */
+  resetPasswordWithEmail(usernameOrEmail: string, code: string, newPassword: string): Promise<void>;
+  /** Đặt lại bằng mã dự phòng; trả mã dự phòng MỚI (hiện một lần) */
+  resetPasswordWithBackup(username: string, backupCode: string, newPassword: string): Promise<{ backupCode: string }>;
+  /** Đổi mật khẩu: server thu hồi mọi phiên khác và cấp token mới cho máy này (được lưu lại) */
+  changePassword(currentPassword: string, newPassword: string): Promise<void>;
+  /** Gắn email: gửi mã 6 số (đòi mật khẩu hiện tại). MAIL_PROVIDER=none => lỗi `provider_unavailable` */
+  startEmailLink(email: string, currentPassword: string): Promise<void>;
+  verifyEmailLink(email: string, code: string): Promise<Array<{ id: string; provider: AuthProvider; display: string }>>;
+  /** Tạo mã dự phòng mới (mã cũ hết hiệu lực; đòi mật khẩu hiện tại) */
+  rotateBackupCode(currentPassword: string): Promise<{ backupCode: string }>;
+  removeIdentity(id: string): Promise<Array<{ id: string; provider: AuthProvider; display: string }>>;
+  /** Lý do phiên đang bị chặn (trong RAM): đăng nhập lại là lối ra. null = không chặn */
+  blockedReason(): 'signed_out' | 'merged_elsewhere' | null;
   /** Thu hồi refresh token rồi xóa phiên; offline => ném 'offline' và GIỮ phiên (đăng xuất chờ mạng do tầng đồng bộ lo) */
   logout(everywhere?: boolean): Promise<void>;
   identities(): Promise<Array<{ id: string; provider: AuthProvider; display: string }>>;
@@ -187,7 +207,7 @@ export function createAuthSession(opts: SessionOptions = {}): AuthSession {
       }
       return { status: res.status, error };
     }
-    const parsed = schema.safeParse(await res.json());
+    const parsed = schema.safeParse(res.status === 204 ? undefined : await res.json());
     if (!parsed.success) throw new GatewayRequestError('contract', `Phản hồi ${path} lệch contract`);
     return { status: res.status, data: parsed.data };
   }
@@ -298,23 +318,22 @@ export function createAuthSession(opts: SessionOptions = {}): AuthSession {
     }
   }
 
-  /** Gọi /v1/me/* có Bearer, gửi lại MỘT lần khi 401 (access token hết hạn) */
-  async function authed<S extends ZodTypeAny>(method: 'GET' | 'POST', path: string, body: unknown, schema: S): Promise<z.infer<S>> {
+  /**
+   * Gọi /v1/me/* có Bearer, gửi lại MỘT lần khi 401 (access token hết hạn).
+   * 401 `invalid_credentials` (sai mật khẩu hiện tại) KHÔNG gửi lại: gửi lại là tự đốt thêm một lần thử sai.
+   */
+  async function authed<S extends ZodTypeAny>(method: 'GET' | 'POST' | 'DELETE', path: string, body: unknown, schema: S): Promise<z.infer<S>> {
     for (let attempt = 0; ; attempt++) {
       const token = await getToken();
       let res: Response;
       try {
         res = await fetch(`${baseUrl()}${path}`, {
           method,
-          headers: { Accept: 'application/json', Authorization: `Bearer ${token}`, ...(method === 'POST' ? { 'Content-Type': 'application/json' } : {}) },
-          ...(method === 'POST' ? { body: JSON.stringify(body ?? {}) } : {})
+          headers: { Accept: 'application/json', Authorization: `Bearer ${token}`, ...(body !== undefined ? { 'Content-Type': 'application/json' } : {}) },
+          ...(body !== undefined ? { body: JSON.stringify(body) } : {})
         });
       } catch (err) {
         throw new GatewayRequestError('offline', err instanceof Error ? err.message : 'Lỗi mạng');
-      }
-      if (res.status === 401 && attempt === 0) {
-        access = null;
-        continue;
       }
       if (!res.ok) {
         let error: string | undefined;
@@ -323,9 +342,13 @@ export function createAuthSession(opts: SessionOptions = {}): AuthSession {
         } catch {
           /* không phải JSON */
         }
+        if (res.status === 401 && attempt === 0 && error !== 'invalid_credentials') {
+          access = null;
+          continue;
+        }
         failCoded({ status: res.status, error }, path);
       }
-      const parsed = schema.safeParse(await res.json());
+      const parsed = schema.safeParse(res.status === 204 ? undefined : await res.json());
       if (!parsed.success) throw new GatewayRequestError('contract', `Phản hồi ${path} lệch contract`);
       return parsed.data;
     }
@@ -347,7 +370,7 @@ export function createAuthSession(opts: SessionOptions = {}): AuthSession {
 
     async info() {
       const s = await load();
-      return s ? { userId: s.userId, recoveryCode: s.recoveryCode } : null;
+      return s ? { userId: s.userId, recoveryCode: s.recoveryCode, kind: s.kind ?? 'guest', providers: s.providers ?? [] } : null;
     },
 
     async recover(code) {
@@ -363,25 +386,37 @@ export function createAuthSession(opts: SessionOptions = {}): AuthSession {
       return r.data.userId;
     },
 
-    async deleteAccount() {
+    async deleteAccount(mode) {
       if (!(await load())) {
         // máy này chưa từng có tài khoản: không có gì trên server để xóa
         emit({ reason: 'deleted', userId: null });
-        return;
+        return { deleteAt: null };
       }
       const token = await getToken();
       let res: Response;
       try {
-        res = await fetch(`${baseUrl()}/v1/me`, { method: 'DELETE', headers: { Accept: 'application/json', Authorization: `Bearer ${token}` } });
+        res = await fetch(`${baseUrl()}/v1/me`, {
+          method: 'DELETE',
+          headers: { Accept: 'application/json', Authorization: `Bearer ${token}`, ...(mode ? { 'Content-Type': 'application/json' } : {}) },
+          // Không có thân = 'now' (hành vi trước dự án 3)
+          ...(mode ? { body: JSON.stringify({ mode }) } : {})
+        });
       } catch (err) {
         throw new GatewayRequestError('offline', err instanceof Error ? err.message : 'Lỗi mạng');
       }
       // 401 account_deleted = đã xóa trước đó (máy khác) => coi như xong
       if (!res.ok && res.status !== 401) fail(res.status, '/v1/me');
-      if (res.ok && !DeleteMeResponseSchema.safeParse(await res.json()).success) throw new GatewayRequestError('contract', 'DELETE /v1/me lệch contract');
+      let deleteAt: string | null = null;
+      if (res.ok) {
+        // Chấp nhận cả thân cũ { deleted: true } (không có deleteAt) lẫn thân mới { deleteAt }
+        const parsed = DeleteMeResultSchema.partial().safeParse(await res.json());
+        if (!parsed.success) throw new GatewayRequestError('contract', 'DELETE /v1/me lệch contract');
+        deleteAt = parsed.data.deleteAt ?? null;
+      }
       access = null;
       await storage().remove(AUTH_STORAGE_KEY);
       emit({ reason: 'deleted', userId: null });
+      return { deleteAt };
     },
 
     async register(username, password) {
@@ -435,9 +470,52 @@ export function createAuthSession(opts: SessionOptions = {}): AuthSession {
     },
 
     async restore() {
-      const res = await authed('POST', '/v1/me/restore', {}, AuthSignedInSchema);
-      await adoptAccount(res, 'signed-in');
-      return res;
+      // Gateway chỉ bỏ hạn xóa ({ deleteAt: null }); token đã cấp lúc đăng nhập vẫn dùng tiếp
+      await authed('POST', '/v1/me/restore', {}, DeleteMeResultSchema);
+    },
+
+    async forgotPassword(usernameOrEmail) {
+      const r = await post('/v1/auth/password/forgot', { usernameOrEmail }, z.object({}).passthrough());
+      if (!r.data) failCoded(r, '/v1/auth/password/forgot');
+    },
+
+    async resetPasswordWithEmail(usernameOrEmail, code, newPassword) {
+      const r = await post('/v1/auth/password/reset-email', { usernameOrEmail, code, newPassword }, z.undefined());
+      if (r.status >= 300) failCoded(r, '/v1/auth/password/reset-email');
+    },
+
+    async resetPasswordWithBackup(username, backupCode, newPassword) {
+      const r = await post('/v1/auth/password/reset-backup', { username, backupCode, newPassword }, BackupCodeResponseSchema);
+      if (!r.data) failCoded(r, '/v1/auth/password/reset-backup');
+      return r.data;
+    },
+
+    async changePassword(currentPassword, newPassword) {
+      const t = await authed('POST', '/v1/me/password', { currentPassword, newPassword }, AuthTokensSchema);
+      // Mọi refresh token cũ đã bị thu hồi: lưu token mới, nếu không máy này bị đăng xuất ở lần làm mới kế tiếp
+      const st = await load();
+      if (st) await save({ ...st, refreshToken: t.refreshToken });
+      adopt(t);
+    },
+
+    async startEmailLink(email, currentPassword) {
+      await authed('POST', '/v1/me/email/start', { email, currentPassword }, z.object({}).passthrough());
+    },
+
+    async verifyEmailLink(email, code) {
+      return (await authed('POST', '/v1/me/email/verify', { email, code }, IdentityListResponseSchema)).identities;
+    },
+
+    async rotateBackupCode(currentPassword) {
+      return authed('POST', '/v1/me/backup-code', { currentPassword }, BackupCodeResponseSchema);
+    },
+
+    async removeIdentity(id) {
+      return (await authed('DELETE', `/v1/me/identities/${encodeURIComponent(id)}`, undefined, IdentityListResponseSchema)).identities;
+    },
+
+    blockedReason() {
+      return blocked ? (blocked.code === 'account_merged' ? 'merged_elsewhere' : 'signed_out') : null;
     },
 
     async logout(everywhere) {
