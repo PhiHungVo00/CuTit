@@ -60,6 +60,13 @@ jobs:
       - name: E2E trên cấu hình điện thoại (Pixel 7, Android 320px)
         run: pnpm --filter @vietlearning/host-shell exec playwright test --project=pixel-7 --project=android-nho-320
 
+      # Trang giới thiệu (dự án 7): đã dựng ở bước Build; kiểm ngân sách (HTML+CSS+JS ≤ 30 kB gzip, font ≤ 80 kB) rồi e2e riêng (2 bản build + axe)
+      - name: Trang giới thiệu — ngân sách kích thước
+        run: pnpm --filter @vietlearning/landing size
+
+      - name: Trang giới thiệu — e2e (vi/en, /tai-apk, âm thanh, axe, 360 px)
+        run: pnpm --filter @vietlearning/landing e2e
+
       - name: Lưu trace Playwright khi lỗi
         if: failure()
         uses: actions/upload-artifact@v4
