@@ -95,6 +95,14 @@ interface Persisted {
    * Còn cờ này: không đưa dữ liệu máy cũ vào hàng đợi; lần gửi kế tiếp chỉ kéo và THAY dữ liệu.
    */
   replacePending?: boolean;
+  /**
+   * Dự án 3 Task 5 — đang gộp khách này (= owner lúc bắt đầu) vào tài khoản: đặt TRƯỚC khi gọi POST /v1/me/merge.
+   * Server đã gộp nhưng phản hồi mất (mạng rớt) => lần sau phiên đổi sang tài khoản đích, engine NHẬN chủ mới và giữ bóng
+   * (không tải lại toàn bộ dữ liệu máy dưới id sự kiện mới => không cộng XP hai lần).
+   */
+  mergeFrom?: string | null;
+  /** Đăng xuất đang chờ mạng (sống qua lần mở lại app; Host gọi lại `signOut(logout)` khi thấy cờ này trong status) */
+  signOutPending?: boolean;
 }
 
 export interface SyncStatus {
@@ -103,7 +111,11 @@ export interface SyncStatus {
   syncing: boolean;
   /** lỗi lần gửi gần nhất (vd. 'offline'); null = ổn */
   error: string | null;
+  /** đăng xuất đang chờ mạng (hiện "Sẽ đăng xuất khi có mạng" + nút Hủy); về false khi xong hoặc khi hủy */
+  signOutPending: boolean;
 }
+
+export type SignOutResult = 'done' | 'waiting-network' | 'cancelled';
 
 export interface SyncTransport {
   push(events: SyncEvent[]): Promise<SyncResponse>;
@@ -139,6 +151,26 @@ export interface SyncEngine {
    * hàng đợi và bóng (không đẩy lại dữ liệu đã xóa). `deleteAccount` lỗi => giữ nguyên mọi thứ.
    */
   resetLocal(deleteAccount?: () => Promise<unknown>): Promise<void>;
+  /**
+   * Dự án 3 Task 5 — gộp khách trên máy này vào tài khoản (đề xuất A6.2(3)):
+   * 1. đẩy HẾT hàng đợi lên khách (bắt buộc có mạng; lỗi => ném lỗi, hàng đợi và dữ liệu giữ nguyên, chưa gọi merge);
+   * 2. `switchAccount()` = POST /v1/me/merge + lưu token đích, trả `{userId}` của đích;
+   * 3. đổi chủ hàng đợi sang đích (KHÔNG xóa hàng đợi, KHÔNG tải lại dữ liệu máy);
+   * 4. kéo ảnh chụp đã gộp từ server (gộp vào máy, không thay hẳn: dữ liệu chỉ có trên máy như lỗi gần đây được giữ).
+   * `guestGone: true` (máy thứ ba nhận `merged-elsewhere`, hoặc phản hồi gộp bị mất): bỏ bước 1 — khách không còn —
+   * hàng đợi cũ được gửi vào đích với nguyên `clientEventId` (server đã chép sổ chống trùng => không cộng hai lần).
+   */
+  mergeInto(switchAccount: () => Promise<{ userId: string }>, opts?: { guestGone?: boolean }): Promise<void>;
+  /** Kéo dữ liệu máy khác về mỗi `intervalMs` (mặc định 5 phút) khi app đang hiện + mỗi lần app trở lại màn hình. Trả hàm dừng. */
+  startPeriodicPull(intervalMs?: number): () => void;
+  /**
+   * Đăng xuất (máy dùng chung không lộ dữ liệu): đẩy hàng đợi, gọi `logout` (POST /v1/auth/logout), rồi xóa dữ liệu học trên máy.
+   * Không đẩy được (offline/lỗi) => 'waiting-network': giữ nguyên mọi thứ, tự hoàn tất khi lần gửi sau thành công
+   * (status.signOutPending; xong thì onLocalReset được gọi). KHÔNG có đường "vẫn đăng xuất" làm mất dữ liệu chưa đồng bộ.
+   */
+  signOut(logout?: () => Promise<unknown>): Promise<SignOutResult>;
+  /** Hủy đăng xuất đang chờ. false = đã quá muộn (đang xóa dữ liệu) hoặc không có gì để hủy. */
+  cancelSignOut(): boolean;
   status(): SyncStatus;
   onStatus(cb: (s: SyncStatus) => void): () => void;
   stop(): void;
@@ -275,7 +307,13 @@ export function startSync(opts: SyncOptions): SyncEngine {
   let backoff = 0;
   let inflight: Promise<boolean> | null = null;
 
-  const status = (): SyncStatus => ({ pending: rec.outbox.length, lastSyncAt: rec.lastSyncAt, syncing, error });
+  /** đăng xuất: callback gọi /v1/auth/logout (chỉ trong bộ nhớ); đang ở bước xóa dữ liệu thì không hủy được nữa */
+  let signOutLogout: (() => Promise<unknown>) | undefined;
+  let signingOut: Promise<SignOutResult> | null = null;
+  let wiping = false;
+  const cleanups = new Set<() => void>();
+
+  const status = (): SyncStatus => ({ pending: rec.outbox.length, lastSyncAt: rec.lastSyncAt, syncing, error, signOutPending: Boolean(rec.signOutPending) });
   const notify = () => listeners.forEach((cb) => cb(status()));
 
   function push(e: SyncEvent) {
@@ -519,7 +557,12 @@ export function startSync(opts: SyncOptions): SyncEngine {
         rec.lastSyncAt = now().toISOString();
         if (rec.outbox.length) continue;
 
-        if (rec.owner && rec.owner !== res.snapshot.userId) {
+        if (rec.owner && rec.owner !== res.snapshot.userId && rec.mergeFrom === rec.owner) {
+          // Phản hồi gộp bị mất nhưng server đã gộp; phiên giờ là tài khoản đích: nhận chủ mới, GIỮ bóng (dữ liệu máy đã ở
+          // trên khách => đã được gộp vào đích; hàng đợi vừa gửi giữ nguyên clientEventId nên không cộng hai lần)
+          rec.owner = res.snapshot.userId;
+          rec.mergeFrom = null;
+        } else if (rec.owner && rec.owner !== res.snapshot.userId) {
           // Phiên đã chuyển sang tài khoản khách MỚI (tài khoản cũ bị xóa ở máy khác): tải lại toàn bộ dữ liệu máy
           rec.owner = res.snapshot.userId;
           rec.shadow = shadowOf(learnerStore.getInitialState());
@@ -550,8 +593,83 @@ export function startSync(opts: SyncOptions): SyncEngine {
     inflight ??= doFlush(Boolean(o.pull)).finally(() => {
       inflight = null;
     });
-    return inflight;
+    const p = inflight;
+    // Đăng xuất đang chờ mạng: lần gửi thành công đầu tiên (online, thử lại theo backoff…) hoàn tất đăng xuất
+    void p.then((ok) => {
+      if (ok && rec.signOutPending && !signingOut && !stopped) void runSignOut();
+    });
+    return p;
   }
+
+  /** Xóa dữ liệu học trên máy sau `fn` (DELETE /v1/me, logout). `requireEmpty`: còn sự kiện chưa gửi thì KHÔNG xóa. */
+  async function wipeLocal(fn: (() => Promise<unknown>) | undefined, requireEmpty: boolean): Promise<boolean> {
+    switching = true;
+    clearTimeout(timer);
+    try {
+      await inflight?.catch(() => undefined);
+      if (requireEmpty && rec.outbox.length) return false; // có sự kiện mới chen vào giữa lúc đẩy và lúc xóa
+      wiping = true;
+      await fn?.();
+      applying = true;
+      try {
+        learnerStore.getState().reset();
+        // tiến độ lộ trình (XP, bài đã xong, đóng băng, cài đặt nhắc) lưu ở khóa riêng: xóa cùng lúc
+        progressStore.getState().resetProgress();
+      } finally {
+        applying = false;
+      }
+      rec = { ...fresh(), shadow: shadowOf(learnerStore.getState()) };
+      error = null;
+      try {
+        opts.onLocalReset?.();
+      } catch {
+        /* hủy nhắc lỗi không chặn việc xóa */
+      }
+      return true;
+    } finally {
+      wiping = false;
+      switching = false;
+      save();
+      notify();
+    }
+  }
+
+  async function signOutOnce(): Promise<SignOutResult> {
+    for (let i = 0; i < 3; i++) {
+      const ok = await flush();
+      if (!rec.signOutPending) return 'cancelled';
+      if (!ok) return 'waiting-network';
+      if (rec.outbox.length) continue; // thay đổi mới trong lúc gửi: gửi tiếp
+      try {
+        if (await wipeLocal(signOutLogout, true)) {
+          signOutLogout = undefined;
+          return 'done';
+        }
+      } catch (err) {
+        // logout lỗi (mạng rớt đúng lúc): chưa xóa gì, thử lại khi có mạng
+        error = (err as { kind?: string }).kind ?? 'error';
+        backoff = Math.min(60_000, backoff ? backoff * 3 : 5_000);
+        schedule(backoff);
+        notify();
+        return rec.signOutPending ? 'waiting-network' : 'cancelled';
+      }
+    }
+    if (rec.signOutPending) schedule(debounceMs);
+    return rec.signOutPending ? 'waiting-network' : 'cancelled';
+  }
+
+  function runSignOut(): Promise<SignOutResult> {
+    signingOut ??= signOutOnce().finally(() => {
+      signingOut = null;
+    });
+    return signingOut;
+  }
+
+  /** Phản hồi có thể đã mất sau khi server làm xong (mạng rớt / quá giờ / 5xx) — khác lỗi chắc chắn bị từ chối (409, 401…) */
+  const maybeLost = (err: unknown) => {
+    const kind = (err as { kind?: string } | null)?.kind;
+    return kind === undefined || kind === 'offline' || kind === 'timeout' || kind === 'server';
+  };
 
   const unsubscribe = learnerStore.subscribe(() => scan());
   const unsubscribeProgress = progressStore.subscribe(() => scan());
@@ -593,31 +711,78 @@ export function startSync(opts: SyncOptions): SyncEngine {
       }
     },
     async resetLocal(deleteAccount?: () => Promise<unknown>) {
+      await wipeLocal(deleteAccount, false);
+    },
+    async mergeInto(switchAccount: () => Promise<{ userId: string }>, o: { guestGone?: boolean } = {}) {
+      if (!o.guestGone) {
+        // 1. Đẩy hết hàng đợi lên khách. Không được => dừng TRƯỚC khi gộp (hàng đợi còn nguyên, thử lại được)
+        for (let i = 0; i < 3 && (rec.outbox.length || i === 0); i++) {
+          if (!(await flush())) throw Object.assign(new Error('sync failed before merge'), { kind: error ?? 'offline' });
+        }
+        if (rec.outbox.length) throw Object.assign(new Error('sync queue not drained before merge'), { kind: 'pending' });
+      }
       switching = true;
       clearTimeout(timer);
       try {
         await inflight?.catch(() => undefined);
-        await deleteAccount?.();
-        applying = true;
+        rec.mergeFrom = rec.owner;
+        save();
+        let target: { userId: string };
         try {
-          learnerStore.getState().reset();
-          // tiến độ lộ trình (XP, bài đã xong, đóng băng, cài đặt nhắc) lưu ở khóa riêng: xóa cùng lúc
-          progressStore.getState().resetProgress();
-        } finally {
-          applying = false;
+          target = await switchAccount();
+        } catch (err) {
+          // Bị từ chối chắc chắn (vé hỏng, đích chờ xóa…) => không còn gộp dở. Mạng rớt => có thể server đã gộp: giữ dấu
+          if (!maybeLost(err)) rec.mergeFrom = null;
+          throw err;
         }
-        rec = { ...fresh(), shadow: shadowOf(learnerStore.getState()) };
-        error = null;
-        try {
-          opts.onLocalReset?.();
-        } catch {
-          /* hủy nhắc lỗi không chặn việc xóa */
-        }
+        // 3. Đổi chủ ngay khi có token đích (tắt app lúc này: lần mở sau chỉ gửi nốt + kéo, không tải lại dữ liệu máy)
+        rec.owner = target.userId;
+        rec.mergeFrom = null;
       } finally {
         switching = false;
         save();
         notify();
       }
+      // 4. Kéo dữ liệu đã gộp (gửi nốt sự kiện phát sinh trong lúc gộp). Lỗi mạng => engine tự thử lại theo backoff
+      await flush({ pull: true });
+    },
+    startPeriodicPull(intervalMs = 300_000) {
+      const tick = async () => {
+        if (stopped || switching || rec.signOutPending) return;
+        if (typeof document !== 'undefined' && document.visibilityState === 'hidden') return;
+        // chưa có tài khoản trên máy => không kéo (kéo sẽ tạo khách lười)
+        const has = opts.hasAccount ? await opts.hasAccount().catch(() => false) : true;
+        if (has && !stopped && !switching) void flush({ pull: true });
+      };
+      const id = setInterval(() => void tick(), intervalMs);
+      const onVisible = () => {
+        if (typeof document !== 'undefined' && document.visibilityState === 'visible') void tick();
+      };
+      if (typeof document !== 'undefined') document.addEventListener('visibilitychange', onVisible);
+      const cleanup = () => {
+        clearInterval(id);
+        if (typeof document !== 'undefined') document.removeEventListener('visibilitychange', onVisible);
+        cleanups.delete(cleanup);
+      };
+      cleanups.add(cleanup);
+      return cleanup;
+    },
+    async signOut(logout?: () => Promise<unknown>) {
+      if (logout) signOutLogout = logout;
+      if (!rec.signOutPending) {
+        rec.signOutPending = true;
+        save();
+        notify();
+      }
+      return runSignOut();
+    },
+    cancelSignOut() {
+      if (!rec.signOutPending || wiping) return false;
+      rec.signOutPending = false;
+      signOutLogout = undefined;
+      save();
+      notify();
+      return true;
     },
     status,
     onStatus(cb: (s: SyncStatus) => void) {
@@ -627,6 +792,7 @@ export function startSync(opts: SyncOptions): SyncEngine {
     stop() {
       stopped = true;
       clearTimeout(timer);
+      [...cleanups].forEach((c) => c());
       unsubscribe();
       unsubscribeProgress();
       if (typeof window !== 'undefined') {
