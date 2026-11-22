@@ -579,11 +579,13 @@ test.describe('Giao diện tiếng Anh (người nước ngoài)', () => {
 
   test('mặc định theo ngôn ngữ máy, đổi ngôn ngữ ở trang chủ và được lưu lại', async ({ page }) => {
     await page.goto('/');
-    await expect(page.getByRole('heading', { name: 'Learn Vietnamese with Cu Tít' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Hi there!' })).toBeVisible();
     await expect(page.locator('html')).toHaveAttribute('lang', 'en');
     await expect(page.getByRole('navigation', { name: 'Main navigation' })).toBeVisible();
     await assertMobileLayout(page);
-    await page.getByRole('button', { name: 'Chuyển giao diện sang tiếng Việt' }).click();
+    await page.goto('/cai-dat/ngon-ngu');
+    await page.getByRole('radio', { name: /Tiếng Việt/ }).check();
+    await page.goto('/');
     await expect(page.getByRole('heading', { name: 'Chào bạn!' })).toBeVisible();
     await page.reload();
     await expect(page.getByRole('heading', { name: 'Chào bạn!' })).toBeVisible();

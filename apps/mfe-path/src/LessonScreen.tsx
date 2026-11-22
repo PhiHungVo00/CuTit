@@ -165,10 +165,7 @@ function SummaryCard({ result, lessonTitle, pct }: { result: Finished; lessonTit
         {t('summaryTitle', { lesson: lessonTitle })}
       </h1>
       <p className="m-0 text-3xl font-black text-accent">
-        <span className="sr-only" data-testid="xp-final">
-          {t('summaryXp', { n: result.xp })}
-        </span>
-        <span aria-hidden="true">
+        <span role="img" data-testid="xp-final" aria-label={t('summaryXp', { n: result.xp })}>
           +<span data-testid="xp-count">{xp}</span> XP
         </span>
       </p>
