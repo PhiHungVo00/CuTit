@@ -300,6 +300,20 @@ test('logout {everywhere:true} thu hồi mọi họ token của người đó, k
   }
 });
 
+test('logout {everywhere:true} bằng token ĐÃ XOAY VÒNG không đăng xuất máy khác (rà kien-truc RA-DOT2)', async () => {
+  const { app, close } = await setup();
+  try {
+    const A = await guest(app);
+    const B = (await app.inject({ method: 'POST', url: '/v1/auth/recover', payload: { recoveryCode: A.body.recoveryCode } })).json();
+    await app.inject({ method: 'POST', url: '/v1/auth/refresh', payload: { refreshToken: A.body.refreshToken } }); // token cũ của máy A
+    const r = await app.inject({ method: 'POST', url: '/v1/auth/logout', payload: { refreshToken: A.body.refreshToken, everywhere: true } });
+    assert.equal(r.statusCode, 204);
+    assert.equal((await app.inject({ method: 'POST', url: '/v1/auth/refresh', payload: { refreshToken: B.refreshToken } })).statusCode, 200, 'máy B vẫn đăng nhập');
+  } finally {
+    await close();
+  }
+});
+
 test('Xoay vòng giữ family_id; dùng lại token đã xoay => thu hồi cả họ (kể cả token mới)', async () => {
   const { app, db, close } = await setup();
   try {
