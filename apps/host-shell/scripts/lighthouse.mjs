@@ -77,6 +77,11 @@ try {
       row.accessibility < BUDGET.accessibility && `Accessibility ${row.accessibility} < ${BUDGET.accessibility}`
     ].filter(Boolean);
     if (problems.length) failed = true;
+    // Vượt LCP thì in phần tử LCP của lần đo cuối (khỏi đoán): chữ/ảnh nào, kích thước, ở đâu
+    if (row.lcpMs > BUDGET.lcpMs) {
+      const node = a['lcp-breakdown-insight']?.details?.items?.find?.((i) => i.type === 'node');
+      if (node) console.log(`  [LCP ${route}] ${node.selector} ${node.boundingRect?.width}x${node.boundingRect?.height}@y${node.boundingRect?.top} «${String(node.nodeLabel).slice(0, 60)}»`);
+    }
     rows.push({ ...row, 'vượt ngân sách': problems.join('; ') || '—' });
     // In các lỗi a11y cụ thể để sửa
     for (const [id, audit] of Object.entries(a)) {
