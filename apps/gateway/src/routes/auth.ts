@@ -12,7 +12,6 @@ import { schema } from '../db/client.js';
 import { parseOr400, respond } from '../lib/validate.js';
 import { classifyRefreshFailure, formatRecoveryCode, issueTokens, newRecoveryCode, rotateRefreshToken, sha256 } from '../services/auth/tokens.js';
 import { AuditLog } from '../services/audit/audit.js';
-import { isDeletedCredential } from '../services/learner/repo.js';
 import { logoutByRefreshToken } from '../services/auth/lifecycle.js';
 import { tombstoneReason } from '../services/auth/accounts.js';
 import { passwordAuthRoutes } from './authPassword.js';
@@ -50,10 +49,12 @@ export const authRoutes: FastifyPluginAsync<RouteDeps> = async (server, deps) =>
       // Token đã xoay vòng bị dùng lại: dấu hiệu token bị lộ/sao chép (hoặc client gửi trùng) => đã thu hồi cả họ; ghi audit
       const owner = failure.kind === 'reused' ? failure.userId : null;
       if (owner) audit.record('auth.refresh_reuse', { outcome: 'failure', userId: owner, ctx });
-      // Tài khoản đã bị xóa (ở máy khác): báo riêng để client xóa dữ liệu trên máy thay vì tạo khách mới
-      const deleted = await isDeletedCredential(d, sha256(body.refreshToken));
-      if (!deleted && !owner) audit.noteAuthFailure(ctx, 'invalid_refresh_token');
-      return reply.status(401).send({ error: deleted ? 'account_deleted' : 'invalid_refresh_token' });
+      // Tài khoản đã bị xóa (ở máy khác): báo riêng để client xóa dữ liệu trên máy thay vì tạo khách mới.
+      // Khách rỗng đã gộp vào tài khoản Google (bia mộ 'merged') => account_merged: mời đăng nhập, KHÔNG xóa dữ liệu máy
+      const tomb = await tombstoneReason(d, sha256(body.refreshToken));
+      if (!tomb && !owner) audit.noteAuthFailure(ctx, 'invalid_refresh_token');
+      const error = tomb === 'merged' ? 'account_merged' : tomb === 'upgraded' ? 'account_upgraded' : tomb ? 'account_deleted' : 'invalid_refresh_token';
+      return reply.status(401).send({ error });
     }
     return respond(AuthTokensSchema, tokens);
   });
