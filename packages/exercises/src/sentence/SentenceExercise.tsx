@@ -78,7 +78,7 @@ export function SentenceExercise({ item, seed, onDone }: { item: BuildItem; seed
 
       <div ref={feedbackRef} className="scroll-mb-[calc(80px+env(safe-area-inset-bottom))]">
         {b.result?.valid && (
-          <div role="status" className="flex flex-col gap-2 rounded-xl bg-accent-soft p-3">
+          <div role="status" className="ct-feedback flex flex-col gap-2 rounded-xl bg-accent-soft p-3">
             <FeedbackMascot correct />
             <div className="flex items-center justify-between gap-2">
               <span className="text-[15px] font-bold text-heading">{t('correct', { sentence })}</span>
@@ -95,7 +95,7 @@ export function SentenceExercise({ item, seed, onDone }: { item: BuildItem; seed
           </div>
         )}
         {b.result && !b.result.valid && (
-          <div role="status" className="flex flex-col gap-2 rounded-xl bg-danger-soft p-3 text-[15px] text-danger-ink">
+          <div role="status" className="ct-feedback flex flex-col gap-2 rounded-xl bg-danger-soft p-3 text-[15px] text-danger-ink">
             <FeedbackMascot correct={false} />
             <ul className="m-0 flex list-disc flex-col gap-1 pl-5">
               {b.result.errors.map((e) => (

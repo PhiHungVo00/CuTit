@@ -70,7 +70,7 @@ export function ChoiceExercise({ item, onDone, onSkip }: { item: ChoiceItem; onD
               lang={item.variant === 'meaning' && item.speak ? undefined : 'vi'}
               className={[
                 'min-h-14 break-words rounded-xl border-2 px-2 py-1 text-base font-bold',
-                state === 'right' ? 'border-accent bg-accent text-accent-ink' : state === 'wrong' ? 'border-danger bg-danger-soft text-danger-ink' : 'border-line bg-surface-2 text-ink'
+                state === 'right' ? 'ct-pop border-accent bg-accent text-accent-ink' : state === 'wrong' ? 'ct-shake border-danger bg-danger-soft text-danger-ink' : 'border-line bg-surface-2 text-ink'
               ].join(' ')}
             >
               {o}
@@ -79,7 +79,7 @@ export function ChoiceExercise({ item, onDone, onSkip }: { item: ChoiceItem; onD
         })}
       </div>
       {chosen !== null && (
-        <div ref={feedbackRef} role="status" className={['scroll-mb-[calc(80px+env(safe-area-inset-bottom))] rounded-xl p-3 text-[15px]', correct ? 'bg-accent-soft text-heading' : 'bg-danger-soft text-danger-ink'].join(' ')}>
+        <div ref={feedbackRef} role="status" className={['ct-feedback scroll-mb-[calc(80px+env(safe-area-inset-bottom))] rounded-xl p-3 text-[15px]', correct ? 'bg-accent-soft text-heading' : 'bg-danger-soft text-danger-ink'].join(' ')}>
           <div className="flex items-center gap-3">
             <FeedbackMascot correct={correct} />
             <strong>{correct ? t('right') : t('wrong', { answer: item.answer })}</strong>
