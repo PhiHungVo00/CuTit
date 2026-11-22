@@ -167,7 +167,7 @@ test('register: nâng cấp khách (Bearer), lưu kind account, XÓA mã khôi p
   assert.deepEqual(saved.providers, ['password']);
   assert.equal(saved.refreshToken, 'refresh-2-xxxxxxxxxxxxxxxx');
   assert.ok(!store.m.get(AUTH_STORAGE_KEY).includes('ABCD-EFGH'), 'mã khôi phục không còn trên máy');
-  assert.deepEqual(await s.info(), { userId: uid(1), recoveryCode: null });
+  assert.deepEqual(await s.info(), { userId: uid(1), recoveryCode: null, kind: 'account', providers: ['password'] });
   assert.deepEqual(ev, [{ reason: 'signed-in', userId: uid(1) }]);
   assert.equal(await s.getToken(), 'access-2-xxxxxxxx');
 });
@@ -187,7 +187,7 @@ test('login: lưu tài khoản, xóa mã khôi phục; tài khoản chờ xóa =
   const deleteAt = '2026-12-20T00:00:00.000Z';
   const calls = fakeGateway({
     '/v1/auth/login': () => json(signedIn(3, { userId: uid(5), restorable: { deleteAt } })),
-    '/v1/me/restore': () => json(signedIn(4, { userId: uid(5) }))
+    '/v1/me/restore': () => json({ deleteAt: null })
   });
   const s = createAuthSession(opts(store));
   const ev = events(s);
@@ -325,4 +325,65 @@ test('401 account_upgraded ở /refresh (khách không còn mã khôi phục) =>
   await assert.rejects(s.getToken(), (e) => e.code === 'account_merged');
   assert.deepEqual(ev, [{ reason: 'merged-elsewhere', userId: null }]);
   assert.deepEqual(calls.map((c) => c.path), ['/v1/auth/refresh']);
+});
+
+test('deleteAccount(grace): gửi {mode:"grace"}, trả hạn xóa, xóa phiên trên máy; không đối số = xóa ngay như cũ', async () => {
+  const store = memStore({ [AUTH_STORAGE_KEY]: stored(ACCOUNT) });
+  const calls = fakeGateway({
+    '/v1/auth/refresh': [json(tokens(1))],
+    '/v1/me': () => json({ deleteAt: '2026-12-22T00:00:00.000Z' })
+  });
+  const s = createAuthSession(opts(store));
+  const r = await s.deleteAccount('grace');
+  assert.deepEqual(r, { deleteAt: '2026-12-22T00:00:00.000Z' });
+  assert.deepEqual(calls.find((c) => c.path === '/v1/me').body, { mode: 'grace' });
+  assert.equal(store.m.get(AUTH_STORAGE_KEY), undefined);
+
+  const store2 = memStore({ [AUTH_STORAGE_KEY]: stored(GUEST) });
+  const calls2 = fakeGateway({ '/v1/auth/refresh': [json(tokens(1))], '/v1/me': () => json({ deleted: true, deleteAt: null }) });
+  const r2 = await createAuthSession(opts(store2)).deleteAccount();
+  assert.deepEqual(r2, { deleteAt: null });
+  assert.equal(calls2.find((c) => c.path === '/v1/me').body, undefined);
+});
+
+test('changePassword: lưu refresh token MỚI (server đã thu hồi cái cũ); sai mật khẩu hiện tại KHÔNG bị gửi lại', async () => {
+  const store = memStore({ [AUTH_STORAGE_KEY]: stored(ACCOUNT) });
+  let n = 0;
+  const calls = fakeGateway({
+    '/v1/auth/refresh': [json(tokens(1))],
+    '/v1/me/password': () => (++n === 1 ? json({ error: 'invalid_credentials' }, 401) : json(tokens(7)))
+  });
+  const s = createAuthSession(opts(store));
+  await assert.rejects(s.changePassword('sai-mat-khau-cu', 'mat-khau-moi-123'), (e) => e.code === 'invalid_credentials');
+  assert.equal(calls.filter((c) => c.path === '/v1/me/password').length, 1, 'không tự gửi lại lần thứ hai');
+  await s.changePassword('dung-mat-khau-cu', 'mat-khau-moi-123');
+  assert.equal(JSON.parse(store.m.get(AUTH_STORAGE_KEY)).refreshToken, 'refresh-7-xxxxxxxxxxxxxxxx');
+});
+
+test('quên mật khẩu: forgot (202), reset-email (204 không thân), reset-backup trả mã mới; không cần phiên', async () => {
+  const store = memStore();
+  const calls = fakeGateway({
+    '/v1/auth/password/forgot': () => json({}, 202),
+    '/v1/auth/password/reset-email': () => new Response(null, { status: 204 }),
+    '/v1/auth/password/reset-backup': () => json({ backupCode: 'WXYZ-WXYZ-WXYZ-WXYZ' })
+  });
+  const s = createAuthSession(opts(store));
+  await s.forgotPassword('mai.le');
+  await s.resetPasswordWithEmail('mai.le', '123456', 'mat-khau-moi-123');
+  assert.deepEqual(await s.resetPasswordWithBackup('mai.le', 'ABCD-EFGH-JKMN-PQRS', 'mat-khau-moi-123'), { backupCode: 'WXYZ-WXYZ-WXYZ-WXYZ' });
+  assert.ok(calls.every((c) => c.headers.Authorization === undefined), 'không Bearer, không tạo khách');
+  assert.equal(store.m.size, 0);
+  const bad = fakeGateway({ '/v1/auth/password/reset-email': () => json({ error: 'otp_invalid' }, 400) });
+  void bad;
+  await assert.rejects(s.resetPasswordWithEmail('mai.le', '000000', 'mat-khau-moi-123'), (e) => e.code === 'otp_invalid');
+});
+
+test('info() có kind + providers; blockedReason phản ánh merged-elsewhere', async () => {
+  const store = memStore({ [AUTH_STORAGE_KEY]: stored(ACCOUNT) });
+  fakeGateway({ '/v1/auth/refresh': () => json({ error: 'account_merged' }, 401) });
+  const s = createAuthSession(opts(store));
+  assert.deepEqual(await s.info(), { userId: uid(1), recoveryCode: null, kind: 'account', providers: ['password'] });
+  assert.equal(s.blockedReason(), null);
+  await assert.rejects(s.getToken());
+  assert.equal(s.blockedReason(), 'merged_elsewhere');
 });

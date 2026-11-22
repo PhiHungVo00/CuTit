@@ -40,7 +40,7 @@ test('Khách lười: 3 request song song lúc khởi động chỉ tạo MỘT 
   const got = await Promise.all([s.getToken(), s.getToken(), s.getToken()]);
   assert.deepEqual(got, Array(3).fill('access-1-xxxxxxxx'));
   assert.equal(calls.filter((c) => c.path === '/v1/auth/guest').length, 1);
-  assert.deepEqual(await s.info(), { userId: uid(1), recoveryCode: 'ABCD-EFGH-JKMN-PQRS' });
+  assert.deepEqual(await s.info(), { userId: uid(1), recoveryCode: 'ABCD-EFGH-JKMN-PQRS', kind: 'guest', providers: [] });
   assert.match(store.m.get(AUTH_STORAGE_KEY), /refresh-1/);
 });
 
@@ -79,7 +79,7 @@ test('Khôi phục trên máy mới: đổi userId, lưu mã đã nhập, báo o
   await assert.rejects(s.recover('0000-0000-0000-0000'), (e) => e.kind === 'unauthorized' && e.code === 'invalid_recovery_code');
   assert.equal(await s.recover('abcd efgh jkmn pqrs'), uid(7));
   assert.deepEqual(seen, [{ reason: 'recovered', userId: uid(7) }]);
-  assert.deepEqual(await s.info(), { userId: uid(7), recoveryCode: 'ABCD-EFGH-JKMN-PQRS' });
+  assert.deepEqual(await s.info(), { userId: uid(7), recoveryCode: 'ABCD-EFGH-JKMN-PQRS', kind: 'guest', providers: [] });
   assert.equal(await s.getToken(), 'access-5-xxxxxxxx');
 });
 
