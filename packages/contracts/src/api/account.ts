@@ -96,7 +96,9 @@ export const AuthErrorCode = {
   /** 409: thao tác chỉ dành cho tài khoản có mật khẩu (gắn email, tạo mã dự phòng) */
   passwordRequired: 'password_required',
   /** 429: khóa tạm theo (IP, tên) / trần IP */
-  rateLimited: 'rate_limited'
+  rateLimited: 'rate_limited',
+  /** 409: vé gộp sai / hết hạn / đã dùng / không thuộc khách này (POST /v1/me/merge) — đăng nhập lại để lấy vé mới */
+  mergeTicketInvalid: 'merge_ticket_invalid'
 } as const;
 export type AuthErrorCodeValue = (typeof AuthErrorCode)[keyof typeof AuthErrorCode];
 
@@ -187,7 +189,7 @@ export type AuthSignInResponse = z.infer<typeof AuthSignInResponseSchema>;
 export const AuthRegisterResponseSchema = AuthSignedInSchema.extend({ backupCode: z.string() });
 export type AuthRegisterResponse = z.infer<typeof AuthRegisterResponseSchema>;
 
-// POST /v1/me/merge (Bearer khách) → AuthSignedInSchema
+// POST /v1/me/merge (Bearer khách) → AuthSignedInSchema · 409 merge_ticket_invalid · 409 account_pending_deletion (đích đang chờ xóa: khôi phục trước)
 export const AuthMergeRequestSchema = z.object({ mergeTicket: Opaque, strategy: z.enum(['merge', 'discard_device']) });
 
 // POST /v1/auth/logout (xác thực bằng chính refresh token)
