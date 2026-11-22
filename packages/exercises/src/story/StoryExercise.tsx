@@ -166,7 +166,7 @@ export default function StoryExercise({ item, onDone, onSkip }: { item: StoryIte
         })}
       </div>
       {chosen !== null && (
-        <div ref={feedbackRef} role="status" className={['scroll-mb-[calc(80px+env(safe-area-inset-bottom))] rounded-xl p-3 text-[15px]', correct ? 'bg-accent-soft text-heading' : 'bg-danger-soft text-danger-ink'].join(' ')}>
+        <div ref={feedbackRef} role="status" className={['ct-feedback scroll-mb-[calc(80px+env(safe-area-inset-bottom))] rounded-xl p-3 text-[15px]', correct ? 'bg-accent-soft text-heading' : 'bg-danger-soft text-danger-ink'].join(' ')}>
           <div className="flex items-center gap-3">
             <FeedbackMascot correct={correct} />
             <strong>{correct ? t('right') : t('wrong', { answer: q.answer })}</strong>

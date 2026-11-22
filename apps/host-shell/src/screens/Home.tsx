@@ -1,6 +1,6 @@
 import { lazy, Suspense } from 'react';
 import { Link } from 'react-router-dom';
-import { cefrLabel, learnerStore, useLearner } from '@vietlearning/state';
+import { cefrLabel, useLearner } from '@vietlearning/state';
 import { SCREENS, prefetchScreen } from '../routes';
 import { useT } from '../i18n';
 
@@ -14,13 +14,14 @@ const loadPath = () => import('./PathHomeRoute');
 if (typeof location !== 'undefined' && location.pathname === '/') void loadPath().catch(() => undefined);
 const PathHome = lazy(loadPath);
 
+const HomeMascot = lazy(() => import('./HomeMascot'));
 const HomeLookup = lazy(() => import('./HomeLookup'));
 
 function PathSkeleton() {
   const t = useT();
   return (
     <div aria-busy="true" role="status" aria-label={t('pathLoading')} className="flex flex-col gap-4">
-      <div className="h-16 animate-pulse rounded-xl bg-surface-2" />
+      <div className="h-8 animate-pulse rounded-xl bg-surface-2" />
       <div className="h-16 animate-pulse rounded-xl bg-surface-2" />
       <div className="h-14 animate-pulse rounded-2xl bg-surface-2" />
       <div className="h-48 animate-pulse rounded-2xl bg-surface-2" />
@@ -31,27 +32,23 @@ function PathSkeleton() {
 export function Home() {
   const profile = useLearner((s) => s.profile);
   const t = useT();
-  const lang = useLearner((s) => s.preferences.uiLanguage);
   const onboarding = SCREENS.find((s) => s.path === '/bat-dau');
   return (
     <div className="home">
-      <div className="home-head">
-        <h1>{t('appTitle')}</h1>
-        <button
-          type="button"
-          className="lang-switch"
-          lang={lang === 'vi' ? 'en' : 'vi'}
-          aria-label={t('langSwitchLabel')}
-          onClick={() => learnerStore.getState().setPreferences({ uiLanguage: lang === 'vi' ? 'en' : 'vi' })}
-        >
-          🌐 {t('langSwitch')}
-        </button>
-      </div>
-      <p className="lead">
+      {/* Tiêu đề là chữ thường trực (không nằm trong chunk lười) => LCP là chữ, không phải ảnh Cu Tít */}
+      <header className="flex items-center gap-3">
+        <span className="block size-16 shrink-0">
+          <Suspense fallback={null}>
+            <HomeMascot />
+          </Suspense>
+        </span>
+        <h1 className="min-w-0 flex-1">{t('homeTitle')}</h1>
+      </header>
+      {/* Dòng dẫn rộng hết lề: là khối chữ lớn nhất trong màn đầu nên LCP vẫn là chữ thường trực (không phải chữ trong chunk lười) */}
+      <p className="m-0 mb-5 mt-2 text-lg leading-7 text-ink-soft">
         {profile.onboarded ? t('homeLevel', { level: cefrLabel(profile.level) }) : ''}
         {t('homeLead')}
       </p>
-
       {/* Banner nằm CÙNG khối Suspense với lộ trình: hiện cùng lúc, không bị lộ trình (cao hơn khung chờ) đẩy xuống
           sau khi tải => không gây xê dịch bố cục (CLS 0,111 trên Lighthouse trước đây) */}
       <Suspense fallback={<PathSkeleton />}>

@@ -83,7 +83,7 @@ export default function ToneExercise({ item, onDone, onSkip }: { item: ToneItem;
           </p>
         )}
         {result && v && best && (
-          <div role="status" className="flex flex-col gap-2 rounded-xl border border-line bg-sunken p-3">
+          <div role="status" className="ct-feedback flex flex-col gap-2 rounded-xl border border-line bg-sunken p-3">
             <div className="flex items-center justify-between gap-2">
               <FeedbackMascot correct={v !== 'bad'} size={48} />
               <strong className={v === 'bad' ? 'text-danger' : 'text-heading'}>{t(`verdict.${v}`)}</strong>
