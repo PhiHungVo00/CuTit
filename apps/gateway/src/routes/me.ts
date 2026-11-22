@@ -2,7 +2,9 @@ import type { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
 import {
   AnalyticsSummaryResponseSchema,
-  DeleteMeResponseSchema,
+  DeleteMeRequestSchema,
+  DeleteMeResultSchema,
+  RestoreAccountRequestSchema,
   PreferencesSchema,
   SrsDueResponseSchema,
   SyncRequestSchema,
@@ -12,7 +14,8 @@ import type { RouteDeps } from '../app.js';
 import { parseOr400, respond } from '../lib/validate.js';
 import { AuditLog } from '../services/audit/audit.js';
 import { requireUserId } from '../pipeline/RequestPipeline.js';
-import { applyEvents, deleteUser, dueCards, getPreferences, putPreferences, snapshot, summary } from '../services/learner/repo.js';
+import { hardDeleteUser, restoreAccount, scheduleDeletion } from '../services/auth/lifecycle.js';
+import { applyEvents, dueCards, getPreferences, putPreferences, snapshot, summary } from '../services/learner/repo.js';
 
 /** Mặc định khi người học chưa từng lưu tùy chỉnh (khớp giá trị mặc định của client) */
 const DEFAULT_PREFERENCES = {
@@ -86,14 +89,44 @@ export const meRoutes: FastifyPluginAsync<RouteDeps> = async (server, { db, pipe
     return respond(SyncResponseSchema, { ...result, snapshot: await snapshot(d, userId) });
   });
 
-  // DELETE /v1/me: xóa cứng tài khoản + mọi dữ liệu (kể cả xp_events, refresh token)
-  server.delete('/me', async (req) => {
+  // DELETE /v1/me {mode:'grace'|'now'}
+  //  - grace: khóa ngay, thu hồi mọi refresh token, xóa cứng sau 30 ngày (khôi phục được: POST /v1/me/restore)
+  //  - now: xóa cứng ngay như trước (kể cả xp_events, refresh token)
+  //  - KHÔNG gửi thân (client cũ trước dự án 3): giữ hành vi cũ = 'now', và vẫn trả { deleted: true } cho client cũ.
+  server.delete('/me', async (req, reply) => {
     const userId = requireUserId(req);
-    await deleteUser(await db.get(), userId);
+    const d = await db.get();
+    const now = pipeline.now();
+    let mode: 'grace' | 'now' = 'now';
+    if (req.body !== undefined && req.body !== null) {
+      const body = parseOr400(DeleteMeRequestSchema, req.body, reply);
+      if (!body) return reply;
+      mode = body.mode;
+    }
+    if (mode === 'grace') {
+      const deleteAt = await scheduleDeletion(d, userId, now);
+      pipeline.forgetUser(userId);
+      if (!deleteAt) return reply.status(401).send({ error: 'account_deleted' });
+      audit.record('account.deletion_scheduled', { outcome: 'success', userId, ctx: AuditLog.context(req) });
+      req.log.info('account deletion scheduled');
+      return respond(DeleteMeResultSchema, { deleteAt: deleteAt.toISOString() });
+    }
+    await hardDeleteUser(d, userId, now);
     pipeline.forgetUser(userId);
     // Các dòng audit cũ của user đã tự ẩn danh (FK ON DELETE SET NULL); dòng này cũng KHÔNG gắn user_id
     audit.record('account.deleted', { outcome: 'success', userId: null, ctx: AuditLog.context(req) });
     req.log.info('account deleted');
-    return respond(DeleteMeResponseSchema, { deleted: true });
+    return { deleted: true, ...DeleteMeResultSchema.parse({ deleteAt: null }) };
+  });
+
+  // POST /v1/me/restore: bỏ hạn xóa (chỉ trong 30 ngày). Không có thân (hoặc {}). Gọi cho tài khoản đang hoạt động: vô hại.
+  server.post('/me/restore', async (req, reply) => {
+    const userId = requireUserId(req);
+    if (!parseOr400(RestoreAccountRequestSchema, req.body ?? {}, reply)) return reply;
+    const ok = await restoreAccount(await db.get(), userId, pipeline.now());
+    pipeline.forgetUser(userId);
+    if (!ok) return reply.status(401).send({ error: 'account_deleted' });
+    audit.record('account.restored', { outcome: 'success', userId, ctx: AuditLog.context(req) });
+    return respond(DeleteMeResultSchema, { deleteAt: null });
   });
 };
