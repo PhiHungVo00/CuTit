@@ -1,5 +1,24 @@
 apply plugin: 'com.android.application'
 
+import groovy.json.JsonSlurper
+
+// Số phiên bản: nguồn duy nhất là `version` trong apps/host-shell/package.json (dự án 8).
+// versionCode = x·1 000 000 + y·1 000 + z — cùng công thức với scripts/version.mjs (versionToBuild).
+def appPackageJson = new JsonSlurper().parse(file('../../package.json'))
+def appVersion = appPackageJson.version as String
+def versionMatch = (appVersion =~ /^(\d+)\.(\d+)\.(\d+)$/)
+if (!versionMatch.matches()) {
+    throw new GradleException("version trong package.json không đúng dạng x.y.z: ${appVersion}")
+}
+def (vx, vy, vz) = [versionMatch.group(1), versionMatch.group(2), versionMatch.group(3)].collect { it as long }
+if (vy > 999 || vz > 999) {
+    throw new GradleException("version ${appVersion}: y và z phải ≤ 999")
+}
+def appBuild = vx * 1000000L + vy * 1000L + vz
+if (appBuild > 2100000000L) {
+    throw new GradleException("version ${appVersion}: build ${appBuild} vượt giới hạn Google Play")
+}
+
 android {
     namespace "vn.edu.uit.becutit"
     compileSdk rootProject.ext.compileSdkVersion
@@ -7,13 +26,24 @@ android {
         applicationId "vn.edu.uit.becutit"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
-        versionName "1.0"
+        versionCode (appBuild as int)
+        versionName appVersion
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
              // Default: https://android.googlesource.com/platform/frameworks/base/+/282e181b58cf72b6ca770dc7ca5f91f135444502/tools/aapt/AaptAssets.cpp#61
             ignoreAssetsPattern '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
+        }
+    }
+    // Hai kênh phân phối (cùng applicationId): `play` lên Google Play (không có quyền/mã cài APK),
+    // `apk` cài tay (có REQUEST_INSTALL_PACKAGES + cầu nối ApkUpdater — Task 6).
+    flavorDimensions "store"
+    productFlavors {
+        play {
+            dimension "store"
+        }
+        apk {
+            dimension "store"
         }
     }
     buildTypes {
