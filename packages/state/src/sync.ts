@@ -557,6 +557,9 @@ export function startSync(opts: SyncOptions): SyncEngine {
         rec.lastSyncAt = now().toISOString();
         if (rec.outbox.length) continue;
 
+        // Vẫn gửi thành công vào chính khách => server chắc chắn CHƯA gộp (khách đã gộp bị xóa, mọi request của nó bị từ chối):
+        // bỏ dấu gộp dở, nếu không lần đổi chủ sau (khách bị xóa ở máy khác => khách mới) sẽ bị coi nhầm là gộp và không tải lại dữ liệu
+        if (rec.mergeFrom && rec.owner === res.snapshot.userId) rec.mergeFrom = null;
         if (rec.owner && rec.owner !== res.snapshot.userId && rec.mergeFrom === rec.owner) {
           // Phản hồi gộp bị mất nhưng server đã gộp; phiên giờ là tài khoản đích: nhận chủ mới, GIỮ bóng (dữ liệu máy đã ở
           // trên khách => đã được gộp vào đích; hàng đợi vừa gửi giữ nguyên clientEventId nên không cộng hai lần)
