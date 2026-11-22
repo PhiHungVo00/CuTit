@@ -30,6 +30,7 @@ const TAB_BY_SEGMENT: Record<string, TabId> = {
   '/tien-do': 'ho-so',
   '/cai-dat': 'ho-so',
   '/bat-dau': 'ho-so',
+  '/dang-nhap': 'ho-so',
   '/quyen-rieng-tu': 'ho-so'
 };
 
