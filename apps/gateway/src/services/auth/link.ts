@@ -241,7 +241,12 @@ export async function unlinkIdentity(db: Db, userId: string, identityId: string)
     }
     await tx.delete(identities).where(and(eq(identities.id, identityId), eq(identities.userId, userId)));
     // Gỡ mật khẩu => bỏ luôn băm mật khẩu + mã dự phòng (mã dự phòng chỉ dùng để đặt lại mật khẩu)
-    if (target.provider === 'password') await tx.delete(passwordCredentials).where(eq(passwordCredentials.userId, userId));
+    // và email đã gắn: email CHỈ để lấy lại mật khẩu (spec 6) => không còn mục đích, không giữ thừa dữ liệu cá nhân
+    // (tối thiểu hóa dữ liệu, NĐ 13/2023) — rà kien-truc RA-DOT2
+    if (target.provider === 'password') {
+      await tx.delete(passwordCredentials).where(eq(passwordCredentials.userId, userId));
+      await tx.delete(identities).where(and(eq(identities.userId, userId), eq(identities.provider, 'email')));
+    }
     return { kind: 'ok', provider: target.provider } as const;
   });
 }
