@@ -26,6 +26,8 @@ import { quotaRoutes } from './routes/quota.js';
 import { friendsRoutes } from './routes/friends.js';
 import { identityAuthRoutes, identityRoutes } from './routes/identities.js';
 import { createIdentityProviderFromEnv, type IdentityProvider } from './providers/identity.js';
+import { authMeRoutes } from './routes/authMe.js';
+import { createMailProvider, type MailProvider } from './services/mail/MailProvider.js';
 import { createDbProvider, type DbProvider } from './db/client.js';
 import { AuditLog, purgeAuditEvents } from './services/audit/audit.js';
 
@@ -59,6 +61,10 @@ export interface RouteDeps {
   audit: AuditLog;
   /** Dự án 3: kiểm ID token Google. null = chưa cấu hình GOOGLE_WEB_CLIENT_ID => route Google trả 503 provider_unavailable */
   identity?: IdentityProvider | null;
+  /** Dự án 3: gửi mã OTP (MAIL_PROVIDER, mặc định none) */
+  mail: MailProvider;
+  /** Đồng hồ cho hạn mã OTP / cửa sổ giới hạn đăng nhập (test tiêm) */
+  clock: Clock;
 }
 
 export interface BuildOptions {
@@ -77,6 +83,8 @@ export interface BuildOptions {
   stt?: SttProvider | null;
   /** Test tiêm TTS giả; bỏ trống = theo cấu hình TTS_PROVIDER */
   tts?: TtsProvider | null;
+  /** Test tiêm nhà cung cấp mail giả; bỏ trống = theo MAIL_PROVIDER */
+  mail?: MailProvider;
   /** Test tiêm DB dùng chung; bỏ trống = theo cấu hình (DATABASE_URL hoặc PGlite) và tự đóng khi app đóng */
   db?: DbProvider;
   /** Test tiêm bộ kiểm token giả (khóa cục bộ); null = chưa cấu hình; bỏ trống = theo env GOOGLE_WEB_CLIENT_ID */
@@ -144,7 +152,7 @@ export async function buildApp(config: GatewayConfig, opts: BuildOptions = {}): 
   const tts = opts.tts !== undefined ? opts.tts : createTtsProvider(config);
   const audioStore = new FileAudioStore(config.TTS_AUDIO_DIR);
   const ttsCache = opts.ttsCache ?? new TTSCacheProxy(fileSynthesizer(audioStore, tts), Boolean(tts));
-  const deps: RouteDeps = { pipeline, ttsCache, config, llm, vision, stt, tts, tutor: createTutor(llm, app.log, vision), db, audit };
+  const deps: RouteDeps = { pipeline, ttsCache, config, llm, vision, stt, tts, tutor: createTutor(llm, app.log, vision), db, audit, mail: opts.mail ?? createMailProvider(config), clock: opts.clock ?? (() => new Date()) };
   deps.identity = opts.identity !== undefined ? opts.identity : createIdentityProviderFromEnv();
   app.log.info({ llm: llm?.name ?? 'mock', vision: vision?.name ?? 'mock', stt: stt?.name ?? 'mock' }, 'AI providers');
 
@@ -202,6 +210,7 @@ export async function buildApp(config: GatewayConfig, opts: BuildOptions = {}): 
       await v1.register(quotaRoutes, deps);
       await v1.register(friendsRoutes, deps);
       await v1.register(identityRoutes, deps);
+      await v1.register(authMeRoutes, deps);
     },
     { prefix: '/v1' }
   );
