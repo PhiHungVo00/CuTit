@@ -335,6 +335,37 @@ test('reset-email: mật khẩu yếu + mã sai => CÙNG thân lỗi cho tài kh
   }
 });
 
+test('reset-email SAU /forgot: sai 5 lần / mã hết hạn => CÙNG thân lỗi cho tài khoản có thật và không có (rà kien-truc RA-DOT2)', async () => {
+  const mail = fakeMail();
+  const a = await makeAuthApp({}, { mail });
+  try {
+    const acc = await account(a, 'do.tim');
+    await attachEmail(a, mail, acc, E('do.tim'));
+    mail.sent.length = 0;
+    for (const usernameOrEmail of [U('do.tim'), U('do.timx')]) await post(a, '/v1/auth/password/forgot', { usernameOrEmail });
+    const real = await mail.codeFor(E('do.tim')); // mã thật đang chờ cho tài khoản có thật
+    const wrong = real === '000000' ? '111111' : '000000';
+    const try5 = async (name) => {
+      let last;
+      for (let i = 0; i < 5; i++) last = await post(a, '/v1/auth/password/reset-email', { usernameOrEmail: name, code: wrong, newPassword: 'mi-quang-ga-22' });
+      return last;
+    };
+    const k = await try5(U('do.tim'));
+    const u = await try5(U('do.timx'));
+    assert.equal(k.body, u.body, 'lần sai thứ 5');
+    // mã hết hạn
+    mail.sent.length = 0;
+    await post(a, '/v1/auth/password/forgot', { usernameOrEmail: E('do.tim') });
+    const code = await mail.codeFor(E('do.tim'));
+    a.advance(11 * 60 * 1000);
+    const ke = await post(a, '/v1/auth/password/reset-email', { usernameOrEmail: E('do.tim'), code, newPassword: 'mi-quang-ga-22' });
+    const ue = await post(a, '/v1/auth/password/reset-email', { usernameOrEmail: E('do.timx'), code, newPassword: 'mi-quang-ga-22' });
+    assert.equal(ke.body, ue.body, 'mã hết hạn');
+  } finally {
+    await a.close();
+  }
+});
+
 test('Người khác KHÔNG phá được quên mật khẩu của nạn nhân qua /me/email/* (không xóa mã, không đốt lượt gửi, không khóa)', async () => {
   const mail = fakeMail();
   const a = await makeAuthApp({}, { mail });
