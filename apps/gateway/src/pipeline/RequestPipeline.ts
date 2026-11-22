@@ -133,6 +133,32 @@ export class RequestPipeline {
   /** Gọi sau khi xóa tài khoản để token cũ bị từ chối ngay (một instance; nhiều instance: trễ ≤ 60 s) */
   forgetUser(id: string): void {
     this.knownUsers.delete(id);
+    this.guestUsers.delete(id);
+  }
+
+  /** Dự án 3: nhớ "là khách?" ngắn hạn (nâng cấp gọi forgetUser => hạn mức tài khoản áp dụng ngay) */
+  private guestUsers = new Map<string, { guest: boolean; until: number }>();
+
+  private async isGuest(id: string): Promise<boolean> {
+    const hit = this.guestUsers.get(id);
+    if (hit && hit.until > Date.now()) return hit.guest;
+    const db = await this.db.get();
+    const [row] = await db.select({ isGuest: schema.users.isGuest }).from(schema.users).where(eq(schema.users.id, id));
+    const guest = row?.isGuest ?? false;
+    if (this.guestUsers.size > 50_000) this.guestUsers.clear();
+    this.guestUsers.set(id, { guest, until: Date.now() + USER_CACHE_MS });
+    return guest;
+  }
+
+  /**
+   * Hạn mức của người gửi request: khách = GUEST_QUOTA_FACTOR × hạn mức tài khoản (spec dự án 3 mục 6, khuyến khích đăng
+   * nhập; mỗi khách mới là một hạn mức mới). Principal ẩn danh `anon:<ip>` (chỉ dev/test) giữ hạn mức đầy đủ như cũ.
+   */
+  async limitFor(request: FastifyRequest, capability: Capability): Promise<number> {
+    const base = this.limits[capability];
+    const p = request.principal;
+    if (!p || p.anonymous || this.config.GUEST_QUOTA_FACTOR >= 1) return base;
+    return (await this.isGuest(p.id)) ? Math.floor(base * this.config.GUEST_QUOTA_FACTOR) : base;
   }
 
   /**
@@ -150,7 +176,7 @@ export class RequestPipeline {
   /** Trừ người dùng rồi trần chung, cùng một khóa ngày `day`; trần chung từ chối HOẶC lỗi => hoàn phần của người dùng */
   private async charge(request: FastifyRequest, capability: Capability, units: number, day: string, providerCall = true): Promise<number> {
     const id = this.principalId(request);
-    const r = await this.quota.tryConsume(id, capability, units, this.limits[capability], day);
+    const r = await this.quota.tryConsume(id, capability, units, await this.limitFor(request, capability), day);
     if (!r.ok) {
       throw new GatewayError(429, 'quota_exceeded', `Đã hết hạn mức ${capability} hôm nay`, { capability, resetAt: quotaResetAt(this.clock()) });
     }
@@ -230,7 +256,9 @@ export class RequestPipeline {
   async remaining(request: FastifyRequest): Promise<Remaining | undefined> {
     try {
       const used = await this.quota.getAll(this.principalId(request));
-      const left = (cap: Capability) => Math.max(0, this.limits[cap] - used[cap]);
+      const caps: Capability[] = ['turn', 'llm', 'stt', 'vision'];
+      const limits = Object.fromEntries(await Promise.all(caps.map(async (c) => [c, await this.limitFor(request, c)] as const))) as Record<Capability, number>;
+      const left = (cap: Capability) => Math.max(0, limits[cap] - used[cap]);
       return { turns: left('turn'), llmTokens: left('llm'), sttSeconds: left('stt'), visionImages: left('vision') };
     } catch {
       return undefined;

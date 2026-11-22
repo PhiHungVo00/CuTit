@@ -98,7 +98,7 @@ test.describe('GĐ3 Hội thoại AI', () => {
     });
     await page.goto('/goi-thoai');
     await expect(page).toHaveURL(/\/goi-thoai$/);
-    await expect(page.getByTestId('turns-left')).toHaveText('Còn 60 lượt nói chuyện với AI hôm nay');
+    await expect(page.getByTestId('turns-left')).toHaveText('Còn 30 lượt nói chuyện với AI hôm nay');
     await assertMobileLayout(page);
 
     await page.getByRole('button', { name: 'Bắt đầu gọi' }).click();
@@ -112,7 +112,7 @@ test.describe('GĐ3 Hội thoại AI', () => {
     await expect(subs.getByText(/Bé Cu Tít đây/)).toHaveCount(1, { timeout: 20_000 });
     // lượt 2 tự bắt đầu sau khi đọc xong (không bấm gì)
     await expect(subs.getByText(/Bé Cu Tít đây/)).toHaveCount(2, { timeout: 30_000 });
-    await expect(page.getByTestId('turns-left')).toHaveText('Còn 58 lượt nói chuyện với AI hôm nay');
+    await expect(page.getByTestId('turns-left')).toHaveText('Còn 28 lượt nói chuyện với AI hôm nay');
     expect(turns.slice(0, 2).map((x) => [x.mode, x.userText])).toEqual([
       ['call', 'Xin chào bạn'],
       ['call', 'Xin chào bạn']
