@@ -20,6 +20,10 @@ export interface TurnRequest {
   explanationLanguage: 'vi' | 'en';
   /** GĐ3: 'call' = gọi thoại (bản chép lời giọng nói, trả lời văn nói ngắn) */
   mode?: 'chat' | 'call';
+  /** Tóm tắt cuộc trò chuyện (≤ 600 ký tự) thay cho phần lịch sử cũ hơn 10 lượt */
+  summary?: string;
+  /** Ảnh JPEG base64 (đã thu nhỏ bởi `capturePhoto`); lượt có ảnh tốn thêm 1 lượt xem ảnh */
+  imageBase64?: string;
 }
 
 export type DoneEvent = Extract<ChatEvent, { type: 'done' }>;
@@ -29,7 +33,9 @@ export class TurnError extends Error {
     public readonly kind: 'offline' | 'timeout' | 'quota' | 'unavailable' | 'incomplete' | 'server' | 'contract' | 'unauthorized' | 'invalid-request',
     message: string,
     /** mã lỗi Gateway (vd. quota_exceeded = hết lượt AI hôm nay, khác rate-limit theo phút) */
-    public readonly code?: string
+    public readonly code?: string,
+    /** thân lỗi JSON của Gateway (vd. scope:'global' của quota_exceeded) */
+    public readonly details?: Record<string, unknown>
   ) {
     super(message);
   }
@@ -82,8 +88,8 @@ export async function sendTurn(req: TurnRequest, onEvent: (e: ChatEvent) => void
     if (signal.aborted) throw err; // người dùng hủy / rời màn hình: để nơi gọi tự bỏ qua
     if (err instanceof GatewayRequestError) {
       const resetAt = err.details?.resetAt;
-      if (err.code === 'quota_exceeded' && typeof resetAt === 'string') throw new TurnError('quota', quotaMessage(resetAt), err.code);
-      throw new TurnError(err.kind, describeGatewayError(err, req.explanationLanguage), err.code);
+      if (err.code === 'quota_exceeded' && typeof resetAt === 'string') throw new TurnError('quota', quotaMessage(resetAt), err.code, err.details);
+      throw new TurnError(err.kind, describeGatewayError(err, req.explanationLanguage), err.code, err.details);
     }
     throw new TurnError('offline', t('errDropped'));
   } finally {
@@ -93,4 +99,10 @@ export async function sendTurn(req: TurnRequest, onEvent: (e: ChatEvent) => void
   }
   if (!done) throw new TurnError('incomplete', t('errIncomplete'));
   return done;
+}
+
+/** Viết lại bản tóm tắt cuộc trò chuyện. Lỗi ném lên để nơi gọi giữ tóm tắt cũ (không chặn lượt người dùng). */
+export async function summarizeConversation(req: { sessionId: string; previousSummary?: string; history: ChatHistoryItem[]; explanationLanguage: 'vi' | 'en' }, signal?: AbortSignal): Promise<string> {
+  const { summarizeChat } = await import('@vietlearning/api-client');
+  return (await summarizeChat(req, signal)).summary;
 }
