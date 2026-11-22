@@ -95,7 +95,11 @@ pnpm --filter @vietlearning/host-shell e2e
 
 ## 🧭 5. Phân việc theo model (thống nhất với người dùng 20/11/2026)
 
-**Phiên chính dùng model mạnh nhất (Opus) làm điều phối.** Nó lập kế hoạch, chia việc, chọn model/effort, kiểm và gộp. Việc đã chia rõ thì giao cho subagent (`.claude/agents/`) hoặc phiên phụ, kèm model rẻ hơn.
+**Phân vai (người dùng chốt 22–23/11/2026):**
+- **Sonnet = điều phối chính** (phiên chính): chia việc, mở phiên con, kiểm kết quả, gộp PR, ghi nhật ký.
+- **Haiku = router**: phân loại việc mới vào, chọn agent/model, đọc và tóm tắt kết quả ngắn, việc máy móc (tìm/đọc, nhật ký, chụp ảnh).
+- **Opus chỉ cho 2 loại việc:** (1) **lập kế hoạch** (brainstorm, spec, plan, chọn kiến trúc); (2) **vấn đề Sonnet không làm được** (Sonnet làm 2 lần vẫn hỏng, lỗi rất khó tìm nguyên nhân) và **một lượt rà tổng trước khi phát hành**.
+- Mọi việc còn lại dùng Sonnet hoặc Haiku cho đỡ tốn, kể cả rà kiến trúc/bảo mật (`kien-truc` chạy Sonnet).
 
 Effort chọn theo **rủi ro và mức mơ hồ**, không theo độ dài. Bốn câu hỏi để quyết:
 - Sai có khó hoàn tác không (DB, bảo mật, dữ liệu người dùng, pháp lý)?
@@ -105,14 +109,17 @@ Effort chọn theo **rủi ro và mức mơ hồ**, không theo độ dài. Bố
 
 | Việc | Agent / phiên | Model | Effort |
 |---|---|---|---|
-| Điều phối, kế hoạch, kiểm và gộp | phiên chính | Opus | high |
-| Kiến trúc, bảo mật, schema/migration, auth, lỗi khó (native, hiệu năng, race), review cuối | `kien-truc` | Opus | xhigh |
+| Điều phối, chia việc, kiểm và gộp | phiên chính | Sonnet | high |
+| Router: phân loại việc, chọn agent, tóm tắt kết quả ngắn | `tai-lieu` hoặc phiên con | Haiku | low |
+| Lập kế hoạch (brainstorm, spec, plan); vấn đề Sonnet không làm được | phiên lập kế hoạch | Opus | high |
+| Kiến trúc, bảo mật, schema/migration, auth, lỗi khó (native, hiệu năng, race), review cuối | `kien-truc` | Sonnet | high |
 | Tính năng nhiều tệp đã có yêu cầu rõ, TDD | `lam-tinh-nang` | Sonnet | high |
 | Lỗi đã rõ nguyên nhân, test chập chờn, CI đỏ có log, refactor nhỏ | `sua-nho` | Sonnet | medium |
 | Tìm/đọc code, nhật ký, tài liệu, chụp ảnh, slide, sửa chữ hàng loạt | `tai-lieu` | Haiku | medium (low cho việc rất máy móc) |
 
 **Luật nâng cấp:**
 - Model rẻ làm 2 lần vẫn hỏng ⇒ chuyển lên model cao hơn.
+- **Rà tổng bằng Opus chỉ một lần trước khi phát hành, hoặc khi thật sự cần** (người dùng chốt 22/11/2026): một lượt `kien-truc` chạy Opus rà toàn bộ đăng nhập, dữ liệu người dùng, DB/migration, native Android, pháp lý. Ngày thường `kien-truc` chạy Sonnet.
 - Việc đụng DB, auth, native Android hay pháp lý ⇒ `kien-truc` xem lại.
 - **Không gì vào `main`** nếu chưa qua skill `kiem-truoc-khi-gop`.
 
@@ -122,7 +129,7 @@ Effort chọn theo **rủi ro và mức mơ hồ**, không theo độ dài. Bố
 - `dung-am-thanh`
 - `chup-man-hinh-app`
 
-**Plugin đã cài:** code-review, Axe Accessibility, Android Emulator QA, Playwright MCP, security review, TypeScript LSP (cách dùng trong skill `kiem-truoc-khi-gop`).
+**Plugin đã cài:** code-review, Android Emulator QA, Playwright MCP, security review, TypeScript LSP (cách dùng trong skill `kiem-truoc-khi-gop`). Trợ năng dùng công cụ miễn phí trong repo (`@axe-core/playwright` ở `e2e/a11y.spec.ts`, Lighthouse) thay plugin Axe trả phí (gỡ 22/11). Nguyên tắc thiết kế UI/UX (dùng khi thiết kế, không phải bước kiểm): `docs/thiet-ke/NGUYEN-TAC-UI-UX.md`.
 
 **Hook** (`.claude/settings.json`):
 - chặn sửa migration đã phát hành;
@@ -142,7 +149,7 @@ Bản đầy đủ: `docs/QUY-TRINH-VIBE-CODING.md`. Người dùng không phả
 
 | Giai đoạn | Ở dự án này làm bằng |
 |---|---|
-| 1 Yêu cầu · 2 Kiến trúc · 3 Database · 4 Giao diện | skill `superpowers:brainstorming` ⇒ spec `docs/superpowers/specs/` (có mục phương án, mục tiêu/không làm, người đọc độc lập rà) ⇒ người dùng duyệt |
+| 1 Yêu cầu · 2 Kiến trúc · 3 Database · 4 Giao diện | skill `superpowers:brainstorming` ⇒ spec `docs/superpowers/specs/` (có mục phương án, mục tiêu/không làm, người đọc độc lập rà) ⇒ người dùng duyệt. Giai đoạn 4 thiết kế màn/bản phác theo `docs/thiet-ke/NGUYEN-TAC-UI-UX.md` |
 | 5 Thiết lập dự án | monorepo sẵn có; `.env.example` không chứa khóa; bí mật ở `~/.becutit/gateway.env` |
 | 6 Lập trình từng chức năng | `superpowers:writing-plans` ⇒ kế hoạch `docs/superpowers/plans/` chia đợt ⇒ phiên con TDD, commit nhỏ |
 | 7 Bảo mật | 7 nguyên tắc mục 2; `kien-truc` xem lại khi đụng DB/auth; plugin security review |
