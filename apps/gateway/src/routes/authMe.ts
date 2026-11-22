@@ -3,11 +3,13 @@ import { and, eq } from 'drizzle-orm';
 import {
   AuthTokensSchema,
   BackupCodeResponseSchema,
+  BackupCodeRotateRequestSchema,
   EmailStartRequestSchema,
   EmailVerifyRequestSchema,
   IdentityListResponseSchema,
   PasswordChangeRequestSchema
 } from '@vietlearning/contracts/api';
+import type { FastifyReply, FastifyRequest } from 'fastify';
 import type { RouteDeps } from '../app.js';
 import { schema, type Db } from '../db/client.js';
 import { parseOr400, respond } from '../lib/validate.js';
@@ -27,9 +29,14 @@ import { OTP_FAIL_EMAIL_MAX, OTP_SEND_EMAIL_MAX, OTP_SEND_IP_MAX, authKeys } fro
  *   POST /v1/me/password (đổi) · /v1/me/email/start · /v1/me/email/verify · /v1/me/backup-code (tạo mới)
  * Tách khỏi routes/me.ts (Task 4) và routes/identities.ts (Task 3) để ba phiên song song không sửa chung một tệp.
  * Email gắn vào CHỈ để lấy lại mật khẩu (spec 6) => cần tài khoản có mật khẩu (`password_required`).
+ * Đổi mật khẩu, gắn email, tạo mã dự phòng đều đòi MẬT KHẨU HIỆN TẠI (rà kien-truc PR #18 mục 1): access token lộ
+ * (sống 15 phút) không đủ để gắn email của kẻ gian / lấy mã dự phòng mới rồi đặt lại mật khẩu => chiếm vĩnh viễn.
+ * Sai mật khẩu cộng dồn cho cả ba route: ≥ 5 lần / 15 phút / người dùng => 429 (kể cả khi lần sau gõ đúng).
  */
 const MIN = 60_000;
 const PASSWORD_REQUIRED = { error: 'password_required' } as const;
+const CURRENT_PW_FAIL_MAX = 5;
+const CURRENT_PW_WINDOW_MS = 15 * MIN;
 
 export const authMeRoutes: FastifyPluginAsync<RouteDeps> = async (server, { db, audit, config, clock, mail }) => {
   const pepper = config.AUTH_OTP_PEPPER ?? '';
@@ -37,6 +44,32 @@ export const authMeRoutes: FastifyPluginAsync<RouteDeps> = async (server, { db, 
   const counters = new RateCounters(pepper);
   /** Đoán mật khẩu cũ / gửi thư / nhập mã: 10 lần mỗi phút mỗi người (ngoài giới hạn chung của /v1 và bộ đếm OTP riêng) */
   const strict = { config: { rateLimit: { max: 10, timeWindow: '1 minute' } } };
+
+  /**
+   * Kiểm mật khẩu hiện tại (verifyPassword đã chuẩn hóa NFC). Trả tài khoản nếu đúng; nếu không thì đã gửi phản hồi
+   * (409 password_required · 429 rate_limited · 401 invalid_credentials) và trả null.
+   */
+  async function checkCurrentPassword(req: FastifyRequest, reply: FastifyReply, d: Db, userId: string, password: string, now: Date) {
+    const account = await passwordAccountOf(d, userId);
+    if (!account) {
+      reply.status(409).send(PASSWORD_REQUIRED);
+      return null;
+    }
+    const failKey = authKeys.mePassword(userId);
+    if ((await counters.count(d, failKey, now)) >= CURRENT_PW_FAIL_MAX) {
+      reply.status(429).send({ error: 'rate_limited' });
+      return null;
+    }
+    if (!(await verifyPassword(account.passwordHash, password))) {
+      await counters.hit(d, failKey, CURRENT_PW_WINDOW_MS, now);
+      const ctx = AuditLog.context(req);
+      audit.noteAuthFailure(ctx, 'invalid_credentials');
+      reply.status(401).send({ error: 'invalid_credentials' });
+      return null;
+    }
+    await counters.clear(d, failKey);
+    return account;
+  }
 
   // ---------- POST /v1/me/password: đổi mật khẩu => thu hồi mọi refresh token, trả token mới cho máy này ----------
   server.post('/me/password', strict, async (req, reply) => {
@@ -46,11 +79,12 @@ export const authMeRoutes: FastifyPluginAsync<RouteDeps> = async (server, { db, 
     const d = await db.get();
     const now = clock();
     const ctx = AuditLog.context(req);
-    const account = await passwordAccountOf(d, userId);
-    if (!account || !(await verifyPassword(account.passwordHash, body.currentPassword))) {
+    // khách (không có mật khẩu) => 401 như cũ (không có gì để đổi)
+    if (!(await passwordAccountOf(d, userId))) return reply.status(401).send({ error: 'invalid_credentials' });
+    const account = await checkCurrentPassword(req, reply, d, userId, body.currentPassword, now);
+    if (!account) {
       audit.record('auth.password_changed', { outcome: 'failure', userId, ctx });
-      audit.noteAuthFailure(ctx, 'invalid_credentials');
-      return reply.status(401).send({ error: 'invalid_credentials' });
+      return reply;
     }
     if (isWeakPassword(body.newPassword, account.username)) return reply.status(400).send({ error: 'weak_password' });
     const passwordHash = await hashPassword(body.newPassword);
@@ -69,7 +103,7 @@ export const authMeRoutes: FastifyPluginAsync<RouteDeps> = async (server, { db, 
     if (!body) return reply;
     const d = await db.get();
     const now = clock();
-    if (!(await passwordAccountOf(d, userId))) return reply.status(409).send(PASSWORD_REQUIRED);
+    if (!(await checkCurrentPassword(req, reply, d, userId, body.currentPassword, now))) return reply;
     if (!mail.available()) return reply.status(503).send({ error: 'provider_unavailable' });
     if ((await counters.hit(d, authKeys.sendLink(body.email), 15 * MIN, now)) > OTP_SEND_EMAIL_MAX) return reply.status(429).send({ error: 'rate_limited' });
     if ((await counters.hit(d, authKeys.sendIp(req.ip), 60 * MIN, now)) > OTP_SEND_IP_MAX) return reply.status(429).send({ error: 'rate_limited' });
@@ -147,8 +181,11 @@ export const authMeRoutes: FastifyPluginAsync<RouteDeps> = async (server, { db, 
   // ---------- POST /v1/me/backup-code: tạo mã dự phòng mới (mã cũ hết hiệu lực) — chỉ tài khoản có mật khẩu ----------
   server.post('/me/backup-code', strict, async (req, reply) => {
     const userId = requireUserId(req);
+    const body = parseOr400(BackupCodeRotateRequestSchema, req.body ?? {}, reply);
+    if (!body) return reply;
     const d = await db.get();
     const now = clock();
+    if (!(await checkCurrentPassword(req, reply, d, userId, body.currentPassword, now))) return reply;
     const fresh = newRecoveryCode();
     const rows = await d
       .update(schema.passwordCredentials)

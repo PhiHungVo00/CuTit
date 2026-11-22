@@ -76,7 +76,7 @@ async function account(app, name) {
 }
 
 async function attachEmail(app, mail, acc, email) {
-  assert.equal((await post(app, '/v1/me/email/start', { email }, bearer(acc))).statusCode, 202);
+  assert.equal((await post(app, '/v1/me/email/start', { email, currentPassword: PW }, bearer(acc))).statusCode, 202);
   const code = await mail.codeFor(email);
   const r = await post(app, '/v1/me/email/verify', { email, code }, bearer(acc));
   assert.equal(r.statusCode, 200, r.body);
@@ -98,6 +98,24 @@ test('Cấu hình: MAIL_PROVIDER mặc định none; gmail-smtp thiếu thông t
   assert.doesNotThrow(() => loadConfig({ ...prodBase, AUTH_OTP_PEPPER: 'z'.repeat(32) }));
 });
 
+test('Gắn email đòi mật khẩu hiện tại: thiếu => 400, sai => 401 invalid_credentials (không gửi thư), đúng => 202', async () => {
+  const mail = fakeMail();
+  const a = await makeAuthApp({}, { mail });
+  try {
+    const acc = await account(a, 'mk.gan');
+    const email = E('mk.gan');
+    assert.equal((await post(a, '/v1/me/email/start', { email }, bearer(acc))).statusCode, 400);
+    const wrong = await post(a, '/v1/me/email/start', { email, currentPassword: 'sai-roi-nhe' }, bearer(acc));
+    assert.equal(wrong.statusCode, 401);
+    assert.equal(wrong.json().error, 'invalid_credentials');
+    assert.equal(mail.sent.length, 0);
+    assert.equal((await post(a, '/v1/me/email/start', { email, currentPassword: PW }, bearer(acc))).statusCode, 202);
+    assert.equal(mail.sent.length, 1);
+  } finally {
+    await a.close();
+  }
+});
+
 test('MAIL_PROVIDER=none: quên mật khẩu vẫn 202 (không treo, không lộ); gắn email => provider_unavailable', async () => {
   const a = await makeAuthApp();
   try {
@@ -106,7 +124,7 @@ test('MAIL_PROVIDER=none: quên mật khẩu vẫn 202 (không treo, không lộ
       const r = await post(a, '/v1/auth/password/forgot', { usernameOrEmail });
       assert.equal(r.statusCode, 202);
     }
-    const s = await post(a, '/v1/me/email/start', { email: E('x') }, bearer(acc));
+    const s = await post(a, '/v1/me/email/start', { email: E('x'), currentPassword: PW }, bearer(acc));
     assert.equal(s.statusCode, 503);
     assert.equal(s.json().error, 'provider_unavailable');
   } finally {
@@ -121,7 +139,7 @@ test('Gắn email: mã 6 số qua thư song ngữ; sai mã => otp_invalid; đún
     const acc = await account(a, 'gan.mail');
     const email = E('Gan.Mail');
     const norm = email.toLowerCase();
-    assert.equal((await post(a, '/v1/me/email/start', { email }, bearer(acc))).statusCode, 202);
+    assert.equal((await post(a, '/v1/me/email/start', { email, currentPassword: PW }, bearer(acc))).statusCode, 202);
     const m = mail.sent.at(-1);
     assert.equal(m.to, norm);
     assert.ok(m.subjectVi && m.subjectEn);
@@ -158,7 +176,7 @@ test('OTP: sai 5 lần => otp_locked (kể cả mã đúng sau đó); quá 10 ph
   try {
     const acc = await account(a, 'khoa.otp');
     const email = E('khoa.otp');
-    await post(a, '/v1/me/email/start', { email }, bearer(acc));
+    await post(a, '/v1/me/email/start', { email, currentPassword: PW }, bearer(acc));
     const code = await mail.codeFor(email);
     const bad = code === '999999' ? '888888' : '999999';
     const errs = [];
@@ -167,7 +185,7 @@ test('OTP: sai 5 lần => otp_locked (kể cả mã đúng sau đó); quá 10 ph
     assert.equal((await post(a, '/v1/me/email/verify', { email, code }, bearer(acc))).json().error, 'otp_locked');
 
     a.advance(16 * 60_000); // qua cửa sổ giới hạn gửi
-    await post(a, '/v1/me/email/start', { email }, bearer(acc));
+    await post(a, '/v1/me/email/start', { email, currentPassword: PW }, bearer(acc));
     const code2 = await mail.codeFor(email);
     a.advance(10 * 60_000 + 1000);
     const exp = await post(a, '/v1/me/email/verify', { email, code: code2 }, bearer(acc));
@@ -184,10 +202,10 @@ test('OTP: cấp mã mới hủy mã cũ cùng email => 5 lần thử không nh�
   try {
     const acc = await account(a, 'ma.cu');
     const email = E('ma.cu');
-    await post(a, '/v1/me/email/start', { email }, bearer(acc));
+    await post(a, '/v1/me/email/start', { email, currentPassword: PW }, bearer(acc));
     const first = await mail.codeFor(email);
     mail.sent.length = 0;
-    await post(a, '/v1/me/email/start', { email }, bearer(acc));
+    await post(a, '/v1/me/email/start', { email, currentPassword: PW }, bearer(acc));
     const second = await mail.codeFor(email);
     const d = await a.dbForTest();
     const live = await d
@@ -208,13 +226,13 @@ test('Giới hạn gửi: 3 thư/15 phút mỗi email => lần 4 rate_limited; t
   try {
     const acc = await account(a, 'gioi.han');
     const email = E('gioi.han');
-    for (let i = 0; i < 3; i++) assert.equal((await post(a, '/v1/me/email/start', { email }, bearer(acc))).statusCode, 202);
-    const fourth = await post(a, '/v1/me/email/start', { email }, bearer(acc));
+    for (let i = 0; i < 3; i++) assert.equal((await post(a, '/v1/me/email/start', { email, currentPassword: PW }, bearer(acc))).statusCode, 202);
+    const fourth = await post(a, '/v1/me/email/start', { email, currentPassword: PW }, bearer(acc));
     assert.equal(fourth.statusCode, 429);
     assert.equal(fourth.json().error, 'rate_limited');
     // thư thứ 4 trong ngày (email khác) vẫn được; thứ 5 => chạm trần MAIL_DAILY_CAP=4
-    assert.equal((await post(a, '/v1/me/email/start', { email: E('khac1') }, bearer(acc))).statusCode, 202);
-    const capped = await post(a, '/v1/me/email/start', { email: E('khac2') }, bearer(acc));
+    assert.equal((await post(a, '/v1/me/email/start', { email: E('khac1'), currentPassword: PW }, bearer(acc))).statusCode, 202);
+    const capped = await post(a, '/v1/me/email/start', { email: E('khac2'), currentPassword: PW }, bearer(acc));
     assert.equal(capped.statusCode, 503);
     assert.equal(capped.json().error, 'provider_unavailable');
     assert.equal(mail.sent.length, 4);
@@ -232,7 +250,7 @@ test('Email đã gắn tài khoản khác: start vẫn 202 (không lộ); chỉ 
     await attachEmail(a, mail, owner, email);
     const other = await account(a, 'nguoi.khac');
     mail.sent.length = 0;
-    assert.equal((await post(a, '/v1/me/email/start', { email }, bearer(other))).statusCode, 202);
+    assert.equal((await post(a, '/v1/me/email/start', { email, currentPassword: PW }, bearer(other))).statusCode, 202);
     const code = await mail.codeFor(email);
     const r = await post(a, '/v1/me/email/verify', { email, code }, bearer(other));
     assert.equal(r.statusCode, 409);
@@ -302,7 +320,7 @@ test('Mã gắn email của người A không dùng được để đặt lại 
     await attachEmail(a, mail, owner, email);
     mail.sent.length = 0;
     // owner xin gắn lại cùng email (mã "gắn email"), rồi thử dùng mã đó cho đặt lại mật khẩu
-    await post(a, '/v1/me/email/start', { email }, bearer(owner));
+    await post(a, '/v1/me/email/start', { email, currentPassword: PW }, bearer(owner));
     const linkCode = await mail.codeFor(email);
     const r = await post(a, '/v1/auth/password/reset-email', { usernameOrEmail: email, code: linkCode, newPassword: 'mi-quang-ga-22' });
     assert.equal(r.statusCode, 400);
@@ -378,7 +396,7 @@ test('Người khác KHÔNG phá được quên mật khẩu của nạn nhân q
     const code = await mail.codeFor(email);
     // kẻ xấu: xin mã gắn email của nạn nhân nhiều lần, nhập sai 10+ lần
     const evil = await account(a, 'ke.xau');
-    for (let i = 0; i < 3; i++) await post(a, '/v1/me/email/start', { email }, bearer(evil));
+    for (let i = 0; i < 3; i++) await post(a, '/v1/me/email/start', { email, currentPassword: PW }, bearer(evil));
     for (let i = 0; i < 6; i++) await post(a, '/v1/me/email/verify', { email, code: code === '000000' ? '111111' : '000000' }, bearer(evil));
     a.advance(61_000);
     for (let i = 0; i < 6; i++) await post(a, '/v1/me/email/verify', { email, code: code === '000000' ? '111111' : '000000' }, bearer(evil));

@@ -68,7 +68,9 @@ const keys = {
   sendIp: (ip: string) => `otp_send:ip:${ip}`,
   /** theo đúng chuỗi người gọi gõ (chuẩn hóa) => tài khoản có thật hay không đều bị khóa như nhau */
   failReset: (typed: string) => `otp_fail:reset:${typed}`,
-  failLink: (userId: string, email: string) => `otp_fail:link:${userId}:${email}`
+  failLink: (userId: string, email: string) => `otp_fail:link:${userId}:${email}`,
+  /** sai mật khẩu hiện tại ở /v1/me/* (đổi mật khẩu, gắn email, mã dự phòng) — cộng dồn theo người dùng */
+  mePassword: (userId: string) => `me_pw_fail:${userId}`
 };
 export { keys as authKeys };
 
