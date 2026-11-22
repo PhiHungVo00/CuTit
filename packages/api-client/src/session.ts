@@ -253,7 +253,7 @@ export function createAuthSession(opts: SessionOptions = {}): AuthSession {
     }
     if (r.status !== 401) fail(r.status, '/v1/auth/refresh');
     if (r.error === 'account_deleted') return remoteDeleted();
-    if (r.error === 'account_merged') return mergedElsewhere();
+    if (r.error === 'account_merged' || r.error === 'account_upgraded') return mergedElsewhere();
     // Tài khoản thật: KHÔNG tự tạo khách (sẽ rơi vào tài khoản trống); báo đăng xuất, giữ dữ liệu trên máy
     if (stored.kind === 'account') return endSession('signed-out', 'signed_out', 'Phiên đăng nhập đã hết hạn. Hãy đăng nhập lại.');
     // Refresh token hỏng (vd. mất phản hồi lúc xoay vòng): cứu bằng mã khôi phục đã lưu

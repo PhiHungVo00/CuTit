@@ -313,3 +313,16 @@ test('identities(): GET /v1/me/identities với Bearer', async () => {
   assert.deepEqual(list, [{ id: uid(3), provider: 'password', display: 'mai' }]);
   assert.equal(calls.at(-1).headers.Authorization, 'Bearer access-1-xxxxxxxx');
 });
+
+test('401 account_upgraded ở /refresh (khách không còn mã khôi phục) => merged-elsewhere, KHÔNG tạo khách mới', async () => {
+  const store = memStore({ [AUTH_STORAGE_KEY]: stored({ ...GUEST, recoveryCode: null }) });
+  const calls = fakeGateway({
+    '/v1/auth/refresh': () => json({ error: 'account_upgraded' }, 401),
+    '/v1/auth/guest': () => json({ ...tokens(9), recoveryCode: 'ABCD-EFGH-JKMN-PQRS' })
+  });
+  const s = createAuthSession(opts(store));
+  const ev = events(s);
+  await assert.rejects(s.getToken(), (e) => e.code === 'account_merged');
+  assert.deepEqual(ev, [{ reason: 'merged-elsewhere', userId: null }]);
+  assert.deepEqual(calls.map((c) => c.path), ['/v1/auth/refresh']);
+});
