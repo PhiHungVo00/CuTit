@@ -74,3 +74,23 @@ describe('callReducer — vòng gọi thoại', () => {
     expect(run([{ type: 'START' }, { type: 'HEARD', text: 'a' }], ended).phase).toBe('ended');
   });
 });
+
+describe('callReducer — gọi video', () => {
+  it('START có video ⇒ state.video=true; mặc định gọi thường', () => {
+    expect(run([{ type: 'START' }]).video).toBe(false);
+    expect(run([{ type: 'START', video: true }]).video).toBe(true);
+  });
+
+  it('tắt camera / bị từ chối quyền ⇒ chuyển sang gọi thường, cuộc gọi tiếp tục (không đổi pha, không mất lượt)', () => {
+    const thinking = run([{ type: 'START', video: true }, { type: 'HEARD', text: 'a' }]);
+    const off = callReducer(thinking, { type: 'CAMERA_OFF', reason: 'permission-denied' });
+    expect(off).toMatchObject({ phase: 'thinking', video: false, cameraNote: 'permission-denied', pendingText: 'a', turns: 0 });
+    const speaking = run([{ type: 'THOUGHT' }], off);
+    expect(callReducer(speaking, { type: 'CAMERA_OFF', reason: 'user' }).phase).toBe('speaking');
+  });
+
+  it('CAMERA_OFF khi đang gọi thường ⇒ không đổi gì', () => {
+    const s = run([{ type: 'START' }]);
+    expect(callReducer(s, { type: 'CAMERA_OFF', reason: 'user' })).toBe(s);
+  });
+});
