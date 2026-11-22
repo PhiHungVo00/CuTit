@@ -8,7 +8,7 @@
 
 **Tech Stack:** Zod, Fastify, `node --test`, React 18 + Vite + vite-plugin-pwa ^0.21.2, Vitest, Playwright, Capacitor 7, `@capawesome/capacitor-app-update@7.2.0` (MIT), Java (Android DownloadManager/PackageInstaller), GitHub Actions.
 
-**Spec:** `docs/superpowers/specs/2026-11-21-cap-nhat-ung-dung-design.md` (đã duyệt 2026-11-21). Kế hoạch **chờ người dùng xem**. Spec thắng khi khác kế hoạch.
+**Spec:** `docs/superpowers/specs/2026-11-21-cap-nhat-ung-dung-design.md` (đã duyệt 2026-11-21). Kế hoạch **đã duyệt 2026-11-22**. Spec thắng khi khác kế hoạch.
 
 ## Global Constraints
 
