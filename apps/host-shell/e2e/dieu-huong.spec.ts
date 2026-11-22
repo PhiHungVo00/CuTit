@@ -23,7 +23,7 @@ test.describe('4 tab và điều hướng', () => {
 
     await nav(page).getByRole('link', { name: 'Học', exact: true }).click();
     await expect(page).toHaveURL(/\/$/);
-    await expect(page.getByRole('heading', { name: 'Học Tiếng Việt Cùng Bé Cu Tít' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Chào bạn!' })).toBeVisible();
   });
 
   test('màn tra cứu giữ thanh tab và sáng tab Học; màn Cu Tít không có thanh tab', async ({ page }) => {

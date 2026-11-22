@@ -10,8 +10,9 @@ const GOALS = ['daily', 'travel', 'work', 'family'] as const;
 const GOALS_WITH_HINT = new Set<string>(['daily', 'work', 'family']);
 
 /** Tên ngôn ngữ viết bằng chính ngôn ngữ đó: không dịch */
-const LANGS = [
-  { value: 'en', label: 'English' },
+const MAIN_LANGS = [{ value: 'en', label: 'English' }];
+/** Ngôn ngữ ít dùng: gập trong “Xem thêm ngôn ngữ” để bước 2 gọn (P1-5) */
+const MORE_LANGS = [
   { value: 'ko', label: '한국어' },
   { value: 'ja', label: '日本語' },
   { value: 'zh', label: '中文' },
@@ -104,6 +105,12 @@ export function OnboardingScreen() {
         <span className="text-sm font-bold text-ink-muted">{t('stepOf', { n: STEP_NO[step.kind] })}</span>
       </div>
 
+      {step.kind !== 'result' && (
+        <div className="flex justify-center">
+          <CuTit mood={step.kind === 'goal' ? 'chao' : 'suy-nghi'} size={step.kind === 'goal' ? 96 : 72} />
+        </div>
+      )}
+
       <Card role="region" aria-live="polite" elevated style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         {step.kind === 'goal' && (
           <>
@@ -126,7 +133,14 @@ export function OnboardingScreen() {
           <>
             {heading(t('langQ'))}
             <p className="m-0 text-[15px] text-ink-soft">{t('langWhy')}</p>
-            <ChoiceGroup name="lang" legend={t('langLegend')} value={lang} options={[...LANGS, { value: 'other', label: t('langOther') }]} onChange={setLang} />
+            <ChoiceGroup name="lang" legend={t('langLegend')} value={lang} options={MAIN_LANGS} onChange={setLang} />
+            {/* Cùng name="lang" nên hai nhóm là một nhóm radio; đã chọn ngôn ngữ trong mục gập thì mở sẵn */}
+            <details open={lang !== null && lang !== 'en'} className="rounded-xl border border-line px-3">
+              <summary className="flex min-h-11 cursor-pointer items-center text-sm font-bold text-ink">{t('langMore')}</summary>
+              <div className="pb-3">
+                <ChoiceGroup name="lang" legend={t('langMoreLegend')} value={lang} options={[...MORE_LANGS, { value: 'other', label: t('langOther') }]} onChange={setLang} />
+              </div>
+            </details>
             <Button disabled={!lang} onClick={() => setStep({ kind: 'dialect' })} style={{ width: '100%' }}>
               {t('next')}
             </Button>

@@ -46,7 +46,7 @@ export default function CuTitBubble() {
           go('/hoi-thoai');
         }}
       >
-        <CuTit mood={thinking ? 'suy-nghi' : 'chan-dung'} size={mini ? 32 : 52} animate={thinking} alt="" />
+        <CuTit mood={thinking ? 'suy-nghi' : 'chan-dung'} size={mini ? 32 : 52} animate={thinking} alt="" preload={['suy-nghi', 'chan-dung']} />
       </button>
     </>
   );

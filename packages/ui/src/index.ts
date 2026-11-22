@@ -4,6 +4,7 @@ export * from './components/Card.js';
 export * from './components/Toggle.js';
 export * from './components/SegmentedControl.js';
 export * from './components/ListRow.js';
+export * from './components/EmptyState.js';
 export * from './icons/Icon.js';
 export * from './icons/paths.js';
 export * from './mascot/CuTit.js';

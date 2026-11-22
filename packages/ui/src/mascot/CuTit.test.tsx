@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
-import { afterEach, describe, expect, it } from 'vitest';
+import { act } from '@testing-library/react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render } from '@testing-library/react';
 import { learnerStore } from '@vietlearning/state';
 import { CuTit } from './CuTit.js';
@@ -103,5 +104,68 @@ describe('CuTit — ảnh lỗi (ngoại tuyến, P0-3)', () => {
     fireEvent.error(container.querySelector('img')!);
     rerender(<CuTit mood="buon" />);
     expect(container.querySelector('img')!.getAttribute('src')).toContain('cutit-buon');
+  });
+});
+
+describe('CuTit — chuyển tư thế mượt (P1-7)', () => {
+  const imgs = (c: HTMLElement) => [...c.querySelectorAll('img')] as HTMLImageElement[];
+
+  it('lần vẽ đầu chỉ có một ảnh', () => {
+    const { container } = render(<CuTit mood="chao" />);
+    expect(imgs(container).length).toBe(1);
+  });
+
+  it('đổi tư thế: ảnh mới (ẩn tới khi tải xong) nằm trên, ảnh cũ giữ bên dưới, chỉ ảnh mới có alt', () => {
+    const { container, rerender } = render(<CuTit mood="chao" />);
+    rerender(<CuTit mood="buon" />);
+    const [next, old] = imgs(container);
+    expect(next.getAttribute('src')).toContain('cutit-buon');
+    expect(next.className).toContain('ct-cutit__in');
+    expect(next.className).not.toContain('is-ready');
+    expect(old.getAttribute('src')).toContain('cutit-chao');
+    expect(old.getAttribute('alt')).toBe('');
+    expect(old.getAttribute('aria-hidden')).toBe('true');
+    expect(next.alt).toBe('Bé Cu Tít đang buồn');
+  });
+
+  it('ảnh mới tải xong thì hiện dần (is-ready), hết 120ms thì bỏ ảnh cũ', () => {
+    vi.useFakeTimers();
+    try {
+      const { container, rerender } = render(<CuTit mood="chao" />);
+      rerender(<CuTit mood="buon" />);
+      fireEvent.load(imgs(container)[0]);
+      expect(imgs(container)[0].className).toContain('is-ready');
+      act(() => void vi.advanceTimersByTime(200));
+      expect(imgs(container).length).toBe(1);
+      expect(imgs(container)[0].getAttribute('src')).toContain('cutit-buon');
+      expect(imgs(container)[0].className).not.toContain('ct-cutit__in');
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('đổi lại tư thế cũ giữa chừng thì về một ảnh', () => {
+    const { container, rerender } = render(<CuTit mood="chao" />);
+    rerender(<CuTit mood="buon" />);
+    rerender(<CuTit mood="chao" />);
+    expect(imgs(container).length).toBe(1);
+    expect(imgs(container)[0].getAttribute('src')).toContain('cutit-chao');
+  });
+
+  it('prop preload tải trước ảnh của tư thế kế (một Image mỗi tư thế)', () => {
+    const made: string[] = [];
+    const Orig = globalThis.Image;
+    globalThis.Image = class {
+      set src(v: string) {
+        made.push(v);
+      }
+    } as unknown as typeof Image;
+    try {
+      render(<CuTit mood="chan-dung" preload={['suy-nghi']} />);
+      expect(made.length).toBe(1);
+      expect(made[0]).toContain('cutit-suy-nghi');
+    } finally {
+      globalThis.Image = Orig;
+    }
   });
 });

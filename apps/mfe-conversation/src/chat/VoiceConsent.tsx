@@ -15,11 +15,16 @@ export function VoiceConsent({ text, onAgree, onCancel }: { text: string; onAgre
         <Icon name="khoa" size={18} />
         {t('voicePrivacyTitle')}
       </p>
-      <p className="m-0 text-sm text-ink-soft">{text}</p>
+      <p className="m-0 text-sm text-ink-soft">{t('voicePrivacyShort')}</p>
+      <details className="text-sm text-ink-soft">
+        <summary className="flex min-h-11 cursor-pointer items-center font-bold text-ink">{t('consentDetails')} <span aria-hidden="true">▾</span></summary>
+        <p className="m-0 pb-2">{text}</p>
+      </details>
       <Link to="/quyen-rieng-tu" className="self-start text-sm font-bold text-ink underline">
         {t('privacyPolicy')}
       </Link>
-      <div className="grid grid-cols-2 gap-2">
+      {/* Nút chính dính đáy khi màn ngắn: không bị đẩy xuống mép (P1-6) */}
+      <div className="sticky bottom-0 grid grid-cols-2 gap-2 bg-surface-2 pb-1 pt-2">
         <Button variant="secondary" onClick={onCancel}>
           {t('notNow')}
         </Button>
