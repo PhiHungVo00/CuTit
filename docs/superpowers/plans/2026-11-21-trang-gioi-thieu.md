@@ -1,5 +1,7 @@
 # Trang giới thiệu bản web (dự án 7): kế hoạch triển khai
 
+> **Trạng thái:** ĐÃ DUYỆT 2026-11-22 (người dùng duyệt kế hoạch).
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Trang chủ tĩnh, song ngữ, ở `<tên>.id.vn`. Phần đầu theo hướng C (tranh làng quê + Cu Tít) mang chất văn hóa Việt. Trang có ô nghe 3 miền và dẫn khách tới **Bắt đầu miễn phí trên web**, **Đăng nhập** hoặc **Tải APK**.

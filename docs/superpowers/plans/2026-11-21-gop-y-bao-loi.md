@@ -1,5 +1,7 @@
 # Góp ý / Báo lỗi + trang quản trị nền (dự án 5a): kế hoạch triển khai
 
+> **Trạng thái:** ĐÃ DUYỆT 2026-11-22 (người dùng duyệt kế hoạch).
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Cho người dùng gửi góp ý/báo lỗi kèm ảnh và video ngay trong app, rồi xem trạng thái và lời nhắn trả lời. Chủ app xử lý hàng chờ trên trang quản trị web `apps/admin`, đăng nhập bằng mật khẩu + mã 6 số.
