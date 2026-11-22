@@ -56,10 +56,10 @@ Task 3 và Task 5 cùng chạm `vite.config.ts`: Task 3 chỉ thêm khối `defi
 
 **Interfaces — Produces:**
 - Đúng như spec 5.2: `AppChannelSchema`, `AppVersionQuerySchema`, `AppVersionResponseSchema` (gồm `apkFile`, `downloadUrl`, `checkAfterSec`), `AppUpdateRequiredErrorSchema`, `APP_BUILD_HEADER = 'x-app-build'`, `APP_CHANNEL_HEADER = 'x-app-channel'`; type `AppChannel`, `AppVersionResponse`.
-- `AppVersionsConfigSchema` = `{ web, play, apk }` mỗi kênh `{ latestBuild, latestVersion, minBuild, notes|null, downloadUrl|null, apkFile|null }`, refine `minBuild ≤ latestBuild`, `downloadUrl`/`apkFile` chỉ ở `apk` (host allowlist kiểm ở Gateway, không ở contract).
+- `AppVersionsConfigSchema` = `{ web, play, apk }` mỗi kênh `{ latestBuild, latestVersion, minBuild, minBuildEnforceAt: z.string().datetime({ offset: true }).nullable(), notes|null, downloadUrl|null, apkFile|null }`, refine `minBuild ≤ latestBuild`, `downloadUrl`/`apkFile` chỉ ở `apk` (host allowlist kiểm ở Gateway, không ở contract).
 - `scripts/version.mjs`: `export function versionToBuild(version: string): number` (ném lỗi nếu không khớp `^\d+\.\d+\.\d+$` hoặc `y`/`z` > 999), `export function readAppVersion(): { version: string, build: number }` (đọc `package.json` cạnh nó).
 
-- [ ] **Step 1: Viết test hỏng** — `app-version.test.mjs`: response hợp lệ parse được; `apkFile.url` `http://` bị từ chối; `sha256` 63 ký tự bị từ chối; config có `downloadUrl` ở kênh `play` bị từ chối; `minBuild 5 > latestBuild 4` bị từ chối. `version.test.mjs`: `versionToBuild('1.4.2') === 1004002`, `versionToBuild('1.0.0') === 1000000`, `'1.1000.0'` ném lỗi, `'1.4'` ném lỗi.
+- [ ] **Step 1: Viết test hỏng** — `app-version.test.mjs`: response hợp lệ parse được; `apkFile.url` `http://` bị từ chối; `sha256` 63 ký tự bị từ chối; config có `downloadUrl` ở kênh `play` bị từ chối; `minBuild 5 > latestBuild 4` bị từ chối; `minBuildEnforceAt: 'ngày mai'` bị từ chối, `'2026-12-01T10:00:00+07:00'` và `null` hợp lệ. `version.test.mjs`: `versionToBuild('1.4.2') === 1004002`, `versionToBuild('1.0.0') === 1000000`, `'1.1000.0'` ném lỗi, `'1.4'` ném lỗi.
 - [ ] **Step 2:** `pnpm --filter @vietlearning/contracts test` và `node --test apps/host-shell/scripts/` ⇒ FAIL (chưa có module).
 - [ ] **Step 3:** Viết hai tệp theo Interfaces; export từ `api/index.ts`.
 - [ ] **Step 4:** Chạy lại ⇒ PASS; `pnpm --filter @vietlearning/contracts build` xanh.
@@ -67,17 +67,18 @@ Task 3 và Task 5 cùng chạm `vite.config.ts`: Task 3 chỉ thêm khối `defi
 
 ### Task 2: Gateway — cấu hình, endpoint, hook 426
 
-**Files:** Create `apps/gateway/config/app-versions.json` (cả 3 kênh `latestBuild 0, latestVersion "0.0.0", minBuild 0, notes null, downloadUrl null, apkFile null`), `src/services/appVersion/store.ts`, `src/routes/appVersion.ts`, `src/services/appVersion/updateGate.ts`, `test/app-version.test.mjs`; Modify `src/config.ts`, `src/app.ts`.
+**Files:** Create `apps/gateway/config/app-versions.json` (cả 3 kênh `latestBuild 0, latestVersion "0.0.0", minBuild 0, minBuildEnforceAt null, notes null, downloadUrl null, apkFile null`), `src/services/appVersion/store.ts`, `src/routes/appVersion.ts`, `src/services/appVersion/updateGate.ts`, `test/app-version.test.mjs`; Modify `src/config.ts`, `src/app.ts`.
 
 **Interfaces:**
 - Consumes: Task 1 schemas.
-- Produces: env `APP_VERSIONS_FILE` (mặc định `config/app-versions.json` cạnh gói), `APP_VERSIONS_TTL_MS` (60 000), `APP_VERSION_RATE_LIMIT_PER_MINUTE` (30), `APK_DOWNLOAD_HOSTS` (chuỗi host cách dấu phẩy, mặc định rỗng). `createAppVersionStore({ file, ttlMs, apkHosts }): { get(): AppVersionsConfig }` — đọc đồng bộ lúc tạo (sai ⇒ ném, Gateway không khởi động); sau đó đọc lại khi quá TTL, sai ⇒ giữ bản cũ + `log.error`. `computeStatus(build, ch): 'up_to_date'|'update_available'|'update_required'`. `updateGate(store)`: hook `onRequest`.
+- Produces: env `APP_VERSIONS_FILE` (mặc định `config/app-versions.json` cạnh gói), `APP_VERSIONS_TTL_MS` (60 000), `APP_VERSION_RATE_LIMIT_PER_MINUTE` (30), `APK_DOWNLOAD_HOSTS` (chuỗi host cách dấu phẩy, mặc định rỗng). `createAppVersionStore({ file, ttlMs, apkHosts }): { get(): AppVersionsConfig }` — đọc đồng bộ lúc tạo (sai ⇒ ném, Gateway không khởi động); sau đó đọc lại khi quá TTL, sai ⇒ giữ bản cũ + `log.error`. `computeStatus(build, ch): 'up_to_date'|'update_available'|'update_required'`. `updateGate(store, opts?: { now?: () => number })`: hook `onRequest`, chỉ 426 khi `build < minBuild` và (`minBuildEnforceAt` null hoặc đã qua).
 
 - [ ] **Step 1: Test hỏng** (`test/app-version.test.mjs`, dùng `app.inject` như các test khác):
   - `GET /v1/app/version?channel=play&build=5` không token ⇒ 200, `apkFile: null`, `downloadUrl: null`; `channel=apk` với cấu hình có `apkFile` ⇒ trả đúng `apkFile`. Tệp cấu hình đặt `apkFile` ở kênh `play` ⇒ tạo app ném lỗi. Query sai (`channel=ios`, `build=-1`) ⇒ 400.
   - `status`: build < min ⇒ `update_required`; min ≤ build < latest ⇒ `update_available`; ≥ latest ⇒ `up_to_date`; `checkAfterSec === 21600`; header `cache-control: no-store`.
   - `apk` có `apkFile` host `evil.example` không trong `APK_DOWNLOAD_HOSTS` ⇒ khởi động ném.
   - Hook: `GET /v1/me` kèm `x-app-build: 1`, `x-app-channel: play`, min 2 ⇒ 426 `{error:'app_update_required', minBuild:2, channel:'play'}` (trước cả 401); không header ⇒ không 426; `x-app-build: abc` ⇒ không 426; build = min ⇒ không 426; `DELETE /v1/me` dưới min ⇒ không 426; `/v1/auth/guest` dưới min ⇒ không 426.
+  - **Ân hạn (góp ý review PR #19):** dưới min, `minBuildEnforceAt` = now + 1 giờ ⇒ `GET /v1/me` **không** 426 nhưng `GET /v1/app/version` trả `update_required`; `minBuildEnforceAt` = now − 1 phút ⇒ 426; `null` ⇒ 426 ngay. Đồng hồ tiêm vào `updateGate(store, { now })` để test không chờ thật.
   - Preflight `OPTIONS /v1/me` với `Origin` cho phép + `Access-Control-Request-Headers: x-app-build,x-app-channel,authorization` ⇒ `access-control-allow-headers` chứa cả hai.
   - **Review Focus 3:** ghi tệp hỏng sau khi tạo store, `ttlMs: 0` ⇒ `get()` vẫn trả cấu hình cũ, không ném.
   - Rate limit: 31 request/phút cùng IP ⇒ 429.
@@ -183,7 +184,7 @@ Native: `DownloadManager` vào `getExternalFilesDir("updates")`, tên `becutit-<
   - `apkFile` null + `downloadUrl` có ⇒ mở trang; cả hai null ⇒ chữ `apkNoLink`.
 - [ ] **Step 2:** Test ⇒ FAIL; cài đặt; test ⇒ PASS; size-limit chunk cập nhật vẫn ≤ 3,5 kB (vượt ⇒ tách `apk.ts` thành chunk riêng chỉ nạp khi kênh `apk`).
 - [ ] **Step 3: AVD đầu-cuối** (skill `thu-tren-emulator`, cổng Gateway riêng): contract giữ **chỉ https**, nên dùng CDP `Fetch.enable` chặn response `/v1/app/version` và thay `apkFile.url` bằng `http://10.0.2.2:<cổng>/becutit-1.0.1.apk` (SHA/kích thước thật); kiểm https phía client chấp nhận ngoại lệ duy nhất host `10.0.2.2`/`localhost` (native debug cũng chỉ cho http khi `BuildConfig.DEBUG`) ⇒ thẻ tải xong ⇒ xin quyền ⇒ cài ⇒ app `1.0.1`, tiến độ còn; bản `play` cùng Gateway không hiện gì về APK.
-- [ ] **Step 4:** `PHAT-HANH-BAN-MOI.md`: tăng `version` ⇒ build web + `assemblePlayRelease`/`assembleApkRelease` (khi có keystore) ⇒ tính SHA-256/kích thước (`certutil -hashfile <apk> SHA256` / `sha256sum`) ⇒ đăng APK lên URL theo phiên bản (dự án 7) ⇒ sửa `app-versions.json` ⇒ triển khai Gateway; luật: chỉ nâng `minBuild` khi bản mới có ở mọi kênh; một keystore APK dùng mãi; outbox 5000 sự kiện.
+- [ ] **Step 4:** `PHAT-HANH-BAN-MOI.md`: tăng `version` ⇒ build web + `assemblePlayRelease`/`assembleApkRelease` (khi có keystore) ⇒ tính SHA-256/kích thước (`certutil -hashfile <apk> SHA256` / `sha256sum`) ⇒ đăng APK lên URL theo phiên bản (dự án 7) ⇒ sửa `app-versions.json` ⇒ triển khai Gateway; luật: chỉ nâng `minBuild` khi bản mới có ở mọi kênh; một keystore APK dùng mãi; outbox 5000 sự kiện. Nâng `minBuild` ⇒ đặt `minBuildEnforceAt` ≥ lúc triển khai + 2 giờ (`null` chỉ cho sự cố khẩn).
 - [ ] **Step 5:** Dòng nhật ký + commit `feat(host): tự tải và cài bản APK mới (dự án 8)`.
 
 ### Task 8: Kiểm toàn nhánh (phiên chính)
