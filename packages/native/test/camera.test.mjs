@@ -60,3 +60,28 @@ test('môi trường không có camera/DOM ⇒ unsupported, không ném lỗi l�
   await assert.rejects(() => grabFrame({ videoWidth: 0, videoHeight: 0 }), (e) => e instanceof CameraError);
   await assert.rejects(() => capturePhoto(), (e) => e instanceof CameraError && e.code === 'unsupported');
 });
+
+test('capturePhoto: input accept đúng "image/*" + capture=environment (Capacitor Android chỉ mở camera khi có "image/*")', async () => {
+  const listeners = {};
+  const attrs = {};
+  const input = {
+    style: {},
+    files: [],
+    addEventListener: (n, fn) => (listeners[n] = fn),
+    setAttribute: (k, v) => (attrs[k] = v),
+    remove: () => {},
+    click: () => {},
+  };
+  const prev = globalThis.document;
+  globalThis.document = { createElement: () => input, body: { appendChild: () => {} } };
+  try {
+    const p = capturePhoto();
+    assert.equal(input.type, 'file');
+    assert.equal(input.accept, 'image/*');
+    assert.equal(attrs.capture, 'environment');
+    listeners.cancel();
+    assert.equal(await p, null);
+  } finally {
+    globalThis.document = prev;
+  }
+});
