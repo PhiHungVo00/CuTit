@@ -146,19 +146,35 @@ jobs:
       - name: Đồng bộ web vào project Android (cap sync)
         run: pnpm --filter @vietlearning/host-shell exec cap sync android
 
-      - name: Build APK debug
+      # Hai kênh phân phối (dự án 8): play (Google Play, không quyền cài APK) và apk (cài tay)
+      - name: Build APK debug (hai flavor play + apk)
         working-directory: apps/host-shell/android
-        run: ./gradlew assembleDebug --no-daemon --stacktrace
+        run: ./gradlew assemblePlayDebug assembleApkDebug --no-daemon --stacktrace
 
       - name: Kiểm tra APK có web app bên trong
         run: |
-          APK=apps/host-shell/android/app/build/outputs/apk/debug/app-debug.apk
-          ls -l "$APK"
-          unzip -l "$APK" | grep -q 'assets/public/index.html'
+          for APK in apps/host-shell/android/app/build/outputs/apk/play/debug/app-play-debug.apk apps/host-shell/android/app/build/outputs/apk/apk/debug/app-apk-debug.apk; do
+            ls -l "$APK"
+            unzip -l "$APK" | grep -q 'assets/public/index.html'
+          done
+
+      # versionCode = versionToBuild(version); play KHÔNG có REQUEST_INSTALL_PACKAGES, apk CÓ
+      - name: Kiểm versionCode và quyền của hai APK
+        working-directory: apps/host-shell
+        run: |
+          node scripts/check-apk.mjs android/app/build/outputs/apk/play/debug/app-play-debug.apk --flavor play
+          node scripts/check-apk.mjs android/app/build/outputs/apk/apk/debug/app-apk-debug.apk --flavor apk
 
       - uses: actions/upload-artifact@v4
         with:
-          name: app-debug
-          path: apps/host-shell/android/app/build/outputs/apk/debug/app-debug.apk
+          name: app-play-debug
+          path: apps/host-shell/android/app/build/outputs/apk/play/debug/app-play-debug.apk
+          if-no-files-found: error
+          retention-days: 30
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: app-apk-debug
+          path: apps/host-shell/android/app/build/outputs/apk/apk/debug/app-apk-debug.apk
           if-no-files-found: error
           retention-days: 30

@@ -3,6 +3,10 @@ import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 import tailwindcss from '@tailwindcss/vite';
 import type { Plugin } from 'vite';
+import { readAppVersion } from './scripts/version.mjs';
+
+// Số phiên bản (nguồn duy nhất: package.json) đưa vào bundle; build = x·1 000 000 + y·1 000 + z.
+const appVersion = readAppVersion();
 
 /**
  * Preload 4 file font (latin/vietnamese × 400/800) ngay trong HTML. Font khai báo font-display: optional
@@ -30,6 +34,10 @@ function preloadFonts(): Plugin {
  * - PWA: precache toàn bộ shell + chunk màn hình để chạy offline và cài lên màn hình chính.
  */
 export default defineConfig({
+  define: {
+    'import.meta.env.VITE_APP_VERSION': JSON.stringify(appVersion.version),
+    'import.meta.env.VITE_APP_BUILD': JSON.stringify(String(appVersion.build))
+  },
   plugins: [
     react(),
     tailwindcss(),
