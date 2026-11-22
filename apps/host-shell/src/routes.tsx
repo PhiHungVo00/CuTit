@@ -141,6 +141,8 @@ export const PRACTICE_HUB_ROUTE = pathRoute('/luyen-tap-chung', () => import('./
 export const PRIVACY_ROUTE = pathRoute('/quyen-rieng-tu', () => import('./screens/PrivacyRoute'));
 /** GĐ2: phòng tập thanh điệu (mfe-speech-lab), mở từ Khám phá — không tính vào 12 công cụ M1–M12 */
 export const TONE_GYM_ROUTE = pathRoute('/phong-thanh', () => import('./screens/ToneGymRoute'));
+/** Trang công khai hướng dẫn xóa tài khoản (Google Play Data safety): chỉ chữ + link, không gọi Gateway nên không tạo tài khoản khách */
+export const DELETE_ACCOUNT_INFO_ROUTE = pathRoute('/xoa-tai-khoan', () => import('./screens/DeleteAccountInfoRoute'));
 export const PATH_ROUTES: PathRoute[] = [
   pathRoute('/bai-hoc/:lessonId', () => import('./screens/LessonRoute')),
   pathRoute('/kiem-tra/:unitId', () => import('./screens/TestOutRoute')),
@@ -154,6 +156,7 @@ export const PATH_ROUTES: PathRoute[] = [
   pathRoute('/cai-dat', () => import('./screens/SettingsRoute')),
   pathRoute('/cai-dat/:nhom', () => import('./screens/SettingsRoute')),
   PRIVACY_ROUTE,
+  DELETE_ACCOUNT_INFO_ROUTE,
   TONE_GYM_ROUTE
 ];
 

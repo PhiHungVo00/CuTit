@@ -9,6 +9,8 @@
   Dùng:  pnpm --filter @vietlearning/host-shell android:apk:win       (debug)
          pnpm --filter @vietlearning/host-shell android:release:win   (release, CHƯA ký)
   Tùy chọn: -Drive X:  -JavaHome "C:\...\jdk-21"  -SkipWeb  -Release
+  Ghi manifest cho trang giới thiệu (chỉ bản -Release ĐÃ KÝ; debug và bản chưa ký không ghi):
+    -ReleaseManifest apps/landing/apk-release.json -ApkUrl https://.../becutit.apk [-MinAndroid 6.0]
 
   Release: NODE_ENV=production => capacitor.config tắt debug WebView và mixed content;
   bắt buộc VITE_GATEWAY_URL là https (http bị chặn khi tắt mixed content). Ký app: xem nhật ký mục 5.
@@ -17,12 +19,21 @@ param(
   [string]$Drive = 'B:',
   [string]$JavaHome = '',
   [switch]$SkipWeb,
-  [switch]$Release
+  [switch]$Release,
+  [string]$ReleaseManifest = '',
+  [string]$ApkUrl = '',
+  [string]$MinAndroid = '6.0'
 )
 $ErrorActionPreference = 'Stop'
 
 $hostShell = Split-Path -Parent $PSScriptRoot
 $repoRoot = (Resolve-Path (Join-Path $hostShell '..\..')).Path
+
+if ($ReleaseManifest -and -not $Release) {
+  Write-Warning '-ReleaseManifest chỉ áp dụng cho bản -Release; bản debug KHÔNG ghi apk-release.json.'
+  $ReleaseManifest = ''
+}
+if ($ReleaseManifest -and -not $ApkUrl) { throw '-ReleaseManifest cần thêm -ApkUrl (địa chỉ tải APK, https://... hoặc /...).' }
 
 if ($Release) {
   $env:NODE_ENV = 'production'
@@ -107,6 +118,13 @@ try {
     Join-Path $hostShell 'android\app\build\outputs\apk\debug\app-debug.apk'
   }
   Write-Host "`nAPK: $apk ($([math]::Round((Get-Item $apk).Length / 1MB, 1)) MB)"
+
+  if ($ReleaseManifest) {
+    # apk-manifest.mjs từ chối APK chưa ký (tên có "unsigned") nên không ghi manifest cho bản dở
+    $manifestPath = if ([IO.Path]::IsPathRooted($ReleaseManifest)) { $ReleaseManifest } else { Join-Path $repoRoot $ReleaseManifest }
+    node (Join-Path $PSScriptRoot 'apk-manifest.mjs') --apk $apk --url $ApkUrl --out $manifestPath --min-android $MinAndroid
+    if ($LASTEXITCODE) { throw 'Không ghi được apk-release.json (APK chưa ký hoặc url sai)' }
+  }
 } finally {
   Pop-Location
   if ($needsSubst) { subst $Drive /d | Out-Null }
