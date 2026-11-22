@@ -400,3 +400,26 @@ test('Cờ đăng xuất chờ mạng sống qua lần mở lại app (status.si
   assert.equal(again.status().signOutPending, true);
   again.cancelSignOut();
 });
+
+test('Mở lại app khi đang chờ đăng xuất: lần gửi thành công TRƯỚC khi Host gọi lại signOut(logout) không xóa dữ liệu máy mà bỏ qua logout', async () => {
+  const srv = fakeServer();
+  const storage = memStorage();
+  const engine = start(srv, storage);
+  await engine.flush({ pull: true });
+  p().addXp(2, NOW);
+  srv.fail = 'offline';
+  await engine.signOut(async () => undefined);
+  engine.stop();
+  srv.fail = null;
+  let resets = 0;
+  const again = start(srv, storage, { onLocalReset: () => resets++ });
+  await again.flush({ pull: true }); // vd. sự kiện online / lần thử lại theo backoff, trước khi Host kịp gọi signOut(logout)
+  await new Promise((r) => setImmediate(r));
+  await new Promise((r) => setImmediate(r));
+  assert.equal(resets, 0, 'không được xóa dữ liệu khi chưa có callback logout (token vẫn còn hiệu lực trên server)');
+  assert.equal(again.status().signOutPending, true);
+  let logouts = 0;
+  assert.equal(await again.signOut(async () => void logouts++), 'done');
+  assert.equal(logouts, 1);
+  assert.equal(resets, 1);
+});

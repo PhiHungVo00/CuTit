@@ -599,7 +599,9 @@ export function startSync(opts: SyncOptions): SyncEngine {
     const p = inflight;
     // Đăng xuất đang chờ mạng: lần gửi thành công đầu tiên (online, thử lại theo backoff…) hoàn tất đăng xuất
     void p.then((ok) => {
-      if (ok && rec.signOutPending && !signingOut && !stopped) void runSignOut();
+      // Chỉ khi đã có callback logout (nằm trong RAM): mở lại app, Host chưa kịp gọi lại signOut(logout) thì KHÔNG xóa dữ liệu
+      // máy mà bỏ qua thu hồi token (phiên vẫn sống trên server)
+      if (ok && rec.signOutPending && signOutLogout && !signingOut && !stopped) void runSignOut();
     });
     return p;
   }
