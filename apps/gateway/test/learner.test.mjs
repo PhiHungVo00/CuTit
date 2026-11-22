@@ -73,7 +73,7 @@ test('Xóa tài khoản: mọi dữ liệu (kể cả XP) biến mất; access t
   ]);
   const del = await a.inject({ method: 'DELETE', url: '/v1/me', headers });
   assert.equal(del.statusCode, 200);
-  assert.deepEqual(del.json(), { deleted: true });
+  assert.deepEqual(del.json(), { deleted: true, deleteAt: null }); // DELETE không thân = xóa ngay (tương thích client cũ)
 
   const reuse = await sync(headers, [{ clientEventId: id(), at, type: 'xp.add', source: 'lesson', amount: 5, day }]);
   assert.equal(reuse.statusCode, 401);

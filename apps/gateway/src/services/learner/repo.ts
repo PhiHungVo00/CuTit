@@ -1,4 +1,5 @@
-import { and, asc, desc, eq, lt, lte, sql } from 'drizzle-orm';
+import { hardDeleteUser } from '../auth/lifecycle.js';
+import { and, asc, desc, eq, lte, sql } from 'drizzle-orm';
 import type { z } from 'zod';
 import type { PreferencesSchema, ProgressSnapshot, SyncEvent } from '@vietlearning/contracts/api';
 import { schema, type Db } from '../../db/client.js';
@@ -28,8 +29,7 @@ const {
   achievements,
   syncEvents,
   learnerProgress,
-  deletedAccounts,
-  refreshTokens
+  deletedAccounts
 } = schema;
 
 export async function getPreferences(db: Db, userId: string): Promise<Preferences | null> {
@@ -172,26 +172,8 @@ export async function snapshot(db: Db, userId: string): Promise<ProgressSnapshot
   };
 }
 
-/** Bia mộ giữ 90 ngày (= hạn refresh token): sau đó credential cũ đằng nào cũng hết hạn */
-const TOMBSTONE_TTL_MS = 90 * 24 * 3600 * 1000;
-
-/**
- * Xóa cứng: mọi bảng con (kể cả xp_events, refresh_tokens) bị xóa theo nhờ ON DELETE CASCADE.
- * Trước khi xóa, chép sha256 của refresh token + mã khôi phục vào bia mộ (cùng transaction) để máy khác
- * nhận `account_deleted`. Bia mộ không chứa userId hay dữ liệu học.
- */
-export async function deleteUser(db: Db, userId: string, now = new Date()): Promise<boolean> {
-  return db.transaction(async (tx) => {
-    const [u] = await tx.select({ code: users.recoveryCodeHash }).from(users).where(eq(users.id, userId));
-    if (!u) return false;
-    const tokens = await tx.select({ hash: refreshTokens.tokenHash }).from(refreshTokens).where(eq(refreshTokens.userId, userId));
-    const hashes = [...tokens.map((t) => t.hash), ...(u.code ? [u.code] : [])];
-    if (hashes.length) await tx.insert(deletedAccounts).values(hashes.map((credentialHash) => ({ credentialHash, deletedAt: now }))).onConflictDoNothing();
-    await tx.delete(deletedAccounts).where(lt(deletedAccounts.deletedAt, new Date(now.getTime() - TOMBSTONE_TTL_MS)));
-    await tx.delete(users).where(eq(users.id, userId));
-    return true;
-  });
-}
+/** Giữ tên cũ cho nơi gọi cũ: xóa cứng + bia mộ nằm ở services/auth/lifecycle.ts */
+export const deleteUser = (db: Db, userId: string, now = new Date()): Promise<boolean> => hardDeleteUser(db, userId, now);
 
 /** credentialHash = sha256 của refresh token / mã khôi phục đã chuẩn hóa */
 export async function isDeletedCredential(db: Db, credentialHash: string): Promise<boolean> {

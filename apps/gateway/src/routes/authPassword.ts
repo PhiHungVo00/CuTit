@@ -23,6 +23,7 @@ import {
   signedIn,
   uniqueViolation
 } from '../services/auth/accounts.js';
+import { isPastDeletion } from '../services/auth/lifecycle.js';
 import { OtpService } from '../services/auth/otp.js';
 import { burnPasswordCheck, hashPassword, isWeakPassword, verifyPassword } from '../services/auth/password.js';
 import { RateCounters } from '../services/auth/rateCounter.js';
@@ -148,11 +149,13 @@ export const passwordAuthRoutes: FastifyPluginAsync<RouteDeps> = async (server, 
         let oldRecoveryHash: string | null = null;
         if (bearer) {
           const [user] = await tx
-            .select({ id: schema.users.id, isGuest: schema.users.isGuest, recoveryCodeHash: schema.users.recoveryCodeHash })
+            .select({ id: schema.users.id, isGuest: schema.users.isGuest, recoveryCodeHash: schema.users.recoveryCodeHash, deleteAt: schema.users.deleteAt })
             .from(schema.users)
             .where(and(eq(schema.users.id, bearer), isNull(schema.users.deletedAt)))
             .for('update');
           if (!user) throw new GatewayError(401, 'account_deleted');
+          // Khách đang chờ xóa (30 ngày) không được nâng cấp thành tài khoản; quá hạn = đã xóa
+          if (user.deleteAt) throw user.deleteAt.getTime() <= now.getTime() ? new GatewayError(401, 'account_deleted') : new GatewayError(403, 'account_pending_deletion');
           if (!user.isGuest) throw new GatewayError(409, 'account_upgraded', 'Phiên này đã là tài khoản');
           id = user.id;
           oldRecoveryHash = user.recoveryCodeHash;
@@ -216,7 +219,10 @@ export const passwordAuthRoutes: FastifyPluginAsync<RouteDeps> = async (server, 
     if ((await counters.count(d, keys.user(body.username), now)) > LOGIN_USER_SLOW_AFTER) await sleep(config.AUTH_LOGIN_SLOWDOWN_MS);
     const account = await findPasswordAccount(d, body.username);
     const ok = account ? await verifyPassword(account.passwordHash, body.password) : (await burnPasswordCheck(body.password), false);
-    if (!account || !ok) {
+    // Quá hạn xóa 30 ngày nhưng job dọn chưa chạy: coi như không có tài khoản — cùng thân lỗi/đường đi với sai mật khẩu (không dò ra được).
+    // Kiểm SAU khi đã băm/so mật khẩu nên thời gian phản hồi không khác.
+    const expired = account && ok ? await isPastDeletion(d, account.userId, now) : false;
+    if (!account || !ok || expired) {
       await loginFailed(d, req.ip, body.username, now);
       audit.record('auth.signin', { outcome: 'failure', ctx, metadata: { provider: 'password', reason: 'invalid_credentials' } });
       audit.noteAuthFailure(ctx, 'invalid_credentials');
