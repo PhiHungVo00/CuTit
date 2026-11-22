@@ -113,8 +113,8 @@ test.describe('Nối tiến độ GĐ0 ↔ GĐ1', () => {
     await expect(page.getByText(/91\/2025\/QH15/)).toBeVisible();
     await expect(page.getByText(/Rút lại đồng ý bất cứ lúc nào/)).toBeVisible();
     await expect(page.getByText(/Không mua, bán dữ liệu cá nhân/)).toBeVisible();
-    await page.goto('/');
-    await page.getByRole('button', { name: 'Switch the app to English' }).click();
+    await page.goto('/cai-dat/ngon-ngu');
+    await page.getByRole('radio', { name: /English/ }).check();
     await page.goto('/quyen-rieng-tu');
     await expect(page.getByRole('heading', { level: 1, name: 'Privacy policy' })).toBeVisible();
     await expect(page.getByRole('note')).toContainText('DRAFT');

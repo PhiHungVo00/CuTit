@@ -22,7 +22,7 @@ async function assertMobileLayout(page: Page) {
 test.describe('Khung app', () => {
   test('trang chủ: thanh 4 tab, lối vào tra cứu, bố cục mobile chuẩn', async ({ page }) => {
     await page.goto('/');
-    await expect(page.getByRole('heading', { name: 'Học Tiếng Việt Cùng Bé Cu Tít' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Chào bạn!' })).toBeVisible();
     await expect(page.getByRole('navigation', { name: 'Điều hướng chính' })).toBeVisible();
     await assertMobileLayout(page);
     // Dự án 1: màn Khám phá được thay bằng tab Luyện tập (5 cách luyện); tra cứu nằm cuối tab Học
@@ -584,9 +584,9 @@ test.describe('Giao diện tiếng Anh (người nước ngoài)', () => {
     await expect(page.getByRole('navigation', { name: 'Main navigation' })).toBeVisible();
     await assertMobileLayout(page);
     await page.getByRole('button', { name: 'Chuyển giao diện sang tiếng Việt' }).click();
-    await expect(page.getByRole('heading', { name: 'Học Tiếng Việt Cùng Bé Cu Tít' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Chào bạn!' })).toBeVisible();
     await page.reload();
-    await expect(page.getByRole('heading', { name: 'Học Tiếng Việt Cùng Bé Cu Tít' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Chào bạn!' })).toBeVisible();
     await expect(page.locator('html')).toHaveAttribute('lang', 'vi');
   });
 
