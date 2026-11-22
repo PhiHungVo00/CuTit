@@ -24,6 +24,8 @@ loadDotenv({ path: process.env.BECUTIT_ENV_FILE ?? join(homedir(), '.becutit', '
 const DEFAULT_PGLITE_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', '.data', 'pglite');
 /** apps/gateway/.data/tts: âm thanh dựng sẵn (GĐ2), không commit */
 const DEFAULT_TTS_AUDIO_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', '.data', 'tts');
+/** apps/gateway/config/app-versions.json: phiên bản app mới nhất/tối thiểu theo kênh (dự án 8) */
+const DEFAULT_APP_VERSIONS_FILE = join(dirname(fileURLToPath(import.meta.url)), '..', 'config', 'app-versions.json');
 
 const boolFromEnv = z
   .enum(['true', 'false', '1', '0'])
@@ -139,7 +141,16 @@ const EnvSchema = z
     /** Trần thư/ngày (giờ VN) cả app — chừa dư dưới mức ~500/ngày của Gmail. Hết trần => provider_unavailable */
     MAIL_DAILY_CAP: z.coerce.number().int().min(0).default(450),
     /** Hạn mức AI của khách = hệ số × hạn mức tài khoản thật (khuyến khích đăng nhập; spec mục 6) */
-    GUEST_QUOTA_FACTOR: z.coerce.number().min(0).max(1).default(0.5)
+    GUEST_QUOTA_FACTOR: z.coerce.number().min(0).max(1).default(0.5),
+    // ---- Dự án 8: cập nhật ứng dụng (spec docs/superpowers/specs/2026-11-21-cap-nhat-ung-dung-design.md mục 5.3) ----
+    /** Tệp phiên bản app theo kênh; mặc định config/app-versions.json cạnh gói */
+    APP_VERSIONS_FILE: z.string().optional(),
+    /** Đọc lại tệp phiên bản sau chừng này ms (e2e đặt 0) */
+    APP_VERSIONS_TTL_MS: z.coerce.number().int().min(0).default(60_000),
+    /** Giới hạn theo IP cho GET /v1/app/version */
+    APP_VERSION_RATE_LIMIT_PER_MINUTE: z.coerce.number().int().positive().default(30),
+    /** Host (cách nhau bằng dấu phẩy) được phép trong apkFile.url của kênh apk; rỗng = không cho phép apkFile */
+    APK_DOWNLOAD_HOSTS: z.string().default('')
   })
   .transform((env) => ({
     ...env,
@@ -154,6 +165,10 @@ const EnvSchema = z
     AUTH_OTP_PEPPER: env.AUTH_OTP_PEPPER ?? (env.NODE_ENV === 'production' ? undefined : randomBytes(32).toString('hex')),
     PGLITE_DIR: env.PGLITE_DIR ?? (env.NODE_ENV === 'test' ? 'memory://' : DEFAULT_PGLITE_DIR),
     TTS_AUDIO_DIR: env.TTS_AUDIO_DIR ?? DEFAULT_TTS_AUDIO_DIR,
+    APP_VERSIONS_FILE: env.APP_VERSIONS_FILE ?? DEFAULT_APP_VERSIONS_FILE,
+    apkDownloadHosts: env.APK_DOWNLOAD_HOSTS.split(',')
+      .map((h) => h.trim().toLowerCase())
+      .filter(Boolean),
     corsOrigins: env.CORS_ORIGIN.split(',')
       .map((o) => o.trim())
       .filter(Boolean)
