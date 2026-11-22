@@ -31,6 +31,10 @@ describe('messageForError — thông báo lỗi theo mã', () => {
   it('yêu cầu bị từ chối ⇒ không gửi lại', () => {
     expect(messageForError(e('invalid-request', 'llm_rejected'), 'vi').retry).toBe(false);
   });
+  it('cần cập nhật app ⇒ câu riêng vi/en, không gửi lại', () => {
+    expect(messageForError(e('update-required'), 'vi')).toEqual({ text: 'Cần cập nhật ứng dụng để tiếp tục trò chuyện.', retry: false });
+    expect(messageForError(e('update-required'), 'en').retry).toBe(false);
+  });
   it('lỗi khác ⇒ câu chung, thử lại được', () => {
     expect(messageForError(e('server'), 'vi').retry).toBe(true);
   });
