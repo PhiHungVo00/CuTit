@@ -19,7 +19,10 @@ export const REFRESH_TOMBSTONE_TTL_MS = 90 * DAY_MS;
 /** Tên đăng nhập của tài khoản đã xóa cứng được giữ chỗ 30 ngày (spec 5.5) */
 export const USERNAME_RESERVE_MS = 30 * DAY_MS;
 
-const { users, refreshTokens, deletedAccounts, identities, reservedUsernames, friendInvites } = schema;
+const { users, refreshTokens, deletedAccounts, identities, reservedUsernames, friendInvites, authChallenges } = schema;
+
+/** auth_challenges (nonce Google, mã OTP, bộ đếm giới hạn, vé gộp) hết hạn quá 1 ngày thì dọn (đề xuất A7) */
+export const CHALLENGE_PURGE_AFTER_MS = DAY_MS;
 
 /**
  * Đặt hạn xóa: tài khoản bị khóa ngay. Thu hồi MỌI refresh token, hủy mã mời bạn (ẩn khỏi bạn bè).
@@ -101,6 +104,8 @@ export async function hardDeleteUser(db: Db, userId: string, now: Date): Promise
 export async function purgeExpiredTombstones(db: Db, now: Date): Promise<void> {
   await db.delete(deletedAccounts).where(and(isNotNull(deletedAccounts.expiresAt), lte(deletedAccounts.expiresAt, now)));
   await db.delete(reservedUsernames).where(lte(reservedUsernames.until, now));
+  // Không dọn thì bảng phình mãi (mỗi GET /v1/auth/nonce một dòng). Chừa 1 ngày để mã vừa hết hạn vẫn báo otp_expired.
+  await db.delete(authChallenges).where(lte(authChallenges.expiresAt, new Date(now.getTime() - CHALLENGE_PURGE_AFTER_MS)));
 }
 
 /**
