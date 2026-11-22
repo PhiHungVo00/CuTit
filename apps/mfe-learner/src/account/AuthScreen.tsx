@@ -12,10 +12,31 @@ import { MergeDialog, RestoreDialog } from './MergeDialog';
 import { Alert, PasswordField, TextField, authError } from './parts';
 
 type Tab = 'login' | 'register';
+
+/**
+ * Cổng tuổi: Gateway không cho biết lần Google này tạo tài khoản MỚI hay vào tài khoản cũ, nên hỏi MỘT lần trên mỗi máy
+ * trước khi mở Google và nhớ lại (người đã xác nhận, kể cả lúc đăng ký mật khẩu, không bị hỏi nữa).
+ */
+export const AGE_KEY = 'becutit.age-confirmed';
+const ageConfirmed = (): boolean => {
+  try {
+    return localStorage.getItem(AGE_KEY) === '1';
+  } catch {
+    return false;
+  }
+};
+const rememberAge = () => {
+  try {
+    localStorage.setItem(AGE_KEY, '1');
+  } catch {
+    /* chế độ riêng tư: hỏi lại lần sau */
+  }
+};
 type View =
   | { name: 'form' }
   | { name: 'backup'; code: string }
   | { name: 'forgot' }
+  | { name: 'age' }
   /** Đăng nhập mật khẩu trên máy có tiến độ: hỏi gộp hay thay TRƯỚC khi đổi tài khoản */
   | { name: 'local'; username: string; password: string }
   /** Google trả needs_merge: server cấp vé gộp */
@@ -117,6 +138,7 @@ export function AuthScreen({ deps = defaultDeps, onDone }: { deps?: AuthDeps; on
     if (tab === 'register') {
       await run('form', async () => {
         const r = await registerAccount(deps, name, password);
+        rememberAge();
         setPassword('');
         setView({ name: 'backup', code: r.backupCode });
       });
@@ -131,15 +153,45 @@ export function AuthScreen({ deps = defaultDeps, onDone }: { deps?: AuthDeps; on
     await signInPassword(undefined, { username: name, password });
   };
 
-  const google = () =>
+  const startGoogle = () =>
     run('google', async () => {
       handle(await continueWithGoogle(deps));
     });
+  const google = () => (ageConfirmed() ? startGoogle() : setView({ name: 'age' }));
 
   const frame = (children: React.ReactNode) => (
     <ScreenFrame title={view.name === 'forgot' ? t('forgotTitle') : t('authTitle')}>{children}</ScreenFrame>
   );
 
+  if (view.name === 'age') {
+    return frame(
+      <section className={card} aria-labelledby="ct-age-h">
+        <h2 id="ct-age-h" className="m-0 text-xl font-extrabold text-heading">
+          {t('ageTitle')}
+        </h2>
+        <p className="m-0 text-[15px] text-ink-soft">{t('ageBody', { age: MIN_AGE })}</p>
+        <label className="flex min-h-12 cursor-pointer items-center gap-3 rounded-xl border-2 border-line bg-surface-2 px-3 py-2 font-bold text-ink">
+          <input type="checkbox" checked={ageOk} onChange={(e) => setAgeOk(e.target.checked)} className="size-5 accent-[var(--color-accent)]" />
+          {t('ageConfirm', { age: MIN_AGE })}
+        </label>
+        <button
+          type="button"
+          className={primaryBtn}
+          disabled={!ageOk || busy !== null}
+          onClick={() => {
+            rememberAge();
+            setView({ name: 'form' });
+            void startGoogle();
+          }}
+        >
+          {t('google')}
+        </button>
+        <button type="button" className={secondaryBtn} onClick={() => setView({ name: 'form' })}>
+          {t('authBack')}
+        </button>
+      </section>
+    );
+  }
   if (view.name === 'backup') return frame(<BackupCodeScreen code={view.code} onContinue={finish} />);
   if (view.name === 'forgot') {
     return frame(
