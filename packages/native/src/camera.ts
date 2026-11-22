@@ -106,7 +106,9 @@ export function capturePhoto(): Promise<CapturedImage | null> {
   return new Promise((resolve, reject) => {
     const input = document.createElement('input');
     input.type = 'file';
-    input.accept = 'image/jpeg,image/png,image/webp';
+    // Phải đúng "image/*": Capacitor Android chỉ mở camera khi acceptTypes chứa "image/*" (BridgeWebChromeClient.onShowFileChooser),
+    // danh sách MIME cụ thể khiến 📷 rơi vào hộp chọn ảnh thay vì camera (DA2-T9, thử trên AVD). Ảnh vẫn được ép về JPEG ở fileToJpegBase64.
+    input.accept = 'image/*';
     input.setAttribute('capture', 'environment');
     input.style.display = 'none';
     let done = false;
