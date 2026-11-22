@@ -20,16 +20,25 @@ import { chatRoutes } from './routes/chat.js';
 import { speechRoutes } from './routes/speech.js';
 import { practiceRoutes } from './routes/practice.js';
 import { contentRoutes } from './routes/content.js';
-import { authRoutes } from './routes/auth.js';
+import { authLogoutRoutes, authRoutes } from './routes/auth.js';
+import { purgeExpiredAccounts } from './services/auth/lifecycle.js';
 import { meRoutes } from './routes/me.js';
 import { quotaRoutes } from './routes/quota.js';
 import { friendsRoutes } from './routes/friends.js';
+import { identityAuthRoutes, identityRoutes } from './routes/identities.js';
+import { createIdentityProviderFromEnv, type IdentityProvider } from './providers/identity.js';
+import { authMeRoutes } from './routes/authMe.js';
+import { appVersionRoutes } from './routes/appVersion.js';
+import { createAppVersionStore } from './services/appVersion/store.js';
+import { updateGate } from './services/appVersion/updateGate.js';
+import { createMailProvider, type MailProvider } from './services/mail/MailProvider.js';
 import { createDbProvider, type DbProvider } from './db/client.js';
 import { AuditLog, purgeAuditEvents } from './services/audit/audit.js';
 
 /** Dọn audit_events quá hạn: mỗi ngày một lần, lần đầu sau 1 phút (không mở DB lúc khởi động/test) */
 const AUDIT_PURGE_FIRST_MS = 60_000;
 const AUDIT_PURGE_EVERY_MS = 24 * 3600 * 1000;
+const ACCOUNT_PURGE_EVERY_MS = 3600 * 1000;
 
 declare module 'fastify' {
   interface FastifyInstance {
@@ -55,6 +64,12 @@ export interface RouteDeps {
   db: DbProvider;
   /** Nhật ký sự kiện bảo mật (ghi bất đồng bộ, lỗi ghi không làm hỏng request) */
   audit: AuditLog;
+  /** Dự án 3: kiểm ID token Google. null = chưa cấu hình GOOGLE_WEB_CLIENT_ID => route Google trả 503 provider_unavailable */
+  identity?: IdentityProvider | null;
+  /** Dự án 3: gửi mã OTP (MAIL_PROVIDER, mặc định none) */
+  mail: MailProvider;
+  /** Đồng hồ cho hạn mã OTP / cửa sổ giới hạn đăng nhập (test tiêm) */
+  clock: Clock;
 }
 
 export interface BuildOptions {
@@ -73,8 +88,12 @@ export interface BuildOptions {
   stt?: SttProvider | null;
   /** Test tiêm TTS giả; bỏ trống = theo cấu hình TTS_PROVIDER */
   tts?: TtsProvider | null;
+  /** Test tiêm nhà cung cấp mail giả; bỏ trống = theo MAIL_PROVIDER */
+  mail?: MailProvider;
   /** Test tiêm DB dùng chung; bỏ trống = theo cấu hình (DATABASE_URL hoặc PGlite) và tự đóng khi app đóng */
   db?: DbProvider;
+  /** Test tiêm bộ kiểm token giả (khóa cục bộ); null = chưa cấu hình; bỏ trống = theo env GOOGLE_WEB_CLIENT_ID */
+  identity?: IdentityProvider | null;
 }
 
 export async function buildApp(config: GatewayConfig, opts: BuildOptions = {}): Promise<FastifyInstance> {
@@ -119,11 +138,26 @@ export async function buildApp(config: GatewayConfig, opts: BuildOptions = {}): 
     purgeTimer = setInterval(() => void purge(), AUDIT_PURGE_EVERY_MS).unref();
   }, AUDIT_PURGE_FIRST_MS).unref();
 
+  // Dự án 3: xóa cứng tài khoản quá hạn 30 ngày + dọn bia mộ/tên giữ chỗ hết hạn. Chạy mỗi giờ (idempotent, an toàn nhiều instance).
+  const purgeAccounts = () =>
+    db
+      .get()
+      .then((d) => purgeExpiredAccounts(d, (opts.clock ?? (() => new Date()))(), (err) => app.log.error({ err }, 'account purge failed for one user')))
+      .then((n) => n && app.log.info({ deleted: n }, 'expired accounts purged'))
+      .catch((err: unknown) => app.log.warn({ err }, 'account purge failed'));
+  let accountTimer: NodeJS.Timeout | undefined = setTimeout(() => {
+    void purgeAccounts();
+    accountTimer = setInterval(() => void purgeAccounts(), ACCOUNT_PURGE_EVERY_MS).unref();
+  }, AUDIT_PURGE_FIRST_MS).unref();
+
   // Ghi nốt nhật ký đang dở TRƯỚC khi đóng DB (DB tiêm từ test thì test tự đóng)
   app.addHook('onClose', async () => {
     clearTimeout(purgeTimer);
     clearInterval(purgeTimer);
     purgeTimer = undefined;
+    clearTimeout(accountTimer);
+    clearInterval(accountTimer);
+    accountTimer = undefined;
     await audit.flush();
     if (!opts.db) await db.close();
   });
@@ -138,7 +172,8 @@ export async function buildApp(config: GatewayConfig, opts: BuildOptions = {}): 
   const tts = opts.tts !== undefined ? opts.tts : createTtsProvider(config);
   const audioStore = new FileAudioStore(config.TTS_AUDIO_DIR);
   const ttsCache = opts.ttsCache ?? new TTSCacheProxy(fileSynthesizer(audioStore, tts), Boolean(tts));
-  const deps: RouteDeps = { pipeline, ttsCache, config, llm, vision, stt, tts, tutor: createTutor(llm, app.log, vision), db, audit };
+  const deps: RouteDeps = { pipeline, ttsCache, config, llm, vision, stt, tts, tutor: createTutor(llm, app.log, vision), db, audit, mail: opts.mail ?? createMailProvider(config), clock: opts.clock ?? (() => new Date()) };
+  deps.identity = opts.identity !== undefined ? opts.identity : createIdentityProviderFromEnv();
   app.log.info({ llm: llm?.name ?? 'mock', vision: vision?.name ?? 'mock', stt: stt?.name ?? 'mock' }, 'AI providers');
 
   // Phải đặt trước khi đăng ký các scope con để chúng thừa hưởng
@@ -172,13 +207,38 @@ export async function buildApp(config: GatewayConfig, opts: BuildOptions = {}): 
         onExceeded: (req) => audit.noteRateLimited(AuditLog.context(req), req.url.split('?')[0])
       });
       await auth.register(authRoutes, deps);
+      await auth.register(identityAuthRoutes, deps);
+      await auth.register(authLogoutRoutes, deps);
     },
     { prefix: '/v1/auth' }
+  );
+
+  // Dự án 8: GET /v1/app/version công khai (scope riêng như /v1/auth, giới hạn theo IP). Đọc cấu hình lúc dựng app:
+  // tệp sai => ném, Gateway không khởi động. Đăng ký TRƯỚC scope /v1 (không dính hook 426/xác thực của nó).
+  const appVersions = createAppVersionStore({
+    file: config.APP_VERSIONS_FILE,
+    ttlMs: config.APP_VERSIONS_TTL_MS,
+    apkHosts: config.apkDownloadHosts,
+    log: app.log
+  });
+  await app.register(
+    async (appScope) => {
+      await appScope.register(rateLimit, {
+        max: config.APP_VERSION_RATE_LIMIT_PER_MINUTE,
+        timeWindow: '1 minute',
+        keyGenerator: (req) => req.ip,
+        onExceeded: (req) => audit.noteRateLimited(AuditLog.context(req), req.url.split('?')[0])
+      });
+      await appScope.register(appVersionRoutes, { store: appVersions });
+    },
+    { prefix: '/v1/app' }
   );
 
   // Mọi route nghiệp vụ khác nằm trong scope /v1 có hook xác thực + rate limit theo người dùng
   await app.register(
     async (v1) => {
+      // Dự án 8: chặn bản app dưới minBuild bằng 426, TRƯỚC xác thực (không gắn ở /v1/auth — xem spec 5.3)
+      v1.addHook('onRequest', updateGate(appVersions));
       v1.addHook('onRequest', pipeline.authenticate);
       await v1.register(rateLimit, {
         max: config.RATE_LIMIT_PER_MINUTE,
@@ -193,6 +253,8 @@ export async function buildApp(config: GatewayConfig, opts: BuildOptions = {}): 
       await v1.register(meRoutes, deps);
       await v1.register(quotaRoutes, deps);
       await v1.register(friendsRoutes, deps);
+      await v1.register(identityRoutes, deps);
+      await v1.register(authMeRoutes, deps);
     },
     { prefix: '/v1' }
   );

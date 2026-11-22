@@ -107,7 +107,7 @@ test.describe('Nối tiến độ GĐ0 ↔ GĐ1', () => {
     await expect(page).toHaveURL(/\/quyen-rieng-tu$/);
     await expect(page.getByRole('heading', { level: 1, name: 'Chính sách quyền riêng tư' })).toBeVisible();
     await expect(page.getByRole('note')).toContainText('BẢN NHÁP');
-    await expect(page.getByText(/Google Gemini/).first()).toBeVisible();
+    await expect(page.getByText(/Google \(Gemini\)/).first()).toBeVisible();
     // căn cứ pháp lý mới (không còn Nghị định 13/2023 làm căn cứ chính), quyền rút lại đồng ý, không mua bán dữ liệu
     await expect(page.getByRole('heading', { name: 'Căn cứ pháp lý' })).toBeVisible();
     await expect(page.getByText(/91\/2025\/QH15/)).toBeVisible();

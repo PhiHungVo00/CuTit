@@ -173,17 +173,30 @@ export async function friendQuest(db: Db, userId: string, friendshipId: string, 
   return f ? questFor(db, userId, f, today) : null;
 }
 
+/** Bạn đang chờ xóa tài khoản (30 ngày) bị ẩn; khôi phục thì hiện lại nguyên vẹn (quan hệ không bị xóa) */
+async function withoutPendingDeletion(db: Db, userId: string, rows: FriendshipRow[]): Promise<FriendshipRow[]> {
+  if (!rows.length) return rows;
+  const others = rows.map((f) => (f.userA === userId ? f.userB : f.userA));
+  const pending = await db
+    .select({ id: users.id })
+    .from(users)
+    .where(and(inArray(users.id, others), sql`${users.deleteAt} is not null`));
+  const hidden = new Set(pending.map((p) => p.id));
+  return rows.filter((f) => !hidden.has(f.userA === userId ? f.userB : f.userA));
+}
+
 export async function listFriends(db: Db, userId: string, today: string, now = new Date()): Promise<FriendsResponse> {
   const [displayName, inv, rows] = await Promise.all([
     displayNameOf(db, userId),
     db.select().from(friendInvites).where(and(eq(friendInvites.userId, userId), gt(friendInvites.expiresAt, now))),
     db.select().from(friendships).where(mine(userId)).orderBy(friendships.createdAt)
   ]);
+  const visible = await withoutPendingDeletion(db, userId, rows);
   return {
     displayName,
     invite: inv[0] ? { code: formatInviteCode(inv[0].code), expiresAt: inv[0].expiresAt.toISOString() } : null,
     maxFriends: MAX_FRIENDS,
-    friends: await Promise.all(rows.map((f) => questFor(db, userId, f, today)))
+    friends: await Promise.all(visible.map((f) => questFor(db, userId, f, today)))
   };
 }
 

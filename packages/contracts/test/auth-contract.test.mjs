@@ -15,6 +15,7 @@ import {
   AuthMergeRequestSchema,
   AuthLogoutRequestSchema,
   EmailStartRequestSchema,
+  BackupCodeRotateRequestSchema,
   EmailVerifyRequestSchema,
   PasswordForgotRequestSchema,
   PasswordResetWithEmailRequestSchema,
@@ -68,7 +69,11 @@ test('Email + mã OTP 6 số', () => {
   for (const bad of ['12345', '1234567', '12345a', ' 123456']) assert.equal(ok(OtpCodeSchema, bad), false, bad);
   assert.equal(ok(EmailVerifyRequestSchema, { email: 'a@b.co', code: '12345' }), false);
   assert.equal(ok(EmailVerifyRequestSchema, { email: 'a@b.co', code: '123456' }), true);
-  assert.equal(ok(EmailStartRequestSchema, { email: 'a@b.co' }), true);
+  // gắn email đòi mật khẩu hiện tại (rà kien-truc PR #18 mục 1)
+  assert.equal(ok(EmailStartRequestSchema, { email: 'a@b.co' }), false);
+  assert.equal(ok(EmailStartRequestSchema, { email: 'a@b.co', currentPassword: 'x' }), true);
+  assert.equal(ok(BackupCodeRotateRequestSchema, {}), false);
+  assert.equal(ok(BackupCodeRotateRequestSchema, { currentPassword: 'x' }), true);
 });
 
 test('AuthSignInResponse: phân biệt signed_in / needs_merge', () => {
@@ -123,7 +128,8 @@ test('Danh tính, xóa mềm, khôi phục, mã lỗi', () => {
   assert.equal(ok(RestoreAccountRequestSchema, {}), true);
   for (const code of [
     'invalid_credentials', 'username_taken', 'weak_password', 'identity_in_use', 'last_identity', 'account_merged',
-    'account_upgraded', 'account_pending_deletion', 'provider_unavailable', 'otp_invalid', 'otp_expired', 'otp_locked', 'rate_limited'
+    'account_upgraded', 'account_pending_deletion', 'provider_unavailable', 'otp_invalid', 'otp_expired', 'otp_locked', 'rate_limited',
+    'password_required'
   ]) {
     assert.ok(Object.values(AuthErrorCode).includes(code), code);
   }

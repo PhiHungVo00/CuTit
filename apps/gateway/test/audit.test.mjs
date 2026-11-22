@@ -219,7 +219,7 @@ test('Cấu hình: production bắt buộc AUDIT_IP_SALT (≥ 32 ký tự); dev/
   const secret = 'prod-secret-that-is-at-least-32-characters-long';
   assert.throws(() => loadConfig({ NODE_ENV: 'production', JWT_SECRET: secret }), /AUDIT_IP_SALT/);
   assert.throws(() => loadConfig({ NODE_ENV: 'test', AUDIT_IP_SALT: 'ngan' }), /AUDIT_IP_SALT/);
-  assert.ok(loadConfig({ NODE_ENV: 'production', JWT_SECRET: secret, AUDIT_IP_SALT: SALT }));
+  assert.ok(loadConfig({ NODE_ENV: 'production', JWT_SECRET: secret, AUDIT_IP_SALT: SALT, AUTH_OTP_PEPPER: 'p'.repeat(32) }));
   assert.ok(loadConfig({ NODE_ENV: 'test' }).AUDIT_IP_SALT.length >= 32);
   assert.notEqual(loadConfig({ NODE_ENV: 'test' }).AUDIT_IP_SALT, loadConfig({ NODE_ENV: 'test' }).AUDIT_IP_SALT);
 });
