@@ -69,10 +69,10 @@ test.describe('GĐ3 Hội thoại AI', () => {
     await assertMobileLayout(page);
 
     await page.getByLabel('Tin nhắn').fill('Cháu chào cô ạ, cháu tên là Mai');
-    await page.getByRole('button', { name: 'Gửi' }).click();
+    await page.getByRole('button', { name: 'Gửi', exact: true }).click();
     await expect(tasks.getByText('(đã xong)')).toHaveCount(2, { timeout: 20_000 }); // lượt đầu: tạo tài khoản khách + mở DB Gateway
     await page.getByLabel('Tin nhắn').fill('Cô có khỏe không ạ? Tạm biệt cô');
-    await page.getByRole('button', { name: 'Gửi' }).click();
+    await page.getByRole('button', { name: 'Gửi', exact: true }).click();
     await expect(tasks.getByText('(đã xong)')).toHaveCount(4, { timeout: 20_000 });
 
     await page.getByRole('button', { name: 'Hoàn thành! Xem tổng kết' }).click();
@@ -96,8 +96,7 @@ test.describe('GĐ3 Hội thoại AI', () => {
     page.on('request', (r) => {
       if (r.url().includes('/v1/chat/turn') && r.method() === 'POST') turns.push(r.postDataJSON());
     });
-    await page.goto('/hoi-thoai');
-    await page.getByRole('link', { name: 'Gọi Bé Cu Tít' }).click();
+    await page.goto('/goi-thoai');
     await expect(page).toHaveURL(/\/goi-thoai$/);
     await expect(page.getByTestId('turns-left')).toHaveText('Còn 30 lượt nói chuyện với AI hôm nay');
     await assertMobileLayout(page);
@@ -143,7 +142,7 @@ test.describe('GĐ3 Hội thoại AI', () => {
     await page.goto('/goi-thoai');
     await page.getByRole('button', { name: 'Gõ thay nói' }).click();
     await page.getByLabel('Tin nhắn').fill('Xin chào');
-    await page.getByRole('button', { name: 'Gửi' }).click();
+    await page.getByRole('button', { name: 'Gửi', exact: true }).click();
     await expect(page.getByTestId('call-status')).toContainText('Không có kết nối mạng');
     await page.getByRole('button', { name: 'Thử lại' }).click();
     const subs = page.getByRole('log', { name: 'Phụ đề' });
@@ -163,7 +162,7 @@ test.describe('GĐ3 Hội thoại AI', () => {
     await page.goto('/goi-thoai');
     await page.getByRole('button', { name: 'Gõ thay nói' }).click();
     await page.getByLabel('Tin nhắn').fill('Xin chào');
-    await page.getByRole('button', { name: 'Gửi' }).click();
+    await page.getByRole('button', { name: 'Gửi', exact: true }).click();
     const alert = page.getByRole('alert');
     await expect(alert).toContainText('Hôm nay bạn đã dùng hết lượt nói chuyện với AI. Lượt mới bắt đầu lúc');
     await expect(alert).toContainText('Bài học, ôn tập và các công cụ khác vẫn dùng bình thường.');
@@ -173,7 +172,7 @@ test.describe('GĐ3 Hội thoại AI', () => {
     mode = 'minute';
     await page.goto('/hoi-thoai');
     await page.getByLabel('Tin nhắn').fill('Xin chào');
-    await page.getByRole('button', { name: 'Gửi' }).click();
+    await page.getByRole('button', { name: 'Gửi', exact: true }).click();
     await expect(page.getByRole('alert')).toContainText('Bạn gửi hơi nhanh');
     await expect(page.getByRole('alert')).not.toContainText('hết lượt');
   });
