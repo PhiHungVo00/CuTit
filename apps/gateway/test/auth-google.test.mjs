@@ -276,6 +276,20 @@ test('Gỡ liên kết: phương thức cuối => 409 last_identity; còn mật 
   assert.equal((await a.inject({ method: 'DELETE', url: '/v1/me/identities/not-a-uuid', headers: h })).statusCode, 400);
 });
 
+test('Gỡ mật khẩu => xóa luôn băm mật khẩu và email đã gắn (email chỉ để lấy lại mật khẩu; rà kien-truc RA-DOT2)', async () => {
+  const acc = (await signIn({ sub: `g-${randomUUID()}` })).json();
+  const h = bearer(acc.accessToken);
+  const d = await db();
+  const uname = `u${randomUUID().slice(0, 8)}`;
+  const [pw] = await d.insert(schema.identities).values({ userId: acc.userId, provider: 'password', subject: uname, display: uname }).returning({ id: schema.identities.id });
+  await d.insert(schema.passwordCredentials).values({ userId: acc.userId, passwordHash: 'x' });
+  await d.insert(schema.identities).values({ userId: acc.userId, provider: 'email', subject: `x-${randomUUID()}@gmail.com`, emailVerified: true });
+  const r = await a.inject({ method: 'DELETE', url: `/v1/me/identities/${pw.id}`, headers: h });
+  assert.equal(r.statusCode, 200, r.body);
+  assert.deepEqual(r.json().identities.map((i) => i.provider), ['google']);
+  assert.equal((await d.select().from(schema.passwordCredentials).where(eq(schema.passwordCredentials.userId, acc.userId))).length, 0);
+});
+
 test('Gỡ ĐỒNG THỜI hai phương thức còn lại => chỉ gỡ được một, luôn còn ít nhất một phương thức đăng nhập', async () => {
   const acc = (await signIn({ sub: `g-${randomUUID()}` })).json();
   const h = bearer(acc.accessToken);
