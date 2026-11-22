@@ -19,4 +19,11 @@ describe('hoạt ảnh phản hồi (P1-2)', () => {
   it('Cu Tít khen trong bảng phản hồi chỉ nảy một lần', () => {
     expect(css).toMatch(/\.ct-feedback \.ct-cutit--nhun\s*\{[^}]*iteration-count:\s*1/);
   });
+
+  it('chuyển tư thế (P1-7): ảnh mới mờ → rõ 120ms, tắt khi giảm chuyển động (OS và công tắc)', () => {
+    expect(css).toMatch(/\.ct-cutit__in\s*\{[^}]*opacity:\s*0[^}]*transition:\s*opacity\s*120ms/);
+    expect(css).toMatch(/\.ct-cutit__in\.is-ready\s*\{[^}]*opacity:\s*1/);
+    expect(css).toMatch(/prefers-reduced-motion[^{]*\{\s*\.ct-cutit__in\s*\{\s*transition:\s*none/);
+    expect(css).toMatch(/data-reduced-motion='true'\]\s*\.ct-cutit__in\s*\{\s*transition:\s*none/);
+  });
 });
