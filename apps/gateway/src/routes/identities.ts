@@ -3,6 +3,7 @@ import { z } from 'zod';
 import {
   AuthErrorCode,
   AuthGoogleRequestSchema,
+  AuthMergeRequestSchema,
   AuthNonceResponseSchema,
   AuthSignInResponseSchema,
   IdentityListResponseSchema
@@ -14,6 +15,7 @@ import { requireUserId } from '../pipeline/RequestPipeline.js';
 import { IdentityTokenError, IdentityUnavailableError, type VerifiedIdentity } from '../providers/identity.js';
 import { consumeNonce, issueNonce, linkGoogle, listIdentities, providersOf, signInWithGoogle, unlinkIdentity } from '../services/auth/link.js';
 import { issueTokens } from '../services/auth/tokens.js';
+import { mergeGuestInto } from '../services/auth/merge.js';
 import { isPastDeletion, restorableOf } from '../services/auth/lifecycle.js';
 import { AuditLog } from '../services/audit/audit.js';
 
@@ -131,6 +133,23 @@ export const identityRoutes: FastifyPluginAsync<RouteDeps> = async (server, deps
       case 'linked':
         return signedIn(server, d, res.userId, now);
     }
+  });
+
+  // POST /v1/me/merge (Bearer KHÁCH): dùng vé needs_merge — gộp tiến độ khách vào tài khoản ('merge') hoặc bỏ ('discard_device').
+  // Client (sync.mergeInto) đã đẩy hết hàng đợi lên khách TRƯỚC khi gọi. Thành công => token của tài khoản đích.
+  server.post('/me/merge', { config: IDENTITY_RATE }, async (req, reply) => {
+    const userId = requireUserId(req);
+    const body = parseOr400(AuthMergeRequestSchema, req.body, reply);
+    if (!body) return reply;
+    const d = await db.get();
+    const now = deps.clock();
+    const res = await mergeGuestInto(d, userId, body.mergeTicket, body.strategy, now);
+    // 409 chứ không 401: api-client tự làm mới + gửi lại khi 401
+    if (res.kind === 'invalid_ticket') return reply.status(409).send({ error: AuthErrorCode.mergeTicketInvalid });
+    if (res.kind === 'target_pending_deletion') return reply.status(409).send({ error: AuthErrorCode.accountPendingDeletion });
+    pipeline.forgetUser(userId); // access token của khách đã xóa bị từ chối ngay
+    deps.audit.record('auth.account_merged', { outcome: 'success', userId: res.targetId, ctx: AuditLog.context(req), metadata: { strategy: body.strategy } });
+    return signedIn(server, d, res.targetId, now);
   });
 
   server.get('/me/identities', async (req) => {

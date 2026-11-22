@@ -44,6 +44,8 @@ const METADATA = {
   'auth.email_code_failed': z.object({ purpose: z.enum(['link', 'reset']), reason }),
   'auth.identity_linked': z.object({ provider: z.enum(['google', 'password', 'email']) }),
   'auth.backup_code_rotated': z.object({}),
+  // Task 5: ghi trên tài khoản đích, KHÔNG chứa id khách (đề xuất A8)
+  'auth.account_merged': z.object({ strategy: z.enum(['merge', 'discard_device']) }),
   'friends.invite_created': z.object({}),
   'friends.invite_accepted': z.object({ reason: reason.optional() })
 } as const;
