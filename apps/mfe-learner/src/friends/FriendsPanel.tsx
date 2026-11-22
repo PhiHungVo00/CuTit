@@ -12,6 +12,7 @@ import {
   type FriendsResponse
 } from '@vietlearning/contracts/api';
 import { dayKey, useLearner } from '@vietlearning/state';
+import { EmptyState } from '@vietlearning/ui';
 import { BusyLabel, Spinner, primaryBtn, secondaryBtn } from '../common/ui';
 import { useT } from './i18n';
 
@@ -116,6 +117,7 @@ export function FriendsPanel({ api = gatewayApi, onData }: { api?: FriendsApi; o
   const [data, setData] = useState<FriendsResponse | null>(null);
   const [load, setLoad] = useState<'loading' | 'ok' | 'error'>('loading');
   const [loadErr, setLoadErr] = useState('');
+  const [loadOffline, setLoadOffline] = useState(false);
   const [name, setName] = useState('');
   const [code, setCode] = useState('');
   /** Thao tác đang chờ server (null = rảnh). Ref chặn đồng bộ: hai lần chạm trước khi kịp vẽ lại vẫn chỉ gửi một yêu cầu */
@@ -137,6 +139,7 @@ export function FriendsPanel({ api = gatewayApi, onData }: { api?: FriendsApi; o
     } catch (e) {
       if (!alive.current) return;
       setLoadErr(errText(e, t) === t('err.other') ? t('failed') : errText(e, t));
+      setLoadOffline(errText(e, t) === t('offline'));
       setLoad('error');
     }
   };
@@ -168,21 +171,20 @@ export function FriendsPanel({ api = gatewayApi, onData }: { api?: FriendsApi; o
     }
   };
 
-  if (load === 'loading')
-    return (
-      <p role="status" className="m-0 flex items-center gap-2 text-[15px] text-ink-soft">
-        <Spinner />
-        {t('loading')}
-      </p>
-    );
+  if (load === 'loading') return <EmptyState mood="suy-nghi" size={80} title={t('loading')} />;
   if (load === 'error' || !data)
     return (
-      <div className="flex flex-col gap-2">
-        <p className="m-0 text-[15px] text-ink-soft">{loadErr}</p>
-        <button type="button" className={secondaryBtn} onClick={() => (setLoad('loading'), void refresh())}>
-          {t('retry')}
-        </button>
-      </div>
+      <EmptyState
+        mood={loadOffline ? 'ngu' : 'buon'}
+        tone="error"
+        size={80}
+        title={loadErr}
+        action={
+          <button type="button" className={secondaryBtn} onClick={() => (setLoad('loading'), void refresh())}>
+            {t('retry')}
+          </button>
+        }
+      />
     );
 
   const saveName = (e: FormEvent) => {
