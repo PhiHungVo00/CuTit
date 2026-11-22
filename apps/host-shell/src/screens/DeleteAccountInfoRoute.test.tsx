@@ -19,7 +19,7 @@ async function render() {
 describe('Trang công khai Xóa tài khoản (vi)', () => {
   it('nêu cách xóa trong app, 30 ngày khôi phục, xóa ngay, dữ liệu xóa/giữ, liên hệ "Sắp có"', async () => {
     const html = await render();
-    for (const s of ['Xóa tài khoản', 'Hồ sơ', 'Cài đặt', '30 ngày', 'Xóa ngay', 'Khôi phục', 'Tiến độ học', 'Bản băm', '90 ngày', 'Sắp có']) expect(html).toContain(s);
+    for (const s of ['Xóa tài khoản', 'Hồ sơ', 'Cài đặt', '30 ngày', 'Xóa ngay', 'Khôi phục', 'Tiến độ học', 'Bản băm', '90 ngày', '180 ngày', 'Sắp có']) expect(html).toContain(s);
   });
 
   it('link tới /quyen-rieng-tu và /ho-so (Đăng nhập tạm), không có biểu mẫu', async () => {
