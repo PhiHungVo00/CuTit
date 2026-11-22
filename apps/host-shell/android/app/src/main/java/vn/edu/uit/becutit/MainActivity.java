@@ -11,6 +11,8 @@ public class MainActivity extends BridgeActivity {
         registerPlugin(SystemBarsPlugin.class);
         registerPlugin(AppSettingsPlugin.class);
         registerPlugin(AudioEnvPlugin.class);
+        // Plugin riêng theo flavor (play: không có; apk: cầu nối cài APK) — source set src/<flavor>
+        FlavorPlugins.register(this);
         super.onCreate(savedInstanceState);
     }
 }
