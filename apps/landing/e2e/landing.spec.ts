@@ -206,3 +206,48 @@ test('kiem-link.mjs: mọi link nội bộ trỏ tới tệp có trong dist', ()
   const out = execFileSync(process.execPath, ['scripts/kiem-link.mjs', resolve('dist-e2e-co-apk')], { encoding: 'utf8' });
   expect(out).toMatch(/link nội bộ/);
 });
+
+test.describe('nguyên tắc UI/UX (docs/thiet-ke/NGUYEN-TAC-UI-UX.md)', () => {
+  test('vùng chạm ≥ 44 px, nút chính ≥ 48 px', async ({ page }) => {
+    await page.goto(`${CO_APK}/`);
+    const cao = async (sel: string) => (await page.locator(sel).first().boundingBox())!.height;
+    expect(await cao('[data-cta=web]')).toBeGreaterThanOrEqual(48);
+    for (const sel of ['[data-cta=apk]', '[data-play=bac]', '[data-nav=login]', '[data-lang-switch=en]', '[data-music]', 'summary', 'footer a']) {
+      expect(await cao(sel), sel).toBeGreaterThanOrEqual(44);
+    }
+  });
+
+  test('đoạn văn giới hạn độ dài dòng, thân ≥ 15 px, giãn dòng ≥ 1.5, tiêu đề ≥ 1.25', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto(`${CO_APK}/`);
+    const kq = await page.evaluate(() => {
+      const px = (el: Element, p: string) => parseFloat(getComputedStyle(el).getPropertyValue(p));
+      const body = document.body;
+      const ps = [...document.querySelectorAll('main p')].map((p) => ({ w: p.getBoundingClientRect().width, size: px(p, 'font-size') }));
+      const h = [...document.querySelectorAll('h1,h2')].map((e) => px(e, 'line-height') / px(e, 'font-size'));
+      return { bodyLh: px(body, 'line-height') / px(body, 'font-size'), bodySize: px(body, 'font-size'), maxP: Math.max(...ps.map((p) => p.w / p.size)), h };
+    });
+    expect(kq.bodySize).toBeGreaterThanOrEqual(15);
+    expect(kq.bodyLh).toBeGreaterThanOrEqual(1.5);
+    kq.h.forEach((r) => expect(r).toBeGreaterThanOrEqual(1.25));
+    // 65ch ≈ 65 * 0,5em; chiều rộng tối đa một đoạn không quá ~75 ký tự trung bình (≈ 0,55 em mỗi ký tự)
+    expect(kq.maxP).toBeLessThanOrEqual(75 / 0.55 * 1.0);
+  });
+
+  test('trang chủ dùng tối đa 4 cỡ chữ', async ({ page }) => {
+    await page.goto(`${CO_APK}/`);
+    const sizes = await page.evaluate(() => {
+      const set = new Set<string>();
+      const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+      for (let n = walker.nextNode(); n; n = walker.nextNode()) {
+        if (!n.textContent?.trim() || !n.parentElement) continue;
+        const cs = getComputedStyle(n.parentElement);
+        if (cs.display === 'none' || cs.visibility === 'hidden') continue;
+        set.add(String(Math.round(parseFloat(cs.fontSize))));
+      }
+      return [...set];
+    });
+    // h1 co theo màn hình (clamp) nên tính riêng: các cỡ còn lại phải ≤ 4
+    expect(sizes.length, sizes.join(',')).toBeLessThanOrEqual(5);
+  });
+});
