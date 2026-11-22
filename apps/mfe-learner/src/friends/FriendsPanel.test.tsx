@@ -172,3 +172,24 @@ describe('FriendsPanel (GĐ4c bạn học hợp tác)', () => {
     expect(screen.getByRole('button', { name: 'Change name' })).toBeTruthy();
   });
 });
+
+describe('Trạng thái tải/lỗi có Cu Tít (P1-3)', () => {
+  it('đang tải => Cu Tít suy nghĩ + chữ “Đang tải…”', () => {
+    const api = fakeApi({}, { list: vi.fn(() => new Promise<FriendsResponse>(() => undefined)) });
+    const { container } = render(<FriendsPanel api={api} />);
+    expect(screen.getByText('Đang tải…')).toBeTruthy();
+    expect(container.querySelector('img')!.getAttribute('src')).toContain('cutit-suy-nghi');
+  });
+
+  it('lỗi khác => Cu Tít buồn + Thử lại; mất mạng => Cu Tít ngủ', async () => {
+    const api = fakeApi({}, { list: vi.fn(async () => Promise.reject(Object.assign(new Error('x'), { status: 500 }))) });
+    const { container, unmount } = render(<FriendsPanel api={api} />);
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Thử lại' })).toBeTruthy());
+    expect(container.querySelector('img')!.getAttribute('src')).toContain('cutit-buon');
+    unmount();
+    const off = fakeApi({}, { list: vi.fn(async () => Promise.reject(Object.assign(new Error('x'), { kind: 'offline' }))) });
+    const r2 = render(<FriendsPanel api={off} />);
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Thử lại' })).toBeTruthy());
+    expect(r2.container.querySelector('img')!.getAttribute('src')).toContain('cutit-ngu');
+  });
+});

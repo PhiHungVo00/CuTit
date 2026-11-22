@@ -54,26 +54,22 @@ export function PathHome() {
 
   return (
     <div className="flex flex-col gap-4">
-      <ul className="m-0 grid list-none grid-cols-3 gap-2 p-0 text-center">
-        <li className="rounded-xl bg-surface-2 px-1 py-2" aria-label={t('streakLabel')}>
-          <span className="block text-lg font-black text-heading" data-testid="streak">
-            🔥 {streak}
-          </span>
-          <span className="block text-xs text-ink-soft">{t('streak', { n: streak })}</span>
+      <ul className="m-0 flex list-none flex-wrap gap-2 p-0" aria-label={t('statsLabel')}>
+        <li className="rounded-full bg-surface-2 px-3 py-1 text-sm font-bold text-heading" aria-label={t('streak', { n: streak })}>
+          <span data-testid="streak">🔥 {streak}</span>
         </li>
-        <li className="rounded-xl bg-surface-2 px-1 py-2" aria-label={t('xpLabel')}>
-          <span className="block text-lg font-black text-heading" data-testid="xp">
-            ⭐ {totalXp(xpByDay)}
-          </span>
-          <span className="block text-xs text-ink-soft">XP</span>
+        <li className="rounded-full bg-surface-2 px-3 py-1 text-sm font-bold text-heading" aria-label={t('xpLabel')}>
+          <span data-testid="xp">⭐ {totalXp(xpByDay)}</span> XP
         </li>
-        <li className="rounded-xl bg-surface-2 px-1 py-2" aria-label={t('freezesLabel', { n: freezes })}>
-          <span className="block text-lg font-black text-heading">{t('freezes', { n: freezes })}</span>
-          <span className="block text-xs text-ink-soft">{gp.met ? t('goalMet') : t('goalToday', { m: gp.minutes, goal })}</span>
+        <li className="rounded-full bg-surface-2 px-3 py-1 text-sm font-bold text-heading" aria-label={t('freezesLabel', { n: freezes })}>
+          {t('freezes', { n: freezes })}
         </li>
       </ul>
-      <div className="h-2 overflow-hidden rounded-full bg-surface-2" role="progressbar" aria-label={t('goalLabel')} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(gp.ratio * 100)}>
-        <div className="h-full bg-accent" style={{ width: `${gp.ratio * 100}%` }} />
+      <div className="flex flex-col gap-1">
+        <div className="h-2 overflow-hidden rounded-full bg-surface-2" role="progressbar" aria-label={t('goalLabel')} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(gp.ratio * 100)}>
+          <div className="h-full bg-accent" style={{ width: `${gp.ratio * 100}%` }} />
+        </div>
+        <p className="m-0 text-xs text-ink-soft">{gp.met ? t('goalMet') : t('goalToday', { m: gp.minutes, goal })}</p>
       </div>
       {freezeUsed > 0 && (
         <p role="status" className="m-0 rounded-xl bg-accent-soft p-3 text-sm text-heading">
@@ -122,15 +118,10 @@ export function PathHome() {
         </ol>
       </section>
 
-      <Suspense fallback={null}>
-        <Motivation part="panel" />
-      </Suspense>
-
       <section aria-labelledby="ct-path" className="flex flex-col gap-3">
         <h2 id="ct-path" className="m-0 text-lg font-black text-heading">
           {t('pathTitle')}
         </h2>
-        <p className="m-0 text-sm text-ink-soft">{t('pathNote')}</p>
         {COURSE.units.map((u) => {
           const p = unitProgress(u, lessons, testedOut);
           return (
@@ -180,8 +171,15 @@ export function PathHome() {
             </Card>
           );
         })}
+        {/* Ghi chú đặt cuối bản đồ (không ở đầu): khối chữ của chunk lười lọt màn đầu sẽ thành LCP muộn khi chữ có sẵn ngắn hơn (bản en trên CI: 3 s) */}
+        <p className="m-0 text-xs text-ink-soft">{t('pathNote')}</p>
         <p className="m-0 text-xs italic text-ink-muted">{t('draftContent')}</p>
       </section>
+
+      {/* Panel lười (tổng kết tuần + huy hiệu) đặt dưới bản đồ: nằm ngoài màn hình đầu nên không thành phần tử LCP muộn (soi LCP 3 s) */}
+      <Suspense fallback={null}>
+        <Motivation part="panel" />
+      </Suspense>
 
       <GoalPanel />
     </div>

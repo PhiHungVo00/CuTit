@@ -45,4 +45,13 @@ describe('ChoiceExercise', () => {
     fireEvent.click(screen.getByRole('button', { name: /Không nghe được lúc này/ }));
     expect(onSkip).toHaveBeenCalledOnce();
   });
+
+  it('bảng phản hồi trượt vào (ct-feedback); ô sai lắc, ô đúng nảy', () => {
+    render(<ChoiceExercise item={item} onDone={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: 'cảm ơn' }));
+    expect(screen.getByRole('status').className).toContain('ct-feedback');
+    expect(screen.getByRole('button', { name: 'cảm ơn' }).className).toContain('ct-shake');
+    expect(screen.getByRole('button', { name: 'xin chào' }).className).toContain('ct-pop');
+    expect(screen.getByRole('button', { name: 'tạm biệt' }).className).not.toMatch(/ct-shake|ct-pop/);
+  });
 });

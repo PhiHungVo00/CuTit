@@ -23,7 +23,7 @@ test.describe('4 tab và điều hướng', () => {
 
     await nav(page).getByRole('link', { name: 'Học', exact: true }).click();
     await expect(page).toHaveURL(/\/$/);
-    await expect(page.getByRole('heading', { name: 'Học Tiếng Việt Cùng Bé Cu Tít' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Chào bạn!' })).toBeVisible();
   });
 
   test('màn tra cứu giữ thanh tab và sáng tab Học; màn Cu Tít không có thanh tab', async ({ page }) => {
@@ -108,5 +108,30 @@ test.describe('Chuyển cảnh và giảm chuyển động', () => {
     );
     await page.goto('/');
     await expect(page.locator('html')).toHaveAttribute('data-reduced-motion', 'true');
+  });
+});
+
+test.describe('Trang công khai Xóa tài khoản', () => {
+  test('mở /xoa-tai-khoan ở phiên mới: không tạo tài khoản khách, có chữ vi và link Quyền riêng tư', async ({ page }) => {
+    const guestCalls: string[] = [];
+    page.on('request', (r) => {
+      if (r.url().includes('/v1/auth/')) guestCalls.push(r.url());
+    });
+    await page.goto('/xoa-tai-khoan');
+    await expect(page.getByRole('heading', { level: 1, name: 'Xóa tài khoản và dữ liệu' })).toBeVisible();
+    await expect(page.locator('article')).toContainText('30 ngày');
+    await expect(page.locator('article').getByRole('link', { name: 'Chính sách quyền riêng tư' })).toHaveAttribute('href', '/quyen-rieng-tu');
+    // hàng đợi đồng bộ khởi động sau sự kiện load (setTimeout 0): chờ đủ lâu để một lần tạo khách (nếu có) kịp xảy ra
+    await page.waitForTimeout(2500);
+    expect(guestCalls, 'không được gọi /v1/auth/* khi chỉ mở trang này').toEqual([]);
+  });
+
+  test('en: trang hiện tiếng Anh khi trình duyệt là en-US', async ({ browser }) => {
+    const ctx = await browser.newContext({ locale: 'en-US' });
+    const page = await ctx.newPage();
+    await page.goto('/xoa-tai-khoan');
+    await expect(page.getByRole('heading', { level: 1, name: 'Delete your account and data' })).toBeVisible();
+    await expect(page.locator('article')).toContainText('30 days');
+    await ctx.close();
   });
 });
