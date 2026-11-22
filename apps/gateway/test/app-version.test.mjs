@@ -180,6 +180,13 @@ test('preflight CORS cho phép x-app-build và x-app-channel', async () => {
   assert.ok(allowed.includes('x-app-channel'));
 });
 
+test('426 mang header CORS (bản web đọc được mã app_update_required, không thành lỗi mạng)', async () => {
+  const a = await app(makeCfg({ web: channel({ latestBuild: 3, latestVersion: '0.0.3', minBuild: 2 }) }));
+  const res = await a.inject({ method: 'GET', url: '/v1/quota', headers: { origin: ORIGIN, 'x-app-build': '1', 'x-app-channel': 'web' } });
+  assert.equal(res.statusCode, 426);
+  assert.equal(res.headers['access-control-allow-origin'], ORIGIN);
+});
+
 test('Review Focus 3: tệp hỏng sau khi tạo store ⇒ giữ cấu hình cũ, không ném', () => {
   const file = writeCfg(makeCfg({ web: channel({ latestBuild: 7, latestVersion: '0.0.7' }) }));
   const errors = [];
