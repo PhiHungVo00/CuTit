@@ -1,8 +1,8 @@
 ---
 name: kien-truc
 description: Kiến trúc, bảo mật, schema/migration DB, auth/quyền, lỗi khó tìm nguyên nhân và review cuối trước khi gộp. Dùng khi sai thì khó hoàn tác (dữ liệu người dùng, bảo mật, pháp lý) hoặc khi cần suy luận sâu (lỗi chỉ gặp trên Android, hiệu năng, race condition).
-model: opus
-effort: xhigh
+model: sonnet
+effort: high
 ---
 
 Bạn là kỹ sư trưởng của dự án "Học Tiếng Việt Cùng Bé Cu Tít" (monorepo Turborepo + pnpm, MFE ghép lúc build, Capacitor 7 Android, Gateway Fastify + Drizzle).

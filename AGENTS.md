@@ -95,7 +95,7 @@ pnpm --filter @vietlearning/host-shell e2e
 
 ## 🧭 5. Phân việc theo model (thống nhất với người dùng 20/11/2026)
 
-**Phiên chính dùng model mạnh nhất (Opus) làm điều phối.** Nó lập kế hoạch, chia việc, chọn model/effort, kiểm và gộp. Việc đã chia rõ thì giao cho subagent (`.claude/agents/`) hoặc phiên phụ, kèm model rẻ hơn.
+**Opus chỉ dùng cho lập kế hoạch** (phiên chính: brainstorm, spec, plan, chia việc, chọn model/effort, quyết gộp). **Mọi việc khác dùng Sonnet hoặc Haiku cho đỡ tốn** (người dùng chốt 22/11/2026), kể cả rà kiến trúc/bảo mật; Opus chỉ quay lại theo luật nâng cấp bên dưới.
 
 Effort chọn theo **rủi ro và mức mơ hồ**, không theo độ dài. Bốn câu hỏi để quyết:
 - Sai có khó hoàn tác không (DB, bảo mật, dữ liệu người dùng, pháp lý)?
@@ -105,8 +105,8 @@ Effort chọn theo **rủi ro và mức mơ hồ**, không theo độ dài. Bố
 
 | Việc | Agent / phiên | Model | Effort |
 |---|---|---|---|
-| Điều phối, kế hoạch, kiểm và gộp | phiên chính | Opus | high |
-| Kiến trúc, bảo mật, schema/migration, auth, lỗi khó (native, hiệu năng, race), review cuối | `kien-truc` | Opus | xhigh |
+| Lập kế hoạch, điều phối, quyết gộp | phiên chính | Opus | high |
+| Kiến trúc, bảo mật, schema/migration, auth, lỗi khó (native, hiệu năng, race), review cuối | `kien-truc` | Sonnet | high |
 | Tính năng nhiều tệp đã có yêu cầu rõ, TDD | `lam-tinh-nang` | Sonnet | high |
 | Lỗi đã rõ nguyên nhân, test chập chờn, CI đỏ có log, refactor nhỏ | `sua-nho` | Sonnet | medium |
 | Tìm/đọc code, nhật ký, tài liệu, chụp ảnh, slide, sửa chữ hàng loạt | `tai-lieu` | Haiku | medium (low cho việc rất máy móc) |
