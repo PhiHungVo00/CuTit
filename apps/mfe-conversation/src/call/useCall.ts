@@ -145,7 +145,8 @@ export function useCall(deps?: Partial<SpeakerDeps>, _opts: { video?: boolean } 
       return;
     }
     const text = state.pendingText;
-    const pending = state.video ? frame.current : null;
+    // Gõ thay nói (không qua micro) thì chưa có khung hình ⇒ chụp ngay lúc gửi, để "1 câu = 1 lượt kèm 1 ảnh" đúng cả khi gõ
+    const pending = state.video ? (frame.current ?? (videoEl.current ? grabFrame(videoEl.current).then((f) => f, () => null) : null)) : null;
     frame.current = null;
     void (async () => {
       const image = (await pending) ?? undefined;
