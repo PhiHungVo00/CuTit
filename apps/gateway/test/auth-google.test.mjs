@@ -208,7 +208,10 @@ test('Google đã thuộc tài khoản A, khách KHÔNG tiến độ => signed_i
   const merged = await d.select().from(schema.deletedAccounts).where(eq(schema.deletedAccounts.reason, 'merged'));
   assert.ok(merged.length >= 2); // refresh token + mã khôi phục của khách
   assert.equal((await a.inject({ url: '/v1/me/identities', headers: g.headers })).statusCode, 401);
-  assert.equal((await a.inject({ method: 'POST', url: '/v1/auth/refresh', payload: { refreshToken: g.body.refreshToken } })).statusCode, 401);
+  // máy khác của khách gọi /refresh => account_merged (mời đăng nhập), KHÔNG account_deleted (client sẽ xóa dữ liệu máy)
+  const rf = await a.inject({ method: 'POST', url: '/v1/auth/refresh', payload: { refreshToken: g.body.refreshToken } });
+  assert.equal(rf.statusCode, 401);
+  assert.equal(rf.json().error, 'account_merged');
 });
 
 test('Google đã thuộc tài khoản A, khách CÓ tiến độ => needs_merge + mergeTicket (một lần, gắn khách→A), khách còn nguyên', async () => {
