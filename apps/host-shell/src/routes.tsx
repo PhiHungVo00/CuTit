@@ -151,6 +151,8 @@ export const PATH_ROUTES: PathRoute[] = [
   // Tiến độ chi tiết (M9: thống kê, ôn thẻ SM-2, 7 ngày, độ chính xác) — mở từ một dòng của tab Hồ sơ
   pathRoute('/tien-do', () => import('./screens/ProgressRoute')),
   pathRoute('/ban-be', () => import('./screens/FriendsRoute')),
+  // Dự án 3: đăng nhập/đăng ký (mfe-learner); mở từ Hồ sơ, thẻ mời và Cài đặt › Tài khoản
+  pathRoute('/dang-nhap', () => import('./screens/AuthRoute')),
   pathRoute('/cai-dat', () => import('./screens/SettingsRoute')),
   pathRoute('/cai-dat/:nhom', () => import('./screens/SettingsRoute')),
   PRIVACY_ROUTE,
