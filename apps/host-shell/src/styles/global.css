@@ -420,19 +420,18 @@ textarea {
   cursor: pointer;
 }
 
-/* ---------- Thanh đầu màn Cu Tít (quay lại + đổi chế độ) ---------- */
-.mode-bar {
+/* ---------- Thanh đầu tối giản (nút quay lại) cho màn Cu Tít mở bằng link cũ ---------- */
+.back-bar {
   position: sticky;
   top: 0;
   z-index: 30;
   display: flex;
   align-items: center;
-  gap: 6px;
   padding: calc(6px + var(--safe-top)) calc(8px + var(--safe-right)) 6px calc(8px + var(--safe-left));
   background: var(--shell-bg);
   border-bottom: 1px solid var(--shell-border);
 }
-.mode-back {
+.back-bar-btn {
   flex: none;
   width: 44px;
   height: 44px;
@@ -443,31 +442,6 @@ textarea {
   background: transparent;
   color: var(--shell-text);
   cursor: pointer;
-}
-.mode-tabs {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  gap: 4px;
-}
-.mode-tabs a {
-  flex: 1;
-  min-width: 0;
-  min-height: 44px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 1px;
-  border-radius: 12px;
-  color: var(--shell-muted);
-  text-decoration: none;
-  font-size: 11px;
-  font-weight: 600;
-}
-.mode-tabs a[aria-current='page'] {
-  background: var(--shell-surface-2);
-  color: var(--shell-accent-text);
 }
 
 /* ---------- Chuyển cảnh: View Transitions (≤ 200 ms) + fade dự phòng cho WebView cũ ---------- */

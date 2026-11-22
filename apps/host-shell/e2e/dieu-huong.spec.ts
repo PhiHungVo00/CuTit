@@ -31,7 +31,8 @@ test.describe('4 tab và điều hướng', () => {
     await expect(nav(page).getByRole('link', { name: 'Học', exact: true })).toHaveAttribute('aria-current', 'page');
     await page.goto('/hoi-thoai');
     await expect(nav(page)).toHaveCount(0);
-    await expect(page.getByRole('navigation', { name: 'Chế độ với Cu Tít' })).toBeVisible();
+    // Dự án 2 Task 8: thanh chế độ Cu Tít đã gỡ (màn chat tự có đầu màn)
+    await expect(page.getByRole('navigation', { name: 'Chế độ với Cu Tít' })).toHaveCount(0);
   });
 
   test('vào bài học thì không có thanh tab', async ({ page }) => {
@@ -71,17 +72,6 @@ test.describe('Bong bóng Cu Tít', () => {
     await page.getByRole('button', { name: 'Hỏi Bé Cu Tít' }).click();
     await expect(page).toHaveURL(/\/hoi-thoai$/);
     await expect(page.getByRole('button', { name: 'Hỏi Bé Cu Tít' })).toHaveCount(0); // ẩn ở màn Cu Tít
-  });
-
-  test('thanh đổi chế độ chuyển giữa Chat · Nhập vai · Gọi thoại · Camera', async ({ page }) => {
-    await page.goto('/hoi-thoai');
-    const modes = page.getByRole('navigation', { name: 'Chế độ với Cu Tít' });
-    await modes.getByRole('link', { name: 'Nhập vai' }).click();
-    await expect(page).toHaveURL(/\/nhap-vai$/);
-    await modes.getByRole('link', { name: 'Gọi thoại' }).click();
-    await expect(page).toHaveURL(/\/goi-thoai$/);
-    await modes.getByRole('link', { name: 'Camera' }).click();
-    await expect(page).toHaveURL(/\/camera$/);
   });
 
   test('ẩn khi bàn phím mở (visualViewport co > 150px)', async ({ page }) => {
