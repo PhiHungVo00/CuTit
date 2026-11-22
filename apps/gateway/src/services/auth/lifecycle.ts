@@ -47,6 +47,12 @@ export async function restorableOf(db: Db, userId: string, now: Date): Promise<{
   return { deleteAt: u.deleteAt.toISOString() };
 }
 
+/** Đã quá hạn xóa (`delete_at <= now`) mà job dọn chưa chạy: tài khoản coi như KHÔNG tồn tại (đăng nhập/nâng cấp phải từ chối) */
+export async function isPastDeletion(db: Db, userId: string, now: Date): Promise<boolean> {
+  const [u] = await db.select({ deleteAt: users.deleteAt }).from(users).where(eq(users.id, userId));
+  return Boolean(u?.deleteAt && u.deleteAt.getTime() <= now.getTime());
+}
+
 /** Khôi phục: bỏ hạn xóa. false = không còn user hoặc đã quá hạn. Người đang hoạt động => true (idempotent). */
 export async function restoreAccount(db: Db, userId: string, now: Date): Promise<boolean> {
   const [u] = await db.select({ deleteAt: users.deleteAt }).from(users).where(eq(users.id, userId));
