@@ -12,6 +12,11 @@
   height: 100%;
   object-fit: contain;
 }
+.ct-cutit { position: relative; }
+/* Chuyển tư thế (P1-7): ảnh mới nằm trên, mờ → rõ 120ms sau khi tải xong; ảnh cũ giữ bên dưới tới lúc đó */
+.ct-cutit__in { position: relative; z-index: 1; opacity: 0; transition: opacity 120ms ease-out; }
+.ct-cutit__in.is-ready { opacity: 1; }
+.ct-cutit > img.ct-cutit__out { position: absolute; inset: 0; z-index: 0; }
 .ct-cutit--anim { transform-origin: 50% 90%; }
 .ct-cutit--nhun { animation: ct-nhun 1.6s ease-in-out infinite; }
 .ct-cutit--nay { animation: ct-nay 0.9s ease-in-out infinite; }
@@ -48,3 +53,7 @@ html[data-reduced-motion='true'] .ct-cutit--anim { animation: none !important; }
   .ct-feedback, .ct-shake, .ct-pop { animation: none !important; }
 }
 html[data-reduced-motion='true'] :is(.ct-feedback, .ct-shake, .ct-pop) { animation: none !important; }
+@media (prefers-reduced-motion: reduce) {
+  .ct-cutit__in { transition: none; }
+}
+html[data-reduced-motion='true'] .ct-cutit__in { transition: none; }

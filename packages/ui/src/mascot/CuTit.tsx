@@ -1,5 +1,5 @@
 import './cutit.css';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { defineMessages } from '@vietlearning/state';
 
 export type CuTitMood = 'chao' | 'khen' | 'an-mung' | 'dong-vien' | 'suy-nghi' | 'nghe' | 'noi' | 'nhac-hoc' | 'buon' | 'ngu' | 'chan-dung';
@@ -11,6 +11,8 @@ export interface CuTitProps {
   /** Bật chuyển động theo trạng thái (mặc định true); luôn tắt khi giảm chuyển động */
   animate?: boolean;
   alt?: string;
+  /** Tư thế có thể đổi sang kế tiếp: tải trước ảnh để lúc đổi không bị trễ */
+  preload?: readonly CuTitMood[];
 }
 
 // Mỗi ảnh là một asset riêng (Vite tách tệp, tải khi ảnh được vẽ) => không vào gói đầu
@@ -66,14 +68,42 @@ const messages = defineMessages(
   }
 );
 
-/** Nhân vật Bé Cu Tít theo trạng thái. Đổi `mood` chỉ đổi `src` của cùng một thẻ img (không remount). */
-export function CuTit({ mood, size = 96, animate = true, alt }: CuTitProps) {
+/** Thời gian mờ → rõ khi đổi tư thế (khớp transition trong cutit.css), ms */
+const FADE_MS = 120;
+
+/**
+ * Nhân vật Bé Cu Tít theo trạng thái. Đổi `mood` giữ nguyên thẻ img chính (không remount) nhưng không nháy:
+ * ảnh cũ ở lại bên dưới, ảnh mới mờ → rõ trong 120ms ngay khi tải xong (chưa giải mã thì chưa lộ ra).
+ */
+export function CuTit({ mood, size = 96, animate = true, alt, preload }: CuTitProps) {
   const t = messages.useT();
   // Ảnh lỗi (vd. ngoại tuyến mà chưa precache): bỏ thẻ img để trình duyệt không vẽ alt xuống dòng từng chữ.
   // Lưu theo src nên đổi mood sẽ thử tải ảnh mới.
   const [failedSrc, setFailedSrc] = useState<string | null>(null);
   const src = SRC[mood];
+  /** ảnh đã hiện đầy đủ gần nhất (khác `src` khi đang chuyển tư thế) */
+  const [shown, setShown] = useState(src);
+  /** ảnh `src` đã tải xong, được phép hiện dần */
+  const [readySrc, setReadySrc] = useState<string | null>(null);
   const failed = failedSrc === src;
+  const fading = shown !== src;
+  const ready = readySrc === src;
+
+  useEffect(() => {
+    if (!fading || !ready) return;
+    const id = setTimeout(() => setShown(src), FADE_MS + 20);
+    return () => clearTimeout(id);
+  }, [fading, ready, src]);
+
+  const preloadKey = preload?.join(',') ?? '';
+  useEffect(() => {
+    if (typeof Image === 'undefined') return;
+    for (const m of preloadKey ? (preloadKey.split(',') as CuTitMood[]) : []) {
+      const img = new Image();
+      img.src = SRC[m];
+    }
+  }, [preloadKey]);
+
   const motion = animate && !failed ? MOTION[mood] : undefined;
   return (
     <span
@@ -90,9 +120,12 @@ export function CuTit({ mood, size = 96, animate = true, alt }: CuTitProps) {
           loading="lazy"
           decoding="async"
           draggable={false}
+          className={fading ? `ct-cutit__in${ready ? ' is-ready' : ''}` : undefined}
+          onLoad={() => setReadySrc(src)}
           onError={() => setFailedSrc(src)}
         />
       )}
+      {!failed && fading && failedSrc !== shown && <img src={shown} alt="" aria-hidden="true" className="ct-cutit__out" draggable={false} />}
     </span>
   );
 }
