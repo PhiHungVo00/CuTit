@@ -122,7 +122,7 @@ Effort chọn theo **rủi ro và mức mơ hồ**, không theo độ dài. Bố
 - `dung-am-thanh`
 - `chup-man-hinh-app`
 
-**Plugin đã cài:** code-review, Axe Accessibility, Android Emulator QA, Playwright MCP, security review, TypeScript LSP (cách dùng trong skill `kiem-truoc-khi-gop`).
+**Plugin đã cài:** code-review, Android Emulator QA, Playwright MCP, security review, TypeScript LSP (cách dùng trong skill `kiem-truoc-khi-gop`). Trợ năng dùng công cụ miễn phí trong repo (`@axe-core/playwright` ở `e2e/a11y.spec.ts`, Lighthouse) thay plugin Axe trả phí (gỡ 22/11). Nguyên tắc UI/UX + bảng kiểm PR: `docs/thiet-ke/NGUYEN-TAC-UI-UX.md`.
 
 **Hook** (`.claude/settings.json`):
 - chặn sửa migration đã phát hành;
