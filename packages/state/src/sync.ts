@@ -255,7 +255,23 @@ const sameJson = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringif
 
 // ---------- engine ----------
 
-let current: (SyncEngine & { enqueue(e: NewSyncEvent): void }) | null = null;
+let current: (SyncEngine & { enqueue(e: NewSyncEvent): void; wake(): void }) | null = null;
+
+/**
+ * Dự án 8: app bị bắt buộc cập nhật (Gateway trả 426) => tạm dừng ĐẨY và KÉO (kể cả kéo định kỳ) thay vì thử lại
+ * liên tục. Sự kiện vẫn vào hàng đợi lưu bền. Cờ ở mức module nên sống qua việc khởi động lại engine.
+ */
+let pausedReason: 'update-required' | null = null;
+
+export function pauseSync(reason: 'update-required'): void {
+  pausedReason = reason;
+}
+
+export function resumeSync(): void {
+  if (!pausedReason) return;
+  pausedReason = null;
+  current?.wake();
+}
 
 export function getSyncEngine(): SyncEngine | null {
   return current;
@@ -493,7 +509,7 @@ export function startSync(opts: SyncOptions): SyncEngine {
   }
 
   function schedule(ms: number) {
-    if (stopped) return;
+    if (stopped || pausedReason) return;
     clearTimeout(timer);
     timer = setTimeout(() => void flush(), ms);
   }
@@ -538,7 +554,7 @@ export function startSync(opts: SyncOptions): SyncEngine {
   }
 
   async function doFlush(pull: boolean): Promise<boolean> {
-    if (switching) return false;
+    if (switching || pausedReason) return false;
     if (!rec.outbox.length && !pull && !rec.replacePending) return true;
     syncing = true;
     notify();
@@ -581,6 +597,10 @@ export function startSync(opts: SyncOptions): SyncEngine {
       return true;
     } catch (err) {
       error = (err as { kind?: string }).kind ?? 'error';
+      if (error === 'update-required') {
+        pausedReason = 'update-required'; // 426: thử lại vô ích tới khi cập nhật (Host gọi resumeSync nếu cần)
+        return false;
+      }
       backoff = Math.min(60_000, backoff ? backoff * 3 : 5_000);
       schedule(backoff);
       return false;
@@ -690,6 +710,8 @@ export function startSync(opts: SyncOptions): SyncEngine {
   const engine = {
     flush,
     async pullAndReplace(switchAccount?: () => Promise<unknown>) {
+      // Đang bắt buộc cập nhật: /v1/sync sẽ bị 426 NGAY SAU khi đã đổi tài khoản => không bắt đầu
+      if (pausedReason) throw Object.assign(new Error('sync paused'), { kind: pausedReason });
       switching = true;
       clearTimeout(timer);
       try {
@@ -753,7 +775,7 @@ export function startSync(opts: SyncOptions): SyncEngine {
     },
     startPeriodicPull(intervalMs = 300_000) {
       const tick = async () => {
-        if (stopped || switching || rec.signOutPending) return;
+        if (stopped || switching || pausedReason || rec.signOutPending) return;
         if (typeof document !== 'undefined' && document.visibilityState === 'hidden') return;
         // chưa có tài khoản trên máy => không kéo (kéo sẽ tạo khách lười)
         const has = opts.hasAccount ? await opts.hasAccount().catch(() => false) : true;
@@ -805,6 +827,9 @@ export function startSync(opts: SyncOptions): SyncEngine {
         document.removeEventListener('visibilitychange', onHidden);
       }
       if (current === engine) current = null;
+    },
+    wake() {
+      if (rec.outbox.length || rec.replacePending) schedule(0);
     },
     enqueue(e: NewSyncEvent) {
       push({ ...e, clientEventId: uuid(), at: e.at ?? now().toISOString() } as SyncEvent);

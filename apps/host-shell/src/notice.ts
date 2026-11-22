@@ -2,14 +2,16 @@
  * Thông báo một lần của Host (vd. tài khoản đã bị xóa ở máy khác). Lưu ở khóa riêng — KHÔNG nằm trong
  * các store bị xóa — để vẫn hiện sau khi dữ liệu đã xóa hoặc app tải lại.
  */
-export type NoticeKey = 'accountDeleted';
+export type NoticeKey = 'accountDeleted' | 'signedOut' | 'mergedElsewhere';
+const KEYS: readonly string[] = ['accountDeleted', 'signedOut', 'mergedElsewhere'];
 
 const KEY = 'becutit.notice';
 const EVENT = 'becutit:notice';
 
 export function readNotice(): NoticeKey | null {
   try {
-    return localStorage.getItem(KEY) === 'accountDeleted' ? 'accountDeleted' : null;
+    const v = localStorage.getItem(KEY);
+    return v && KEYS.includes(v) ? (v as NoticeKey) : null;
   } catch {
     return null;
   }
