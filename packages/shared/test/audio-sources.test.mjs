@@ -20,6 +20,12 @@ const WRAPPED = [
 /** Chính điều phối: nhạc nền/hiệu ứng tự phát, không phải nguồn cần báo. */
 const COORDINATOR = ['packages/shared/src/audio/music.ts', 'packages/shared/src/audio/sfx.ts'];
 
+/**
+ * Trang giới thiệu (apps/landing) là trang tĩnh riêng, KHÔNG dùng @vietlearning/shared (kéo vào sẽ phá ngân sách 30 kB) và không có nhạc nền
+ * của app để dừng. Âm thanh ở đó chỉ phát khi người dùng bấm, và nút tự dừng nguồn đang phát trước khi phát nguồn khác.
+ */
+const SKIP_PREFIX = ['apps/landing/'];
+
 const PATTERN = /new Audio\(|speechSynthesis\.speak|\.speak\(u\)|getUserMedia\(\s*\{\s*audio|AudioWorkletNode\(/;
 const SKIP_DIRS = new Set(['node_modules', 'dist', 'build', '.turbo', 'android', 'e2e', 'test', 'coverage', '.claude', 'docs']);
 
@@ -39,7 +45,7 @@ test('không có nguồn phát/thu âm nào ngoài danh sách đã bọc', () =>
   for (const top of ['apps', 'packages']) {
     for (const f of walk(join(ROOT, top))) {
       const r = rel(f);
-      if (WRAPPED.includes(r) || COORDINATOR.includes(r)) continue;
+      if (WRAPPED.includes(r) || COORDINATOR.includes(r) || SKIP_PREFIX.some((p) => r.startsWith(p))) continue;
       if (PATTERN.test(readFileSync(f, 'utf8'))) offenders.push(r);
     }
   }

@@ -1,0 +1,39 @@
+/* SINH TỰ ĐỘNG bởi scripts/trich-token.mjs từ packages/ui/src/theme.css (chủ đề SÁNG). Không sửa tay: sửa nguồn rồi chạy `pnpm --filter @vietlearning/landing tokens`. */
+:root {
+  --ct-radius-sm: 12px;
+  --ct-radius-md: 16px;
+  --ct-radius-lg: 24px;
+  --ct-motion-fast: 120ms;
+  --ct-motion-base: 180ms;
+  color-scheme: light;
+  --ct-canvas: #fbf3e4;
+  --ct-surface: #fffdf8;
+  --ct-surface-2: #f6ecd8;
+  --ct-sunken: #fff8ea;
+  --ct-line: #eadfcb;
+  --ct-line-strong: #6fa544;
+  --ct-ink: #3b2a1e;
+  --ct-ink-soft: #5e4a39;
+  --ct-ink-muted: #75624f;
+  --ct-heading: #5a3e28;
+  --ct-accent: #6fa544;
+  /* Chữ nhỏ màu nhấn trên nền kem: #6fa544 chỉ đạt 2,5:1 => dùng xanh đậm hơn (≥4,5:1) */
+  --ct-accent-text: #3f6b1c;
+  --ct-accent-ink: #1f2e10;
+  --ct-accent-soft: rgb(111 165 68 / 0.16);
+  --ct-gold: #e9b949;
+  --ct-sky: #cfe8f3;
+  --ct-danger: #c03a27;
+  --ct-danger-soft: #fde4dc;
+  --ct-danger-ink: #8a2616;
+  --ct-chip1-bg: #fde4dc;
+  --ct-chip1-line: #f0a893;
+  --ct-chip1-ink: #7f2514;
+  --ct-chip2-bg: #fbeec4;
+  --ct-chip2-line: #e9b949;
+  --ct-chip2-ink: #6b4208;
+  --ct-chip3-bg: #e1f0d1;
+  --ct-chip3-line: #9cc578;
+  --ct-chip3-ink: #2f5a14;
+  --ct-shadow-card: 0 6px 20px rgb(90 62 40 / 0.1);
+}
