@@ -5,7 +5,8 @@ description: Quy trình kiểm bắt buộc trước khi gộp một nhánh/PR v
 
 # Kiểm trước khi gộp
 
-Chỉ gộp khi **mọi bước** đạt. Bước nào đỏ thì phân biệt nhiễu (chạy lại 2–3 lần, so với main) và lỗi thật. Không nới ngân sách hay timeout để cho qua.
+Chỉ gộp khi **mọi bước** đạt. Bước nào đỏ thì phân biệt nhiễu (chạy lại 2–3 lần, so với main) và lỗi thật. Không nới **ngân sách hiệu năng** (LCP, TBT, gói đầu JS, thời gian phản hồi một lần chạm) hay timeout để cho qua.
+Ngân sách không ảnh hưởng hiệu năng thật (ví dụ vài trăm byte CSS vượt trần do máy Linux đo khác Windows) thì **được nâng bình thường** (người dùng chốt 23/11/2026): nâng vừa đủ, ghi lý do trong `.size-limit.cjs` và dòng nhật ký.
 
 1. **Cập nhật nhánh theo main** (`git fetch && git merge origin/main`). Gỡ xung đột:
    - Nhật ký `docs/NHAT_KY_CHUYEN_DOI_MOBILE.md`: giữ cả hai dòng, đánh số lại, dòng mới nhất ở trên.
