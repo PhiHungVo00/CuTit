@@ -202,6 +202,26 @@ test('Merge bị từ chối chắc chắn (vé hỏng 409): bỏ dấu gộp d�
   assert.equal(srv.users[NEW].byDay[TODAY], 10);
 });
 
+test('Merge lỗi mạng nhưng server CHƯA gộp (lần gửi sau vẫn vào khách): bỏ dấu gộp dở — khách bị xóa ở máy khác thì vẫn tải lại dữ liệu máy', async () => {
+  const srv = fakeServer();
+  const engine = start(srv);
+  await engine.flush({ pull: true });
+  p().addXp(10, NOW);
+  await assert.rejects(
+    engine.mergeInto(async () => {
+      throw Object.assign(new Error('offline'), { kind: 'offline' });
+    })
+  );
+  // còn là khách và gửi thành công => chắc chắn server chưa gộp
+  p().addXp(1, NOW);
+  assert.equal(await engine.flush({ pull: true }), true);
+  const NEW = '00000000-0000-4000-8000-0000000000c0';
+  srv.users[NEW] = userState();
+  srv.current = NEW;
+  assert.equal(await engine.flush({ pull: true }), true);
+  assert.equal(srv.users[NEW].byDay[TODAY], 11, 'dữ liệu máy phải được tải lên khách mới');
+});
+
 test('Tắt app ngay sau khi gộp (chưa kéo được): mở lại chỉ kéo, không tải lại dữ liệu máy', async () => {
   const srv = fakeServer();
   const storage = memStorage();
