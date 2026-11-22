@@ -93,6 +93,20 @@ export interface RegistryDeps {
 /** Mặc định (không đặt biến chuỗi): "gemini" khi có khóa — giữ hành vi trước khi có chuỗi dự phòng */
 const defaultSpec = (config: GatewayConfig) => (config.GEMINI_API_KEY ? 'gemini' : undefined);
 
+/**
+ * Mặc định của VISION_CHAIN: Gemini rồi các nguồn MIỄN PHÍ có khóa (Gemini hay 503/timeout nên ảnh/video cần dự phòng; đã thử thật 11/2026,
+ * xem docs/van-hanh/AI-CHUOI-DU-PHONG.md). Chỉ thêm nguồn khi có khóa tương ứng để không sinh cảnh báo thừa.
+ */
+export const VISION_DEFAULT_GROQ = 'groq:qwen/qwen3.8-27b';
+export const VISION_DEFAULT_OPENROUTER = ['openrouter:google/gemma-4-31b-it:free', 'openrouter:nvidia/nemotron-3.5-super-vl:free'];
+function defaultVisionSpec(config: GatewayConfig): string | undefined {
+  const parts: string[] = [];
+  if (config.GEMINI_API_KEY) parts.push('gemini');
+  if (config.aiEnv.GROQ_API_KEY) parts.push(VISION_DEFAULT_GROQ);
+  if (config.aiEnv.OPENROUTER_API_KEY) parts.push(...VISION_DEFAULT_OPENROUTER);
+  return parts.length ? parts.join(',') : undefined;
+}
+
 export function createAiProviders(config: GatewayConfig, deps: RegistryDeps = {}): AiProviders {
   const env: Record<string, string> = { ...config.aiEnv };
   if (config.GEMINI_API_KEY) env.GEMINI_API_KEY = config.GEMINI_API_KEY;
@@ -171,7 +185,7 @@ export function createAiProviders(config: GatewayConfig, deps: RegistryDeps = {}
 
   return {
     llm: buildLlm('llm', config.LLM_CHAIN ?? defaultSpec(config)),
-    vision: buildLlm('vision', config.VISION_CHAIN ?? defaultSpec(config)),
+    vision: buildLlm('vision', config.VISION_CHAIN ?? defaultVisionSpec(config)),
     stt: buildStt(config.STT_CHAIN ?? defaultSpec(config)),
     breaker,
     skipped

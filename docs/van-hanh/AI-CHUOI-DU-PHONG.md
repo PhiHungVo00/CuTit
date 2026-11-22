@@ -9,14 +9,14 @@ Ba biến, mỗi biến là danh sách `nhà_cung_cấp[:model]` cách nhau bằ
 | Biến | Dùng cho | Mặc định khi không đặt |
 |---|---|---|
 | `LLM_CHAIN` | chat, nhập vai, gọi thoại, hỏi văn hóa, giải thích bài tập | `gemini` nếu có `GEMINI_API_KEY`, không thì bộ giả lập (`mock: true`) |
-| `VISION_CHAIN` | nhận diện ảnh camera | như trên |
+| `VISION_CHAIN` | ảnh trong chat, khung hình gọi video, Camera từ vựng | `gemini` + (nếu có khóa) `groq:qwen/qwen3.8-27b` + `openrouter:google/gemma-4-31b-it:free` + `openrouter:nvidia/nemotron-3.5-super-vl:free` (VISION-DP) |
 | `STT_CHAIN` | chép lời giọng nói (và chấm phát âm) | như trên |
 
 Ví dụ:
 
 ```
 LLM_CHAIN=gemini,openrouter:google/gemma-4-31b-it:free,groq:openai/gpt-oss-120b
-VISION_CHAIN=gemini,openrouter:google/gemma-4-31b-it:free
+VISION_CHAIN=gemini,groq:qwen/qwen3.8-27b,openrouter:google/gemma-4-31b-it:free,openrouter:nvidia/nemotron-3.5-super-vl:free
 STT_CHAIN=gemini,groq:whisper-large-v3-turbo
 ```
 
@@ -56,6 +56,21 @@ Khi một nguồn gặp **429 / 5xx / timeout / lỗi mạng / JSON không qua Z
 - **Gemini** `gemini-3.5-flash-lite`: với prompt chỉ ~20 token vẫn mất 1–7 s (thường 4–6 s), thỉnh thoảng 503 "high demand", và STT/chat thật có lúc chạm timeout 8 s. Đo bật/tắt `thinkingLevel: minimal` (12 lượt): không khác biệt có ý nghĩa; `thinkingBudget: 0` bị từ chối (400). Thinking không được tính token ⇒ **không phải do độ dài prompt hay thinking mà do độ trễ phía dịch vụ**, nên không rút gọn prompt. Cách xử lý đúng: **đặt nguồn nhanh trước, Gemini sau** (khi Gemini là nguồn cuối nó nhận toàn bộ ngân sách còn lại, ≈ 8,5 s sau hai lần 429 nhanh; đã có test).
 - **Groq free chỉ 8 000 token/phút** (header `x-ratelimit-limit-tokens`): prompt gia sư ≈ 3 000 token ⇒ cả app chỉ vài lượt chat/phút trên Groq; 429 thì ngắt mạch rồi sang nguồn kế. `gpt-oss-120b` cũng là model suy luận (có thể trả `content` rỗng nếu `max_tokens` thấp).
 - Thứ tự đề xuất đã ghi trong `.env.example`: `LLM_CHAIN=groq:qwen/qwen3.8-27b,groq:openai/gpt-oss-120b,gemini`, `STT_CHAIN=groq:whisper-large-v3-turbo,gemini`, `VISION_CHAIN=gemini,openrouter:<model vision :free>`.
+
+### Vision dự phòng miễn phí (VISION-DP, đo thật 22/11/2026)
+
+Lý do: Gemini hay 503/timeout nên ảnh chat/gọi video báo "Cu Tít đang bận" (phát hiện ở DA2-T9). Gọi `GET /models` của từng hãng bằng khóa thật, thử 3 ảnh mẫu (táo, nhà, cốc), qua đúng `createAiProviders` + `FallbackLlmProvider`:
+
+| Nguồn | Vai trò | Độ trễ đo | JSON mode | Giới hạn free | Ảnh |
+|---|---|---|---|---|---|
+| `groq:qwen/qwen3.8-27b` | dự phòng 1 | 0,4–2 s | `json_object` (trang vision của Groq nói hỗ trợ cả khi có ảnh); không ghi `json_schema` | **8 000 token/phút**, 30 RPM, 1 000 RPD, 200 K token/ngày (bảng rate-limit ghi "Developer plan"; free có thể thấp hơn, xem console). Mỗi ảnh ≈ 2 048 token ⇒ **chỉ ~3 ảnh/phút** (429 thật gặp khi gửi dồn); 429 ⇒ ngắt mạch rồi sang nguồn kế | ≤ 3 ảnh/yêu cầu; ≤ 20 MB (URL); app gửi JPEG ≤ 768 px nên rất xa trần |
+| `openrouter:google/gemma-4-31b-it:free` | dự phòng 2 | 3,2 s khi qua; **thường 429 "temporarily rate-limited upstream"** | `response_format` có | `:free`: 20 RPM; **50 request/ngày** nếu chưa nạp ≥ 10 credit, 1 000/ngày nếu đã nạp | PNG/JPEG/WebP/GIF, data URI; không ghi trần dung lượng |
+| `openrouter:nvidia/nemotron-3.5-super-vl:free` | dự phòng 3 | 2,5–7 s | `response_format` + structured_outputs | như trên (dùng chung hạn mức OpenRouter free) | như trên |
+
+- Gemma-4-26b-a4b cũng 429 upstream cùng lúc nên không dùng. Nemotron là model suy luận: có lần `content` rỗng (chỉ suy luận) ⇒ `llm_bad_output` ⇒ nguồn kế (đã có test) và có lần trả lời bằng tiếng Anh (tên vật vẫn đúng; Zod chỉ kiểm cấu trúc).
+- Chạy thật (3 ảnh × 3 cấu hình): Gemini đứng đầu trả lời được 2/3 ảnh (2–6 s) và ảnh đầu bị Groq nhận thay; Gemini đặt cuối ⇒ Groq trả lời cả 3 (0,5–1,6 s); chỉ OpenRouter ⇒ gemma 429 hết, nemotron trả lời cả 3 (3,6–5,2 s). Dự phòng chạy đúng, nhãn nguồn đúng (`x-ai-provider`).
+- Nguồn tài liệu: https://console.groq.com/docs/vision · https://console.groq.com/docs/rate-limits · https://openrouter.ai/docs/api-reference/limits · https://openrouter.ai/docs/guides/overview/multimodal/image-understanding.md
+- Đánh đổi: mọi dự phòng đều free-tier nên dùng chung hạn mức nhỏ; tải cao vẫn có thể hết chuỗi ⇒ `503 llm_busy`, **không trừ lượt** (đã có test route).
 
 ## 5. Chạy thử thật
 
