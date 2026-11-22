@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
-import { learnerStore } from '@vietlearning/state';
+import { dayKey, learnerStore } from '@vietlearning/state';
 import { ProgressScreen } from './ProgressScreen';
 
 const lang = (uiLanguage: 'vi' | 'en') => learnerStore.getState().setPreferences({ uiLanguage });
@@ -33,5 +33,16 @@ describe('ProgressScreen (M9, mở từ tab Hồ sơ)', () => {
     expect(screen.getByRole('link', { name: /Settings/ }).getAttribute('href')).toBe('/cai-dat');
     expect(screen.getByRole('heading', { name: /Minutes studied/ })).toBeTruthy();
     expect(screen.queryByText(/Open study buddies/)).toBeNull();
+  });
+
+  it('tuần này chưa học phút nào => Cu Tít + lời mời thay cho biểu đồ trống; có phút học thì vẽ biểu đồ', () => {
+    const { container } = show();
+    expect(screen.getByRole('heading', { name: 'Chưa có phút học nào' })).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'Học ngay' }).getAttribute('href')).toBe('/');
+    expect(container.querySelectorAll('img[src*="cutit-chao"]').length).toBeGreaterThan(0);
+    cleanup();
+    learnerStore.setState({ activity: { [dayKey(new Date())]: 720 } });
+    show();
+    expect(screen.queryByRole('heading', { name: 'Chưa có phút học nào' })).toBeNull();
   });
 });

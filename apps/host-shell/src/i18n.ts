@@ -4,13 +4,14 @@ import { defineMessages } from '@vietlearning/state';
 export const { useT, t } = defineMessages(
   {
     appTitle: 'Học Tiếng Việt Cùng Bé Cu Tít',
+    homeTitle: 'Chào bạn!',
     homeLead: 'Mỗi ngày một bài ngắn: bấm “Học tiếp” để bắt đầu.',
+    homeLevel: 'Trình độ {level} · ',
     learn: 'Học',
     tabPractice: 'Luyện tập',
     tabFriends: 'Bạn bè',
     tabProfile: 'Hồ sơ',
     pathLoading: 'Đang tải lộ trình…',
-    homeLevel: 'Trình độ {level} · ',
     onboardTitle: 'Lần đầu học cùng Cu Tít?',
     onboardBody: 'Làm quen 1 phút và xếp lớp để bài học vừa sức bạn.',
     open: 'Mở',
@@ -21,18 +22,17 @@ export const { useT, t } = defineMessages(
     chunkFailed: 'Không tải được màn hình. Kiểm tra kết nối mạng rồi thử lại.',
     screenError: 'Màn hình này gặp lỗi.',
     retry: 'Thử lại',
-    langSwitch: 'English',
-    langSwitchLabel: 'Switch the app to English',
   },
   {
     appTitle: 'Learn Vietnamese with Cu Tít',
+    homeTitle: 'Hi there!',
     homeLead: 'One short lesson a day: tap “Continue” to start.',
+    homeLevel: 'Level {level} · ',
     learn: 'Learn',
     tabPractice: 'Practice',
     tabFriends: 'Friends',
     tabProfile: 'Profile',
     pathLoading: 'Loading your path…',
-    homeLevel: 'Level {level} · ',
     onboardTitle: 'New to Cu Tít?',
     onboardBody: 'Take a 1-minute intro and placement test so lessons match your level.',
     open: 'Open',
@@ -43,8 +43,6 @@ export const { useT, t } = defineMessages(
     chunkFailed: 'Could not load this screen. Check your connection and try again.',
     screenError: 'Something went wrong on this screen.',
     retry: 'Try again',
-    langSwitch: 'Tiếng Việt',
-    langSwitchLabel: 'Chuyển giao diện sang tiếng Việt',
   }
 );
 

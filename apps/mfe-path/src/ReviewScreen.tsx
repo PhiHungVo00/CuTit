@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { haptic, playSfx } from '@vietlearning/shared/audio';
-import { Button, Card, CuTit, Icon } from '@vietlearning/ui';
+import { Button, Card, CuTit, EmptyState, Icon } from '@vietlearning/ui';
 import { PitchReferenceFlyweight, type ExerciseRef } from '@vietlearning/content';
 import { getDeviceSpeech } from '@vietlearning/native';
 import { dueCards, learnerStore, speechRate, useLearner, useUiLanguage, type SrsCard } from '@vietlearning/state';
@@ -131,6 +131,7 @@ export function ReviewScreen() {
   const weak = weakestTone(toneStats);
   const weakRef = weak ? PitchReferenceFlyweight.get(weak) : null;
   const weakName = weakRef ? (en ? weakRef.nameEn : weakRef.name).toLowerCase() : '';
+  const nothingToReview = due.length === 0 && recent.length === 0 && !weak;
   const weakAvg = weak ? Math.round(toneStats[weak].sum / toneStats[weak].n) : 0;
 
   return (
@@ -146,6 +147,24 @@ export function ReviewScreen() {
         </Card>
       )}
 
+      {nothingToReview && (
+        <EmptyState
+          mood={Object.keys(srs).length > 0 ? 'khen' : 'ngu'}
+          title={t(Object.keys(srs).length > 0 ? 'reviewAllDoneTitle' : 'reviewEmptyTitle')}
+          body={t(Object.keys(srs).length > 0 ? 'reviewAllDoneBody' : 'reviewEmptyBody')}
+          action={
+            <>
+              <LinkButton to="/">{t('backToPath')}</LinkButton>
+              <LinkButton to="/phat-am" variant="secondary">
+                {t('toneLab')}
+              </LinkButton>
+            </>
+          }
+        />
+      )}
+
+      {!nothingToReview && (
+      <>
       <Card role="region" aria-labelledby="ct-due" elevated style={cardStack}>
         <h2 id="ct-due" className="m-0 text-lg font-extrabold text-ink">
           {t('dueTitle')} ({due.length})
@@ -192,6 +211,8 @@ export function ReviewScreen() {
           </>
         )}
       </Card>
+      </>
+      )}
     </Page>
   );
 }

@@ -22,7 +22,7 @@ export const VI: Strings = {
   skip: /Không (nghe|nói) được lúc này/
 };
 export const EN: Strings = {
-  summary: /complete!$/,
+  summary: /complete$/,
   answer: /Answer: “([^”]+)”/,
   correctOrder: /Correct sentence: “([^”]+)”/,
   next: 'Next →',

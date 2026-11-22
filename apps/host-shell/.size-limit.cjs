@@ -25,7 +25,7 @@ module.exports = [
   // chuyển cảnh/fade và luật giảm chuyển động (đo 8.35 kB)
   // 8.4 → 8.7 kB (P0-1 soi FE, 2026-11-21): cutit.css thực sự được nạp (trước đó bị bỏ sót nên đo thiếu ~0.25 kB). Nằm trong tệp CSS
   // lười đi cùng chunk CuTit, KHÔNG vào CSS tải đầu (index-*.css giữ nguyên); đo tổng 8.6 kB.
-  { name: 'CSS toàn app (Tailwind + tokens)', path: 'dist/assets/*.css', limit: '8.9 kB', gzip: true }, // DA2-T5-6: màn chat Messenger thêm lớp tiện ích (đo 8.76 kB)
+  { name: 'CSS toàn app (Tailwind + tokens)', path: 'dist/assets/*.css', limit: '9.2 kB', gzip: true }, // 8.9 → 9.2 kB (DA1b-P1, 2026-11-22): hoạt ảnh phản hồi + chuyển tư thế Cu Tít + EmptyState (đo 8.97 kB trên Windows, 9.11 kB trên CI Linux; phần lớn ở CSS lười). DA2-T5-6: màn chat Messenger thêm lớp tiện ích (đo 8.76 kB)
   { name: 'M3 Ma trận xưng hô (lazy)', path: 'dist/assets/HonorificScreen-*.js', limit: '15 kB', gzip: true },
   { name: 'M3 Bảng 20 cặp + Radix Dialog (lazy khi mở)', path: 'dist/assets/HonorificExplorerDrawer-*.js', limit: '18 kB', gzip: true },
   { name: 'M2 Luyện thanh điệu (lazy)', path: 'dist/assets/ToneLabRoute-*.js', limit: '9 kB', gzip: true },
@@ -49,7 +49,8 @@ module.exports = [
   // `import … from './index-*.js'`; gói đầu đổi lại giảm 4.37 kB. Mã của PathHome không đổi
     // 3.45 → 3.6 kB (Dự án 1 đợt 3, 2026-11-21): thẻ dùng Card/LinkButton chung (style nội tuyến thay lớp Tailwind), +34 B lúc đo
   { name: 'GĐ1 Phần lộ trình của trang chủ (lazy)', path: 'dist/assets/PathHomeRoute-*.js', limit: '3.6 kB', gzip: true },
-  { name: 'GĐ1 Phiên bài học (lazy)', path: 'dist/assets/LessonRoute-*.js', limit: '2.5 kB', gzip: true },
+    // 2.5 → 2.8 kB (DA1b-P1, 2026-11-22): thẻ tổng kết có XP đếm + lời mời ôn lại (đo 2.73 kB), chunk lười
+  { name: 'GĐ1 Phiên bài học (lazy)', path: 'dist/assets/LessonRoute-*.js', limit: '2.8 kB', gzip: true },
   { name: 'GĐ1 Ôn tập (lazy)', path: 'dist/assets/ReviewRoute-*.js', limit: '3 kB', gzip: true },
   { name: 'GĐ1 Kiểm tra vượt unit (lazy)', path: 'dist/assets/TestOutRoute-*.js', limit: '2 kB', gzip: true },
   { name: 'Dự án 1 Tab Luyện tập: lối vào 5 cách luyện (lazy)', path: 'dist/assets/PracticeHub-*.js', limit: '2.5 kB', gzip: true },

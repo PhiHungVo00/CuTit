@@ -7,6 +7,7 @@ import { defineMessages } from '@vietlearning/state';
 export const { useT, t } = defineMessages(
   {
     // Trang chủ lộ trình
+    statsLabel: 'Chuỗi ngày, điểm và đóng băng',
     streak: '{n} ngày liên tiếp',
     streakLabel: 'Chuỗi ngày học',
     xp: '{n} XP',
@@ -72,8 +73,10 @@ export const { useT, t } = defineMessages(
     notFound: 'Không tìm thấy bài học này.',
     backToPath: 'Về lộ trình',
     // Tổng kết
-    summaryTitle: 'Xong bài “{lesson}”!',
+    summaryTitle: 'Xong bài “{lesson}”',
     summaryXp: '+{n} XP',
+    summaryReview: 'Ôn lại {n} câu để nhớ lâu',
+    summaryReviewBtn: 'Ôn ngay',
     summaryAccuracy: 'Đúng ngay lần đầu: {pct}%',
     summarySkipped: 'Bỏ qua {n} câu nghe/nói (không tính sai).',
     summaryWords: 'Từ trong bài',
@@ -84,6 +87,10 @@ export const { useT, t } = defineMessages(
 
     // Ôn tập
     reviewTitle: 'Ôn tập',
+    reviewEmptyTitle: 'Chưa có gì để ôn',
+    reviewEmptyBody: 'Làm bài đầu tiên rồi quay lại: câu sai sẽ vào đây để bạn ôn đúng lúc sắp quên.',
+    reviewAllDoneTitle: 'Hôm nay ôn xong rồi!',
+    reviewAllDoneBody: 'Giỏi quá! Quay lại sau để ôn những thẻ mới đến hạn.',
     reviewIntro: 'Ôn đúng lúc sắp quên (SM-2), làm lại câu sai gần đây, luyện thanh còn yếu.',
     dueTitle: 'Thẻ đến hạn',
     dueStart: 'Ôn {n} thẻ',
@@ -120,6 +127,7 @@ export const { useT, t } = defineMessages(
     'region.south': 'Nam'
   },
   {
+    statsLabel: 'Streak, points and freezes',
     streak: '{n}-day streak',
     streakLabel: 'Study streak',
     xp: '{n} XP',
@@ -182,8 +190,10 @@ export const { useT, t } = defineMessages(
     retry: 'Try again',
     notFound: 'This lesson doesn’t exist.',
     backToPath: 'Back to path',
-    summaryTitle: '“{lesson}” complete!',
+    summaryTitle: '“{lesson}” complete',
     summaryXp: '+{n} XP',
+    summaryReview: 'Review {n} questions to remember them longer',
+    summaryReviewBtn: 'Review now',
     summaryAccuracy: 'Right first time: {pct}%',
     summarySkipped: 'Skipped {n} listening/speaking item(s) (not counted as wrong).',
     summaryWords: 'Words in this lesson',
@@ -193,6 +203,10 @@ export const { useT, t } = defineMessages(
     nextLesson: 'Continue: {lesson}',
 
     reviewTitle: 'Review',
+    reviewEmptyTitle: 'Nothing to review yet',
+    reviewEmptyBody: 'Do your first lesson and come back: questions you miss land here so you review them just before you forget.',
+    reviewAllDoneTitle: 'All reviewed for today!',
+    reviewAllDoneBody: 'Great job! Come back later for cards that become due.',
     reviewIntro: 'Review just before you forget (SM-2), redo recent mistakes, practise your weakest tone.',
     dueTitle: 'Cards due',
     dueStart: 'Review {n} cards',
