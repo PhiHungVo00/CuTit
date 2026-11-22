@@ -113,6 +113,7 @@ Effort chọn theo **rủi ro và mức mơ hồ**, không theo độ dài. Bố
 
 **Luật nâng cấp:**
 - Model rẻ làm 2 lần vẫn hỏng ⇒ chuyển lên model cao hơn.
+- **Rà tổng bằng Opus chỉ một lần trước khi phát hành, hoặc khi thật sự cần** (người dùng chốt 22/11/2026): một lượt `kien-truc` chạy Opus rà toàn bộ đăng nhập, dữ liệu người dùng, DB/migration, native Android, pháp lý. Ngày thường `kien-truc` chạy Sonnet.
 - Việc đụng DB, auth, native Android hay pháp lý ⇒ `kien-truc` xem lại.
 - **Không gì vào `main`** nếu chưa qua skill `kiem-truoc-khi-gop`.
 
