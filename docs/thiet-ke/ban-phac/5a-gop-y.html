@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Phác 5a: Góp ý / Báo lỗi</title>
+<!-- Ảnh phác, không phải code sản phẩm. Spec: docs/superpowers/specs/2026-11-21-gop-y-bao-loi-design.md -->
+<style>
+  :root{--kem:#FBF3E4;--surface:#FFFDF8;--earth:#5A3E28;--text:#3B2A1E;--straw:#E9B949;--green:#6FA544;--line:#EADFCB;--muted:#9A8672;--red:#C0553A;}
+  body{margin:0;background:#E7DCC4;font-family:'Be Vietnam Pro',system-ui,sans-serif;color:var(--text);padding:16px}
+  h1{font-size:20px;margin:0 0 4px} p.sub{margin:0 0 16px;color:#6b5847;font-size:14px}
+  .row{display:flex;flex-wrap:wrap;gap:20px;align-items:flex-start}
+  .phone{width:300px;height:620px;background:var(--kem);border:8px solid #2B211A;border-radius:36px;overflow:hidden;display:flex;flex-direction:column}
+  .bar{padding:14px 16px 8px;font-weight:700;display:flex;gap:8px;align-items:center}
+  .body{padding:0 14px 14px;display:flex;flex-direction:column;gap:10px;overflow:auto}
+  .seg{display:flex;gap:6px}.seg span{flex:1;text-align:center;padding:8px 0;border:1.5px solid var(--line);border-radius:12px;font-size:13px;background:var(--surface)}
+  .seg span.on{background:var(--straw);border-color:var(--straw);font-weight:700}
+  textarea{height:110px;border:1.5px solid var(--line);border-radius:12px;padding:10px;font:inherit;font-size:13px;background:var(--surface);resize:none}
+  .att{display:flex;gap:6px}.thumb{width:56px;height:56px;border-radius:10px;background:#d9c9a8;position:relative;font-size:11px;display:flex;align-items:center;justify-content:center}
+  .thumb b{position:absolute;top:-6px;right:-6px;background:var(--earth);color:#fff;border-radius:50%;width:18px;height:18px;font-size:11px;display:flex;align-items:center;justify-content:center}
+  .add{border:1.5px dashed var(--muted);background:transparent}
+  .meta{font-size:11px;color:var(--muted);background:var(--surface);border-radius:10px;padding:8px}
+  .btn{background:var(--green);color:#fff;text-align:center;padding:12px;border-radius:14px;font-weight:700}
+  .item{background:var(--surface);border:1.5px solid var(--line);border-radius:12px;padding:10px;font-size:13px}
+  .tag{font-size:11px;padding:2px 8px;border-radius:99px;background:#e8f1dc;color:#3d6b1f;font-weight:700}
+  .tag.y{background:#fbefcc;color:#7a5a07}.dot{width:8px;height:8px;background:var(--red);border-radius:50%;display:inline-block}
+  .msg{background:#f3ead8;border-radius:10px;padding:8px;font-size:12px;margin-top:6px}
+  .admin{flex:1 1 640px;max-width:900px;background:#fff;border-radius:12px;border:1px solid #d6c7a8;overflow:hidden;font-size:13px}
+  .admin header{background:var(--earth);color:#fff;padding:10px 14px;font-weight:700;display:flex;justify-content:space-between}
+  .cols{display:flex;min-height:420px}.list{width:46%;border-right:1px solid #eee}
+  .list .f{padding:8px;border-bottom:1px solid #eee;display:flex;gap:6px}
+  .list .r{padding:9px 12px;border-bottom:1px solid #f1ebe0}.list .r.sel{background:#fbf3e4}
+  .det{flex:1;padding:12px;display:flex;flex-direction:column;gap:8px}
+  select,input{font:inherit;font-size:12px;padding:4px 6px}
+  .shots{display:flex;gap:8px}.shots div{width:90px;height:160px;background:#d9c9a8;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:11px}
+</style></head><body>
+<h1>Dự án 5a: Góp ý / Báo lỗi (ảnh phác)</h1>
+<p class="sub">Trái: màn trong app (Hồ sơ › Góp ý / Báo lỗi) và "Góp ý của tôi". Phải: trang quản trị trên máy chủ app. Chỉ để hình dung bố cục; màu, chữ, khoảng cách theo token packages/ui.</p>
+<div class="row">
+  <div class="phone"><div class="bar">‹ Góp ý / Báo lỗi</div><div class="body">
+    <div class="seg"><span class="on">Báo lỗi</span><span>Góp ý</span><span>Khác</span></div>
+    <textarea>Bấm nút nghe giọng Nam ở bài 3 thì không có tiếng…</textarea>
+    <div style="font-size:12px;font-weight:700">Đính kèm (tối đa 3 ảnh, 1 video ≤ 60 giây)</div>
+    <div class="att"><div class="thumb">ảnh<b>✕</b></div><div class="thumb">▶ 0:24<b>✕</b></div><div class="thumb add">＋</div></div>
+    <div class="meta">Gửi kèm: phiên bản 1.4.0 (build 212) · Android 15 · tiếng Việt · màn trước: /bai-hoc/u1l3</div>
+    <div class="meta">Chủ app sẽ xem nội dung, ảnh, video bạn gửi để sửa lỗi.</div>
+    <div class="btn">Gửi</div>
+    <div class="item" style="display:flex;justify-content:space-between">Góp ý của tôi (2) <span class="dot"></span></div>
+  </div></div>
+
+  <div class="phone"><div class="bar">‹ Góp ý của tôi</div><div class="body">
+    <div class="item"><span class="tag y">Đang xử lý</span> <span class="dot"></span><br><b>Báo lỗi</b>: Bấm nút nghe giọng Nam…<br><small style="color:var(--muted)">21/11</small>
+      <div class="msg"><b>Chủ app:</b> Cảm ơn bạn, mình đã thấy lỗi, bản sau sẽ sửa.</div></div>
+    <div class="item"><span class="tag">Đã xong</span><br><b>Góp ý</b>: Thêm chế độ tối cho…<br><small style="color:var(--muted)">18/11</small>
+      <div class="msg"><b>Chủ app:</b> Đã có trong bản 1.3!</div></div>
+  </div></div>
+
+  <div class="admin"><header><span>Bé Cu Tít · Quản trị</span><span>Hàng chờ · Nhật ký · Đăng xuất</span></header>
+    <div class="cols"><div class="list">
+      <div class="f"><select><option>Góp ý & báo lỗi</option><option disabled>Báo cáo chat (dự án 4)</option></select><select><option>Chưa xong (7)</option></select><select><option>Mọi loại</option></select></div>
+      <div class="r sel"><b>Báo lỗi</b> · Bấm nút nghe giọng Nam… <br><small>1.4.0 · /bai-hoc/u1l3 · 2 tệp · 10 phút trước · <span class="tag y">Đang xử lý</span></small></div>
+      <div class="r"><b>Góp ý</b> · Muốn có thêm bài về Tết <br><small>1.4.0 · /van-hoa · 0 tệp · 2 giờ trước · <span class="tag">Đã nhận</span></small></div>
+      <div class="r"><b>Khác</b> · App rất dễ thương <br><small>1.3.2 · /ho-so · 0 tệp · hôm qua · <span class="tag">Đã nhận</span></small></div>
+    </div><div class="det">
+      <b>Báo lỗi · người dùng #a91f…(khách) · 21/11 14:02</b>
+      <div>Bấm nút nghe giọng Nam ở bài 3 thì không có tiếng…</div>
+      <small>Phiên bản 1.4.0 (212) · Android 15 · vi · màn trước /bai-hoc/u1l3 · gần đây: /, /bai-hoc/u1l2, /bai-hoc/u1l3</small>
+      <div class="shots"><div>ảnh (bấm phóng to)</div><div>▶ video 0:24</div></div>
+      <div><b>Dòng thời gian</b><br><small>21/11 14:02 gửi · 21/11 14:20 Đang xử lý: "Cảm ơn bạn…"</small></div>
+      <div>Trạng thái <select><option>Đang xử lý</option><option>Đã xong</option></select></div>
+      <textarea style="height:60px" placeholder="Lời nhắn cho người dùng (tùy chọn)"></textarea>
+      <div class="btn" style="width:120px">Lưu</div>
+    </div></div></div>
+</div>
+</body></html>
