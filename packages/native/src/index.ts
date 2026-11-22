@@ -19,3 +19,5 @@ export {
 export type { CameraErrorCode, CapturedImage } from './camera.js';
 export { getAudioEnv } from './audioEnv.js';
 export type { AudioEnvBridge } from './audioEnv.js';
+export { IdentityError, configureGoogleIdentity, getGoogleIdToken, isGoogleSignInAvailable } from './identity.js';
+export type { IdentityErrorCode } from './identity.js';
