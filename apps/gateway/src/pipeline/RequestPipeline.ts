@@ -57,6 +57,9 @@ function providerWasCalled(cause: unknown): boolean {
  */
 const NO_REFUND = new Set(['llm_blocked', 'llm_rejected']);
 
+/** API còn mở cho tài khoản đang chờ xóa: tự khôi phục hoặc "Xóa ngay" */
+const PENDING_ALLOWED = new Set(['POST /v1/me/restore', 'DELETE /v1/me']);
+
 export class RequestPipeline {
   private readonly limits: Record<Capability, number>;
   /** trần dùng chung toàn app (0 = không giới hạn); tts không có trần chung (không tốn hạn mức nhà cung cấp AI) */
@@ -100,8 +103,14 @@ export class RequestPipeline {
         return;
       }
       // Tài khoản đã xóa (DELETE /v1/me) => access token còn hạn cũng không dùng được nữa
-      if (!(await this.userExists(sub))) {
+      const state = await this.userState(sub);
+      if (state === 'gone') {
         reply.status(401).send({ error: 'account_deleted' });
+        return;
+      }
+      // Đang chờ xóa (30 ngày): khóa mọi API, trừ khôi phục / xóa ngay
+      if (state === 'pending' && !PENDING_ALLOWED.has(`${request.method} ${request.url.split('?')[0]}`)) {
+        reply.status(403).send({ error: 'account_pending_deletion' });
         return;
       }
       request.principal = { id: sub, anonymous: false };
@@ -116,23 +125,56 @@ export class RequestPipeline {
     request.principal = { id: `anon:${request.ip}`, anonymous: true };
   };
 
-  private async userExists(id: string): Promise<boolean> {
+  /** Giờ của pipeline (đồng hồ tiêm được) — route dùng chung để test mốc thời gian không chờ thật */
+  now(): Date {
+    return this.clock();
+  }
+
+  /** active = dùng bình thường; pending = chờ xóa còn hạn (khôi phục được); gone = không còn / quá hạn xóa. Chỉ nhớ `active`. */
+  private async userState(id: string): Promise<'active' | 'pending' | 'gone'> {
     const until = this.knownUsers.get(id);
-    if (until && until > Date.now()) return true;
+    if (until && until > Date.now()) return 'active';
     const db = await this.db.get();
     const [row] = await db
-      .select({ id: schema.users.id })
+      .select({ id: schema.users.id, deleteAt: schema.users.deleteAt })
       .from(schema.users)
       .where(and(eq(schema.users.id, id), isNull(schema.users.deletedAt)));
-    if (!row) return false;
+    if (!row) return 'gone';
+    if (row.deleteAt) return row.deleteAt.getTime() > this.clock().getTime() ? 'pending' : 'gone';
     if (this.knownUsers.size > 50_000) this.knownUsers.clear();
     this.knownUsers.set(id, Date.now() + USER_CACHE_MS);
-    return true;
+    return 'active';
   }
 
   /** Gọi sau khi xóa tài khoản để token cũ bị từ chối ngay (một instance; nhiều instance: trễ ≤ 60 s) */
   forgetUser(id: string): void {
     this.knownUsers.delete(id);
+    this.guestUsers.delete(id);
+  }
+
+  /** Dự án 3: nhớ "là khách?" ngắn hạn (nâng cấp gọi forgetUser => hạn mức tài khoản áp dụng ngay) */
+  private guestUsers = new Map<string, { guest: boolean; until: number }>();
+
+  private async isGuest(id: string): Promise<boolean> {
+    const hit = this.guestUsers.get(id);
+    if (hit && hit.until > Date.now()) return hit.guest;
+    const db = await this.db.get();
+    const [row] = await db.select({ isGuest: schema.users.isGuest }).from(schema.users).where(eq(schema.users.id, id));
+    const guest = row?.isGuest ?? false;
+    if (this.guestUsers.size > 50_000) this.guestUsers.clear();
+    this.guestUsers.set(id, { guest, until: Date.now() + USER_CACHE_MS });
+    return guest;
+  }
+
+  /**
+   * Hạn mức của người gửi request: khách = GUEST_QUOTA_FACTOR × hạn mức tài khoản (spec dự án 3 mục 6, khuyến khích đăng
+   * nhập; mỗi khách mới là một hạn mức mới). Principal ẩn danh `anon:<ip>` (chỉ dev/test) giữ hạn mức đầy đủ như cũ.
+   */
+  async limitFor(request: FastifyRequest, capability: Capability): Promise<number> {
+    const base = this.limits[capability];
+    const p = request.principal;
+    if (!p || p.anonymous || this.config.GUEST_QUOTA_FACTOR >= 1) return base;
+    return (await this.isGuest(p.id)) ? Math.floor(base * this.config.GUEST_QUOTA_FACTOR) : base;
   }
 
   /**
@@ -150,7 +192,7 @@ export class RequestPipeline {
   /** Trừ người dùng rồi trần chung, cùng một khóa ngày `day`; trần chung từ chối HOẶC lỗi => hoàn phần của người dùng */
   private async charge(request: FastifyRequest, capability: Capability, units: number, day: string, providerCall = true): Promise<number> {
     const id = this.principalId(request);
-    const r = await this.quota.tryConsume(id, capability, units, this.limits[capability], day);
+    const r = await this.quota.tryConsume(id, capability, units, await this.limitFor(request, capability), day);
     if (!r.ok) {
       throw new GatewayError(429, 'quota_exceeded', `Đã hết hạn mức ${capability} hôm nay`, { capability, resetAt: quotaResetAt(this.clock()) });
     }
@@ -230,7 +272,9 @@ export class RequestPipeline {
   async remaining(request: FastifyRequest): Promise<Remaining | undefined> {
     try {
       const used = await this.quota.getAll(this.principalId(request));
-      const left = (cap: Capability) => Math.max(0, this.limits[cap] - used[cap]);
+      const caps: Capability[] = ['turn', 'llm', 'stt', 'vision'];
+      const limits = Object.fromEntries(await Promise.all(caps.map(async (c) => [c, await this.limitFor(request, c)] as const))) as Record<Capability, number>;
+      const left = (cap: Capability) => Math.max(0, limits[cap] - used[cap]);
       return { turns: left('turn'), llmTokens: left('llm'), sttSeconds: left('stt'), visionImages: left('vision') };
     } catch {
       return undefined;

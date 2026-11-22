@@ -24,6 +24,8 @@ loadDotenv({ path: process.env.BECUTIT_ENV_FILE ?? join(homedir(), '.becutit', '
 const DEFAULT_PGLITE_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', '.data', 'pglite');
 /** apps/gateway/.data/tts: âm thanh dựng sẵn (GĐ2), không commit */
 const DEFAULT_TTS_AUDIO_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', '.data', 'tts');
+/** apps/gateway/config/app-versions.json: phiên bản app mới nhất/tối thiểu theo kênh (dự án 8) */
+const DEFAULT_APP_VERSIONS_FILE = join(dirname(fileURLToPath(import.meta.url)), '..', 'config', 'app-versions.json');
 
 const boolFromEnv = z
   .enum(['true', 'false', '1', '0'])
@@ -117,7 +119,38 @@ const EnvSchema = z
     /** Thư mục âm thanh dựng sẵn (<hash>.wav, packs/, state/) — gitignored */
     TTS_AUDIO_DIR: z.string().optional(),
     /** Gốc URL công khai của Gateway để trả audioUrl tuyệt đối (sau proxy). Không đặt => lấy từ Host của request */
-    PUBLIC_BASE_URL: z.string().url().optional()
+    PUBLIC_BASE_URL: z.string().url().optional(),
+    // ---- Dự án 3: mật khẩu, OTP email, gửi mail (spec docs/superpowers/specs/2026-11-21-dang-nhap-design.md) ----
+    /**
+     * Muối HMAC cho mã OTP email + khóa bộ đếm giới hạn (IP, tên đăng nhập, email). Production bắt buộc (≥ 32 ký tự).
+     * Đổi pepper => mọi mã OTP đang chờ và bộ đếm hết hiệu lực (không mất dữ liệu người dùng).
+     */
+    AUTH_OTP_PEPPER: z.string().min(32, 'AUTH_OTP_PEPPER phải dài tối thiểu 32 ký tự').optional(),
+    /** Làm chậm (không khóa) khi một tên đăng nhập bị sai > 50 lần/giờ từ nhiều IP (ms) */
+    AUTH_LOGIN_SLOWDOWN_MS: z.coerce.number().int().min(0).max(10_000).default(2000),
+    /**
+     * Gửi mail (Nguyên tắc 4: đổi nhà cung cấp qua env). 'none' (mặc định, chưa có mật khẩu ứng dụng Gmail) => mọi luồng
+     * cần mail trả provider_unavailable, quên mật khẩu vẫn 202 và giao diện chỉ đường mã dự phòng.
+     */
+    MAIL_PROVIDER: z.enum(['none', 'gmail-smtp']).default('none'),
+    /** Địa chỉ người gửi; vắng => MAIL_SMTP_USER */
+    MAIL_FROM: z.string().min(3).max(200).optional(),
+    MAIL_SMTP_USER: z.string().email().optional(),
+    /** Mật khẩu ứng dụng Gmail (16 ký tự) — chỉ ở server */
+    MAIL_SMTP_PASS: z.string().min(8).optional(),
+    /** Trần thư/ngày (giờ VN) cả app — chừa dư dưới mức ~500/ngày của Gmail. Hết trần => provider_unavailable */
+    MAIL_DAILY_CAP: z.coerce.number().int().min(0).default(450),
+    /** Hạn mức AI của khách = hệ số × hạn mức tài khoản thật (khuyến khích đăng nhập; spec mục 6) */
+    GUEST_QUOTA_FACTOR: z.coerce.number().min(0).max(1).default(0.5),
+    // ---- Dự án 8: cập nhật ứng dụng (spec docs/superpowers/specs/2026-11-21-cap-nhat-ung-dung-design.md mục 5.3) ----
+    /** Tệp phiên bản app theo kênh; mặc định config/app-versions.json cạnh gói */
+    APP_VERSIONS_FILE: z.string().optional(),
+    /** Đọc lại tệp phiên bản sau chừng này ms (e2e đặt 0) */
+    APP_VERSIONS_TTL_MS: z.coerce.number().int().min(0).default(60_000),
+    /** Giới hạn theo IP cho GET /v1/app/version */
+    APP_VERSION_RATE_LIMIT_PER_MINUTE: z.coerce.number().int().positive().default(30),
+    /** Host (cách nhau bằng dấu phẩy) được phép trong apkFile.url của kênh apk; rỗng = không cho phép apkFile */
+    APK_DOWNLOAD_HOSTS: z.string().default('')
   })
   .transform((env) => ({
     ...env,
@@ -129,8 +162,13 @@ const EnvSchema = z
     JWT_SECRET: env.JWT_SECRET ?? (env.NODE_ENV === 'production' ? undefined : randomBytes(32).toString('hex')),
     jwtSecretGenerated: !env.JWT_SECRET && env.NODE_ENV !== 'production',
     AUDIT_IP_SALT: env.AUDIT_IP_SALT ?? (env.NODE_ENV === 'production' ? undefined : randomBytes(32).toString('hex')),
+    AUTH_OTP_PEPPER: env.AUTH_OTP_PEPPER ?? (env.NODE_ENV === 'production' ? undefined : randomBytes(32).toString('hex')),
     PGLITE_DIR: env.PGLITE_DIR ?? (env.NODE_ENV === 'test' ? 'memory://' : DEFAULT_PGLITE_DIR),
     TTS_AUDIO_DIR: env.TTS_AUDIO_DIR ?? DEFAULT_TTS_AUDIO_DIR,
+    APP_VERSIONS_FILE: env.APP_VERSIONS_FILE ?? DEFAULT_APP_VERSIONS_FILE,
+    apkDownloadHosts: env.APK_DOWNLOAD_HOSTS.split(',')
+      .map((h) => h.trim().toLowerCase())
+      .filter(Boolean),
     corsOrigins: env.CORS_ORIGIN.split(',')
       .map((o) => o.trim())
       .filter(Boolean)
@@ -148,6 +186,20 @@ const EnvSchema = z
         code: z.ZodIssueCode.custom,
         path: ['AUDIT_IP_SALT'],
         message: 'Production bắt buộc cấu hình AUDIT_IP_SALT (≥ 32 ký tự, khác JWT_SECRET)'
+      });
+    }
+    if (!env.AUTH_OTP_PEPPER) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['AUTH_OTP_PEPPER'],
+        message: 'Production bắt buộc cấu hình AUTH_OTP_PEPPER (≥ 32 ký tự, khác JWT_SECRET)'
+      });
+    }
+    if (env.MAIL_PROVIDER === 'gmail-smtp' && (!env.MAIL_SMTP_USER || !env.MAIL_SMTP_PASS)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['MAIL_SMTP_USER'],
+        message: 'MAIL_PROVIDER=gmail-smtp cần MAIL_SMTP_USER và MAIL_SMTP_PASS (mật khẩu ứng dụng Gmail)'
       });
     }
     if (env.corsOrigins.includes('*')) {

@@ -93,8 +93,12 @@ export const AuthErrorCode = {
   otpExpired: 'otp_expired',
   /** sai ≥ 5 lần: mã bị hủy */
   otpLocked: 'otp_locked',
+  /** 409: thao tác chỉ dành cho tài khoản có mật khẩu (gắn email, tạo mã dự phòng) */
+  passwordRequired: 'password_required',
   /** 429: khóa tạm theo (IP, tên) / trần IP */
-  rateLimited: 'rate_limited'
+  rateLimited: 'rate_limited',
+  /** 409: vé gộp sai / hết hạn / đã dùng / không thuộc khách này (POST /v1/me/merge) — đăng nhập lại để lấy vé mới */
+  mergeTicketInvalid: 'merge_ticket_invalid'
 } as const;
 export type AuthErrorCodeValue = (typeof AuthErrorCode)[keyof typeof AuthErrorCode];
 
@@ -185,14 +189,16 @@ export type AuthSignInResponse = z.infer<typeof AuthSignInResponseSchema>;
 export const AuthRegisterResponseSchema = AuthSignedInSchema.extend({ backupCode: z.string() });
 export type AuthRegisterResponse = z.infer<typeof AuthRegisterResponseSchema>;
 
-// POST /v1/me/merge (Bearer khách) → AuthSignedInSchema
+// POST /v1/me/merge (Bearer khách) → AuthSignedInSchema · 409 merge_ticket_invalid · 409 account_pending_deletion (đích đang chờ xóa: khôi phục trước)
 export const AuthMergeRequestSchema = z.object({ mergeTicket: Opaque, strategy: z.enum(['merge', 'discard_device']) });
 
 // POST /v1/auth/logout (xác thực bằng chính refresh token)
 export const AuthLogoutRequestSchema = z.object({ refreshToken: z.string().min(20).max(200), everywhere: z.boolean().optional() });
 
-// POST /v1/me/email/start (202) · POST /v1/me/email/verify
-export const EmailStartRequestSchema = z.object({ email: EmailSchema });
+/** Mật khẩu hiện tại: bắt buộc cho thao tác /v1/me/* có thể dẫn tới chiếm tài khoản (access token lộ ≠ chiếm vĩnh viễn) */
+export const CurrentPasswordSchema = z.string().min(1).max(PASSWORD_MAX);
+// POST /v1/me/email/start (202) · POST /v1/me/email/verify — start đòi mật khẩu hiện tại (rà kien-truc PR #18 mục 1)
+export const EmailStartRequestSchema = z.object({ email: EmailSchema, currentPassword: CurrentPasswordSchema });
 export const EmailVerifyRequestSchema = z.object({ email: EmailSchema, code: OtpCodeSchema });
 
 // POST /v1/auth/password/forgot (luôn 202, không lộ)
@@ -205,11 +211,13 @@ export const PasswordResetWithEmailRequestSchema = z.object({
 });
 // POST /v1/auth/password/reset-backup → BackupCodeResponseSchema (mã MỚI, mã cũ hết hiệu lực)
 export const PasswordResetWithBackupRequestSchema = z.object({ username: UsernameSchema, backupCode: BackupCodeSchema, newPassword: PasswordSchema });
+// POST /v1/me/backup-code (tạo mã mới; đòi mật khẩu hiện tại) → BackupCodeResponseSchema
+export const BackupCodeRotateRequestSchema = z.object({ currentPassword: CurrentPasswordSchema });
 /** cũng là phản hồi của POST /v1/me/backup-code (tạo mã mới) */
 export const BackupCodeResponseSchema = z.object({ backupCode: z.string() });
 
 // POST /v1/me/password (đổi; thu hồi mọi refresh token khác)
-export const PasswordChangeRequestSchema = z.object({ currentPassword: z.string().min(1).max(PASSWORD_MAX), newPassword: PasswordSchema });
+export const PasswordChangeRequestSchema = z.object({ currentPassword: CurrentPasswordSchema, newPassword: PasswordSchema });
 
 // GET /v1/me/identities · DELETE /v1/me/identities/:id
 export const IdentityListResponseSchema = z.object({

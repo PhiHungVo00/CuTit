@@ -51,5 +51,10 @@
         <intent>
             <action android:name="android.intent.action.TTS_SERVICE" />
         </intent>
+        <!-- Android 11+: Capacitor chỉ mở camera chụp ảnh (📷 trong chat) khi thấy được ứng dụng camera; thiếu khai báo này
+             resolveActivity trả null và 📷 rơi về hộp chọn ảnh (DA2-T9, thử trên AVD) -->
+        <intent>
+            <action android:name="android.media.action.IMAGE_CAPTURE" />
+        </intent>
     </queries>
 </manifest>
