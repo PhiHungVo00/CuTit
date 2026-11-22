@@ -61,11 +61,6 @@ export async function providersOf(db: Db | Tx, userId: string): Promise<AuthProv
   return rows.map((r) => r.p);
 }
 
-export async function deleteAtOf(db: Db, userId: string): Promise<Date | null> {
-  const [u] = await db.select({ d: users.deleteAt }).from(users).where(eq(users.id, userId));
-  return u?.d ?? null;
-}
-
 /** Khách có tiến độ học trên server chưa (đề xuất A6.2(2)) */
 async function hasProgress(tx: Tx, userId: string): Promise<boolean> {
   const r = await tx.execute<{ p: boolean }>(sql`select (
@@ -128,18 +123,21 @@ export type LinkResult =
   /** khách rỗng đã bị xóa; đăng nhập tài khoản chủ danh tính */
   | { kind: 'switched'; userId: string; removedGuestId: string }
   | { kind: 'needs_merge'; mergeTicket: string; targetCreatedAt: Date }
-  | { kind: 'identity_in_use' };
+  | { kind: 'identity_in_use' }
+  /** người gọi đang chờ xóa (Task 4) — đua với DELETE /v1/me sau khi pipeline đã cho qua */
+  | { kind: 'pending_deletion' };
 
 /** POST /v1/me/identities/google */
 export async function linkGoogle(db: Db, callerId: string, v: VerifiedIdentity, now = new Date()): Promise<LinkResult> {
   return db.transaction(async (tx) => {
     // Khóa người gọi: hai request cùng khách (hai lần bấm, hai máy) chạy lần lượt
     const [caller] = await tx
-      .select({ id: users.id, isGuest: users.isGuest, code: users.recoveryCodeHash })
+      .select({ id: users.id, isGuest: users.isGuest, code: users.recoveryCodeHash, deleteAt: users.deleteAt })
       .from(users)
       .where(eq(users.id, callerId))
       .for('update');
     if (!caller) return { kind: 'identity_in_use' } as const;
+    if (caller.deleteAt) return { kind: 'pending_deletion' } as const;
 
     for (let attempt = 0; attempt < 2; attempt++) {
       const owner = await ownerOf(tx, v.subject);
@@ -172,7 +170,10 @@ export async function linkGoogle(db: Db, callerId: string, v: VerifiedIdentity, 
 async function otherOwner(tx: Tx, caller: { id: string; isGuest: boolean; code: string | null }, owner: string, now: Date): Promise<LinkResult> {
   // Không gộp hai tài khoản thật (đề xuất A6.2(4))
   if (!caller.isGuest) return { kind: 'identity_in_use' };
-  const [target] = await tx.select({ createdAt: users.createdAt }).from(users).where(eq(users.id, owner));
+  const [target] = await tx.select({ createdAt: users.createdAt, deleteAt: users.deleteAt }).from(users).where(eq(users.id, owner));
+  // Chủ danh tính đã QUÁ HẠN xóa (job dọn chưa chạy) => coi như không còn (luật như /login), nhưng `sub` vẫn bị giữ tới khi
+  // job dọn xóa cứng => không gắn được cho khách. 409 chứ không 401: client tự gửi lại khi 401 (nonce đã tiêu).
+  if (!target || (target.deleteAt && target.deleteAt.getTime() <= now.getTime())) return { kind: 'identity_in_use' };
   if (await hasProgress(tx, caller.id)) {
     const mergeTicket = opaque();
     await tx.insert(authChallenges).values({
@@ -220,13 +221,14 @@ export async function listIdentities(db: Db | Tx, userId: string): Promise<{ id:
   return rows.map((r) => ({ id: r.id, provider: r.provider, display: displayOf(r.provider, r.display, r.subject) }));
 }
 
-export type UnlinkResult = { kind: 'ok'; provider: AuthProvider } | { kind: 'not_found' } | { kind: 'last_identity' };
+export type UnlinkResult = { kind: 'ok'; provider: AuthProvider } | { kind: 'not_found' } | { kind: 'last_identity' } | { kind: 'pending_deletion' };
 
 /** DELETE /v1/me/identities/:id — chỉ danh tính của chính mình; không gỡ phương thức đăng nhập cuối */
 export async function unlinkIdentity(db: Db, userId: string, identityId: string): Promise<UnlinkResult> {
   return db.transaction(async (tx) => {
     // Khóa người dùng: hai lệnh gỡ đồng thời không cùng vượt qua bước đếm
-    await tx.select({ id: users.id }).from(users).where(eq(users.id, userId)).for('update');
+    const [me] = await tx.select({ deleteAt: users.deleteAt }).from(users).where(eq(users.id, userId)).for('update');
+    if (me?.deleteAt) return { kind: 'pending_deletion' } as const;
     const [target] = await tx
       .select({ provider: identities.provider })
       .from(identities)

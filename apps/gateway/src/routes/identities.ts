@@ -12,8 +12,9 @@ import type { Db } from '../db/client.js';
 import { parseOr400, respond } from '../lib/validate.js';
 import { requireUserId } from '../pipeline/RequestPipeline.js';
 import { IdentityTokenError, IdentityUnavailableError, type VerifiedIdentity } from '../providers/identity.js';
-import { consumeNonce, deleteAtOf, issueNonce, linkGoogle, listIdentities, providersOf, signInWithGoogle, unlinkIdentity } from '../services/auth/link.js';
+import { consumeNonce, issueNonce, linkGoogle, listIdentities, providersOf, signInWithGoogle, unlinkIdentity } from '../services/auth/link.js';
 import { issueTokens } from '../services/auth/tokens.js';
+import { isPastDeletion, restorableOf } from '../services/auth/lifecycle.js';
 import { AuditLog } from '../services/audit/audit.js';
 
 /**
@@ -59,15 +60,16 @@ async function verifyGoogle(deps: RouteDeps, db: Db, body: { idToken: string; no
   return { ok: true, v };
 }
 
-async function signedIn(server: Parameters<FastifyPluginAsync>[0], db: Db, userId: string) {
+/** `restorable` theo đúng luật Task 4 (`restorableOf`, như /login): chỉ khi còn trong hạn khôi phục */
+async function signedIn(server: Parameters<FastifyPluginAsync>[0], db: Db, userId: string, now: Date) {
   const tokens = await issueTokens(server, db, userId);
-  const deleteAt = await deleteAtOf(db, userId);
+  const restorable = await restorableOf(db, userId, now);
   return respond(AuthSignInResponseSchema, {
     status: 'signed_in',
     ...tokens,
     isGuest: false,
     providers: await providersOf(db, userId),
-    ...(deleteAt ? { restorable: { deleteAt: deleteAt.toISOString() } } : {})
+    ...(restorable ? { restorable } : {})
   });
 }
 
@@ -83,10 +85,17 @@ export const identityAuthRoutes: FastifyPluginAsync<RouteDeps> = async (server, 
     const body = parseOr400(AuthGoogleRequestSchema, req.body, reply);
     if (!body) return reply;
     const d = await deps.db.get();
-    const r = await verifyGoogle(deps, d, body, reply, AuditLog.context(req));
+    const now = deps.clock();
+    const ctx = AuditLog.context(req);
+    const r = await verifyGoogle(deps, d, body, reply, ctx);
     if (!r.ok) return reply;
-    const { userId } = await signInWithGoogle(d, r.v);
-    return signedIn(server, d, userId);
+    const { userId } = await signInWithGoogle(d, r.v, now);
+    // Quá hạn xóa 30 ngày mà job dọn chưa chạy: coi như không có tài khoản — cùng lỗi với /login (Task 4)
+    if (await isPastDeletion(d, userId, now)) {
+      deps.audit.noteAuthFailure(ctx, 'invalid_credentials');
+      return reply.status(401).send({ error: AuthErrorCode.invalidCredentials });
+    }
+    return signedIn(server, d, userId, now);
   });
 };
 
@@ -103,8 +112,11 @@ export const identityRoutes: FastifyPluginAsync<RouteDeps> = async (server, deps
     const d = await db.get();
     const r = await verifyGoogle(deps, d, body, reply, AuditLog.context(req));
     if (!r.ok) return reply;
-    const res = await linkGoogle(d, userId, r.v);
+    const now = deps.clock();
+    const res = await linkGoogle(d, userId, r.v, now);
     switch (res.kind) {
+      case 'pending_deletion':
+        return reply.status(403).send({ error: 'account_pending_deletion' });
       case 'identity_in_use':
         return reply.status(409).send({ error: AuthErrorCode.identityInUse });
       case 'needs_merge':
@@ -115,9 +127,9 @@ export const identityRoutes: FastifyPluginAsync<RouteDeps> = async (server, deps
         });
       case 'switched':
         pipeline.forgetUser(res.removedGuestId); // access token của khách đã xóa bị từ chối ngay
-        return signedIn(server, d, res.userId);
+        return signedIn(server, d, res.userId, now);
       case 'linked':
-        return signedIn(server, d, res.userId);
+        return signedIn(server, d, res.userId, now);
     }
   });
 
@@ -133,6 +145,7 @@ export const identityRoutes: FastifyPluginAsync<RouteDeps> = async (server, deps
     const d = await db.get();
     const res = await unlinkIdentity(d, userId, params.id);
     if (res.kind === 'not_found') return reply.status(404).send({ error: 'not_found' });
+    if (res.kind === 'pending_deletion') return reply.status(403).send({ error: 'account_pending_deletion' });
     if (res.kind === 'last_identity') return reply.status(409).send({ error: AuthErrorCode.lastIdentity });
     return respond(IdentityListResponseSchema, { identities: await listIdentities(d, userId) });
   });
