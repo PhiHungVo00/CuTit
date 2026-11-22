@@ -115,7 +115,7 @@ test('computeStatus', () => {
 
 test('hook 426: chỉ khi header hợp lệ và build < minBuild, trước cả 401', async () => {
   const a = await app(makeCfg({ play: channel({ latestBuild: 3, latestVersion: '0.0.3', minBuild: 2 }) }));
-  const me = (headers) => a.inject({ method: 'GET', url: '/v1/me', headers });
+  const me = (headers) => a.inject({ method: 'GET', url: '/v1/quota', headers });
   const blocked = await me({ 'x-app-build': '1', 'x-app-channel': 'play' });
   assert.equal(blocked.statusCode, 426);
   assert.deepEqual(blocked.json(), { error: 'app_update_required', minBuild: 2, channel: 'play' });
@@ -131,13 +131,13 @@ test('hook 426: chỉ khi header hợp lệ và build < minBuild, trước cả 
 test('miễn trừ: DELETE /v1/me, /v1/app/version, /v1/auth/*, /healthz không bị 426', async () => {
   const a = await app(makeCfg({ play: channel({ latestBuild: 3, latestVersion: '0.0.3', minBuild: 2 }) }));
   const h = { 'x-app-build': '1', 'x-app-channel': 'play' };
-  assert.notEqual((await a.inject({ method: 'DELETE', url: '/v1/me', headers: h })).statusCode, 426);
+  assert.notEqual((await a.inject({ method: 'DELETE', url: '/v1/quota', headers: h })).statusCode, 426);
   assert.equal((await a.inject({ method: 'GET', url: '/v1/app/version?channel=play&build=1', headers: h })).statusCode, 200);
   assert.equal((await a.inject({ method: 'POST', url: '/v1/auth/guest', headers: h })).statusCode, 200);
   assert.equal((await a.inject({ method: 'GET', url: '/healthz', headers: h })).statusCode, 200);
 });
 
-test('ân hạn: dưới min nhưng chưa tới minBuildEnforceAt ⇒ /v1/me không 426, /v1/app/version vẫn update_required', async () => {
+test('ân hạn: dưới min nhưng chưa tới minBuildEnforceAt ⇒ /v1/quota không 426, /v1/app/version vẫn update_required', async () => {
   const NOW = Date.parse('2026-12-01T00:00:00Z');
   const h = { 'x-app-build': '1', 'x-app-channel': 'play' };
   const gateStatus = async (enforceAt) => {
@@ -149,7 +149,7 @@ test('ân hạn: dưới min nhưng chưa tới minBuildEnforceAt ⇒ /v1/me kh�
       code(c) { sent.code = c; return this; },
       send(b) { sent.body = b; return this; }
     };
-    await gate({ method: 'GET', url: '/v1/me', headers: h }, reply);
+    await gate({ method: 'GET', url: '/v1/quota', headers: h }, reply);
     return sent.code;
   };
   assert.equal(await gateStatus(new Date(NOW + 3_600_000).toISOString()), undefined); // còn 1 giờ ⇒ qua
@@ -159,7 +159,7 @@ test('ân hạn: dưới min nhưng chưa tới minBuildEnforceAt ⇒ /v1/me kh�
   // và qua HTTP thật: cấu hình ân hạn xa ⇒ /v1/me qua, /v1/app/version báo update_required
   const far = new Date(Date.now() + 3_600_000).toISOString();
   const a = await app(makeCfg({ play: channel({ latestBuild: 3, latestVersion: '0.0.3', minBuild: 2, minBuildEnforceAt: far }) }));
-  assert.notEqual((await a.inject({ method: 'GET', url: '/v1/me', headers: h })).statusCode, 426);
+  assert.notEqual((await a.inject({ method: 'GET', url: '/v1/quota', headers: h })).statusCode, 426);
   const v = await a.inject({ method: 'GET', url: '/v1/app/version?channel=play&build=1' });
   assert.equal(v.json().status, 'update_required');
 });
