@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { canOpenAppSettings, openAppSettings } from '@vietlearning/native';
 import { useLearner } from '@vietlearning/state';
 import { Button, CuTit, Icon } from '@vietlearning/ui';
@@ -8,6 +8,8 @@ import { t as tConv, useT } from '../i18n';
 import { buildSummary } from '../summary/summaryItems';
 import { SessionSummary } from '../summary/SessionSummary';
 import { useCall } from './useCall';
+import { useT as useCallT } from './i18n';
+import { VideoCallView } from './VideoCallView';
 
 const pill = 'min-h-12 rounded-xl border border-line-strong bg-surface-2 px-3 text-sm font-bold text-ink';
 const full = { width: '100%' } as const;
@@ -34,7 +36,9 @@ export function CallScreen() {
 
 function Call({ onAgain }: { onAgain: () => void }) {
   const t = useT();
-  const { state, dispatch, session, voice, words, turnsLeft, slow, setSlow, replaySlow } = useCall();
+  const tc = useCallT();
+  const wantVideo = useSearchParams()[0].get('video') === '1';
+  const { state, dispatch, setVideoElement, onCameraOff, session, voice, words, turnsLeft, slow, setSlow, replaySlow } = useCall();
   const consent = useLearner((s) => s.consents.voice === true);
   const [askConsent, setAskConsent] = useState(false);
   const [subtitles, setSubtitles] = useState(true);
@@ -43,7 +47,7 @@ function Call({ onAgain }: { onAgain: () => void }) {
 
   const start = (input: 'voice' | 'text') => {
     if (input === 'voice' && !consent) return setAskConsent(true);
-    dispatch({ type: 'START' });
+    dispatch({ type: 'START', video: input === 'voice' && wantVideo });
     if (input === 'text') dispatch({ type: 'USE_TEXT' });
   };
   const toText = () => {
@@ -60,27 +64,38 @@ function Call({ onAgain }: { onAgain: () => void }) {
     setDraft('');
   };
 
-  const turnsNote = turnsLeft !== null && <p className="m-0 text-sm text-ink-muted" data-testid="turns-left">{t('turnsLeft', { n: turnsLeft })}</p>;
+  const turnsNote = (
+    <div className="flex flex-col items-center gap-0.5 text-sm text-ink-muted">
+      <p className="m-0 font-bold" data-testid="turn-rule">
+        {state.video || (phase === 'idle' && wantVideo) ? tc('turnRuleVideo') : tc('turnRule')}
+      </p>
+      {turnsLeft !== null && (
+        <p className="m-0" data-testid="turns-left">
+          {t('turnsLeft', { n: turnsLeft })}
+        </p>
+      )}
+    </div>
+  );
 
   if (phase === 'idle') {
     return (
       <section className="flex flex-col items-center gap-3 rounded-2xl border border-line-strong bg-surface p-5 text-center shadow-card">
         <CuTit mood="chao" size={112} />
-        <p className="m-0 text-[15px] text-ink-soft">{t('callIntro')}</p>
+        <p className="m-0 text-[15px] text-ink-soft">{wantVideo ? tc('videoIntro') : t('callIntro')}</p>
         {askConsent ? (
           <VoiceConsent
             text={t('voicePrivacyCall')}
             onCancel={() => setAskConsent(false)}
             onAgree={() => {
               setAskConsent(false);
-              dispatch({ type: 'START' });
+              dispatch({ type: 'START', video: wantVideo });
             }}
           />
         ) : (
           <div className="flex w-full flex-col gap-2">
             <Button size="lg" style={full} onClick={() => start('voice')}>
-              <Icon name="goi" size={22} />
-              {t('callStart')}
+              <Icon name={wantVideo ? 'camera' : 'goi'} size={22} />
+              {wantVideo ? tc('videoStart') : t('callStart')}
             </Button>
             <Button variant="secondary" style={full} onClick={() => start('text')}>
               {t('typeInstead')}
@@ -125,11 +140,13 @@ function Call({ onAgain }: { onAgain: () => void }) {
     phase === 'listening'
       ? voice.status === 'transcribing'
         ? t('callHearing')
-        : t('callListening')
+        : tc('statusListening')
       : phase === 'thinking'
-        ? t('callThinking')
+        ? state.video
+          ? tc('statusWatching')
+          : tc('statusThinking')
         : phase === 'speaking'
-          ? t('callSpeaking')
+          ? tc('statusSpeaking')
           : phase === 'typing'
             ? t('callTyping')
             : state.error ?? (voice.error ? t(`voice.${voice.error}`) : t('callPaused'));
@@ -141,6 +158,12 @@ function Call({ onAgain }: { onAgain: () => void }) {
         <p role="status" aria-live="polite" className="m-0 text-[16px] font-bold text-ink" data-testid="call-status">
           {status}
         </p>
+        {state.video && <VideoCallView onVideo={setVideoElement} onCameraOff={onCameraOff} />}
+        {state.cameraNote && (
+          <p role="status" className="m-0 w-full rounded-xl bg-surface-2 p-3 text-sm text-ink" data-testid="camera-note">
+            {state.cameraNote === 'permission-denied' ? tc('cameraDenied') : state.cameraNote === 'user' ? tc('cameraStopped') : tc('cameraFailed')}
+          </p>
+        )}
         {recording && (
           <div aria-hidden="true" className="h-2 w-40 overflow-hidden rounded-full bg-surface-2">
             <div className="h-full origin-left rounded-full bg-accent" style={{ transform: `scaleX(${Math.max(0.05, voice.level)})` }} />
