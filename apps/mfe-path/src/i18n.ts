@@ -7,9 +7,6 @@ import { defineMessages } from '@vietlearning/state';
 export const { useT, t } = defineMessages(
   {
     // Trang chủ lộ trình
-    homeTitle: 'Chào bạn!',
-    homeLead: 'Mỗi ngày một bài ngắn: bấm “Học tiếp” để bắt đầu.',
-    homeLevel: 'Trình độ {level} · ',
     statsLabel: 'Chuỗi ngày, điểm và đóng băng',
     streak: '{n} ngày liên tiếp',
     streakLabel: 'Chuỗi ngày học',
@@ -130,9 +127,6 @@ export const { useT, t } = defineMessages(
     'region.south': 'Nam'
   },
   {
-    homeTitle: 'Hi there!',
-    homeLead: 'One short lesson a day: tap “Continue” to start.',
-    homeLevel: 'Level {level} · ',
     statsLabel: 'Streak, points and freezes',
     streak: '{n}-day streak',
     streakLabel: 'Study streak',

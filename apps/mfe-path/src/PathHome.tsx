@@ -1,7 +1,7 @@
 import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { COURSE } from '@vietlearning/content';
-import { cefrLabel, dayKey, dueCards, learnerStore, useLearner, useUiLanguage } from '@vietlearning/state';
+import { dayKey, dueCards, learnerStore, useLearner, useUiLanguage } from '@vietlearning/state';
 import { goalProgress, learnedDays, progressStore, streakWithFreezes, totalXp, useProgress, weekCalendar } from '@vietlearning/state/progress';
 import { useT } from './i18n';
 import { lessonStatuses, nextLesson, unitProgress } from './path/pathModel';
@@ -9,7 +9,7 @@ import { lessonHref } from './path/lessonHref';
 import { defaultVisible } from './path/visibility';
 import { GoalPanel } from './GoalPanel';
 import { startGoalWatch, syncReminders } from './reminders';
-import { Card, CuTit, Icon } from '@vietlearning/ui';
+import { Card, Icon } from '@vietlearning/ui';
 import { cardStack, LinkButton } from './Page';
 
 // Thẻ miền (GĐ2) chỉ tải khi người học mở
@@ -24,7 +24,6 @@ const Motivation = lazy(() => import('./motivation/Motivation'));
 export function PathHome() {
   const t = useT();
   const en = useUiLanguage() === 'en';
-  const profile = useLearner((s) => s.profile);
   const activity = useLearner((s) => s.activity);
   const srs = useLearner((s) => s.srs);
   const lessons = useProgress((s) => s.lessons);
@@ -55,17 +54,6 @@ export function PathHome() {
 
   return (
     <div className="flex flex-col gap-4">
-      <header className="flex items-center gap-3">
-        <CuTit mood="chao" size={64} />
-        <div className="min-w-0 flex-1">
-          <h1 className="m-0 text-2xl font-black leading-tight text-heading">{t('homeTitle')}</h1>
-          <p className="m-0 mt-1 text-sm text-ink-soft">
-            {profile.onboarded ? t('homeLevel', { level: cefrLabel(profile.level) }) : ''}
-            {t('homeLead')}
-          </p>
-        </div>
-      </header>
-
       <ul className="m-0 flex list-none flex-wrap gap-2 p-0" aria-label={t('statsLabel')}>
         <li className="rounded-full bg-surface-2 px-3 py-1 text-sm font-bold text-heading" aria-label={t('streak', { n: streak })}>
           <span data-testid="streak">🔥 {streak}</span>
@@ -130,15 +118,11 @@ export function PathHome() {
         </ol>
       </section>
 
-      <Suspense fallback={null}>
-        <Motivation part="panel" />
-      </Suspense>
-
       <section aria-labelledby="ct-path" className="flex flex-col gap-3">
         <h2 id="ct-path" className="m-0 text-lg font-black text-heading">
           {t('pathTitle')}
         </h2>
-        <p className="m-0 text-sm text-ink-soft">{t('pathNote')}</p>
+        <p className="m-0 text-xs text-ink-soft">{t('pathNote')}</p>
         {COURSE.units.map((u) => {
           const p = unitProgress(u, lessons, testedOut);
           return (
@@ -190,6 +174,11 @@ export function PathHome() {
         })}
         <p className="m-0 text-xs italic text-ink-muted">{t('draftContent')}</p>
       </section>
+
+      {/* Panel lười (tổng kết tuần + huy hiệu) đặt dưới bản đồ: nằm ngoài màn hình đầu nên không thành phần tử LCP muộn (soi LCP 3 s) */}
+      <Suspense fallback={null}>
+        <Motivation part="panel" />
+      </Suspense>
 
       <GoalPanel />
     </div>

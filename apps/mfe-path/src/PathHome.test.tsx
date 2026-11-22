@@ -23,14 +23,6 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe('Trang Học (P1-1)', () => {
-  it('tiêu đề một dòng “Chào bạn!” với Cu Tít chào bên trái', () => {
-    const { container } = show();
-    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Chào bạn!');
-    const first = container.querySelector('img')!;
-    expect(first.getAttribute('src')).toContain('cutit-chao');
-    expect(first.getAttribute('width')).toBe('64');
-  });
-
   it('không còn nút đổi ngôn ngữ (đã có ở Cài đặt)', () => {
     show();
     expect(screen.queryByRole('button', { name: /English|Switch the app/ })).toBeNull();
@@ -50,15 +42,5 @@ describe('Trang Học (P1-1)', () => {
     const cta = screen.getByRole('link', { name: /Bắt đầu bài đầu tiên/ });
     const review = screen.getByRole('link', { name: /Ôn hôm nay/ });
     expect(cta.compareDocumentPosition(review) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-  });
-
-  it('đã làm quen => dòng phụ có trình độ; en có đủ chữ', () => {
-    learnerStore.setState((s) => ({ profile: { ...s.profile, onboarded: true, level: 'B1' as never } }));
-    show();
-    expect(screen.getByText(/Trình độ .* · Mỗi ngày một bài ngắn/)).toBeTruthy();
-    cleanup();
-    learnerStore.getState().setPreferences({ uiLanguage: 'en' });
-    show();
-    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Hi there!');
   });
 });
