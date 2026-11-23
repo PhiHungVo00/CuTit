@@ -1,0 +1,771 @@
+"tieu_de","noi_dung","nhan","thu_muc"
+"[02-01] Viết test cho hộp đồng ý AI (`AiConsentDialog`)","**Mã việc:** 02-01 · **Ưu tiên:** P2 · **Ước lượng:** 1 giờ · **Loại:** test · **Cụm:** Vào nghề
+
+## Việc cần làm
+Màn này chưa có test. Kiểm: hiện tên nhà cung cấp, nút Đồng ý gọi đúng hàm, nút Từ chối gọi đúng hàm, không hiện lại sau khi đồng ý.
+
+## Tệp liên quan
+- `02-hoi-thoai-ai/apps/mfe-conversation/src/chat/AiConsentDialog.tsx`
+- `02-hoi-thoai-ai/apps/mfe-conversation/src/chat/AiConsentDialog.test.tsx (tạo mới)`
+
+## Tiêu chí đạt
+≥ 3 ca test xanh bằng `corepack pnpm --filter @vietlearning/mfe-conversation test`; mẫu: `VoiceConsent.test.tsx` cùng thư mục.
+
+## Cách làm
+1. Mở nhánh `02/<tên-việc-ngắn>` từ `main` mới nhất.
+2. Chỉ sửa trong thư mục `02-hoi-thoai-ai/` (trừ khi việc ghi khác); cần sửa chỗ khác thì hỏi chủ thư mục.
+3. Làm xong chạy test của gói liên quan (lệnh ghi ở Tiêu chí đạt) rồi mở PR, ghi mã việc `02-01` trong mô tả, nói rõ đã chạy gì.
+4. Không commit khóa, `.env` hay dữ liệu cá nhân (repo công khai).
+
+_Nguồn: Tệp chưa có test (kiểm trên nhánh PR #34). Backlog đầy đủ: `docs/nhom/backlog.xlsx`._","thu-muc-02,vao-nghe,test,P2","02"
+"[02-02] Viết test cho khung nhập tin (`Composer`)","**Mã việc:** 02-02 · **Ưu tiên:** P2 · **Ước lượng:** 1.5 giờ · **Loại:** test · **Cụm:** Vào nghề
+
+## Việc cần làm
+Kiểm: không gửi được tin rỗng/toàn khoảng trắng; Enter gửi, nút gửi gọi hàm; ô nhập được xóa sau khi gửi.
+
+## Tệp liên quan
+- `02-hoi-thoai-ai/apps/mfe-conversation/src/chat/Composer.tsx`
+- `02-hoi-thoai-ai/apps/mfe-conversation/src/chat/Composer.test.tsx (tạo mới)`
+
+## Tiêu chí đạt
+≥ 3 ca test xanh; không sửa mã app (nếu thấy lỗi thì mở Issue riêng).
+
+## Cách làm
+1. Mở nhánh `02/<tên-việc-ngắn>` từ `main` mới nhất.
+2. Chỉ sửa trong thư mục `02-hoi-thoai-ai/` (trừ khi việc ghi khác); cần sửa chỗ khác thì hỏi chủ thư mục.
+3. Làm xong chạy test của gói liên quan (lệnh ghi ở Tiêu chí đạt) rồi mở PR, ghi mã việc `02-02` trong mô tả, nói rõ đã chạy gì.
+4. Không commit khóa, `.env` hay dữ liệu cá nhân (repo công khai).
+
+_Nguồn: Tệp chưa có test. Backlog đầy đủ: `docs/nhom/backlog.xlsx`._","thu-muc-02,vao-nghe,test,P2","02"
+"[02-03] Viết test cho bong bóng tin nhắn (`MessageBubble`)","**Mã việc:** 02-03 · **Ưu tiên:** P2 · **Ước lượng:** 1 giờ · **Loại:** test · **Cụm:** Vào nghề
+
+## Việc cần làm
+Kiểm: tin của người dùng và của Cu Tít khác kiểu; chuỗi có thẻ HTML như `<b>x</b>` hiện nguyên văn (nguyên tắc 6, UI không render HTML thô).
+
+## Tệp liên quan
+- `02-hoi-thoai-ai/apps/mfe-conversation/src/chat/MessageBubble.tsx`
+- `02-hoi-thoai-ai/apps/mfe-conversation/src/chat/MessageBubble.test.tsx (tạo mới)`
+
+## Tiêu chí đạt
+≥ 3 ca test xanh, trong đó 1 ca chứng minh HTML không bị render.
+
+## Cách làm
+1. Mở nhánh `02/<tên-việc-ngắn>` từ `main` mới nhất.
+2. Chỉ sửa trong thư mục `02-hoi-thoai-ai/` (trừ khi việc ghi khác); cần sửa chỗ khác thì hỏi chủ thư mục.
+3. Làm xong chạy test của gói liên quan (lệnh ghi ở Tiêu chí đạt) rồi mở PR, ghi mã việc `02-03` trong mô tả, nói rõ đã chạy gì.
+4. Không commit khóa, `.env` hay dữ liệu cá nhân (repo công khai).
+
+_Nguồn: AGENTS.md mục 2, nguyên tắc 6. Backlog đầy đủ: `docs/nhom/backlog.xlsx`._","thu-muc-02,vao-nghe,test,P2","02"
+"[02-04] Viết test cho màn tóm tắt buổi hội thoại (`SessionSummary`)","**Mã việc:** 02-04 · **Ưu tiên:** P2 · **Ước lượng:** 1.5 giờ · **Loại:** test · **Cụm:** Vào nghề
+
+## Việc cần làm
+Tệp `summaryItems.ts` đã có test, màn `SessionSummary.tsx` thì chưa. Kiểm hiện danh sách từ mới, trạng thái rỗng, nút đóng.
+
+## Tệp liên quan
+- `02-hoi-thoai-ai/apps/mfe-conversation/src/summary/SessionSummary.tsx`
+- `02-hoi-thoai-ai/apps/mfe-conversation/src/summary/SessionSummary.test.tsx (tạo mới)`
+
+## Tiêu chí đạt
+≥ 3 ca test xanh; có ca danh sách rỗng.
+
+## Cách làm
+1. Mở nhánh `02/<tên-việc-ngắn>` từ `main` mới nhất.
+2. Chỉ sửa trong thư mục `02-hoi-thoai-ai/` (trừ khi việc ghi khác); cần sửa chỗ khác thì hỏi chủ thư mục.
+3. Làm xong chạy test của gói liên quan (lệnh ghi ở Tiêu chí đạt) rồi mở PR, ghi mã việc `02-04` trong mô tả, nói rõ đã chạy gì.
+4. Không commit khóa, `.env` hay dữ liệu cá nhân (repo công khai).
+
+_Nguồn: Tệp chưa có test. Backlog đầy đủ: `docs/nhom/backlog.xlsx`._","thu-muc-02,vao-nghe,test,P2","02"
+"[02-05] Viết test khói cho màn nhập vai (`RoleplayScreen`)","**Mã việc:** 02-05 · **Ưu tiên:** P2 · **Ước lượng:** 1.5 giờ · **Loại:** test · **Cụm:** Vào nghề
+
+## Việc cần làm
+Chỉ cần kiểm màn hiển thị được danh sách kịch bản (từ `@vietlearning/content`) và chọn một kịch bản thì chuyển bước. Có thể mock mạng.
+
+## Tệp liên quan
+- `02-hoi-thoai-ai/apps/mfe-conversation/src/roleplay/RoleplayScreen.tsx`
+- `02-hoi-thoai-ai/apps/mfe-conversation/src/roleplay/RoleplayScreen.test.tsx (tạo mới)`
+
+## Tiêu chí đạt
+≥ 2 ca test xanh; mẫu mock: `ChatScreen.test.tsx`.
+
+## Cách làm
+1. Mở nhánh `02/<tên-việc-ngắn>` từ `main` mới nhất.
+2. Chỉ sửa trong thư mục `02-hoi-thoai-ai/` (trừ khi việc ghi khác); cần sửa chỗ khác thì hỏi chủ thư mục.
+3. Làm xong chạy test của gói liên quan (lệnh ghi ở Tiêu chí đạt) rồi mở PR, ghi mã việc `02-05` trong mô tả, nói rõ đã chạy gì.
+4. Không commit khóa, `.env` hay dữ liệu cá nhân (repo công khai).
+
+_Nguồn: Màn M7 chưa có test riêng. Backlog đầy đủ: `docs/nhom/backlog.xlsx`._","thu-muc-02,vao-nghe,test,P2","02"
+"[02-06] Viết test cho mô tả khóa tiếng Việt/Anh của màn Gọi (`call/i18n.ts`)","**Mã việc:** 02-06 · **Ưu tiên:** P2 · **Ước lượng:** 1 giờ · **Loại:** test · **Cụm:** Vào nghề
+
+## Việc cần làm
+Theo quy tắc song ngữ: mọi chuỗi UI phải có cả vi và en. Viết test duyệt qua mọi khóa và kiểm cả hai ngôn ngữ đều có chuỗi không rỗng.
+
+## Tệp liên quan
+- `02-hoi-thoai-ai/apps/mfe-conversation/src/call/i18n.ts`
+- `02-hoi-thoai-ai/apps/mfe-conversation/src/call/i18n.test.ts (tạo mới)`
+
+## Tiêu chí đạt
+Test xanh; nếu thấy khóa thiếu thì sửa luôn chuỗi thiếu trong `i18n.ts` và nêu trong PR.
+
+## Cách làm
+1. Mở nhánh `02/<tên-việc-ngắn>` từ `main` mới nhất.
+2. Chỉ sửa trong thư mục `02-hoi-thoai-ai/` (trừ khi việc ghi khác); cần sửa chỗ khác thì hỏi chủ thư mục.
+3. Làm xong chạy test của gói liên quan (lệnh ghi ở Tiêu chí đạt) rồi mở PR, ghi mã việc `02-06` trong mô tả, nói rõ đã chạy gì.
+4. Không commit khóa, `.env` hay dữ liệu cá nhân (repo công khai).
+
+_Nguồn: Quy tắc song ngữ (bộ nhớ dự án: bilingual-ui-rule). Backlog đầy đủ: `docs/nhom/backlog.xlsx`._","thu-muc-02,vao-nghe,test,P2","02"
+"[02-07] Viết test song ngữ cho `mfe-vision/src/i18n.ts`","**Mã việc:** 02-07 · **Ưu tiên:** P2 · **Ước lượng:** 1 giờ · **Loại:** test · **Cụm:** Vào nghề
+
+## Việc cần làm
+Giống việc trên nhưng cho màn Camera AI: mọi khóa có vi và en, không rỗng.
+
+## Tệp liên quan
+- `02-hoi-thoai-ai/apps/mfe-vision/src/i18n.ts`
+- `02-hoi-thoai-ai/apps/mfe-vision/src/i18n.test.ts (tạo mới)`
+
+## Tiêu chí đạt
+Test xanh bằng `corepack pnpm --filter @vietlearning/mfe-vision test`.
+
+## Cách làm
+1. Mở nhánh `02/<tên-việc-ngắn>` từ `main` mới nhất.
+2. Chỉ sửa trong thư mục `02-hoi-thoai-ai/` (trừ khi việc ghi khác); cần sửa chỗ khác thì hỏi chủ thư mục.
+3. Làm xong chạy test của gói liên quan (lệnh ghi ở Tiêu chí đạt) rồi mở PR, ghi mã việc `02-07` trong mô tả, nói rõ đã chạy gì.
+4. Không commit khóa, `.env` hay dữ liệu cá nhân (repo công khai).
+
+_Nguồn: Quy tắc song ngữ. Backlog đầy đủ: `docs/nhom/backlog.xlsx`._","thu-muc-02,vao-nghe,test,P2","02"
+"[02-08] Viết README cho `mfe-conversation`: sơ đồ trạng thái lượt chat","**Mã việc:** 02-08 · **Ưu tiên:** P2 · **Ước lượng:** 1.5 giờ · **Loại:** tài liệu · **Cụm:** Vào nghề
+
+## Việc cần làm
+Đọc `TurnStateMachine.ts` và `useChatSession.ts`, vẽ sơ đồ (bảng hoặc mermaid) các trạng thái và chuyển tiếp của một lượt chat; liệt kê thư mục `chat/`, `call/`, `roleplay/`, `summary/` làm gì.
+
+## Tệp liên quan
+- `02-hoi-thoai-ai/apps/mfe-conversation/README.md (tạo mới)`
+- `02-hoi-thoai-ai/apps/mfe-conversation/src/state/TurnStateMachine.ts`
+
+## Tiêu chí đạt
+README tiếng Việt ≤ 1 trang, mỗi trạng thái trong `TurnStateMachine.ts` đều có trong sơ đồ; người mới đọc hiểu được.
+
+## Cách làm
+1. Mở nhánh `02/<tên-việc-ngắn>` từ `main` mới nhất.
+2. Chỉ sửa trong thư mục `02-hoi-thoai-ai/` (trừ khi việc ghi khác); cần sửa chỗ khác thì hỏi chủ thư mục.
+3. Làm xong chạy test của gói liên quan (lệnh ghi ở Tiêu chí đạt) rồi mở PR, ghi mã việc `02-08` trong mô tả, nói rõ đã chạy gì.
+4. Không commit khóa, `.env` hay dữ liệu cá nhân (repo công khai).
+
+_Nguồn: Mô-đun chưa có README. Backlog đầy đủ: `docs/nhom/backlog.xlsx`._","thu-muc-02,vao-nghe,tai-lieu,P2","02"
+"[02-09] Viết README cho `packages/prompts` (PromptBuilder)","**Mã việc:** 02-09 · **Ưu tiên:** P2 · **Ước lượng:** 1 giờ · **Loại:** tài liệu · **Cụm:** Vào nghề
+
+## Việc cần làm
+Giải thích PromptBuilder tạo prompt cho Bé Cu Tít thế nào, có đầu vào/đầu ra gì, vì sao prompt có phiên bản.
+
+## Tệp liên quan
+- `02-hoi-thoai-ai/packages/prompts/src/PromptBuilder.ts`
+- `02-hoi-thoai-ai/packages/prompts/README.md (tạo mới)`
+
+## Tiêu chí đạt
+README tiếng Việt, có 1 ví dụ gọi hàm, nêu rõ ràng không chứa khóa API.
+
+## Cách làm
+1. Mở nhánh `02/<tên-việc-ngắn>` từ `main` mới nhất.
+2. Chỉ sửa trong thư mục `02-hoi-thoai-ai/` (trừ khi việc ghi khác); cần sửa chỗ khác thì hỏi chủ thư mục.
+3. Làm xong chạy test của gói liên quan (lệnh ghi ở Tiêu chí đạt) rồi mở PR, ghi mã việc `02-09` trong mô tả, nói rõ đã chạy gì.
+4. Không commit khóa, `.env` hay dữ liệu cá nhân (repo công khai).
+
+_Nguồn: AGENTS.md mục 1 (packages/prompts). Backlog đầy đủ: `docs/nhom/backlog.xlsx`._","thu-muc-02,vao-nghe,tai-lieu,P2","02"
+"[02-10] Thêm test đầu tiên cho `packages/prompts`","**Mã việc:** 02-10 · **Ưu tiên:** P2 · **Ước lượng:** 1.5 giờ · **Loại:** test · **Cụm:** Vào nghề
+
+## Việc cần làm
+Gói chưa có thư mục test và chưa có script `test`. Thêm script `test` vào `package.json`, một tệp test kiểm PromptBuilder trả chuỗi không rỗng và đổi theo đầu vào.
+
+## Tệp liên quan
+- `02-hoi-thoai-ai/packages/prompts/package.json`
+- `02-hoi-thoai-ai/packages/prompts/test/prompt-builder.test.mjs (tạo mới)`
+
+## Tiêu chí đạt
+`corepack pnpm --filter @vietlearning/prompts test` chạy và xanh; không đổi hành vi PromptBuilder.
+
+## Cách làm
+1. Mở nhánh `02/<tên-việc-ngắn>` từ `main` mới nhất.
+2. Chỉ sửa trong thư mục `02-hoi-thoai-ai/` (trừ khi việc ghi khác); cần sửa chỗ khác thì hỏi chủ thư mục.
+3. Làm xong chạy test của gói liên quan (lệnh ghi ở Tiêu chí đạt) rồi mở PR, ghi mã việc `02-10` trong mô tả, nói rõ đã chạy gì.
+4. Không commit khóa, `.env` hay dữ liệu cá nhân (repo công khai).
+
+_Nguồn: Gói chưa có test. Backlog đầy đủ: `docs/nhom/backlog.xlsx`._","thu-muc-02,vao-nghe,test,P2","02"
+"[02-11] Thiết kế dự án 2b: AI tương tác trong chat (spec)","**Mã việc:** 02-11 · **Ưu tiên:** P1 · **Ước lượng:** 6 giờ · **Loại:** tài liệu · **Cụm:** Cụm lớn
+
+## Việc cần làm
+Chưa có thiết kế. Đọc nghiên cứu, trả lời các quyết định cần người dùng (mục 5), viết spec ở `docs/superpowers/specs/` theo quy trình brainstorming của dự án. Cần người dùng duyệt trước khi code.
+
+## Tệp liên quan
+- `docs/thiet-ke/NGHIEN-CUU-AI-TUONG-TAC.md`
+- `docs/nhat-ky/GOP-Y-20-11.md`
+- `docs/superpowers/specs/ (tạo spec mới)`
+
+## Tiêu chí đạt
+Spec có mục phương án, mục tiêu/không làm, người đọc độc lập rà; người dùng duyệt.
+
+## Cách làm
+1. Mở nhánh `02/<tên-việc-ngắn>` từ `main` mới nhất.
+2. Chỉ sửa trong thư mục `02-hoi-thoai-ai/` (trừ khi việc ghi khác); cần sửa chỗ khác thì hỏi chủ thư mục.
+3. Làm xong chạy test của gói liên quan (lệnh ghi ở Tiêu chí đạt) rồi mở PR, ghi mã việc `02-11` trong mô tả, nói rõ đã chạy gì.
+4. Không commit khóa, `.env` hay dữ liệu cá nhân (repo công khai).
+
+_Nguồn: docs/thiet-ke/NGHIEN-CUU-AI-TUONG-TAC.md mục 5. Backlog đầy đủ: `docs/nhom/backlog.xlsx`._","thu-muc-02,cum-lon,tai-lieu,P1","02"
+"[02-12] Dự án 2b: hợp đồng khối bấm trong chat (thay `payload: z.record(z.any())`)","**Mã việc:** 02-12 · **Ưu tiên:** P2 · **Ước lượng:** 8 giờ · **Loại:** tính năng · **Cụm:** Cụm lớn
+
+## Việc cần làm
+Khai báo các loại khối bấm bằng Zod chặt chẽ (contract-first). Sửa contracts ở PR riêng, 01 duyệt.
+
+## Tệp liên quan
+- `01-nen-tang/packages/contracts/src/`
+- `02-hoi-thoai-ai/apps/mfe-conversation/src/chat/AgentBlockView.tsx`
+
+## Tiêu chí đạt
+Test contract: khối sai hình dạng bị từ chối; chỉ làm sau khi spec 2b được duyệt.
+
+## Cách làm
+1. Mở nhánh `02/<tên-việc-ngắn>` từ `main` mới nhất.
+2. Chỉ sửa trong thư mục `02-hoi-thoai-ai/` (trừ khi việc ghi khác); cần sửa chỗ khác thì hỏi chủ thư mục.
+3. Làm xong chạy test của gói liên quan (lệnh ghi ở Tiêu chí đạt) rồi mở PR, ghi mã việc `02-12` trong mô tả, nói rõ đã chạy gì.
+4. Không commit khóa, `.env` hay dữ liệu cá nhân (repo công khai).
+
+_Nguồn: docs/thiet-ke/NGHIEN-CUU-AI-TUONG-TAC.md mục 2.2–2.3. Backlog đầy đủ: `docs/nhom/backlog.xlsx`._","thu-muc-02,cum-lon,tinh-nang,P2","02"
+"[02-13] Dự án 2b: Gateway cho LLM sinh khối an toàn","**Mã việc:** 02-13 · **Ưu tiên:** P2 · **Ước lượng:** 10 giờ · **Loại:** tính năng · **Cụm:** Cụm lớn
+
+## Việc cần làm
+Prompt + kiểm Zod đầu ra LLM thành khối bấm; tính chi phí token (Groq free 8 000 token/phút).
+
+## Tệp liên quan
+- `01-nen-tang/apps/gateway/src/services/chat/tutor.ts`
+- `01-nen-tang/apps/gateway/src/services/chat/mockTutor.ts`
+- `01-nen-tang/apps/gateway/test/chat.test.mjs`
+
+## Tiêu chí đạt
+Test Gateway: đầu ra LLM sai bị loại, không render HTML thô; chỉ làm sau spec 2b.
+
+## Cách làm
+1. Mở nhánh `02/<tên-việc-ngắn>` từ `main` mới nhất.
+2. Chỉ sửa trong thư mục `02-hoi-thoai-ai/` (trừ khi việc ghi khác); cần sửa chỗ khác thì hỏi chủ thư mục.
+3. Làm xong chạy test của gói liên quan (lệnh ghi ở Tiêu chí đạt) rồi mở PR, ghi mã việc `02-13` trong mô tả, nói rõ đã chạy gì.
+4. Không commit khóa, `.env` hay dữ liệu cá nhân (repo công khai).
+
+_Nguồn: docs/thiet-ke/NGHIEN-CUU-AI-TUONG-TAC.md mục 2.5–2.6. Backlog đầy đủ: `docs/nhom/backlog.xlsx`._","thu-muc-02,cum-lon,tinh-nang,P2","02"
+"[02-14] Dự án 2b: giao diện mười mẫu khối bấm trong chat","**Mã việc:** 02-14 · **Ưu tiên:** P2 · **Ước lượng:** 14 giờ · **Loại:** tính năng · **Cụm:** Cụm lớn
+
+## Việc cần làm
+Dựng các mẫu khối (trắc nghiệm nhanh, thẻ từ...) trong `AgentBlockView`, tôn trọng i18n và a11y.
+
+## Tệp liên quan
+- `02-hoi-thoai-ai/apps/mfe-conversation/src/chat/AgentBlockView.tsx`
+- `01-nen-tang/packages/ui/src/agent-blocks/`
+
+## Tiêu chí đạt
+Mỗi mẫu có test render + axe; vi/en đủ; chỉ làm sau khi contract và Gateway xong.
+
+## Cách làm
+1. Mở nhánh `02/<tên-việc-ngắn>` từ `main` mới nhất.
+2. Chỉ sửa trong thư mục `02-hoi-thoai-ai/` (trừ khi việc ghi khác); cần sửa chỗ khác thì hỏi chủ thư mục.
+3. Làm xong chạy test của gói liên quan (lệnh ghi ở Tiêu chí đạt) rồi mở PR, ghi mã việc `02-14` trong mô tả, nói rõ đã chạy gì.
+4. Không commit khóa, `.env` hay dữ liệu cá nhân (repo công khai).
+
+_Nguồn: docs/thiet-ke/NGHIEN-CUU-AI-TUONG-TAC.md mục 1.2. Backlog đầy đủ: `docs/nhom/backlog.xlsx`._","thu-muc-02,cum-lon,tinh-nang,P2","02"
+"[02-15] Dự án 2b: Cu Tít chủ động nhắc (luật kích hoạt, tần suất, tắt được)","**Mã việc:** 02-15 · **Ưu tiên:** P2 · **Ước lượng:** 10 giờ · **Loại:** tính năng · **Cụm:** Cụm lớn
+
+## Việc cần làm
+Luật kích hoạt, giảm dần, tôn trọng không làm phiền và âm thanh.
+
+## Tệp liên quan
+- `02-hoi-thoai-ai/apps/mfe-conversation/src/chat/`
+- `01-nen-tang/packages/state/src/`
+
+## Tiêu chí đạt
+Có công tắc tắt trong Cài đặt; test luật kích hoạt xanh; không nhắc quá tần suất đã chốt trong spec.
+
+## Cách làm
+1. Mở nhánh `02/<tên-việc-ngắn>` từ `main` mới nhất.
+2. Chỉ sửa trong thư mục `02-hoi-thoai-ai/` (trừ khi việc ghi khác); cần sửa chỗ khác thì hỏi chủ thư mục.
+3. Làm xong chạy test của gói liên quan (lệnh ghi ở Tiêu chí đạt) rồi mở PR, ghi mã việc `02-15` trong mô tả, nói rõ đã chạy gì.
+4. Không commit khóa, `.env` hay dữ liệu cá nhân (repo công khai).
+
+_Nguồn: docs/thiet-ke/NGHIEN-CUU-AI-TUONG-TAC.md mục 3. Backlog đầy đủ: `docs/nhom/backlog.xlsx`._","thu-muc-02,cum-lon,tinh-nang,P2","02"
+"[02-16] Dự án 2b: nối khối bấm với SM-2 (A4) và xưng hô (A6)","**Mã việc:** 02-16 · **Ưu tiên:** P2 · **Ước lượng:** 6 giờ · **Loại:** tính năng · **Cụm:** Cụm lớn
+
+## Việc cần làm
+Khối ôn từ dùng lịch SM-2 sẵn có, khối xưng hô dùng HonorificInterpreter; không thêm thuật toán mới.
+
+## Tệp liên quan
+- `02-hoi-thoai-ai/apps/mfe-conversation/src/`
+- `01-nen-tang/packages/shared/src/srs/sm2.ts`
+- `04-am-thanh-tri-thuc/packages/content/src/honorifics/HonorificInterpreter.ts`
+
+## Tiêu chí đạt
+Kết quả khối ghi vào thẻ SM-2 đúng; test xanh; không thêm thuật toán ngoài A1–A8.
+
+## Cách làm
+1. Mở nhánh `02/<tên-việc-ngắn>` từ `main` mới nhất.
+2. Chỉ sửa trong thư mục `02-hoi-thoai-ai/` (trừ khi việc ghi khác); cần sửa chỗ khác thì hỏi chủ thư mục.
+3. Làm xong chạy test của gói liên quan (lệnh ghi ở Tiêu chí đạt) rồi mở PR, ghi mã việc `02-16` trong mô tả, nói rõ đã chạy gì.
+4. Không commit khóa, `.env` hay dữ liệu cá nhân (repo công khai).
+
+_Nguồn: docs/thiet-ke/NGHIEN-CUU-AI-TUONG-TAC.md mục 2.7. Backlog đầy đủ: `docs/nhom/backlog.xlsx`._","thu-muc-02,cum-lon,tinh-nang,P2","02"
+"[03-01] Viết test cho hàm chấm bài nói (`gradeAssess`)","**Mã việc:** 03-01 · **Ưu tiên:** P2 · **Ước lượng:** 1.5 giờ · **Loại:** test · **Cụm:** Vào nghề
+
+## Việc cần làm
+Hàm trong `speak/grade.ts` (ngưỡng đạt `SPEAK_PASS = 70`) chưa có test riêng. Kiểm: điểm ≥ 70 đúng, < 70 sai, điểm mock không tính là đúng ra sao (đọc code để xác định), quality ở các mốc.
+
+## Tệp liên quan
+- `03-hoc-tap/packages/exercises/src/speak/grade.ts`
+- `03-hoc-tap/packages/exercises/src/speak/grade.test.ts (tạo mới)`
+
+## Tiêu chí đạt
+≥ 5 ca test xanh bằng `corepack pnpm --filter @vietlearning/exercises test`; ca biên điểm = 69, 70.
+
+## Cách làm
+1. Mở nhánh `03/<tên-việc-ngắn>` từ `main` mới nhất.
+2. Chỉ sửa trong thư mục `03-hoc-tap/` (trừ khi việc ghi khác); cần sửa chỗ khác thì hỏi chủ thư mục.
+3. Làm xong chạy test của gói liên quan (lệnh ghi ở Tiêu chí đạt) rồi mở PR, ghi mã việc `03-01` trong mô tả, nói rõ đã chạy gì.
+4. Không commit khóa, `.env` hay dữ liệu cá nhân (repo công khai).
+
+_Nguồn: Tệp chưa có test riêng. Backlog đầy đủ: `docs/nhom/backlog.xlsx`._","thu-muc-03,vao-nghe,test,P2","03"
+"[03-02] Viết test cho `toneAnalyzer` (phần hàm thuần)","**Mã việc:** 03-02 · **Ưu tiên:** P2 · **Ước lượng:** 1.5 giờ · **Loại:** test · **Cụm:** Vào nghề
+
+## Việc cần làm
+Tệp `tone/toneAnalyzer.ts` chưa có test. Đọc tệp, chọn các hàm không cần micro/Worker, viết ca đầu vào nhỏ và kết quả mong đợi.
+
+## Tệp liên quan
+- `03-hoc-tap/packages/exercises/src/tone/toneAnalyzer.ts`
+- `03-hoc-tap/packages/exercises/src/tone/toneAnalyzer.test.ts (tạo mới)`
+
+## Tiêu chí đạt
+≥ 3 ca test xanh; ghi trong PR hàm nào được test và hàm nào bỏ qua vì sao.
+
+## Cách làm
+1. Mở nhánh `03/<tên-việc-ngắn>` từ `main` mới nhất.
+2. Chỉ sửa trong thư mục `03-hoc-tap/` (trừ khi việc ghi khác); cần sửa chỗ khác thì hỏi chủ thư mục.
+3. Làm xong chạy test của gói liên quan (lệnh ghi ở Tiêu chí đạt) rồi mở PR, ghi mã việc `03-02` trong mô tả, nói rõ đã chạy gì.
+4. Không commit khóa, `.env` hay dữ liệu cá nhân (repo công khai).
+
+_Nguồn: Tệp chưa có test riêng. Backlog đầy đủ: `docs/nhom/backlog.xlsx`._","thu-muc-03,vao-nghe,test,P2","03"
+"[03-03] Viết test khói cho `SessionRunner` (chạy một phiên bài học)","**Mã việc:** 03-03 · **Ưu tiên:** P2 · **Ước lượng:** 2 giờ · **Loại:** test · **Cụm:** Vào nghề
+
+## Việc cần làm
+Dùng 1–2 bài từ `@vietlearning/exercises` giả, kiểm chạy hết bài thì gọi `onComplete` (hoặc tương đương, đọc code để biết).
+
+## Tệp liên quan
+- `03-hoc-tap/apps/mfe-path/src/session/SessionRunner.tsx`
+- `03-hoc-tap/apps/mfe-path/src/session/SessionRunner.test.tsx (tạo mới)`
+
+## Tiêu chí đạt
+≥ 2 ca test xanh bằng `corepack pnpm --filter @vietlearning/mfe-path test`; mẫu: `lessonSession.test.ts`.
+
+## Cách làm
+1. Mở nhánh `03/<tên-việc-ngắn>` từ `main` mới nhất.
+2. Chỉ sửa trong thư mục `03-hoc-tap/` (trừ khi việc ghi khác); cần sửa chỗ khác thì hỏi chủ thư mục.
+3. Làm xong chạy test của gói liên quan (lệnh ghi ở Tiêu chí đạt) rồi mở PR, ghi mã việc `03-03` trong mô tả, nói rõ đã chạy gì.
+4. Không commit khóa, `.env` hay dữ liệu cá nhân (repo công khai).
+
+_Nguồn: Tệp chưa có test riêng. Backlog đầy đủ: `docs/nhom/backlog.xlsx`._","thu-muc-03,vao-nghe,test,P2","03"
+"[03-04] Viết test khói cho màn xếp câu (`SentenceBuilderScreen`)","**Mã việc:** 03-04 · **Ưu tiên:** P2 · **Ước lượng:** 2 giờ · **Loại:** test · **Cụm:** Vào nghề
+
+## Việc cần làm
+Màn M8 chưa có test màn. Kiểm hiển thị các từ để xếp và xếp xong thì hiện kết quả đúng/sai.
+
+## Tệp liên quan
+- `03-hoc-tap/apps/mfe-practice/src/sentence/SentenceBuilderScreen.tsx`
+- `03-hoc-tap/apps/mfe-practice/src/sentence/SentenceBuilderScreen.test.tsx (tạo mới)`
+
+## Tiêu chí đạt
+≥ 2 ca test xanh bằng `corepack pnpm --filter @vietlearning/mfe-practice test`.
+
+## Cách làm
+1. Mở nhánh `03/<tên-việc-ngắn>` từ `main` mới nhất.
+2. Chỉ sửa trong thư mục `03-hoc-tap/` (trừ khi việc ghi khác); cần sửa chỗ khác thì hỏi chủ thư mục.
+3. Làm xong chạy test của gói liên quan (lệnh ghi ở Tiêu chí đạt) rồi mở PR, ghi mã việc `03-04` trong mô tả, nói rõ đã chạy gì.
+4. Không commit khóa, `.env` hay dữ liệu cá nhân (repo công khai).
+
+_Nguồn: Màn M8 chưa có test màn. Backlog đầy đủ: `docs/nhom/backlog.xlsx`._","thu-muc-03,vao-nghe,test,P2","03"
+"[03-05] Viết test cho danh sách nhóm cài đặt (`settings/groups.ts`)","**Mã việc:** 03-05 · **Ưu tiên:** P2 · **Ước lượng:** 1 giờ · **Loại:** test · **Cụm:** Vào nghề
+
+## Việc cần làm
+Kiểm id nhóm không trùng, mỗi nhóm có nhãn vi và en không rỗng, thứ tự ổn định.
+
+## Tệp liên quan
+- `03-hoc-tap/apps/mfe-learner/src/settings/groups.ts`
+- `03-hoc-tap/apps/mfe-learner/src/settings/groups.test.ts (tạo mới)`
+
+## Tiêu chí đạt
+Test xanh bằng `corepack pnpm --filter @vietlearning/mfe-learner test`.
+
+## Cách làm
+1. Mở nhánh `03/<tên-việc-ngắn>` từ `main` mới nhất.
+2. Chỉ sửa trong thư mục `03-hoc-tap/` (trừ khi việc ghi khác); cần sửa chỗ khác thì hỏi chủ thư mục.
+3. Làm xong chạy test của gói liên quan (lệnh ghi ở Tiêu chí đạt) rồi mở PR, ghi mã việc `03-05` trong mô tả, nói rõ đã chạy gì.
+4. Không commit khóa, `.env` hay dữ liệu cá nhân (repo công khai).
+
+_Nguồn: Quy tắc song ngữ. Backlog đầy đủ: `docs/nhom/backlog.xlsx`._","thu-muc-03,vao-nghe,test,P2","03"
+"[03-06] Viết test song ngữ cho `friends/i18n.ts` của mfe-learner","**Mã việc:** 03-06 · **Ưu tiên:** P2 · **Ước lượng:** 1 giờ · **Loại:** test · **Cụm:** Vào nghề
+
+## Việc cần làm
+Mọi khóa có chuỗi vi và en không rỗng; chuỗi có tham số `{x}` thì vi và en dùng cùng tên tham số.
+
+## Tệp liên quan
+- `03-hoc-tap/apps/mfe-learner/src/friends/i18n.ts`
+- `03-hoc-tap/apps/mfe-learner/src/friends/i18n.test.ts (tạo mới)`
+
+## Tiêu chí đạt
+Test xanh; nếu có khóa thiếu thì sửa luôn.
+
+## Cách làm
+1. Mở nhánh `03/<tên-việc-ngắn>` từ `main` mới nhất.
+2. Chỉ sửa trong thư mục `03-hoc-tap/` (trừ khi việc ghi khác); cần sửa chỗ khác thì hỏi chủ thư mục.
+3. Làm xong chạy test của gói liên quan (lệnh ghi ở Tiêu chí đạt) rồi mở PR, ghi mã việc `03-06` trong mô tả, nói rõ đã chạy gì.
+4. Không commit khóa, `.env` hay dữ liệu cá nhân (repo công khai).
+
+_Nguồn: Quy tắc song ngữ. Backlog đầy đủ: `docs/nhom/backlog.xlsx`._","thu-muc-03,vao-nghe,test,P2","03"
+"[03-07] Thêm 5 câu 'Bạn có biết?' vào kho động lực (`motivation/facts.ts`)","**Mã việc:** 03-07 · **Ưu tiên:** P2 · **Ước lượng:** 1.5 giờ · **Loại:** tính năng · **Cụm:** Vào nghề
+
+## Việc cần làm
+Thêm 5 mẩu thông tin ngắn, đúng về tiếng Việt/văn hóa, có cả vi và en. Ghi nguồn trong PR. Không chép nguyên văn từ sách/báo.
+
+## Tệp liên quan
+- `03-hoc-tap/apps/mfe-path/src/motivation/facts.ts`
+- `03-hoc-tap/apps/mfe-path/src/motivation/motivation.test.tsx`
+
+## Tiêu chí đạt
+Có 5 mục mới đủ vi/en; test motivation xanh; PR nêu nguồn từng mục.
+
+## Cách làm
+1. Mở nhánh `03/<tên-việc-ngắn>` từ `main` mới nhất.
+2. Chỉ sửa trong thư mục `03-hoc-tap/` (trừ khi việc ghi khác); cần sửa chỗ khác thì hỏi chủ thư mục.
+3. Làm xong chạy test của gói liên quan (lệnh ghi ở Tiêu chí đạt) rồi mở PR, ghi mã việc `03-07` trong mô tả, nói rõ đã chạy gì.
+4. Không commit khóa, `.env` hay dữ liệu cá nhân (repo công khai).
+
+_Nguồn: Dữ liệu có sẵn. Backlog đầy đủ: `docs/nhom/backlog.xlsx`._","thu-muc-03,vao-nghe,tinh-nang,P2","03"
+"[03-08] Viết test cho `placementClient` của màn Làm quen","**Mã việc:** 03-08 · **Ưu tiên:** P2 · **Ước lượng:** 1.5 giờ · **Loại:** test · **Cụm:** Vào nghề
+
+## Việc cần làm
+Dùng `fetch` giả: kiểm gọi đúng đường dẫn, xử lý lỗi mạng và lỗi 4xx.
+
+## Tệp liên quan
+- `03-hoc-tap/apps/mfe-learner/src/onboarding/placementClient.ts`
+- `03-hoc-tap/apps/mfe-learner/src/onboarding/placementClient.test.ts (tạo mới)`
+
+## Tiêu chí đạt
+≥ 3 ca test xanh; không gọi mạng thật.
+
+## Cách làm
+1. Mở nhánh `03/<tên-việc-ngắn>` từ `main` mới nhất.
+2. Chỉ sửa trong thư mục `03-hoc-tap/` (trừ khi việc ghi khác); cần sửa chỗ khác thì hỏi chủ thư mục.
+3. Làm xong chạy test của gói liên quan (lệnh ghi ở Tiêu chí đạt) rồi mở PR, ghi mã việc `03-08` trong mô tả, nói rõ đã chạy gì.
+4. Không commit khóa, `.env` hay dữ liệu cá nhân (repo công khai).
+
+_Nguồn: Tệp chưa có test riêng. Backlog đầy đủ: `docs/nhom/backlog.xlsx`._","thu-muc-03,vao-nghe,test,P2","03"
+"[03-09] Viết README cho `mfe-path`: mô hình lộ trình và phiên bài học","**Mã việc:** 03-09 · **Ưu tiên:** P2 · **Ước lượng:** 1.5 giờ · **Loại:** tài liệu · **Cụm:** Vào nghề
+
+## Việc cần làm
+Đọc `path/pathModel.ts` và `session/lessonSession.ts`; giải thích bài mở khóa thế nào, phiên bài học chạy ra sao; liệt kê các màn Học, Ôn tập, Test-out.
+
+## Tệp liên quan
+- `03-hoc-tap/apps/mfe-path/README.md (tạo mới)`
+- `03-hoc-tap/apps/mfe-path/src/path/pathModel.ts`
+- `03-hoc-tap/apps/mfe-path/src/session/lessonSession.ts`
+
+## Tiêu chí đạt
+README tiếng Việt ≤ 1 trang; mỗi khẳng định đối chiếu được với code.
+
+## Cách làm
+1. Mở nhánh `03/<tên-việc-ngắn>` từ `main` mới nhất.
+2. Chỉ sửa trong thư mục `03-hoc-tap/` (trừ khi việc ghi khác); cần sửa chỗ khác thì hỏi chủ thư mục.
+3. Làm xong chạy test của gói liên quan (lệnh ghi ở Tiêu chí đạt) rồi mở PR, ghi mã việc `03-09` trong mô tả, nói rõ đã chạy gì.
+4. Không commit khóa, `.env` hay dữ liệu cá nhân (repo công khai).
+
+_Nguồn: Mô-đun chưa có README. Backlog đầy đủ: `docs/nhom/backlog.xlsx`._","thu-muc-03,vao-nghe,tai-lieu,P2","03"
+"[03-10] Viết README cho `packages/exercises`: các loại bài và cách thêm một loại mới","**Mã việc:** 03-10 · **Ưu tiên:** P2 · **Ước lượng:** 1.5 giờ · **Loại:** tài liệu · **Cụm:** Vào nghề
+
+## Việc cần làm
+Liệt kê mọi loại bài (mỗi `kind` trong `types.ts`, ví dụ choice, build, tone, speak, story...), mỗi loại một dòng làm gì và tệp chính; cách thêm một loại mới.
+
+## Tệp liên quan
+- `03-hoc-tap/packages/exercises/README.md (tạo mới)`
+- `03-hoc-tap/packages/exercises/src/ExerciseView.tsx`
+- `03-hoc-tap/packages/exercises/src/types.ts`
+
+## Tiêu chí đạt
+README đủ mọi `kind` có trong `types.ts` (đếm lại bằng tay); có mục 'thêm loại mới' ≥ 4 bước.
+
+## Cách làm
+1. Mở nhánh `03/<tên-việc-ngắn>` từ `main` mới nhất.
+2. Chỉ sửa trong thư mục `03-hoc-tap/` (trừ khi việc ghi khác); cần sửa chỗ khác thì hỏi chủ thư mục.
+3. Làm xong chạy test của gói liên quan (lệnh ghi ở Tiêu chí đạt) rồi mở PR, ghi mã việc `03-10` trong mô tả, nói rõ đã chạy gì.
+4. Không commit khóa, `.env` hay dữ liệu cá nhân (repo công khai).
+
+_Nguồn: Gói chưa có README. Backlog đầy đủ: `docs/nhom/backlog.xlsx`._","thu-muc-03,vao-nghe,tai-lieu,P2","03"
+"[03-11] Dự án 5a Task 3: màn Góp ý / Báo lỗi + 'Góp ý của tôi' + chấm đỏ","**Mã việc:** 03-11 · **Ưu tiên:** P1 · **Ước lượng:** 12 giờ · **Loại:** tính năng · **Cụm:** Cụm lớn
+
+## Việc cần làm
+Màn gửi góp ý (ảnh/video), danh sách của tôi, chấm đỏ chưa đọc, dòng ở Hồ sơ. Chờ Task 1–2 (Gateway) ở 01.
+
+## Tệp liên quan
+- `03-hoc-tap/apps/mfe-learner/src/feedback/ (tạo mới: FeedbackScreen.tsx, MyFeedback.tsx, prepareImage.ts, feedbackDraft.ts)`
+- `01-nen-tang/packages/api-client/src/feedback.ts`
+- `03-hoc-tap/apps/mfe-learner/src/profile/`
+
+## Tiêu chí đạt
+Test Vitest theo plan xanh; vi+en đủ; thử chọn ảnh/video trên AVD; axe không lỗi.
+
+## Cách làm
+1. Mở nhánh `03/<tên-việc-ngắn>` từ `main` mới nhất.
+2. Chỉ sửa trong thư mục `03-hoc-tap/` (trừ khi việc ghi khác); cần sửa chỗ khác thì hỏi chủ thư mục.
+3. Làm xong chạy test của gói liên quan (lệnh ghi ở Tiêu chí đạt) rồi mở PR, ghi mã việc `03-11` trong mô tả, nói rõ đã chạy gì.
+4. Không commit khóa, `.env` hay dữ liệu cá nhân (repo công khai).
+
+_Nguồn: docs/superpowers/plans/2026-11-21-gop-y-bao-loi.md Task 3. Backlog đầy đủ: `docs/nhom/backlog.xlsx`._","thu-muc-03,cum-lon,tinh-nang,P1","03"
+"[03-12] Soi FE P1-4: Hồ sơ có Cu Tít chân dung, tên và cấp; bỏ viền xanh gây hiểu nhầm","**Mã việc:** 03-12 · **Ưu tiên:** P1 · **Ước lượng:** 4 giờ · **Loại:** tính năng · **Cụm:** Cụm lớn
+
+## Việc cần làm
+Nhóm P1 đã giao thiếu mục này. Cu Tít `chan-dung` 72, tên + cấp, chỉ số bỏ viền xanh.
+
+## Tệp liên quan
+- `03-hoc-tap/apps/mfe-learner/src/profile/ProfileScreen.tsx`
+- `03-hoc-tap/apps/mfe-learner/src/profile/ProfileScreen.test.tsx`
+
+## Tiêu chí đạt
+Test Hồ sơ xanh; ảnh chụp trước/sau; gói đầu không tăng quá 0,3 kB.
+
+## Cách làm
+1. Mở nhánh `03/<tên-việc-ngắn>` từ `main` mới nhất.
+2. Chỉ sửa trong thư mục `03-hoc-tap/` (trừ khi việc ghi khác); cần sửa chỗ khác thì hỏi chủ thư mục.
+3. Làm xong chạy test của gói liên quan (lệnh ghi ở Tiêu chí đạt) rồi mở PR, ghi mã việc `03-12` trong mô tả, nói rõ đã chạy gì.
+4. Không commit khóa, `.env` hay dữ liệu cá nhân (repo công khai).
+
+_Nguồn: docs/thiet-ke/soi-fe/BAO-CAO.md mục 5 (P1-4). Backlog đầy đủ: `docs/nhom/backlog.xlsx`._","thu-muc-03,cum-lon,tinh-nang,P1","03"
+"[04-01] Thêm 5 mục phương ngữ mới vào `dialects.json`","**Mã việc:** 04-01 · **Ưu tiên:** P1 · **Ước lượng:** 1.5 giờ · **Loại:** tính năng · **Cụm:** Vào nghề
+
+## Việc cần làm
+Thêm 5 từ khác nhau giữa Bắc/Trung/Nam (đối chiếu nguồn đáng tin, ghi nguồn trong PR). Mỗi mục có id mới theo dạng dN, đặt `reviewed: false` cho tới khi có người duyệt.
+
+## Tệp liên quan
+- `04-am-thanh-tri-thuc/packages/content/src/data/dialects.json`
+- `04-am-thanh-tri-thuc/packages/content/test/data.test.mjs`
+
+## Tiêu chí đạt
+Kho có 35 mục, id không trùng; test `content` xanh bằng `corepack pnpm --filter @vietlearning/content test`; PR ghi nguồn từng mục.
+
+## Cách làm
+1. Mở nhánh `04/<tên-việc-ngắn>` từ `main` mới nhất.
+2. Chỉ sửa trong thư mục `04-am-thanh-tri-thuc/` (trừ khi việc ghi khác); cần sửa chỗ khác thì hỏi chủ thư mục.
+3. Làm xong chạy test của gói liên quan (lệnh ghi ở Tiêu chí đạt) rồi mở PR, ghi mã việc `04-01` trong mô tả, nói rõ đã chạy gì.
+4. Không commit khóa, `.env` hay dữ liệu cá nhân (repo công khai).
+
+_Nguồn: Dữ liệu A7 hiện có 30 mục. Backlog đầy đủ: `docs/nhom/backlog.xlsx`._","thu-muc-04,vao-nghe,tinh-nang,P1","04"
+"[04-02] Thêm 3 thẻ văn hóa mới vào `culture.json` (song ngữ)","**Mã việc:** 04-02 · **Ưu tiên:** P2 · **Ước lượng:** 1.5 giờ · **Loại:** tính năng · **Cụm:** Vào nghề
+
+## Việc cần làm
+Thẻ có đủ `title/category/content` và `titleEn/categoryEn/contentEn`, `reviewed:false`. Test M10 đang kiểm đúng 20 thẻ nên phải sửa số này lên 23 trong cùng PR.
+
+## Tệp liên quan
+- `04-am-thanh-tri-thuc/packages/content/src/data/culture.json`
+- `04-am-thanh-tri-thuc/packages/content/test/data.test.mjs`
+- `04-am-thanh-tri-thuc/apps/mfe-knowledge/src/components/knowledgeScreens.test.tsx`
+
+## Tiêu chí đạt
+Test content và mfe-knowledge xanh; ghi nguồn trong PR; không chép nguyên văn.
+
+## Cách làm
+1. Mở nhánh `04/<tên-việc-ngắn>` từ `main` mới nhất.
+2. Chỉ sửa trong thư mục `04-am-thanh-tri-thuc/` (trừ khi việc ghi khác); cần sửa chỗ khác thì hỏi chủ thư mục.
+3. Làm xong chạy test của gói liên quan (lệnh ghi ở Tiêu chí đạt) rồi mở PR, ghi mã việc `04-02` trong mô tả, nói rõ đã chạy gì.
+4. Không commit khóa, `.env` hay dữ liệu cá nhân (repo công khai).
+
+_Nguồn: Dữ liệu M10 hiện có 20 thẻ. Backlog đầy đủ: `docs/nhom/backlog.xlsx`._","thu-muc-04,vao-nghe,tinh-nang,P2","04"
+"[04-03] Rà phần tiếng Anh của 20 thẻ văn hóa hiện có","**Mã việc:** 04-03 · **Ưu tiên:** P2 · **Ước lượng:** 1.5 giờ · **Loại:** tài liệu · **Cụm:** Vào nghề
+
+## Việc cần làm
+Đọc 20 thẻ trong `culture.json`, sửa lỗi dịch/chính tả ở `titleEn/categoryEn/contentEn`; viết test kiểm thẻ nào cũng có đủ ba trường En.
+
+## Tệp liên quan
+- `04-am-thanh-tri-thuc/packages/content/src/data/culture.json`
+- `04-am-thanh-tri-thuc/packages/content/test/culture-en.test.mjs (tạo mới)`
+
+## Tiêu chí đạt
+Test mới xanh; PR liệt kê các thẻ đã sửa.
+
+## Cách làm
+1. Mở nhánh `04/<tên-việc-ngắn>` từ `main` mới nhất.
+2. Chỉ sửa trong thư mục `04-am-thanh-tri-thuc/` (trừ khi việc ghi khác); cần sửa chỗ khác thì hỏi chủ thư mục.
+3. Làm xong chạy test của gói liên quan (lệnh ghi ở Tiêu chí đạt) rồi mở PR, ghi mã việc `04-03` trong mô tả, nói rõ đã chạy gì.
+4. Không commit khóa, `.env` hay dữ liệu cá nhân (repo công khai).
+
+_Nguồn: Quy tắc song ngữ. Backlog đầy đủ: `docs/nhom/backlog.xlsx`._","thu-muc-04,vao-nghe,tai-lieu,P2","04"
+"[04-04] Viết test cho kho thống kê phòng tập thanh điệu (`gymStore`)","**Mã việc:** 04-04 · **Ưu tiên:** P2 · **Ước lượng:** 1.5 giờ · **Loại:** test · **Cụm:** Vào nghề
+
+## Việc cần làm
+Hàm trong `gym/gymStore.ts` (`gymStore.get/subscribe/...`) chưa có test. Kiểm ghi thêm một lượt rồi đọc lại; subscribe được gọi khi đổi.
+
+## Tệp liên quan
+- `04-am-thanh-tri-thuc/apps/mfe-speech-lab/src/gym/gymStore.ts`
+- `04-am-thanh-tri-thuc/apps/mfe-speech-lab/src/gym/gymStore.test.ts (tạo mới)`
+
+## Tiêu chí đạt
+≥ 3 ca test xanh bằng `corepack pnpm --filter @vietlearning/mfe-speech-lab test`; mẫu: `toneGymModel.test.ts`.
+
+## Cách làm
+1. Mở nhánh `04/<tên-việc-ngắn>` từ `main` mới nhất.
+2. Chỉ sửa trong thư mục `04-am-thanh-tri-thuc/` (trừ khi việc ghi khác); cần sửa chỗ khác thì hỏi chủ thư mục.
+3. Làm xong chạy test của gói liên quan (lệnh ghi ở Tiêu chí đạt) rồi mở PR, ghi mã việc `04-04` trong mô tả, nói rõ đã chạy gì.
+4. Không commit khóa, `.env` hay dữ liệu cá nhân (repo công khai).
+
+_Nguồn: Tệp chưa có test riêng. Backlog đầy đủ: `docs/nhom/backlog.xlsx`._","thu-muc-04,vao-nghe,test,P2","04"
+"[04-05] Viết test song ngữ cho `mfe-knowledge/src/i18n.ts`","**Mã việc:** 04-05 · **Ưu tiên:** P2 · **Ước lượng:** 1 giờ · **Loại:** test · **Cụm:** Vào nghề
+
+## Việc cần làm
+Mọi khóa có chuỗi vi và en không rỗng; tham số `{x}` khớp giữa hai ngôn ngữ.
+
+## Tệp liên quan
+- `04-am-thanh-tri-thuc/apps/mfe-knowledge/src/i18n.ts`
+- `04-am-thanh-tri-thuc/apps/mfe-knowledge/src/i18n.test.ts (tạo mới)`
+
+## Tiêu chí đạt
+Test xanh; sửa luôn khóa thiếu nếu có.
+
+## Cách làm
+1. Mở nhánh `04/<tên-việc-ngắn>` từ `main` mới nhất.
+2. Chỉ sửa trong thư mục `04-am-thanh-tri-thuc/` (trừ khi việc ghi khác); cần sửa chỗ khác thì hỏi chủ thư mục.
+3. Làm xong chạy test của gói liên quan (lệnh ghi ở Tiêu chí đạt) rồi mở PR, ghi mã việc `04-05` trong mô tả, nói rõ đã chạy gì.
+4. Không commit khóa, `.env` hay dữ liệu cá nhân (repo công khai).
+
+_Nguồn: Quy tắc song ngữ. Backlog đầy đủ: `docs/nhom/backlog.xlsx`._","thu-muc-04,vao-nghe,test,P2","04"
+"[04-06] Viết test ca biên cho `hzToSemitone` và `toRelativeSemitones` (A1)","**Mã việc:** 04-06 · **Ưu tiên:** P2 · **Ước lượng:** 1.5 giờ · **Loại:** test · **Cụm:** Vào nghề
+
+## Việc cần làm
+`semitone.ts` có test chung trong `dsp.test.mjs`. Thêm ca: 0 Hz, số âm, NaN, ít hơn `minVoicedFrames` khung có tiếng. CHỈ ghi nhận hành vi hiện tại, không sửa mã; thấy lỗi thì mở Issue riêng.
+
+## Tệp liên quan
+- `04-am-thanh-tri-thuc/packages/audio-dsp/src/pitch/semitone.ts`
+- `04-am-thanh-tri-thuc/packages/audio-dsp/test/semitone-edge.test.mjs (tạo mới)`
+
+## Tiêu chí đạt
+≥ 4 ca xanh bằng `corepack pnpm --filter @vietlearning/audio-dsp test`; PR mô tả hành vi tìm được.
+
+## Cách làm
+1. Mở nhánh `04/<tên-việc-ngắn>` từ `main` mới nhất.
+2. Chỉ sửa trong thư mục `04-am-thanh-tri-thuc/` (trừ khi việc ghi khác); cần sửa chỗ khác thì hỏi chủ thư mục.
+3. Làm xong chạy test của gói liên quan (lệnh ghi ở Tiêu chí đạt) rồi mở PR, ghi mã việc `04-06` trong mô tả, nói rõ đã chạy gì.
+4. Không commit khóa, `.env` hay dữ liệu cá nhân (repo công khai).
+
+_Nguồn: AGENTS.md mục 3 (A1). Backlog đầy đủ: `docs/nhom/backlog.xlsx`._","thu-muc-04,vao-nghe,test,P2","04"
+"[04-07] Viết test ca biên cho `translateDialect` (A7)","**Mã việc:** 04-07 · **Ưu tiên:** P2 · **Ước lượng:** 1 giờ · **Loại:** test · **Cụm:** Vào nghề
+
+## Việc cần làm
+Kiểm chữ hoa/thường, khoảng trắng đầu cuối, chuỗi chưa chuẩn NFC, từ không có trong từ điển trả `undefined`.
+
+## Tệp liên quan
+- `04-am-thanh-tri-thuc/packages/content/src/dialects/dialectMap.ts`
+- `04-am-thanh-tri-thuc/packages/content/test/dialect-edge.test.mjs (tạo mới)`
+
+## Tiêu chí đạt
+≥ 4 ca xanh bằng `corepack pnpm --filter @vietlearning/content test`.
+
+## Cách làm
+1. Mở nhánh `04/<tên-việc-ngắn>` từ `main` mới nhất.
+2. Chỉ sửa trong thư mục `04-am-thanh-tri-thuc/` (trừ khi việc ghi khác); cần sửa chỗ khác thì hỏi chủ thư mục.
+3. Làm xong chạy test của gói liên quan (lệnh ghi ở Tiêu chí đạt) rồi mở PR, ghi mã việc `04-07` trong mô tả, nói rõ đã chạy gì.
+4. Không commit khóa, `.env` hay dữ liệu cá nhân (repo công khai).
+
+_Nguồn: AGENTS.md mục 3 (A7). Backlog đầy đủ: `docs/nhom/backlog.xlsx`._","thu-muc-04,vao-nghe,test,P2","04"
+"[04-08] Viết README cho `audio-dsp`: YIN, DTW, semitone (A1, A2) bằng lời dễ hiểu","**Mã việc:** 04-08 · **Ưu tiên:** P2 · **Ước lượng:** 1.5 giờ · **Loại:** tài liệu · **Cụm:** Vào nghề
+
+## Việc cần làm
+Đọc `yin.ts`, `dtw.ts`, `semitone.ts`; giải thích mỗi bước làm gì, đầu vào/đầu ra, vì sao dùng semitone. Có sơ đồ luồng từ micro đến điểm thanh điệu.
+
+## Tệp liên quan
+- `04-am-thanh-tri-thuc/packages/audio-dsp/README.md (tạo mới)`
+- `04-am-thanh-tri-thuc/packages/audio-dsp/src/pitch/yin.ts`
+- `04-am-thanh-tri-thuc/packages/audio-dsp/src/pitch/dtw.ts`
+
+## Tiêu chí đạt
+README tiếng Việt ≤ 1,5 trang; đối chiếu được từng bước với tên hàm trong code.
+
+## Cách làm
+1. Mở nhánh `04/<tên-việc-ngắn>` từ `main` mới nhất.
+2. Chỉ sửa trong thư mục `04-am-thanh-tri-thuc/` (trừ khi việc ghi khác); cần sửa chỗ khác thì hỏi chủ thư mục.
+3. Làm xong chạy test của gói liên quan (lệnh ghi ở Tiêu chí đạt) rồi mở PR, ghi mã việc `04-08` trong mô tả, nói rõ đã chạy gì.
+4. Không commit khóa, `.env` hay dữ liệu cá nhân (repo công khai).
+
+_Nguồn: Gói chưa có README. Backlog đầy đủ: `docs/nhom/backlog.xlsx`._","thu-muc-04,vao-nghe,tai-lieu,P2","04"
+"[04-09] Viết README cho `packages/content`: cấu trúc dữ liệu, cờ `reviewed`, luật không đổi 20 cặp A6","**Mã việc:** 04-09 · **Ưu tiên:** P2 · **Ước lượng:** 1 giờ · **Loại:** tài liệu · **Cụm:** Vào nghề
+
+## Việc cần làm
+Liệt kê tệp trong `src/data/`, ý nghĩa cờ `reviewed`, quy trình thêm mục, và vì sao 20 cặp xưng hô (A6) là danh mục đóng.
+
+## Tệp liên quan
+- `04-am-thanh-tri-thuc/packages/content/README.md (tạo mới)`
+- `docs/nhat-ky/DUYET-NOI-DUNG.md`
+
+## Tiêu chí đạt
+README ≤ 1 trang; có bảng tệp dữ liệu và số mục hiện tại; đối chiếu với `DUYET-NOI-DUNG.md`.
+
+## Cách làm
+1. Mở nhánh `04/<tên-việc-ngắn>` từ `main` mới nhất.
+2. Chỉ sửa trong thư mục `04-am-thanh-tri-thuc/` (trừ khi việc ghi khác); cần sửa chỗ khác thì hỏi chủ thư mục.
+3. Làm xong chạy test của gói liên quan (lệnh ghi ở Tiêu chí đạt) rồi mở PR, ghi mã việc `04-09` trong mô tả, nói rõ đã chạy gì.
+4. Không commit khóa, `.env` hay dữ liệu cá nhân (repo công khai).
+
+_Nguồn: Gói chưa có README. Backlog đầy đủ: `docs/nhom/backlog.xlsx`._","thu-muc-04,vao-nghe,tai-lieu,P2","04"
+"[04-10] Dựng lại âm thanh 3 miền sau khi thêm từ/câu mới","**Mã việc:** 04-10 · **Ưu tiên:** P2 · **Ước lượng:** 4 giờ · **Loại:** tính năng · **Cụm:** Cụm lớn
+
+## Việc cần làm
+Dùng skill dung-am-thanh (VieNeu-TTS + faster-whisper chạy máy) cho nội dung mới. Chỉ làm khi các việc thêm dữ liệu đã gộp và máy chạy được TTS cục bộ.
+
+## Tệp liên quan
+- `.claude/skills/dung-am-thanh`
+- `04-am-thanh-tri-thuc/packages/content/src/data/`
+- `docs/nhat-ky/D9-TTS-LOCAL.md`
+
+## Tiêu chí đạt
+Báo cáo duyệt tự động của skill đạt; không commit tệp âm thanh quá lớn ngoài quy ước.
+
+## Cách làm
+1. Mở nhánh `04/<tên-việc-ngắn>` từ `main` mới nhất.
+2. Chỉ sửa trong thư mục `04-am-thanh-tri-thuc/` (trừ khi việc ghi khác); cần sửa chỗ khác thì hỏi chủ thư mục.
+3. Làm xong chạy test của gói liên quan (lệnh ghi ở Tiêu chí đạt) rồi mở PR, ghi mã việc `04-10` trong mô tả, nói rõ đã chạy gì.
+4. Không commit khóa, `.env` hay dữ liệu cá nhân (repo công khai).
+
+_Nguồn: Skill dung-am-thanh. Backlog đầy đủ: `docs/nhom/backlog.xlsx`._","thu-muc-04,cum-lon,tinh-nang,P2","04"
+"[04-11] Chụp ảnh M2, M3, M6, M10 ở en + tối để rà giao diện","**Mã việc:** 04-11 · **Ưu tiên:** P2 · **Ước lượng:** 3 giờ · **Loại:** test · **Cụm:** Cụm lớn
+
+## Việc cần làm
+Dùng skill chup-man-hinh-app chụp bốn màn của thư mục 04 (sáng/tối, vi/en); ghi chú chữ tràn, tương phản, chữ chưa dịch thành danh sách lỗi.
+
+## Tệp liên quan
+- `.claude/skills/chup-man-hinh-app`
+- `docs/thiet-ke/anh-chup/`
+
+## Tiêu chí đạt
+Ảnh lưu đúng thư mục; có danh sách lỗi (hoặc 'không thấy lỗi'); lỗi thật được thành Issue.
+
+## Cách làm
+1. Mở nhánh `04/<tên-việc-ngắn>` từ `main` mới nhất.
+2. Chỉ sửa trong thư mục `04-am-thanh-tri-thuc/` (trừ khi việc ghi khác); cần sửa chỗ khác thì hỏi chủ thư mục.
+3. Làm xong chạy test của gói liên quan (lệnh ghi ở Tiêu chí đạt) rồi mở PR, ghi mã việc `04-11` trong mô tả, nói rõ đã chạy gì.
+4. Không commit khóa, `.env` hay dữ liệu cá nhân (repo công khai).
+
+_Nguồn: docs/thiet-ke/soi-fe/BAO-CAO.md mục 5 (P2-6). Backlog đầy đủ: `docs/nhom/backlog.xlsx`._","thu-muc-04,cum-lon,test,P2","04"
+"[04-12] Quy trình duyệt nội dung `reviewed:false` mới thêm","**Mã việc:** 04-12 · **Ưu tiên:** P2 · **Ước lượng:** 2 giờ · **Loại:** tài liệu · **Cụm:** Cụm lớn
+
+## Việc cần làm
+Người đọc tiếng Việt giỏi duyệt các mục mới của nhóm (từ, thẻ văn hóa, phương ngữ); đổi `reviewed` thành `true` khi khớp nguồn, ghi vào `DUYET-NOI-DUNG.md`.
+
+## Tệp liên quan
+- `04-am-thanh-tri-thuc/packages/content/src/data/dialects.json`
+- `04-am-thanh-tri-thuc/packages/content/src/data/culture.json`
+- `docs/nhat-ky/DUYET-NOI-DUNG.md`
+
+## Tiêu chí đạt
+Không còn mục `reviewed:false` hoặc có lý do ghi rõ; bảng trong DUYET-NOI-DUNG cập nhật.
+
+## Cách làm
+1. Mở nhánh `04/<tên-việc-ngắn>` từ `main` mới nhất.
+2. Chỉ sửa trong thư mục `04-am-thanh-tri-thuc/` (trừ khi việc ghi khác); cần sửa chỗ khác thì hỏi chủ thư mục.
+3. Làm xong chạy test của gói liên quan (lệnh ghi ở Tiêu chí đạt) rồi mở PR, ghi mã việc `04-12` trong mô tả, nói rõ đã chạy gì.
+4. Không commit khóa, `.env` hay dữ liệu cá nhân (repo công khai).
+
+_Nguồn: docs/nhat-ky/DUYET-NOI-DUNG.md. Backlog đầy đủ: `docs/nhom/backlog.xlsx`._","thu-muc-04,cum-lon,tai-lieu,P2","04"
