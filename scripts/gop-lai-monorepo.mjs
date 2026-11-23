@@ -11,8 +11,9 @@
  *   3. Sửa pnpm-workspace.yaml về `apps/*` + `packages/*`.
  *   4. Sửa các đường dẫn tương đối bị lệch vì chuyển cấp (bảng LEGACY_EDITS) và bỏ tiền tố `0N-…/` khỏi mọi
  *      đường dẫn trong tệp mã, cấu hình, CI, skill (KHÔNG đụng docs/ — tài liệu và nhật ký giữ nguyên lịch sử).
- *   5. `pnpm install --lockfile-only` để sinh lại pnpm-lock.yaml (bỏ bằng --no-lockfile).
+ *   5. `pnpm install --no-frozen-lockfile` để sinh lại pnpm-lock.yaml và node_modules (pnpm 12 không viết lại đường dẫn link khi chỉ chạy --lockfile-only) (bỏ bằng --no-lockfile).
  *
+   (pnpm-lock.yaml được pnpm tự viết lại, script không sửa tay.)
  * Không tự commit: xem `git status`, chạy build/test rồi commit tay.
  * Đã chạy thử trên bản sao tạm (xem mô tả PR); KHÔNG chạy trên nhánh đang làm việc nếu chưa muốn gộp.
  */
@@ -146,7 +147,7 @@ log(`Đã sửa ${changed} tệp (đường dẫn).`);
 
 /* ---- 5. lockfile ---- */
 if (!flag('--no-lockfile')) {
-  log('corepack pnpm install --lockfile-only …');
-  execFileSync('corepack', ['pnpm', 'install', '--lockfile-only'], { cwd: ROOT, stdio: 'inherit', shell: process.platform === 'win32' });
+  log('corepack pnpm install --no-frozen-lockfile …');
+  execFileSync('corepack', ['pnpm', 'install', '--no-frozen-lockfile'], { cwd: ROOT, stdio: 'inherit', shell: process.platform === 'win32' });
 }
 log('\nXong. Kiểm: git status; corepack pnpm install --frozen-lockfile; corepack pnpm build; pnpm test; pnpm lint:boundaries.');
