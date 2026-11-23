@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { checkSentenceOrder } from '../dist/a8/sentenceOrder.js';
-import { SENTENCE_ITEMS } from '../../content/dist/index.js';
+import { SENTENCE_ITEMS } from '../../../../04-am-thanh-tri-thuc/packages/content/dist/index.js';
 
 const item = (id) => SENTENCE_ITEMS.find((s) => s.id === id);
 const texts = (it, order) => order.map((i) => it.tokens[i].text);

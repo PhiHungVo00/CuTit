@@ -103,6 +103,7 @@ const LEGACY_EDITS = [
   ['apps/host-shell/src/styles/app.css', /@source '\.\.\/\.\.\/\.\.\/\.\.\/\.\.\/0[1-4]-[a-z0-9-]+\/apps\/(mfe-[a-z-]+)\/src';/g, "@source '../../../$1/src';"],
   ['apps/host-shell/src/styles/app.css', /@source '\.\.\/\.\.\/\.\.\/\.\.\/\.\.\/0[1-4]-[a-z0-9-]+\/packages\/([a-z-]+)\/src';/g, "@source '../../../../packages/$1/src';"],
   ['apps/host-shell/src/styles/app.css', "@source '../../../packages/ui/src';", "@source '../../../../packages/ui/src';"],
+  ['packages/contracts/test/a8.test.mjs', "'../../../../04-am-thanh-tri-thuc/packages/content/dist/index.js'", "'../../content/dist/index.js'"],
   // depcruise: bỏ tiền tố thư mục sở hữu khỏi luật
   ['.dependency-cruiser.cjs', "const OWNER = '^0\\\\d-[^/]+/';", "const OWNER = '^';"],
   ['package.json', /depcruise 01-nen-tang 02-hoi-thoai-ai 03-hoc-tap 04-am-thanh-tri-thuc --config/g, 'depcruise apps packages --config'],
