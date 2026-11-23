@@ -2,12 +2,12 @@
 /**
  * Lấy âm thanh “Một câu, ba miền” cho trang giới thiệu (dự án 7, Task 2).
  *
- * Nguồn: kho âm thanh khóa học đã dựng sẵn (skill dung-am-thanh, D9): apps/gateway/.data/tts (không commit).
+ * Nguồn: kho âm thanh khóa học đã dựng sẵn (skill dung-am-thanh, D9): 01-nen-tang/apps/gateway/.data/tts (không commit).
  *   tra packs/*-{north,central,south}.json => khóa sha256 => <khóa>.wav
- * Đầu ra (commit vào repo): apps/landing/public/audio/ba-mien-{bac,trung,nam}.{ogg,mp3}, mỗi tệp ≤ 40 kB.
+ * Đầu ra (commit vào repo): 01-nen-tang/apps/landing/public/audio/ba-mien-{bac,trung,nam}.{ogg,mp3}, mỗi tệp ≤ 40 kB.
  *
  * Chạy (chỉ khi cần đổi câu):
- *   node apps/landing/scripts/lay-am-thanh.mjs --cau "Xin chào! Tôi tên là Lan."
+ *   node 01-nen-tang/apps/landing/scripts/lay-am-thanh.mjs --cau "Xin chào! Tôi tên là Lan."
  *   tùy chọn: --tts-dir <thư mục kho> --out <thư mục đích>; cần ffmpeg trên PATH (hoặc biến FFMPEG).
  * Mã thoát: 0 ok · 1 lỗi chuyển đổi/kích thước · 2 câu không có trong kho (kèm hướng dẫn).
  */
@@ -93,7 +93,7 @@ function arg(name, fallback) {
 function main() {
   const cau = arg('cau');
   if (!cau) {
-    console.error('Dùng: node apps/landing/scripts/lay-am-thanh.mjs --cau "<câu>" [--tts-dir <kho>] [--out <đích>]');
+    console.error('Dùng: node 01-nen-tang/apps/landing/scripts/lay-am-thanh.mjs --cau "<câu>" [--tts-dir <kho>] [--out <đích>]');
     return 2;
   }
   const ttsDir = resolve(arg('tts-dir', DEFAULT_TTS_DIR));

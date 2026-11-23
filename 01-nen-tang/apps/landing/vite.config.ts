@@ -10,7 +10,7 @@ const root = __dirname;
  * Biến build:
  *  - LANDING_APP_ORIGIN : gốc của app (mặc định http://localhost:5173 khi dev), vd https://app.<tên>.id.vn
  *  - LANDING_SITE_ORIGIN: gốc của trang giới thiệu, dùng cho canonical/hreflang/Open Graph/sitemap (mặc định rỗng => đường dẫn tương đối, không sinh sitemap)
- *  - LANDING_APK_FILE   : đường dẫn apk-release.json (mặc định apps/landing/apk-release.json)
+ *  - LANDING_APK_FILE   : đường dẫn apk-release.json (mặc định 01-nen-tang/apps/landing/apk-release.json)
  */
 const appOrigin = (process.env.LANDING_APP_ORIGIN || 'http://localhost:5173').replace(/\/$/, '');
 const siteOrigin = (process.env.LANDING_SITE_ORIGIN || '').replace(/\/$/, '');

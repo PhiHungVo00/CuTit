@@ -16,7 +16,7 @@ import { fileURLToPath } from 'node:url';
 const CREAM = '#FBF3E4';
 const here = dirname(fileURLToPath(import.meta.url));
 const hostShell = resolve(here, '..');
-const repoRoot = resolve(hostShell, '../..');
+const repoRoot = resolve(hostShell, '../../..');
 const src = resolve(process.argv[2] ?? join(repoRoot, 'docs/thiet-ke/tam/cutit-icon-app.webp'));
 const icons = join(hostShell, 'public/icons');
 const res = join(hostShell, 'android/app/src/main/res');

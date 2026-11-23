@@ -1,5 +1,5 @@
 /**
- * Số build suy ra tất định từ `version` (x.y.z) của apps/host-shell/package.json — nguồn duy nhất.
+ * Số build suy ra tất định từ `version` (x.y.z) của 01-nen-tang/apps/host-shell/package.json — nguồn duy nhất.
  * build = x·1 000 000 + y·1 000 + z; y, z ≤ 999 (tối đa vẫn < 2 100 000 000 của Google Play).
  * Dùng chung cho Vite, Gradle (tính lại bằng Groovy) và test. Công thức tự viết; mẫu 3 chữ số
  * mỗi thành phần cũng là một tùy chọn trong tài liệu ReactiveCircus/app-versioning (Apache-2.0).

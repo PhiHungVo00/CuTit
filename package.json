@@ -9,7 +9,7 @@
     "test": "turbo run test",
     "lint": "turbo run lint",
     "clean": "turbo run clean && rimraf node_modules",
-    "lint:boundaries": "depcruise apps packages --config .dependency-cruiser.cjs"
+    "lint:boundaries": "depcruise 01-nen-tang 02-hoi-thoai-ai 03-hoc-tap 04-am-thanh-tri-thuc --config .dependency-cruiser.cjs"
   },
   "devDependencies": {
     "@types/react": "^18.3.31",

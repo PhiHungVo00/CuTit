@@ -5,8 +5,8 @@ import { defineMessages } from '@vietlearning/state';
  * Cập nhật 2026-11-21 (dự án 2, Cu Tít AI): nhà cung cấp AI là Google (Gemini), Groq, OpenRouter theo chuỗi dự phòng
  * (docs/van-hanh/AI-CHUOI-DU-PHONG.md); thêm ảnh/khung hình gọi video, lịch sử chat trên máy, hộp đồng ý gộp.
  * Văn bản tự soạn lại; mẫu tham khảo (không chép): docs/phap-ly/THAM-KHAO-MAU.md.
- * Đối chiếu mã nguồn ngày 2026-11-19: packages/contracts/src/db/schema.ts (mọi bảng gắn user_id xóa theo tài khoản),
- * apps/gateway (Gemini cho chat/ảnh/giọng nói/giải thích/hỏi văn hóa, không lưu nội dung), refresh token 90 ngày,
+ * Đối chiếu mã nguồn ngày 2026-11-19: 01-nen-tang/packages/contracts/src/db/schema.ts (mọi bảng gắn user_id xóa theo tài khoản),
+ * 01-nen-tang/apps/gateway (Gemini cho chat/ảnh/giọng nói/giải thích/hỏi văn hóa, không lưu nội dung), refresh token 90 ngày,
  * bia mộ 90 ngày, bảng consents (khóa + phiên bản nội dung + thời điểm), consent.revoke.
  * Căn cứ pháp lý đã tra 2026-11-19 — chi tiết + mức độ chắc chắn: docs/phap-ly/DANH-GIA-TAC-DONG.md.
  * Nằm trong chunk lazy của trang này, không ở bundle đầu.

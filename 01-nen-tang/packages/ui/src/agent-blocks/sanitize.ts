@@ -1,6 +1,6 @@
 /**
  * GoF Visitor Pattern (22): duyệt danh sách Agent UI Block do LLM sinh ra (qua Gateway)
- * trước khi màn hình (vd. M1 Trò chuyện) dựng component. Đặt ở packages/ui để mọi MFE dùng chung (Nguyên tắc 7).
+ * trước khi màn hình (vd. M1 Trò chuyện) dựng component. Đặt ở 01-nen-tang/packages/ui để mọi MFE dùng chung (Nguyên tắc 7).
  *
  * Nguyên tắc 6: đầu ra LLM luôn là JSON có cấu trúc, UI KHÔNG render HTML thô.
  * Gateway đã kiểm tra bằng Zod; đây là lớp phòng thủ thứ hai ở client, vì block có thể

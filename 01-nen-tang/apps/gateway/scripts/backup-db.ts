@@ -4,7 +4,7 @@
  * Biến môi trường:
  *   BACKUP_DATABASE_URL | DATABASE_URL_UNPOOLED | DATABASE_URL   (lấy cái đầu tiên có giá trị; Neon: phải là chuỗi
  *                      TRỰC TIẾP, không phải host `-pooler`). Không có (dev PGlite) => báo rồi thoát
- *   BACKUP_DIR         thư mục ghi tệp (mặc định apps/gateway/.data/backups — gitignored)
+ *   BACKUP_DIR         thư mục ghi tệp (mặc định 01-nen-tang/apps/gateway/.data/backups — gitignored)
  *   BACKUP_KEEP_DAYS   số ngày giữ tệp CỤC BỘ (mặc định 30; luôn giữ 7 bản mới nhất)
  * Kết quả: becutit-<UTC>.dump + .sha256. Đẩy tệp sang object storage là bước riêng (cron, xem BACKUP.md),
  * để kho backup nằm NGOÀI máy/nhà cung cấp DB chính.
@@ -29,7 +29,7 @@ async function sha256File(file: string): Promise<string> {
 async function main() {
   const url = process.env.BACKUP_DATABASE_URL ?? process.env.DATABASE_URL_UNPOOLED ?? process.env.DATABASE_URL;
   if (!url) {
-    console.error('Thiếu DATABASE_URL. Dev dùng PGlite (apps/gateway/.data/pglite): sao chép cả thư mục khi Gateway đã tắt.');
+    console.error('Thiếu DATABASE_URL. Dev dùng PGlite (01-nen-tang/apps/gateway/.data/pglite): sao chép cả thư mục khi Gateway đã tắt.');
     process.exit(2);
   }
   if (isPooledHost(url)) {

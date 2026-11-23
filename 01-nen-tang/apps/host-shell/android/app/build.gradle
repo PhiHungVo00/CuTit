@@ -2,7 +2,7 @@ apply plugin: 'com.android.application'
 
 import groovy.json.JsonSlurper
 
-// Số phiên bản: nguồn duy nhất là `version` trong apps/host-shell/package.json (dự án 8).
+// Số phiên bản: nguồn duy nhất là `version` trong 01-nen-tang/apps/host-shell/package.json (dự án 8).
 // versionCode = x·1 000 000 + y·1 000 + z — cùng công thức với scripts/version.mjs (versionToBuild).
 def appPackageJson = new JsonSlurper().parse(file('../../package.json'))
 def appVersion = appPackageJson.version as String

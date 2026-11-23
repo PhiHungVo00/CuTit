@@ -1,5 +1,5 @@
 /**
- * Ghi apps/landing/apk-release.json (kiểu ApkRelease của trang giới thiệu) sau khi build APK **phát hành đã ký**.
+ * Ghi 01-nen-tang/apps/landing/apk-release.json (kiểu ApkRelease của trang giới thiệu) sau khi build APK **phát hành đã ký**.
  * Gọi từ build-apk.ps1 -ReleaseManifest <đường dẫn>. Bản debug và APK chưa ký KHÔNG ghi (tránh đưa APK dở lên trang tải).
  * Chạy tay: node scripts/apk-manifest.mjs --apk <apk> --url <https://…> --out <apk-release.json> [--min-android 6.0]
  */

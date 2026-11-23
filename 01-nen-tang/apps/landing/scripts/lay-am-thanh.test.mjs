@@ -1,5 +1,5 @@
 // Kiểm thử script lay-am-thanh.mjs (dùng manifest giả trong thư mục tạm, không cần ffmpeg).
-// Chạy: node --test apps/landing/scripts/lay-am-thanh.test.mjs
+// Chạy: node --test 01-nen-tang/apps/landing/scripts/lay-am-thanh.test.mjs
 import assert from 'node:assert/strict';
 import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';

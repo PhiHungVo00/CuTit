@@ -1,6 +1,6 @@
 import { existsSync, readFileSync } from 'node:fs';
 
-/** Thông tin bản APK ký phát hành (do bước phát hành ghi vào apps/landing/apk-release.json) */
+/** Thông tin bản APK ký phát hành (do bước phát hành ghi vào 01-nen-tang/apps/landing/apk-release.json) */
 export type ApkRelease = { version: string; url: string; bytes: number; sha256: string; minAndroid: string };
 
 /**

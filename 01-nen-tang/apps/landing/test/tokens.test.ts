@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { extractTokens, SOURCE, TARGET } from '../scripts/trich-token.mjs';
 
 describe('tokens.css', () => {
-  it('khớp với chủ đề sáng của packages/ui (chưa lệch nguồn)', () => {
+  it('khớp với chủ đề sáng của 01-nen-tang/packages/ui (chưa lệch nguồn)', () => {
     expect(readFileSync(TARGET, 'utf8')).toBe(extractTokens(readFileSync(SOURCE, 'utf8')));
   });
   it('có màu chính của chủ đề sáng, không có màu chủ đề tối', () => {

@@ -15,6 +15,7 @@ const file = input?.tool_input?.file_path;
 if (!file) process.exit(0);
 
 const norm = file.replace(/\\/g, '/');
+// Không neo đầu chuỗi: khớp cả 01-nen-tang/apps/gateway/drizzle/... lẫn bố cục phẳng apps/gateway/drizzle/...
 const m = norm.match(/apps\/gateway\/drizzle\/(?:meta\/\d{4}_snapshot\.json|\d{4}_[^/]+\.sql)$/);
 if (!m) process.exit(0);
 
@@ -41,7 +42,7 @@ process.stdout.write(
       hookEventName: 'PreToolUse',
       permissionDecision: 'deny',
       permissionDecisionReason:
-        `Không sửa migration đã phát hành (${rel} đã có trên origin/main). Đổi schema ở packages/contracts/src/db/schema.ts rồi sinh migration MỚI: pnpm --filter @vietlearning/gateway db:generate --name <ten>. Gộp nhánh bị trùng số thì xóa migration của nhánh vào sau và sinh lại (skill kiem-truoc-khi-gop).`
+        `Không sửa migration đã phát hành (${rel} đã có trên origin/main). Đổi schema ở 01-nen-tang/packages/contracts/src/db/schema.ts rồi sinh migration MỚI: pnpm --filter @vietlearning/gateway db:generate --name <ten>. Gộp nhánh bị trùng số thì xóa migration của nhánh vào sau và sinh lại (skill kiem-truoc-khi-gop).`
     }
   })
 );

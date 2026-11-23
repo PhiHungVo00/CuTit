@@ -185,7 +185,7 @@ importers:
         specifier: ^5.7.3
         version: 5.9.3
 
-  apps/gateway:
+  01-nen-tang/apps/gateway:
     dependencies:
       '@electric-sql/pglite':
         specifier: ^0.5.16
@@ -210,16 +210,16 @@ importers:
         version: 2.2.2
       '@vietlearning/audio-dsp':
         specifier: workspace:*
-        version: link:../../packages/audio-dsp
+        version: link:../../../04-am-thanh-tri-thuc/packages/audio-dsp
       '@vietlearning/content':
         specifier: workspace:*
-        version: link:../../packages/content
+        version: link:../../../04-am-thanh-tri-thuc/packages/content
       '@vietlearning/contracts':
         specifier: workspace:*
         version: link:../../packages/contracts
       '@vietlearning/prompts':
         specifier: workspace:*
-        version: link:../../packages/prompts
+        version: link:../../../02-hoi-thoai-ai/packages/prompts
       '@vietlearning/shared':
         specifier: workspace:*
         version: link:../../packages/shared
@@ -267,7 +267,7 @@ importers:
         specifier: ^5.7.3
         version: 5.9.3
 
-  apps/host-shell:
+  01-nen-tang/apps/host-shell:
     dependencies:
       '@capacitor-community/text-to-speech':
         specifier: ^6.1.0
@@ -301,34 +301,34 @@ importers:
         version: link:../../packages/api-client
       '@vietlearning/content':
         specifier: workspace:*
-        version: link:../../packages/content
+        version: link:../../../04-am-thanh-tri-thuc/packages/content
       '@vietlearning/contracts':
         specifier: workspace:*
         version: link:../../packages/contracts
       '@vietlearning/exercises':
         specifier: workspace:*
-        version: link:../../packages/exercises
+        version: link:../../../03-hoc-tap/packages/exercises
       '@vietlearning/mfe-conversation':
         specifier: workspace:*
-        version: link:../mfe-conversation
+        version: link:../../../02-hoi-thoai-ai/apps/mfe-conversation
       '@vietlearning/mfe-knowledge':
         specifier: workspace:*
-        version: link:../mfe-knowledge
+        version: link:../../../04-am-thanh-tri-thuc/apps/mfe-knowledge
       '@vietlearning/mfe-learner':
         specifier: workspace:*
-        version: link:../mfe-learner
+        version: link:../../../03-hoc-tap/apps/mfe-learner
       '@vietlearning/mfe-path':
         specifier: workspace:*
-        version: link:../mfe-path
+        version: link:../../../03-hoc-tap/apps/mfe-path
       '@vietlearning/mfe-practice':
         specifier: workspace:*
-        version: link:../mfe-practice
+        version: link:../../../03-hoc-tap/apps/mfe-practice
       '@vietlearning/mfe-speech-lab':
         specifier: workspace:*
-        version: link:../mfe-speech-lab
+        version: link:../../../04-am-thanh-tri-thuc/apps/mfe-speech-lab
       '@vietlearning/mfe-vision':
         specifier: workspace:*
-        version: link:../mfe-vision
+        version: link:../../../02-hoi-thoai-ai/apps/mfe-vision
       '@vietlearning/native':
         specifier: workspace:*
         version: link:../../packages/native
@@ -412,7 +412,7 @@ importers:
         specifier: ^7.4.1
         version: 7.4.1
 
-  apps/landing:
+  01-nen-tang/apps/landing:
     dependencies:
       '@fontsource/be-vietnam-pro':
         specifier: ^5.3.0
@@ -449,410 +449,7 @@ importers:
         specifier: ^3.2.7
         version: 3.2.7(@types/node@20.19.43)(jsdom@25.0.1(supports-color@7.2.0))(lightningcss@1.33.0)(supports-color@7.2.0)(terser@5.51.2)
 
-  apps/mfe-conversation:
-    dependencies:
-      '@vietlearning/api-client':
-        specifier: workspace:*
-        version: link:../../packages/api-client
-      '@vietlearning/audio-dsp':
-        specifier: workspace:*
-        version: link:../../packages/audio-dsp
-      '@vietlearning/content':
-        specifier: workspace:*
-        version: link:../../packages/content
-      '@vietlearning/contracts':
-        specifier: workspace:*
-        version: link:../../packages/contracts
-      '@vietlearning/native':
-        specifier: workspace:*
-        version: link:../../packages/native
-      '@vietlearning/shared':
-        specifier: workspace:*
-        version: link:../../packages/shared
-      '@vietlearning/state':
-        specifier: workspace:*
-        version: link:../../packages/state
-      '@vietlearning/ui':
-        specifier: workspace:*
-        version: link:../../packages/ui
-      react:
-        specifier: ^18.3.1
-        version: 18.3.1
-      react-dom:
-        specifier: ^18.3.1
-        version: 18.3.1(react@18.3.1)
-      react-router-dom:
-        specifier: ^6.30.6
-        version: 6.30.6(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-    devDependencies:
-      '@testing-library/dom':
-        specifier: ^10.4.2
-        version: 10.4.2
-      '@testing-library/react':
-        specifier: ^16.3.3
-        version: 16.3.3(@testing-library/dom@10.4.2)(@types/react-dom@18.3.7(@types/react@18.3.31))(@types/react@18.3.31)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      '@vitejs/plugin-react':
-        specifier: ^4.3.4
-        version: 4.7.0(supports-color@7.2.0)(vite@5.4.21(@types/node@20.19.43)(lightningcss@1.33.0)(terser@5.51.2))
-      jsdom:
-        specifier: ^25.0.1
-        version: 25.0.1(supports-color@7.2.0)
-      typescript:
-        specifier: ^5.7.3
-        version: 5.9.3
-      vite:
-        specifier: ^5.4.11
-        version: 5.4.21(@types/node@20.19.43)(lightningcss@1.33.0)(terser@5.51.2)
-      vitest:
-        specifier: ^3.2.7
-        version: 3.2.7(@types/node@20.19.43)(jsdom@25.0.1(supports-color@7.2.0))(lightningcss@1.33.0)(supports-color@7.2.0)(terser@5.51.2)
-
-  apps/mfe-knowledge:
-    dependencies:
-      '@fontsource/be-vietnam-pro':
-        specifier: ^5.3.0
-        version: 5.3.0
-      '@radix-ui/react-dialog':
-        specifier: ^1.3.1
-        version: 1.3.1(@types/react-dom@18.3.7(@types/react@18.3.31))(@types/react@18.3.31)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      '@vietlearning/api-client':
-        specifier: workspace:*
-        version: link:../../packages/api-client
-      '@vietlearning/content':
-        specifier: workspace:*
-        version: link:../../packages/content
-      '@vietlearning/contracts':
-        specifier: workspace:*
-        version: link:../../packages/contracts
-      '@vietlearning/native':
-        specifier: workspace:*
-        version: link:../../packages/native
-      '@vietlearning/shared':
-        specifier: workspace:*
-        version: link:../../packages/shared
-      '@vietlearning/state':
-        specifier: workspace:*
-        version: link:../../packages/state
-      '@vietlearning/ui':
-        specifier: workspace:*
-        version: link:../../packages/ui
-      react:
-        specifier: ^18.3.1
-        version: 18.3.1
-      react-dom:
-        specifier: ^18.3.1
-        version: 18.3.1(react@18.3.1)
-    devDependencies:
-      '@tailwindcss/vite':
-        specifier: ^4.3.5
-        version: 4.3.5(vite@5.4.21(@types/node@20.19.43)(lightningcss@1.33.0)(terser@5.51.2))
-      '@testing-library/dom':
-        specifier: ^10.4.2
-        version: 10.4.2
-      '@testing-library/react':
-        specifier: ^16.3.3
-        version: 16.3.3(@testing-library/dom@10.4.2)(@types/react-dom@18.3.7(@types/react@18.3.31))(@types/react@18.3.31)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      '@vitejs/plugin-react':
-        specifier: ^4.3.4
-        version: 4.7.0(supports-color@7.2.0)(vite@5.4.21(@types/node@20.19.43)(lightningcss@1.33.0)(terser@5.51.2))
-      jsdom:
-        specifier: ^25.0.1
-        version: 25.0.1(supports-color@7.2.0)
-      tailwindcss:
-        specifier: ^4.3.5
-        version: 4.3.5
-      typescript:
-        specifier: ^5.7.3
-        version: 5.9.3
-      vite:
-        specifier: ^5.4.11
-        version: 5.4.21(@types/node@20.19.43)(lightningcss@1.33.0)(terser@5.51.2)
-      vitest:
-        specifier: ^3.2.7
-        version: 3.2.7(@types/node@20.19.43)(jsdom@25.0.1(supports-color@7.2.0))(lightningcss@1.33.0)(supports-color@7.2.0)(terser@5.51.2)
-
-  apps/mfe-learner:
-    dependencies:
-      '@vietlearning/api-client':
-        specifier: workspace:*
-        version: link:../../packages/api-client
-      '@vietlearning/contracts':
-        specifier: workspace:*
-        version: link:../../packages/contracts
-      '@vietlearning/native':
-        specifier: workspace:*
-        version: link:../../packages/native
-      '@vietlearning/shared':
-        specifier: workspace:*
-        version: link:../../packages/shared
-      '@vietlearning/state':
-        specifier: workspace:*
-        version: link:../../packages/state
-      '@vietlearning/ui':
-        specifier: workspace:*
-        version: link:../../packages/ui
-      react:
-        specifier: ^18.3.1
-        version: 18.3.1
-      react-dom:
-        specifier: ^18.3.1
-        version: 18.3.1(react@18.3.1)
-      react-router-dom:
-        specifier: ^6.30.6
-        version: 6.30.6(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-    devDependencies:
-      '@testing-library/dom':
-        specifier: ^10.4.2
-        version: 10.4.2
-      '@testing-library/react':
-        specifier: ^16.3.3
-        version: 16.3.3(@testing-library/dom@10.4.2)(@types/react-dom@18.3.7(@types/react@18.3.31))(@types/react@18.3.31)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      '@vitejs/plugin-react':
-        specifier: ^4.3.4
-        version: 4.7.0(supports-color@7.2.0)(vite@5.4.21(@types/node@20.19.43)(lightningcss@1.33.0)(terser@5.51.2))
-      jsdom:
-        specifier: ^25.0.1
-        version: 25.0.1(supports-color@7.2.0)
-      typescript:
-        specifier: ^5.7.3
-        version: 5.9.3
-      vite:
-        specifier: ^5.4.11
-        version: 5.4.21(@types/node@20.19.43)(lightningcss@1.33.0)(terser@5.51.2)
-      vitest:
-        specifier: ^3.2.7
-        version: 3.2.7(@types/node@20.19.43)(jsdom@25.0.1(supports-color@7.2.0))(lightningcss@1.33.0)(supports-color@7.2.0)(terser@5.51.2)
-
-  apps/mfe-path:
-    dependencies:
-      '@vietlearning/content':
-        specifier: workspace:*
-        version: link:../../packages/content
-      '@vietlearning/exercises':
-        specifier: workspace:*
-        version: link:../../packages/exercises
-      '@vietlearning/native':
-        specifier: workspace:*
-        version: link:../../packages/native
-      '@vietlearning/shared':
-        specifier: workspace:*
-        version: link:../../packages/shared
-      '@vietlearning/state':
-        specifier: workspace:*
-        version: link:../../packages/state
-      '@vietlearning/ui':
-        specifier: workspace:*
-        version: link:../../packages/ui
-      react:
-        specifier: ^18.3.1
-        version: 18.3.1
-      react-dom:
-        specifier: ^18.3.1
-        version: 18.3.1(react@18.3.1)
-      react-router-dom:
-        specifier: ^6.30.6
-        version: 6.30.6(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-    devDependencies:
-      '@testing-library/dom':
-        specifier: ^10.4.2
-        version: 10.4.2
-      '@testing-library/react':
-        specifier: ^16.3.3
-        version: 16.3.3(@testing-library/dom@10.4.2)(@types/react-dom@18.3.7(@types/react@18.3.31))(@types/react@18.3.31)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      '@vitejs/plugin-react':
-        specifier: ^4.3.4
-        version: 4.7.0(supports-color@7.2.0)(vite@5.4.21(@types/node@20.19.43)(lightningcss@1.33.0)(terser@5.51.2))
-      jsdom:
-        specifier: ^25.0.1
-        version: 25.0.1(supports-color@7.2.0)
-      typescript:
-        specifier: ^5.7.3
-        version: 5.9.3
-      vite:
-        specifier: ^5.4.11
-        version: 5.4.21(@types/node@20.19.43)(lightningcss@1.33.0)(terser@5.51.2)
-      vitest:
-        specifier: ^3.2.7
-        version: 3.2.7(@types/node@20.19.43)(jsdom@25.0.1(supports-color@7.2.0))(lightningcss@1.33.0)(supports-color@7.2.0)(terser@5.51.2)
-
-  apps/mfe-practice:
-    dependencies:
-      '@fontsource/be-vietnam-pro':
-        specifier: ^5.3.0
-        version: 5.3.0
-      '@vietlearning/content':
-        specifier: workspace:*
-        version: link:../../packages/content
-      '@vietlearning/contracts':
-        specifier: workspace:*
-        version: link:../../packages/contracts
-      '@vietlearning/exercises':
-        specifier: workspace:*
-        version: link:../../packages/exercises
-      '@vietlearning/native':
-        specifier: workspace:*
-        version: link:../../packages/native
-      '@vietlearning/shared':
-        specifier: workspace:*
-        version: link:../../packages/shared
-      '@vietlearning/state':
-        specifier: workspace:*
-        version: link:../../packages/state
-      '@vietlearning/ui':
-        specifier: workspace:*
-        version: link:../../packages/ui
-      react:
-        specifier: ^18.3.1
-        version: 18.3.1
-      react-dom:
-        specifier: ^18.3.1
-        version: 18.3.1(react@18.3.1)
-      react-router-dom:
-        specifier: ^6.30.6
-        version: 6.30.6(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-    devDependencies:
-      '@tailwindcss/vite':
-        specifier: ^4.3.5
-        version: 4.3.5(vite@5.4.21(@types/node@20.19.43)(lightningcss@1.33.0)(terser@5.51.2))
-      '@testing-library/dom':
-        specifier: ^10.4.2
-        version: 10.4.2
-      '@testing-library/react':
-        specifier: ^16.3.3
-        version: 16.3.3(@testing-library/dom@10.4.2)(@types/react-dom@18.3.7(@types/react@18.3.31))(@types/react@18.3.31)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      '@vitejs/plugin-react':
-        specifier: ^4.3.4
-        version: 4.7.0(supports-color@7.2.0)(vite@5.4.21(@types/node@20.19.43)(lightningcss@1.33.0)(terser@5.51.2))
-      jsdom:
-        specifier: ^25.0.1
-        version: 25.0.1(supports-color@7.2.0)
-      tailwindcss:
-        specifier: ^4.3.5
-        version: 4.3.5
-      typescript:
-        specifier: ^5.7.3
-        version: 5.9.3
-      vite:
-        specifier: ^5.4.11
-        version: 5.4.21(@types/node@20.19.43)(lightningcss@1.33.0)(terser@5.51.2)
-      vitest:
-        specifier: ^3.2.7
-        version: 3.2.7(@types/node@20.19.43)(jsdom@25.0.1(supports-color@7.2.0))(lightningcss@1.33.0)(supports-color@7.2.0)(terser@5.51.2)
-
-  apps/mfe-speech-lab:
-    dependencies:
-      '@fontsource/be-vietnam-pro':
-        specifier: ^5.3.0
-        version: 5.3.0
-      '@vietlearning/audio-dsp':
-        specifier: workspace:*
-        version: link:../../packages/audio-dsp
-      '@vietlearning/content':
-        specifier: workspace:*
-        version: link:../../packages/content
-      '@vietlearning/contracts':
-        specifier: workspace:*
-        version: link:../../packages/contracts
-      '@vietlearning/exercises':
-        specifier: workspace:*
-        version: link:../../packages/exercises
-      '@vietlearning/native':
-        specifier: workspace:*
-        version: link:../../packages/native
-      '@vietlearning/shared':
-        specifier: workspace:*
-        version: link:../../packages/shared
-      '@vietlearning/state':
-        specifier: workspace:*
-        version: link:../../packages/state
-      '@vietlearning/ui':
-        specifier: workspace:*
-        version: link:../../packages/ui
-      react:
-        specifier: ^18.3.1
-        version: 18.3.1
-      react-dom:
-        specifier: ^18.3.1
-        version: 18.3.1(react@18.3.1)
-    devDependencies:
-      '@tailwindcss/vite':
-        specifier: ^4.3.5
-        version: 4.3.5(vite@5.4.21(@types/node@20.19.43)(lightningcss@1.33.0)(terser@5.51.2))
-      '@testing-library/dom':
-        specifier: ^10.4.2
-        version: 10.4.2
-      '@testing-library/react':
-        specifier: ^16.3.3
-        version: 16.3.3(@testing-library/dom@10.4.2)(@types/react-dom@18.3.7(@types/react@18.3.31))(@types/react@18.3.31)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      '@vitejs/plugin-react':
-        specifier: ^4.3.4
-        version: 4.7.0(supports-color@7.2.0)(vite@5.4.21(@types/node@20.19.43)(lightningcss@1.33.0)(terser@5.51.2))
-      jsdom:
-        specifier: ^25.0.1
-        version: 25.0.1(supports-color@7.2.0)
-      tailwindcss:
-        specifier: ^4.3.5
-        version: 4.3.5
-      typescript:
-        specifier: ^5.7.3
-        version: 5.9.3
-      vite:
-        specifier: ^5.4.11
-        version: 5.4.21(@types/node@20.19.43)(lightningcss@1.33.0)(terser@5.51.2)
-      vitest:
-        specifier: ^3.2.7
-        version: 3.2.7(@types/node@20.19.43)(jsdom@25.0.1(supports-color@7.2.0))(lightningcss@1.33.0)(supports-color@7.2.0)(terser@5.51.2)
-
-  apps/mfe-vision:
-    dependencies:
-      '@vietlearning/api-client':
-        specifier: workspace:*
-        version: link:../../packages/api-client
-      '@vietlearning/contracts':
-        specifier: workspace:*
-        version: link:../../packages/contracts
-      '@vietlearning/native':
-        specifier: workspace:*
-        version: link:../../packages/native
-      '@vietlearning/state':
-        specifier: workspace:*
-        version: link:../../packages/state
-      '@vietlearning/ui':
-        specifier: workspace:*
-        version: link:../../packages/ui
-      react:
-        specifier: ^18.3.1
-        version: 18.3.1
-      react-dom:
-        specifier: ^18.3.1
-        version: 18.3.1(react@18.3.1)
-      react-router-dom:
-        specifier: ^6.30.6
-        version: 6.30.6(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-    devDependencies:
-      '@testing-library/dom':
-        specifier: ^10.4.2
-        version: 10.4.2
-      '@testing-library/react':
-        specifier: ^16.3.3
-        version: 16.3.3(@testing-library/dom@10.4.2)(@types/react-dom@18.3.7(@types/react@18.3.31))(@types/react@18.3.31)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      '@vitejs/plugin-react':
-        specifier: ^4.3.4
-        version: 4.7.0(supports-color@7.2.0)(vite@5.4.21(@types/node@20.19.43)(lightningcss@1.33.0)(terser@5.51.2))
-      jsdom:
-        specifier: ^25.0.1
-        version: 25.0.1(supports-color@7.2.0)
-      typescript:
-        specifier: ^5.7.3
-        version: 5.9.3
-      vite:
-        specifier: ^5.4.11
-        version: 5.4.21(@types/node@20.19.43)(lightningcss@1.33.0)(terser@5.51.2)
-      vitest:
-        specifier: ^3.2.7
-        version: 3.2.7(@types/node@20.19.43)(jsdom@25.0.1(supports-color@7.2.0))(lightningcss@1.33.0)(supports-color@7.2.0)(terser@5.51.2)
-
-  packages/api-client:
+  01-nen-tang/packages/api-client:
     dependencies:
       '@vietlearning/contracts':
         specifier: workspace:*
@@ -865,26 +462,7 @@ importers:
         specifier: ^5.7.3
         version: 5.9.3
 
-  packages/audio-dsp:
-    dependencies:
-      '@vietlearning/shared':
-        specifier: workspace:*
-        version: link:../shared
-    devDependencies:
-      '@vietlearning/content':
-        specifier: workspace:*
-        version: link:../content
-      typescript:
-        specifier: ^5.7.3
-        version: 5.9.3
-
-  packages/content:
-    devDependencies:
-      typescript:
-        specifier: ^5.7.3
-        version: 5.9.3
-
-  packages/contracts:
+  01-nen-tang/packages/contracts:
     dependencies:
       drizzle-orm:
         specifier: ^0.39.3
@@ -898,7 +476,7 @@ importers:
         version: 0.5.16
       '@vietlearning/content':
         specifier: workspace:*
-        version: link:../content
+        version: link:../../../04-am-thanh-tri-thuc/packages/content
       postgres:
         specifier: ^3.4.9
         version: 3.4.9
@@ -906,62 +484,7 @@ importers:
         specifier: ^5.7.3
         version: 5.9.3
 
-  packages/exercises:
-    dependencies:
-      '@vietlearning/api-client':
-        specifier: workspace:*
-        version: link:../api-client
-      '@vietlearning/audio-dsp':
-        specifier: workspace:*
-        version: link:../audio-dsp
-      '@vietlearning/content':
-        specifier: workspace:*
-        version: link:../content
-      '@vietlearning/contracts':
-        specifier: workspace:*
-        version: link:../contracts
-      '@vietlearning/native':
-        specifier: workspace:*
-        version: link:../native
-      '@vietlearning/shared':
-        specifier: workspace:*
-        version: link:../shared
-      '@vietlearning/state':
-        specifier: workspace:*
-        version: link:../state
-      '@vietlearning/ui':
-        specifier: workspace:*
-        version: link:../ui
-      comlink:
-        specifier: ^4.4.2
-        version: 4.4.2
-      react:
-        specifier: ^18.3.1
-        version: 18.3.1
-      react-dom:
-        specifier: ^18.3.1
-        version: 18.3.1(react@18.3.1)
-    devDependencies:
-      '@testing-library/dom':
-        specifier: ^10.4.2
-        version: 10.4.2
-      '@testing-library/react':
-        specifier: ^16.3.3
-        version: 16.3.3(@testing-library/dom@10.4.2)(@types/react-dom@18.3.7(@types/react@18.3.31))(@types/react@18.3.31)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      '@vitejs/plugin-react':
-        specifier: ^4.3.4
-        version: 4.7.0(supports-color@7.2.0)(vite@5.4.21(@types/node@20.19.43)(lightningcss@1.33.0)(terser@5.51.2))
-      jsdom:
-        specifier: ^25.0.1
-        version: 25.0.1(supports-color@7.2.0)
-      typescript:
-        specifier: ^5.7.3
-        version: 5.9.3
-      vitest:
-        specifier: ^3.2.7
-        version: 3.2.7(@types/node@20.19.43)(jsdom@25.0.1(supports-color@7.2.0))(lightningcss@1.33.0)(supports-color@7.2.0)(terser@5.51.2)
-
-  packages/native:
+  01-nen-tang/packages/native:
     dependencies:
       '@capacitor-community/text-to-speech':
         specifier: ^6.1.0
@@ -983,13 +506,7 @@ importers:
         specifier: ^5.7.3
         version: 5.9.3
 
-  packages/prompts:
-    devDependencies:
-      typescript:
-        specifier: ^5.7.3
-        version: 5.9.3
-
-  packages/shared:
+  01-nen-tang/packages/shared:
     dependencies:
       '@vietlearning/contracts':
         specifier: workspace:*
@@ -999,7 +516,7 @@ importers:
         specifier: ^5.7.3
         version: 5.9.3
 
-  packages/state:
+  01-nen-tang/packages/state:
     dependencies:
       '@vietlearning/contracts':
         specifier: workspace:*
@@ -1024,7 +541,7 @@ importers:
         specifier: ^5.7.3
         version: 5.9.3
 
-  packages/ui:
+  01-nen-tang/packages/ui:
     dependencies:
       '@vietlearning/contracts':
         specifier: workspace:*
@@ -1066,6 +583,489 @@ importers:
       vitest:
         specifier: ^3.2.7
         version: 3.2.7(@types/node@20.19.43)(jsdom@25.0.1(supports-color@7.2.0))(lightningcss@1.33.0)(supports-color@7.2.0)(terser@5.51.2)
+
+  02-hoi-thoai-ai/apps/mfe-conversation:
+    dependencies:
+      '@vietlearning/api-client':
+        specifier: workspace:*
+        version: link:../../../01-nen-tang/packages/api-client
+      '@vietlearning/audio-dsp':
+        specifier: workspace:*
+        version: link:../../../04-am-thanh-tri-thuc/packages/audio-dsp
+      '@vietlearning/content':
+        specifier: workspace:*
+        version: link:../../../04-am-thanh-tri-thuc/packages/content
+      '@vietlearning/contracts':
+        specifier: workspace:*
+        version: link:../../../01-nen-tang/packages/contracts
+      '@vietlearning/native':
+        specifier: workspace:*
+        version: link:../../../01-nen-tang/packages/native
+      '@vietlearning/shared':
+        specifier: workspace:*
+        version: link:../../../01-nen-tang/packages/shared
+      '@vietlearning/state':
+        specifier: workspace:*
+        version: link:../../../01-nen-tang/packages/state
+      '@vietlearning/ui':
+        specifier: workspace:*
+        version: link:../../../01-nen-tang/packages/ui
+      react:
+        specifier: ^18.3.1
+        version: 18.3.1
+      react-dom:
+        specifier: ^18.3.1
+        version: 18.3.1(react@18.3.1)
+      react-router-dom:
+        specifier: ^6.30.6
+        version: 6.30.6(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+    devDependencies:
+      '@testing-library/dom':
+        specifier: ^10.4.2
+        version: 10.4.2
+      '@testing-library/react':
+        specifier: ^16.3.3
+        version: 16.3.3(@testing-library/dom@10.4.2)(@types/react-dom@18.3.7(@types/react@18.3.31))(@types/react@18.3.31)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@vitejs/plugin-react':
+        specifier: ^4.3.4
+        version: 4.7.0(supports-color@7.2.0)(vite@5.4.21(@types/node@20.19.43)(lightningcss@1.33.0)(terser@5.51.2))
+      jsdom:
+        specifier: ^25.0.1
+        version: 25.0.1(supports-color@7.2.0)
+      typescript:
+        specifier: ^5.7.3
+        version: 5.9.3
+      vite:
+        specifier: ^5.4.11
+        version: 5.4.21(@types/node@20.19.43)(lightningcss@1.33.0)(terser@5.51.2)
+      vitest:
+        specifier: ^3.2.7
+        version: 3.2.7(@types/node@20.19.43)(jsdom@25.0.1(supports-color@7.2.0))(lightningcss@1.33.0)(supports-color@7.2.0)(terser@5.51.2)
+
+  02-hoi-thoai-ai/apps/mfe-vision:
+    dependencies:
+      '@vietlearning/api-client':
+        specifier: workspace:*
+        version: link:../../../01-nen-tang/packages/api-client
+      '@vietlearning/contracts':
+        specifier: workspace:*
+        version: link:../../../01-nen-tang/packages/contracts
+      '@vietlearning/native':
+        specifier: workspace:*
+        version: link:../../../01-nen-tang/packages/native
+      '@vietlearning/state':
+        specifier: workspace:*
+        version: link:../../../01-nen-tang/packages/state
+      '@vietlearning/ui':
+        specifier: workspace:*
+        version: link:../../../01-nen-tang/packages/ui
+      react:
+        specifier: ^18.3.1
+        version: 18.3.1
+      react-dom:
+        specifier: ^18.3.1
+        version: 18.3.1(react@18.3.1)
+      react-router-dom:
+        specifier: ^6.30.6
+        version: 6.30.6(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+    devDependencies:
+      '@testing-library/dom':
+        specifier: ^10.4.2
+        version: 10.4.2
+      '@testing-library/react':
+        specifier: ^16.3.3
+        version: 16.3.3(@testing-library/dom@10.4.2)(@types/react-dom@18.3.7(@types/react@18.3.31))(@types/react@18.3.31)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@vitejs/plugin-react':
+        specifier: ^4.3.4
+        version: 4.7.0(supports-color@7.2.0)(vite@5.4.21(@types/node@20.19.43)(lightningcss@1.33.0)(terser@5.51.2))
+      jsdom:
+        specifier: ^25.0.1
+        version: 25.0.1(supports-color@7.2.0)
+      typescript:
+        specifier: ^5.7.3
+        version: 5.9.3
+      vite:
+        specifier: ^5.4.11
+        version: 5.4.21(@types/node@20.19.43)(lightningcss@1.33.0)(terser@5.51.2)
+      vitest:
+        specifier: ^3.2.7
+        version: 3.2.7(@types/node@20.19.43)(jsdom@25.0.1(supports-color@7.2.0))(lightningcss@1.33.0)(supports-color@7.2.0)(terser@5.51.2)
+
+  02-hoi-thoai-ai/packages/prompts:
+    devDependencies:
+      typescript:
+        specifier: ^5.7.3
+        version: 5.9.3
+
+  03-hoc-tap/apps/mfe-learner:
+    dependencies:
+      '@vietlearning/api-client':
+        specifier: workspace:*
+        version: link:../../../01-nen-tang/packages/api-client
+      '@vietlearning/contracts':
+        specifier: workspace:*
+        version: link:../../../01-nen-tang/packages/contracts
+      '@vietlearning/native':
+        specifier: workspace:*
+        version: link:../../../01-nen-tang/packages/native
+      '@vietlearning/shared':
+        specifier: workspace:*
+        version: link:../../../01-nen-tang/packages/shared
+      '@vietlearning/state':
+        specifier: workspace:*
+        version: link:../../../01-nen-tang/packages/state
+      '@vietlearning/ui':
+        specifier: workspace:*
+        version: link:../../../01-nen-tang/packages/ui
+      react:
+        specifier: ^18.3.1
+        version: 18.3.1
+      react-dom:
+        specifier: ^18.3.1
+        version: 18.3.1(react@18.3.1)
+      react-router-dom:
+        specifier: ^6.30.6
+        version: 6.30.6(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+    devDependencies:
+      '@testing-library/dom':
+        specifier: ^10.4.2
+        version: 10.4.2
+      '@testing-library/react':
+        specifier: ^16.3.3
+        version: 16.3.3(@testing-library/dom@10.4.2)(@types/react-dom@18.3.7(@types/react@18.3.31))(@types/react@18.3.31)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@vitejs/plugin-react':
+        specifier: ^4.3.4
+        version: 4.7.0(supports-color@7.2.0)(vite@5.4.21(@types/node@20.19.43)(lightningcss@1.33.0)(terser@5.51.2))
+      jsdom:
+        specifier: ^25.0.1
+        version: 25.0.1(supports-color@7.2.0)
+      typescript:
+        specifier: ^5.7.3
+        version: 5.9.3
+      vite:
+        specifier: ^5.4.11
+        version: 5.4.21(@types/node@20.19.43)(lightningcss@1.33.0)(terser@5.51.2)
+      vitest:
+        specifier: ^3.2.7
+        version: 3.2.7(@types/node@20.19.43)(jsdom@25.0.1(supports-color@7.2.0))(lightningcss@1.33.0)(supports-color@7.2.0)(terser@5.51.2)
+
+  03-hoc-tap/apps/mfe-path:
+    dependencies:
+      '@vietlearning/content':
+        specifier: workspace:*
+        version: link:../../../04-am-thanh-tri-thuc/packages/content
+      '@vietlearning/exercises':
+        specifier: workspace:*
+        version: link:../../packages/exercises
+      '@vietlearning/native':
+        specifier: workspace:*
+        version: link:../../../01-nen-tang/packages/native
+      '@vietlearning/shared':
+        specifier: workspace:*
+        version: link:../../../01-nen-tang/packages/shared
+      '@vietlearning/state':
+        specifier: workspace:*
+        version: link:../../../01-nen-tang/packages/state
+      '@vietlearning/ui':
+        specifier: workspace:*
+        version: link:../../../01-nen-tang/packages/ui
+      react:
+        specifier: ^18.3.1
+        version: 18.3.1
+      react-dom:
+        specifier: ^18.3.1
+        version: 18.3.1(react@18.3.1)
+      react-router-dom:
+        specifier: ^6.30.6
+        version: 6.30.6(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+    devDependencies:
+      '@testing-library/dom':
+        specifier: ^10.4.2
+        version: 10.4.2
+      '@testing-library/react':
+        specifier: ^16.3.3
+        version: 16.3.3(@testing-library/dom@10.4.2)(@types/react-dom@18.3.7(@types/react@18.3.31))(@types/react@18.3.31)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@vitejs/plugin-react':
+        specifier: ^4.3.4
+        version: 4.7.0(supports-color@7.2.0)(vite@5.4.21(@types/node@20.19.43)(lightningcss@1.33.0)(terser@5.51.2))
+      jsdom:
+        specifier: ^25.0.1
+        version: 25.0.1(supports-color@7.2.0)
+      typescript:
+        specifier: ^5.7.3
+        version: 5.9.3
+      vite:
+        specifier: ^5.4.11
+        version: 5.4.21(@types/node@20.19.43)(lightningcss@1.33.0)(terser@5.51.2)
+      vitest:
+        specifier: ^3.2.7
+        version: 3.2.7(@types/node@20.19.43)(jsdom@25.0.1(supports-color@7.2.0))(lightningcss@1.33.0)(supports-color@7.2.0)(terser@5.51.2)
+
+  03-hoc-tap/apps/mfe-practice:
+    dependencies:
+      '@fontsource/be-vietnam-pro':
+        specifier: ^5.3.0
+        version: 5.3.0
+      '@vietlearning/content':
+        specifier: workspace:*
+        version: link:../../../04-am-thanh-tri-thuc/packages/content
+      '@vietlearning/contracts':
+        specifier: workspace:*
+        version: link:../../../01-nen-tang/packages/contracts
+      '@vietlearning/exercises':
+        specifier: workspace:*
+        version: link:../../packages/exercises
+      '@vietlearning/native':
+        specifier: workspace:*
+        version: link:../../../01-nen-tang/packages/native
+      '@vietlearning/shared':
+        specifier: workspace:*
+        version: link:../../../01-nen-tang/packages/shared
+      '@vietlearning/state':
+        specifier: workspace:*
+        version: link:../../../01-nen-tang/packages/state
+      '@vietlearning/ui':
+        specifier: workspace:*
+        version: link:../../../01-nen-tang/packages/ui
+      react:
+        specifier: ^18.3.1
+        version: 18.3.1
+      react-dom:
+        specifier: ^18.3.1
+        version: 18.3.1(react@18.3.1)
+      react-router-dom:
+        specifier: ^6.30.6
+        version: 6.30.6(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+    devDependencies:
+      '@tailwindcss/vite':
+        specifier: ^4.3.5
+        version: 4.3.5(vite@5.4.21(@types/node@20.19.43)(lightningcss@1.33.0)(terser@5.51.2))
+      '@testing-library/dom':
+        specifier: ^10.4.2
+        version: 10.4.2
+      '@testing-library/react':
+        specifier: ^16.3.3
+        version: 16.3.3(@testing-library/dom@10.4.2)(@types/react-dom@18.3.7(@types/react@18.3.31))(@types/react@18.3.31)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@vitejs/plugin-react':
+        specifier: ^4.3.4
+        version: 4.7.0(supports-color@7.2.0)(vite@5.4.21(@types/node@20.19.43)(lightningcss@1.33.0)(terser@5.51.2))
+      jsdom:
+        specifier: ^25.0.1
+        version: 25.0.1(supports-color@7.2.0)
+      tailwindcss:
+        specifier: ^4.3.5
+        version: 4.3.5
+      typescript:
+        specifier: ^5.7.3
+        version: 5.9.3
+      vite:
+        specifier: ^5.4.11
+        version: 5.4.21(@types/node@20.19.43)(lightningcss@1.33.0)(terser@5.51.2)
+      vitest:
+        specifier: ^3.2.7
+        version: 3.2.7(@types/node@20.19.43)(jsdom@25.0.1(supports-color@7.2.0))(lightningcss@1.33.0)(supports-color@7.2.0)(terser@5.51.2)
+
+  03-hoc-tap/packages/exercises:
+    dependencies:
+      '@vietlearning/api-client':
+        specifier: workspace:*
+        version: link:../../../01-nen-tang/packages/api-client
+      '@vietlearning/audio-dsp':
+        specifier: workspace:*
+        version: link:../../../04-am-thanh-tri-thuc/packages/audio-dsp
+      '@vietlearning/content':
+        specifier: workspace:*
+        version: link:../../../04-am-thanh-tri-thuc/packages/content
+      '@vietlearning/contracts':
+        specifier: workspace:*
+        version: link:../../../01-nen-tang/packages/contracts
+      '@vietlearning/native':
+        specifier: workspace:*
+        version: link:../../../01-nen-tang/packages/native
+      '@vietlearning/shared':
+        specifier: workspace:*
+        version: link:../../../01-nen-tang/packages/shared
+      '@vietlearning/state':
+        specifier: workspace:*
+        version: link:../../../01-nen-tang/packages/state
+      '@vietlearning/ui':
+        specifier: workspace:*
+        version: link:../../../01-nen-tang/packages/ui
+      comlink:
+        specifier: ^4.4.2
+        version: 4.4.2
+      react:
+        specifier: ^18.3.1
+        version: 18.3.1
+      react-dom:
+        specifier: ^18.3.1
+        version: 18.3.1(react@18.3.1)
+    devDependencies:
+      '@testing-library/dom':
+        specifier: ^10.4.2
+        version: 10.4.2
+      '@testing-library/react':
+        specifier: ^16.3.3
+        version: 16.3.3(@testing-library/dom@10.4.2)(@types/react-dom@18.3.7(@types/react@18.3.31))(@types/react@18.3.31)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@vitejs/plugin-react':
+        specifier: ^4.3.4
+        version: 4.7.0(supports-color@7.2.0)(vite@5.4.21(@types/node@20.19.43)(lightningcss@1.33.0)(terser@5.51.2))
+      jsdom:
+        specifier: ^25.0.1
+        version: 25.0.1(supports-color@7.2.0)
+      typescript:
+        specifier: ^5.7.3
+        version: 5.9.3
+      vitest:
+        specifier: ^3.2.7
+        version: 3.2.7(@types/node@20.19.43)(jsdom@25.0.1(supports-color@7.2.0))(lightningcss@1.33.0)(supports-color@7.2.0)(terser@5.51.2)
+
+  04-am-thanh-tri-thuc/apps/mfe-knowledge:
+    dependencies:
+      '@fontsource/be-vietnam-pro':
+        specifier: ^5.3.0
+        version: 5.3.0
+      '@radix-ui/react-dialog':
+        specifier: ^1.3.1
+        version: 1.3.1(@types/react-dom@18.3.7(@types/react@18.3.31))(@types/react@18.3.31)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@vietlearning/api-client':
+        specifier: workspace:*
+        version: link:../../../01-nen-tang/packages/api-client
+      '@vietlearning/content':
+        specifier: workspace:*
+        version: link:../../packages/content
+      '@vietlearning/contracts':
+        specifier: workspace:*
+        version: link:../../../01-nen-tang/packages/contracts
+      '@vietlearning/native':
+        specifier: workspace:*
+        version: link:../../../01-nen-tang/packages/native
+      '@vietlearning/shared':
+        specifier: workspace:*
+        version: link:../../../01-nen-tang/packages/shared
+      '@vietlearning/state':
+        specifier: workspace:*
+        version: link:../../../01-nen-tang/packages/state
+      '@vietlearning/ui':
+        specifier: workspace:*
+        version: link:../../../01-nen-tang/packages/ui
+      react:
+        specifier: ^18.3.1
+        version: 18.3.1
+      react-dom:
+        specifier: ^18.3.1
+        version: 18.3.1(react@18.3.1)
+    devDependencies:
+      '@tailwindcss/vite':
+        specifier: ^4.3.5
+        version: 4.3.5(vite@5.4.21(@types/node@20.19.43)(lightningcss@1.33.0)(terser@5.51.2))
+      '@testing-library/dom':
+        specifier: ^10.4.2
+        version: 10.4.2
+      '@testing-library/react':
+        specifier: ^16.3.3
+        version: 16.3.3(@testing-library/dom@10.4.2)(@types/react-dom@18.3.7(@types/react@18.3.31))(@types/react@18.3.31)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@vitejs/plugin-react':
+        specifier: ^4.3.4
+        version: 4.7.0(supports-color@7.2.0)(vite@5.4.21(@types/node@20.19.43)(lightningcss@1.33.0)(terser@5.51.2))
+      jsdom:
+        specifier: ^25.0.1
+        version: 25.0.1(supports-color@7.2.0)
+      tailwindcss:
+        specifier: ^4.3.5
+        version: 4.3.5
+      typescript:
+        specifier: ^5.7.3
+        version: 5.9.3
+      vite:
+        specifier: ^5.4.11
+        version: 5.4.21(@types/node@20.19.43)(lightningcss@1.33.0)(terser@5.51.2)
+      vitest:
+        specifier: ^3.2.7
+        version: 3.2.7(@types/node@20.19.43)(jsdom@25.0.1(supports-color@7.2.0))(lightningcss@1.33.0)(supports-color@7.2.0)(terser@5.51.2)
+
+  04-am-thanh-tri-thuc/apps/mfe-speech-lab:
+    dependencies:
+      '@fontsource/be-vietnam-pro':
+        specifier: ^5.3.0
+        version: 5.3.0
+      '@vietlearning/audio-dsp':
+        specifier: workspace:*
+        version: link:../../packages/audio-dsp
+      '@vietlearning/content':
+        specifier: workspace:*
+        version: link:../../packages/content
+      '@vietlearning/contracts':
+        specifier: workspace:*
+        version: link:../../../01-nen-tang/packages/contracts
+      '@vietlearning/exercises':
+        specifier: workspace:*
+        version: link:../../../03-hoc-tap/packages/exercises
+      '@vietlearning/native':
+        specifier: workspace:*
+        version: link:../../../01-nen-tang/packages/native
+      '@vietlearning/shared':
+        specifier: workspace:*
+        version: link:../../../01-nen-tang/packages/shared
+      '@vietlearning/state':
+        specifier: workspace:*
+        version: link:../../../01-nen-tang/packages/state
+      '@vietlearning/ui':
+        specifier: workspace:*
+        version: link:../../../01-nen-tang/packages/ui
+      react:
+        specifier: ^18.3.1
+        version: 18.3.1
+      react-dom:
+        specifier: ^18.3.1
+        version: 18.3.1(react@18.3.1)
+    devDependencies:
+      '@tailwindcss/vite':
+        specifier: ^4.3.5
+        version: 4.3.5(vite@5.4.21(@types/node@20.19.43)(lightningcss@1.33.0)(terser@5.51.2))
+      '@testing-library/dom':
+        specifier: ^10.4.2
+        version: 10.4.2
+      '@testing-library/react':
+        specifier: ^16.3.3
+        version: 16.3.3(@testing-library/dom@10.4.2)(@types/react-dom@18.3.7(@types/react@18.3.31))(@types/react@18.3.31)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@vitejs/plugin-react':
+        specifier: ^4.3.4
+        version: 4.7.0(supports-color@7.2.0)(vite@5.4.21(@types/node@20.19.43)(lightningcss@1.33.0)(terser@5.51.2))
+      jsdom:
+        specifier: ^25.0.1
+        version: 25.0.1(supports-color@7.2.0)
+      tailwindcss:
+        specifier: ^4.3.5
+        version: 4.3.5
+      typescript:
+        specifier: ^5.7.3
+        version: 5.9.3
+      vite:
+        specifier: ^5.4.11
+        version: 5.4.21(@types/node@20.19.43)(lightningcss@1.33.0)(terser@5.51.2)
+      vitest:
+        specifier: ^3.2.7
+        version: 3.2.7(@types/node@20.19.43)(jsdom@25.0.1(supports-color@7.2.0))(lightningcss@1.33.0)(supports-color@7.2.0)(terser@5.51.2)
+
+  04-am-thanh-tri-thuc/packages/audio-dsp:
+    dependencies:
+      '@vietlearning/shared':
+        specifier: workspace:*
+        version: link:../../../01-nen-tang/packages/shared
+    devDependencies:
+      '@vietlearning/content':
+        specifier: workspace:*
+        version: link:../content
+      typescript:
+        specifier: ^5.7.3
+        version: 5.9.3
+
+  04-am-thanh-tri-thuc/packages/content:
+    devDependencies:
+      typescript:
+        specifier: ^5.7.3
+        version: 5.9.3
 
 packages:
 

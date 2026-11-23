@@ -4,7 +4,7 @@ import { defineMessages } from '@vietlearning/state';
  * Trang công khai /xoa-tai-khoan (Google Play Data safety yêu cầu một đường dẫn web hướng dẫn xóa tài khoản).
  * BẢN NHÁP — phần chữ pháp lý cần người phụ trách (kien-truc) duyệt trước khi phát hành.
  *
- * Mô tả theo hành vi của Gateway (apps/gateway/src/routes/me.ts, services/auth/lifecycle.ts):
+ * Mô tả theo hành vi của Gateway (01-nen-tang/apps/gateway/src/routes/me.ts, services/auth/lifecycle.ts):
  *  - DELETE /v1/me {mode:'grace'}: khóa ngay, thu hồi mọi phiên, xóa cứng sau ACCOUNT_DELETE_GRACE_DAYS = 30 ngày;
  *    đăng nhập lại trong hạn thì hỏi khôi phục (POST /v1/me/restore).
  *  - DELETE /v1/me {mode:'now'}: xóa cứng ngay. Bia mộ (băm mã đăng nhập) giữ 90 ngày; tên đăng nhập giữ chỗ 30 ngày.

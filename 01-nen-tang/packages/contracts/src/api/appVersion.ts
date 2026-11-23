@@ -51,7 +51,7 @@ export type AppUpdateRequiredError = z.infer<typeof AppUpdateRequiredErrorSchema
 export const APP_BUILD_HEADER = 'x-app-build';
 export const APP_CHANNEL_HEADER = 'x-app-channel';
 
-// Cấu hình Gateway (apps/gateway/config/app-versions.json)
+// Cấu hình Gateway (01-nen-tang/apps/gateway/config/app-versions.json)
 const ChannelConfigSchema = z
   .object({
     latestBuild: z.number().int().min(0),

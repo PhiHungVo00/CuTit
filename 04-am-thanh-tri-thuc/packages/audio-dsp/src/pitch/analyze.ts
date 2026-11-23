@@ -12,7 +12,7 @@ export interface ToneAnalysisInput {
   pcm: Float32Array;
   sampleRate: number;
   target: ToneId;
-  /** contour mẫu (semitone tương đối) của từng thanh, lấy từ packages/content */
+  /** contour mẫu (semitone tương đối) của từng thanh, lấy từ 04-am-thanh-tri-thuc/packages/content */
   references: Record<ToneId, number[]>;
   strategy?: PitchStrategy['name'];
 }

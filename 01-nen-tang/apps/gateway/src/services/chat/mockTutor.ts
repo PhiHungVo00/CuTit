@@ -3,7 +3,7 @@
  *
  * Đây KHÔNG phải thuật toán sản phẩm (không thuộc danh mục A1–A8): chỉ là bộ luật tất định để
  * Frontend và test có dữ liệu đúng hình dạng contract. Khi nối LLM thật (Nguyên tắc 1, 4),
- * thay lớp này bằng adapter gọi LLM với prompt từ packages/prompts, yêu cầu đầu ra JSON
+ * thay lớp này bằng adapter gọi LLM với prompt từ 02-hoi-thoai-ai/packages/prompts, yêu cầu đầu ra JSON
  * (reply, correction, blocks, completedTasks) và xác thực bằng Zod (Nguyên tắc 6).
  * Mọi phản hồi từ đây đều gắn `mock: true` để giao diện báo trung thực cho người học.
  */

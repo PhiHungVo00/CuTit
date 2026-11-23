@@ -2,7 +2,7 @@
  * Mô hình khóa học (GĐ1): Course → Unit → Lesson → ExerciseRef.
  * ExerciseRef chỉ THAM CHIẾU id nội dung có sẵn (câu ghép, cặp xưng hô, từ phương ngữ, thanh điệu)
  * hoặc từ/câu mới của khóa học (words.json `w*`, sentences.json `cs*`). Bài tập cụ thể (lựa chọn, nhiễu)
- * do packages/exercises dựng từ ref. Cờ reviewed: false = bản nháp; đã duyệt hết ở đợt DUYET-NOI-DUNG (docs/nhat-ky/DUYET-NOI-DUNG.md).
+ * do 03-hoc-tap/packages/exercises dựng từ ref. Cờ reviewed: false = bản nháp; đã duyệt hết ở đợt DUYET-NOI-DUNG (docs/nhat-ky/DUYET-NOI-DUNG.md).
  */
 import unit1 from '../data/course/unit-1.json' with { type: 'json' };
 import unit2 from '../data/course/unit-2.json' with { type: 'json' };

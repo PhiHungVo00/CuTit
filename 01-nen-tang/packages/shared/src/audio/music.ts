@@ -7,7 +7,7 @@ const FADE_MS = 300;
 const FADE_STEP_MS = 50;
 const RESUME_DELAY_MS = 1000;
 
-/** Sáng 5–11h, chiều 12–17h, tối/đêm còn lại (khớp trackForHour của packages/state; shared không được import state). */
+/** Sáng 5–11h, chiều 12–17h, tối/đêm còn lại (khớp trackForHour của 01-nen-tang/packages/state; shared không được import state). */
 function trackForHour(hour: number): MusicTrack {
   if (hour >= 5 && hour < 12) return 'sang-lang';
   if (hour >= 12 && hour < 18) return 'chieu-dong';

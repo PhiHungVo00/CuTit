@@ -1,5 +1,7 @@
+# 4 thư mục sở hữu (01-nen-tang … 04-am-thanh-tri-thuc), mỗi thư mục có apps/ và packages/ như cũ.
+# Vẫn là MỘT workspace pnpm; tên gói @vietlearning/* không đổi. Xem docs/CAU-TRUC-4-THU-MUC.md.
 packages:
-  - "apps/*"
-  - "packages/*"
+  - '0[1-4]-*/apps/*'
+  - '0[1-4]-*/packages/*'
 allowBuilds:
   esbuild: true

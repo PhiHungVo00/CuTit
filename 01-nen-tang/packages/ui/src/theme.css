@@ -1,5 +1,5 @@
 /*
- * Design tokens Bé Cu Tít (packages/ui, M3 sở hữu) cho Tailwind CSS v4.
+ * Design tokens Bé Cu Tít (01-nen-tang/packages/ui, M3 sở hữu) cho Tailwind CSS v4.
  *
  * Cách dùng trong app:  @import "tailwindcss";  @import "@vietlearning/ui/theme.css";
  * Rồi dùng class ngữ nghĩa: bg-surface, text-ink, border-line, bg-accent, text-accent-ink...

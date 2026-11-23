@@ -1,7 +1,7 @@
 /**
  * Chạy thử THẬT một lượt /v1/chat/turn (prompt gia sư + xác thực Zod như app) qua chuỗi đã cấu hình, bằng app.inject,
  * DB PGlite trong RAM. Khóa đọc từ ~/.becutit/gateway.env, không in khóa.
- *   LLM_CHAIN='gemini:ten-sai,openrouter:google/gemma-4-31b-it:free' node apps/gateway/scripts/ai-chat-smoke.mjs
+ *   LLM_CHAIN='gemini:ten-sai,openrouter:google/gemma-4-31b-it:free' node 01-nen-tang/apps/gateway/scripts/ai-chat-smoke.mjs
  */
 import { loadConfig } from '../dist/config.js';
 import { buildApp } from '../dist/app.js';

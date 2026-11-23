@@ -60,7 +60,7 @@ export const contentRoutes: FastifyPluginAsync<RouteDeps> = async (server, { pip
     const body = parseOr400(CultureAskRequestSchema, req.body, reply);
     if (!body) return reply;
     const tokensEstimate = Math.ceil(body.question.length / 3) + 300;
-    // Truy hồi thẻ (packages/content) rồi để LLM diễn giải CHỈ từ các thẻ đó (RAG). Không có thẻ khớp
+    // Truy hồi thẻ (04-am-thanh-tri-thuc/packages/content) rồi để LLM diễn giải CHỈ từ các thẻ đó (RAG). Không có thẻ khớp
     // => không gọi AI (tránh bịa). Không có AI => ghép thẻ theo mẫu, mock: true.
     const cards = searchCulture(body.question, 3);
     if (llm && cards.length) {

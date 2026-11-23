@@ -4,7 +4,7 @@ import { expect, test } from '@playwright/test';
 /**
  * Dự án 1 Task 13: quét trợ năng (axe-core, WCAG 2.0/2.1/2.2 A+AA) các màn mới, sáng + tối, ở pixel-7 và 320px.
  * Khẳng định 0 vi phạm mức serious/critical. Chạy: npx playwright test a11y (cần bản build + gateway như e2e thường).
- * Giao diện lưu ở localStorage 'becutit.device' (packages/state/src/deviceSettings.ts); mặc định là sáng.
+ * Giao diện lưu ở localStorage 'becutit.device' (01-nen-tang/packages/state/src/deviceSettings.ts); mặc định là sáng.
  */
 const SCREENS: [string, string][] = [
   ['hoc', '/'],

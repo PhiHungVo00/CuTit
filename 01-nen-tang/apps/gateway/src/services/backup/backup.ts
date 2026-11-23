@@ -2,7 +2,7 @@ import { spawn } from 'node:child_process';
 
 /**
  * Phần thuần (test được) của backup Postgres — docs/van-hanh/BACKUP.md.
- * Script: apps/gateway/scripts/backup-db.ts (pg_dump) và scripts/restore-test.ts (thử khôi phục vào DB tạm).
+ * Script: 01-nen-tang/apps/gateway/scripts/backup-db.ts (pg_dump) và scripts/restore-test.ts (thử khôi phục vào DB tạm).
  *
  * Nguyên tắc: URL/mật khẩu KHÔNG bao giờ nằm trong argv (lộ qua `ps`) hay log — truyền qua biến môi trường PG*.
  */

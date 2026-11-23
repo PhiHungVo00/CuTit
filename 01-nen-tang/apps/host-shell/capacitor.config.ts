@@ -5,7 +5,7 @@ import type { CapacitorConfig } from '@capacitor/cli';
  * Toàn bộ file web nằm sẵn trong app => mở app không cần mạng, chỉ gọi Gateway khi cần AI.
  *
  * Dev với emulator Android: Gateway trên máy tính là http://10.0.2.2:4000.
- * Đặt VITE_GATEWAY_URL lúc build (xem apps/host-shell/.env.example).
+ * Đặt VITE_GATEWAY_URL lúc build (xem 01-nen-tang/apps/host-shell/.env.example).
  */
 const isDev = process.env.NODE_ENV !== 'production';
 

@@ -1,6 +1,6 @@
 /**
  * Chạy thử THẬT một lượt qua chuỗi dự phòng đã cấu hình (đọc khóa từ ~/.becutit/gateway.env). Không in khóa.
- * Dùng:  pnpm --filter @vietlearning/gateway build && node apps/gateway/scripts/ai-chain-smoke.mjs
+ * Dùng:  pnpm --filter @vietlearning/gateway build && node 01-nen-tang/apps/gateway/scripts/ai-chain-smoke.mjs
  * Thử dự phòng thật: đặt LLM_CHAIN=gemini:ten-model-khong-ton-tai,openrouter:<model>  (nguồn đầu 404 => nguồn sau trả lời).
  */
 import { loadConfig } from '../dist/config.js';

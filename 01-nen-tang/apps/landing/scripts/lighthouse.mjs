@@ -2,7 +2,7 @@
  * Đo Lighthouse di động (mặc định của Lighthouse: 4G chậm + CPU chậm 4×) cho trang giới thiệu, lấy TRUNG VỊ nhiều lần.
  * Ngân sách spec dự án 7: Performance ≥ 90, Accessibility ≥ 95.
  * Chạy sau build: pnpm --filter @vietlearning/landing perf   (cần Chrome; đặt CHROME_PATH nếu không ở chỗ mặc định)
- * Dựa theo apps/host-shell/scripts/lighthouse.mjs của dự án.
+ * Dựa theo 01-nen-tang/apps/host-shell/scripts/lighthouse.mjs của dự án.
  */
 import { spawn, spawnSync } from 'node:child_process';
 import { existsSync, mkdtempSync, readFileSync } from 'node:fs';

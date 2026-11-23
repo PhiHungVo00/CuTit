@@ -8,7 +8,7 @@ import { z } from 'zod';
 /**
  * Thứ tự nạp biến môi trường (biến đã có thì KHÔNG bị ghi đè):
  * 1. Biến môi trường của tiến trình (CI, server thật)
- * 2. apps/gateway/.env của checkout hiện tại (gitignored)
+ * 2. 01-nen-tang/apps/gateway/.env của checkout hiện tại (gitignored)
  * 3. Tệp dùng chung cho mọi checkout/worktree trên máy dev, NGOÀI repo:
  *    %USERPROFILE%\.becutit\gateway.env (Windows) hoặc ~/.becutit/gateway.env — đặt API key ở đây
  *    để không phải chép lại sau mỗi lần merge/tạo worktree. Đổi vị trí bằng BECUTIT_ENV_FILE.
@@ -20,11 +20,11 @@ loadDotenv({ path: process.env.BECUTIT_ENV_FILE ?? join(homedir(), '.becutit', '
  * Cấu hình Gateway đọc từ biến môi trường và được xác thực bằng Zod ngay khi khởi động.
  * Thiếu hoặc sai cấu hình => dừng tiến trình sớm thay vì chạy với giá trị nguy hiểm.
  */
-/** apps/gateway/.data/pglite (tính từ dist/ hoặc src/, không phụ thuộc thư mục chạy lệnh) */
+/** 01-nen-tang/apps/gateway/.data/pglite (tính từ dist/ hoặc src/, không phụ thuộc thư mục chạy lệnh) */
 const DEFAULT_PGLITE_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', '.data', 'pglite');
-/** apps/gateway/.data/tts: âm thanh dựng sẵn (GĐ2), không commit */
+/** 01-nen-tang/apps/gateway/.data/tts: âm thanh dựng sẵn (GĐ2), không commit */
 const DEFAULT_TTS_AUDIO_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', '.data', 'tts');
-/** apps/gateway/config/app-versions.json: phiên bản app mới nhất/tối thiểu theo kênh (dự án 8) */
+/** 01-nen-tang/apps/gateway/config/app-versions.json: phiên bản app mới nhất/tối thiểu theo kênh (dự án 8) */
 const DEFAULT_APP_VERSIONS_FILE = join(dirname(fileURLToPath(import.meta.url)), '..', 'config', 'app-versions.json');
 
 const boolFromEnv = z

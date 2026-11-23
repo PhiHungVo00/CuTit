@@ -2,7 +2,7 @@
  * THỬ KHÔI PHỤC một bản backup vào DB TẠM rồi kiểm tra — docs/van-hanh/BACKUP.md (“backup chưa thử khôi phục = chưa có backup”).
  *   RESTORE_DATABASE_URL=postgres://.../becutit_restore_test pnpm --filter @vietlearning/gateway db:restore-test -- --file <tệp.dump>
  * - RESTORE_DATABASE_URL: DB TRỐNG, tạo sẵn, KHÁC DB chính (script từ chối nếu trùng host+cổng+tên với DATABASE_URL).
- * - Kiểm tra: số migration đã áp = số migration trong apps/gateway/drizzle/meta/_journal.json; các bảng chính có mặt; in số dòng.
+ * - Kiểm tra: số migration đã áp = số migration trong 01-nen-tang/apps/gateway/drizzle/meta/_journal.json; các bảng chính có mặt; in số dòng.
  * - Xong thì XÓA DB tạm (chứa dữ liệu cá nhân thật).
  */
 import { readFile } from 'node:fs/promises';

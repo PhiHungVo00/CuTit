@@ -10,12 +10,12 @@ Ngân sách không ảnh hưởng hiệu năng thật (ví dụ vài trăm byte 
 
 1. **Cập nhật nhánh theo main** (`git fetch && git merge origin/main`). Gỡ xung đột:
    - Nhật ký `docs/NHAT_KY_CHUYEN_DOI_MOBILE.md`: giữ cả hai dòng, đánh số lại, dòng mới nhất ở trên.
-   - Migration trùng số (`apps/gateway/drizzle/`): xóa migration và snapshot của nhánh vào sau, lấy journal của main, chạy `pnpm --filter @vietlearning/gateway db:generate --name <ten>`, so SQL với bản gốc.
+   - Migration trùng số (`01-nen-tang/apps/gateway/drizzle/`): xóa migration và snapshot của nhánh vào sau, lấy journal của main, chạy `pnpm --filter @vietlearning/gateway db:generate --name <ten>`, so SQL với bản gốc.
    - `.size-limit.cjs`, `app.ts`, `contracts/api/index.ts`: giữ mục của cả hai bên.
 2. `pnpm install`, rồi `pnpm build` (19/19). Ngay sau đó chạy **`git checkout -- AGENTS.md`**: turbo tự sửa tệp này (R13), không commit thay đổi đó.
 3. `pnpm test` (35/35 task), `pnpm lint:boundaries` (0 vi phạm).
 4. `VITE_GATEWAY_URL=http://localhost:<cổng GW> pnpm --filter @vietlearning/host-shell build`, rồi `pnpm --filter @vietlearning/host-shell size`. Không mục nào "exceeded".
-5. e2e trong `apps/host-shell`: `E2E_PORT=<cổng UI> E2E_GATEWAY_PORT=<cổng GW> npx playwright test --reporter=line`. Mỗi phiên dùng **cổng riêng** để không đụng phiên khác.
+5. e2e trong `01-nen-tang/apps/host-shell`: `E2E_PORT=<cổng UI> E2E_GATEWAY_PORT=<cổng GW> npx playwright test --reporter=line`. Mỗi phiên dùng **cổng riêng** để không đụng phiên khác.
 6. **Đụng native/khởi động/tài khoản/đồng bộ/camera/micro** ⇒ chạy skill `thu-tren-emulator`.
 6b. **Plugin và công cụ** (người dùng bật 20/11; Axe gỡ 22/11):
    - **code-review**: chạy review nhiều agent trên PR/diff trước khi gộp. Chỉ sửa phát hiện có độ tin cậy cao; phát hiện còn nghi ngờ thì ghi vào PR.

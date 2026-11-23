@@ -1,6 +1,6 @@
 /**
  * Danh sách văn bản cần đọc của một gói âm thanh (unit × miền) — NGUỒN DUY NHẤT cho script dựng sẵn TTS (Gateway)
- * và cho client tra gói (packages/exercises). Văn bản đã đổi từ theo miền (A7) trừ từ của bài luyện thanh.
+ * và cho client tra gói (03-hoc-tap/packages/exercises). Văn bản đã đổi từ theo miền (A7) trừ từ của bài luyện thanh.
  */
 import { localizeText, type Dialect } from '../dialects/dialectMap.js';
 import { COURSE, findSentence, findWord, sentenceText, type ExerciseRef } from './course.js';

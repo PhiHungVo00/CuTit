@@ -1,6 +1,6 @@
 # Nguồn âm thanh trang giới thiệu
 
-Ô “Một câu, ba miền” (dự án 7, spec `docs/superpowers/specs/2026-11-21-trang-gioi-thieu-design.md` mục 5.1). Tệp tạo bằng `apps/landing/scripts/lay-am-thanh.mjs`; không gọi Gateway lúc chạy.
+Ô “Một câu, ba miền” (dự án 7, spec `docs/superpowers/specs/2026-11-21-trang-gioi-thieu-design.md` mục 5.1). Tệp tạo bằng `01-nen-tang/apps/landing/scripts/lay-am-thanh.mjs`; không gọi Gateway lúc chạy.
 
 | Mục | Giá trị |
 |---|---|
@@ -12,7 +12,7 @@
 | Kiểm | Luật tự động của dự án (`autoVerdict`, D9): STT chép khớp nguyên văn hoặc khớp khi bỏ dấu thanh. **Người nghe chưa duyệt** từng tệp. |
 | Chuyển đổi | ffmpeg: ogg = Opus 48 kbps mono; mp3 = 64 kbps mono; bỏ metadata |
 | Dung lượng | ogg 9–10 kB, mp3 13–15 kB (trần 40 kB) |
-| Kho gốc | Kho âm thanh khóa học `apps/gateway/.data/tts/` (không commit), manifest `packs/u1-{north,central,south}.json` |
+| Kho gốc | Kho âm thanh khóa học `01-nen-tang/apps/gateway/.data/tts/` (không commit), manifest `packs/u1-{north,central,south}.json` |
 
 Lưu ý:
 - Mô hình gắn **watermark không nghe thấy** mặc định (D9, giữ nguyên).

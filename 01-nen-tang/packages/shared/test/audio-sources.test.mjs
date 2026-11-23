@@ -8,7 +8,7 @@ import { fileURLToPath } from 'node:url';
  * Giữ nguyên tắc: MỌI nguồn phát/thu âm báo vào điều phối (acquireAudio) để nhạc nền dừng.
  * Thêm nguồn mới ⇒ test này đỏ cho tới khi bọc nguồn và thêm vào danh sách trắng bên dưới.
  */
-const ROOT = join(fileURLToPath(new URL('.', import.meta.url)), '..', '..', '..');
+const ROOT = join(fileURLToPath(new URL('.', import.meta.url)), '..', '..', '..', '..');
 
 const WRAPPED = [
   'packages/native/src/speech.ts', // Web Speech + TTS native
@@ -38,11 +38,15 @@ function* walk(dir) {
   }
 }
 
-const rel = (p) => relative(ROOT, p).split(sep).join('/');
+const OWNER_DIRS = readdirSync(ROOT).filter((n) => /^0\d-/.test(n));
+// Đường dẫn tính theo apps/… hoặc packages/… (bỏ tiền tố thư mục sở hữu 0N-…) để danh sách trắng không đổi khi chuyển người sở hữu
+const rel = (p) => relative(ROOT, p).split(sep).join('/').replace(/^0\d-[^/]+\//, '');
+function isFile(p) { try { return statSync(p).isFile(); } catch { return false; } }
+const abs = (r) => join(ROOT, OWNER_DIRS.find((d) => isFile(join(ROOT, d, r))) ?? '', r);
 
 test('không có nguồn phát/thu âm nào ngoài danh sách đã bọc', () => {
   const offenders = [];
-  for (const top of ['apps', 'packages']) {
+  for (const top of OWNER_DIRS.flatMap((d) => [join(d, 'apps'), join(d, 'packages')])) {
     for (const f of walk(join(ROOT, top))) {
       const r = rel(f);
       if (WRAPPED.includes(r) || COORDINATOR.includes(r) || SKIP_PREFIX.some((p) => r.startsWith(p))) continue;
@@ -54,6 +58,6 @@ test('không có nguồn phát/thu âm nào ngoài danh sách đã bọc', () =>
 
 test('mỗi nguồn trong danh sách đã gọi acquireAudio', () => {
   for (const r of WRAPPED) {
-    assert.match(readFileSync(join(ROOT, r), 'utf8'), /acquireAudio\(/, `${r} chưa gọi acquireAudio`);
+    assert.match(readFileSync(abs(r), 'utf8'), /acquireAudio\(/, `${r} chưa gọi acquireAudio`);
   }
 });

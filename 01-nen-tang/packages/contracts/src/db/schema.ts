@@ -17,13 +17,13 @@ import { sql } from 'drizzle-orm';
 
 /**
  * Schema PostgreSQL (Drizzle) — một nguồn duy nhất cho Gateway.
- * Migration SQL đánh số sinh bằng drizzle-kit vào apps/gateway/drizzle/ (không sửa tay bảng đã phát hành).
+ * Migration SQL đánh số sinh bằng drizzle-kit vào 01-nen-tang/apps/gateway/drizzle/ (không sửa tay bảng đã phát hành).
  *
  * Quy ước:
  * - Mọi bảng dữ liệu người học trỏ tới users.id với ON DELETE CASCADE => `DELETE /v1/me` xóa cứng sạch
  *   (kể cả xp_events). `users.deleted_at` dành cho xóa mềm có thời gian ân hạn sau này.
  * - Ngày học (`day`) là ngày ĐỊA PHƯƠNG 'YYYY-MM-DD' do client gửi — không tự tính theo UTC ở server.
- * - Khớp dữ liệu client trong packages/state (nguồn chuẩn hiện tại của hình dạng dữ liệu).
+ * - Khớp dữ liệu client trong 01-nen-tang/packages/state (nguồn chuẩn hiện tại của hình dạng dữ liệu).
  */
 
 const ts = (name: string) => timestamp(name, { withTimezone: true });
@@ -408,7 +408,7 @@ export const friendships = pgTable(
  * 23. Nhật ký sự kiện bảo mật/quản trị (audit log) — CHỈ THÊM, không sửa/ghi đè dòng cũ.
  * Mục đích: phát hiện và điều tra sự cố lộ dữ liệu (báo cơ quan chuyên trách trong 72 giờ — docs/van-hanh/SU-CO-LO-DU-LIEU.md).
  * - Không lưu IP thô: `ip_hash` = HMAC-SHA256(AUDIT_IP_SALT, ip) rút gọn; user-agent rút gọn.
- * - `metadata`: chỉ các trường trong danh sách trắng theo loại sự kiện (apps/gateway/src/services/audit/) — không dữ liệu học,
+ * - `metadata`: chỉ các trường trong danh sách trắng theo loại sự kiện (01-nen-tang/apps/gateway/src/services/audit/) — không dữ liệu học,
  *   không bí mật (token, mã khôi phục, mã mời), không id người dùng khác.
  * - Xóa tài khoản => `user_id` tự đặt NULL (ẩn danh hóa, FK ON DELETE SET NULL); dòng vẫn còn để điều tra.
  * - Lưu tối đa 180 ngày (job dọn trong Gateway).

@@ -1,6 +1,6 @@
 /*
  * Điểm vào CSS của Host Shell.
- * - Tailwind v4 + design tokens dùng chung từ packages/ui.
+ * - Tailwind v4 + design tokens dùng chung từ 01-nen-tang/packages/ui.
  * - @source: quét class trong mã nguồn các remote MFE (ghép lúc build, nằm ngoài thư mục host).
  * - global.css (khung shell) đặt trong layer base để utility class của màn hình luôn thắng.
  */
@@ -8,12 +8,12 @@
 @import '@vietlearning/ui/theme.css';
 @import './global.css' layer(base);
 
-@source '../../../mfe-knowledge/src';
-@source '../../../mfe-conversation/src';
-@source '../../../mfe-practice/src';
-@source '../../../mfe-learner/src';
-@source '../../../mfe-speech-lab/src';
-@source '../../../mfe-vision/src';
-@source '../../../mfe-path/src';
-@source '../../../../packages/exercises/src';
-@source '../../../../packages/ui/src';
+@source '../../../../../04-am-thanh-tri-thuc/apps/mfe-knowledge/src';
+@source '../../../../../02-hoi-thoai-ai/apps/mfe-conversation/src';
+@source '../../../../../03-hoc-tap/apps/mfe-practice/src';
+@source '../../../../../03-hoc-tap/apps/mfe-learner/src';
+@source '../../../../../04-am-thanh-tri-thuc/apps/mfe-speech-lab/src';
+@source '../../../../../02-hoi-thoai-ai/apps/mfe-vision/src';
+@source '../../../../../03-hoc-tap/apps/mfe-path/src';
+@source '../../../../../03-hoc-tap/packages/exercises/src';
+@source '../../../packages/ui/src';

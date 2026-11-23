@@ -4,7 +4,7 @@
  * - 100dvh + env(safe-area-inset-*) cho tai thỏ / thanh home / thanh địa chỉ iOS.
  */
 :root {
-  /* Ánh xạ sang design tokens của packages/ui: đổi theo data-theme trên <html> (ThemeProvider) */
+  /* Ánh xạ sang design tokens của 01-nen-tang/packages/ui: đổi theo data-theme trên <html> (ThemeProvider) */
   --shell-bg: var(--ct-canvas);
   --shell-surface: var(--ct-surface);
   --shell-surface-2: var(--ct-surface-2);

@@ -1,4 +1,4 @@
-/* SINH TỰ ĐỘNG bởi scripts/trich-token.mjs từ packages/ui/src/theme.css (chủ đề SÁNG). Không sửa tay: sửa nguồn rồi chạy `pnpm --filter @vietlearning/landing tokens`. */
+/* SINH TỰ ĐỘNG bởi scripts/trich-token.mjs từ 01-nen-tang/packages/ui/src/theme.css (chủ đề SÁNG). Không sửa tay: sửa nguồn rồi chạy `pnpm --filter @vietlearning/landing tokens`. */
 :root {
   --ct-radius-sm: 12px;
   --ct-radius-md: 16px;

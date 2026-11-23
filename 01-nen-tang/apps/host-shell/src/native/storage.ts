@@ -7,7 +7,7 @@ import type { KeyValue } from '@vietlearning/api-client';
  */
 // KHÔNG trả thẳng proxy plugin qua Promise (`.then((m) => m.Preferences)`): Promise dò `.then` trên proxy, Capacitor
 // coi đó là lời gọi native “Preferences.then()” => treo mãi. Trên Android, phiên đăng nhập và đồng bộ chưa từng chạy
-// vì lỗi này (thấy trên emulator). Bọc trong object thường, giống packages/native/src/reminders.ts.
+// vì lỗi này (thấy trên emulator). Bọc trong object thường, giống 01-nen-tang/packages/native/src/reminders.ts.
 const plugin = async () => ({ p: (await import('@capacitor/preferences')).Preferences });
 
 export const preferencesStore: KeyValue = {

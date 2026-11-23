@@ -1,5 +1,5 @@
 /**
- * Trích token màu của CHỦ ĐỀ SÁNG từ packages/ui/src/theme.css ra src/styles/tokens.css.
+ * Trích token màu của CHỦ ĐỀ SÁNG từ 01-nen-tang/packages/ui/src/theme.css ra src/styles/tokens.css.
  * Không import nguyên tệp theme.css vì nó mở đầu bằng khối Tailwind `@theme inline`.
  * Chạy: pnpm --filter @vietlearning/landing tokens   (test/tokens.test.ts kiểm tệp sinh ra còn khớp nguồn)
  */
@@ -28,7 +28,7 @@ export function extractTokens(css) {
       .split('\n')
       .filter((l) => /--ct-[\w-]+:/.test(l) || /^\s*\/\*/.test(l) || /^\s*color-scheme/.test(l))
       .join('\n');
-  return `/* SINH TỰ ĐỘNG bởi scripts/trich-token.mjs từ packages/ui/src/theme.css (chủ đề SÁNG). Không sửa tay: sửa nguồn rồi chạy \`pnpm --filter @vietlearning/landing tokens\`. */
+  return `/* SINH TỰ ĐỘNG bởi scripts/trich-token.mjs từ 01-nen-tang/packages/ui/src/theme.css (chủ đề SÁNG). Không sửa tay: sửa nguồn rồi chạy \`pnpm --filter @vietlearning/landing tokens\`. */
 :root {
 ${keep(radius)}
 ${keep(light)}

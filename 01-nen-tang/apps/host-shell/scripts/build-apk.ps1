@@ -4,13 +4,13 @@
   Vì sao cần script này: Gradle/Java trên Windows lỗi khi đường dẫn dự án có ký tự tiếng Việt
   (ví dụ "Kì cuối", "đồ án"): "Could not find or load main class GradleWrapperMain".
   Script map tạm gốc monorepo sang một ổ ảo ASCII (subst) rồi build ở đó.
-  Ổ ảo phải trỏ vào GỐC repo, vì capacitor.settings.gradle tham chiếu ../../../node_modules.
+  Ổ ảo phải trỏ vào GỐC repo, vì capacitor.settings.gradle tham chiếu ../../../../node_modules.
 
   Dùng:  pnpm --filter @vietlearning/host-shell android:apk:win       (debug)
          pnpm --filter @vietlearning/host-shell android:release:win   (release, CHƯA ký)
   Tùy chọn: -Drive X:  -JavaHome "C:\...\jdk-21"  -SkipWeb  -Release  -Flavor play|apk (mặc định play; dự án 8: hai kênh phân phối)
   Ghi manifest cho trang giới thiệu (chỉ bản -Release ĐÃ KÝ; debug và bản chưa ký không ghi):
-    -ReleaseManifest apps/landing/apk-release.json -ApkUrl https://.../becutit.apk [-MinAndroid 6.0]
+    -ReleaseManifest 01-nen-tang/apps/landing/apk-release.json -ApkUrl https://.../becutit.apk [-MinAndroid 6.0]
 
   Release: NODE_ENV=production => capacitor.config tắt debug WebView và mixed content;
   bắt buộc VITE_GATEWAY_URL là https (http bị chặn khi tắt mixed content). Ký app: xem nhật ký mục 5.
@@ -28,7 +28,7 @@ param(
 $ErrorActionPreference = 'Stop'
 
 $hostShell = Split-Path -Parent $PSScriptRoot
-$repoRoot = (Resolve-Path (Join-Path $hostShell '..\..')).Path
+$repoRoot = (Resolve-Path (Join-Path $hostShell '..\..\..')).Path
 
 if ($ReleaseManifest -and -not $Release) {
   Write-Warning '-ReleaseManifest chỉ áp dụng cho bản -Release; bản debug KHÔNG ghi apk-release.json.'
@@ -50,7 +50,7 @@ if ($Release) {
     }
   }
   if (-not $gateway -or -not $gateway.StartsWith('https://')) {
-    throw "Bản release cần VITE_GATEWAY_URL dạng https (hiện: '$gateway'). Đặt trong apps/host-shell/.env.production.local"
+    throw "Bản release cần VITE_GATEWAY_URL dạng https (hiện: '$gateway'). Đặt trong 01-nen-tang/apps/host-shell/.env.production.local"
   }
   Write-Host "Release: gateway = $gateway"
 } else {
@@ -77,7 +77,7 @@ if (-not $SkipWeb) {
   Push-Location $repoRoot
   try {
     # Chỉ packages/* (có dist/); các MFE được host đọc thẳng từ src/ nên không cần build trang demo của chúng
-    pnpm turbo run build --filter='./packages/*'
+    pnpm turbo run build --filter='./0*/packages/*'
     if ($LASTEXITCODE) { throw 'build package phụ thuộc lỗi' }
   } finally { Pop-Location }
 
@@ -107,7 +107,7 @@ if ($needsSubst) {
 }
 
 try {
-  Push-Location (Join-Path $buildRoot 'apps\host-shell\android')
+  Push-Location (Join-Path $buildRoot '01-nen-tang\apps\host-shell\android')
   # --no-daemon: daemon sống tiếp sẽ giữ ổ ảo và ống dẫn output, làm script treo
   $flavorCap = (Get-Culture).TextInfo.ToTitleCase($Flavor)
   $task = if ($Release) { "assemble${flavorCap}Release" } else { "assemble${flavorCap}Debug" }

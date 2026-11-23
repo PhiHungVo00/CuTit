@@ -72,7 +72,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: playwright-traces
-          path: apps/host-shell/test-results
+          path: 01-nen-tang/apps/host-shell/test-results
           if-no-files-found: ignore
 
   performance:
@@ -131,9 +131,9 @@ jobs:
           java-version: 21
           cache: gradle
           cache-dependency-path: |
-            apps/host-shell/android/*.gradle*
-            apps/host-shell/android/app/*.gradle*
-            apps/host-shell/android/gradle/wrapper/gradle-wrapper.properties
+            01-nen-tang/apps/host-shell/android/*.gradle*
+            01-nen-tang/apps/host-shell/android/app/*.gradle*
+            01-nen-tang/apps/host-shell/android/gradle/wrapper/gradle-wrapper.properties
 
       - run: pnpm install --frozen-lockfile
 
@@ -148,19 +148,19 @@ jobs:
 
       # Hai kênh phân phối (dự án 8): play (Google Play, không quyền cài APK) và apk (cài tay)
       - name: Build APK debug (hai flavor play + apk)
-        working-directory: apps/host-shell/android
+        working-directory: 01-nen-tang/apps/host-shell/android
         run: ./gradlew assemblePlayDebug assembleApkDebug --no-daemon --stacktrace
 
       - name: Kiểm tra APK có web app bên trong
         run: |
-          for APK in apps/host-shell/android/app/build/outputs/apk/play/debug/app-play-debug.apk apps/host-shell/android/app/build/outputs/apk/apk/debug/app-apk-debug.apk; do
+          for APK in 01-nen-tang/apps/host-shell/android/app/build/outputs/apk/play/debug/app-play-debug.apk 01-nen-tang/apps/host-shell/android/app/build/outputs/apk/apk/debug/app-apk-debug.apk; do
             ls -l "$APK"
             unzip -l "$APK" | grep -q 'assets/public/index.html'
           done
 
       # versionCode = versionToBuild(version); play KHÔNG có REQUEST_INSTALL_PACKAGES, apk CÓ
       - name: Kiểm versionCode và quyền của hai APK
-        working-directory: apps/host-shell
+        working-directory: 01-nen-tang/apps/host-shell
         run: |
           node scripts/check-apk.mjs android/app/build/outputs/apk/play/debug/app-play-debug.apk --flavor play
           node scripts/check-apk.mjs android/app/build/outputs/apk/apk/debug/app-apk-debug.apk --flavor apk
@@ -168,13 +168,13 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: app-play-debug
-          path: apps/host-shell/android/app/build/outputs/apk/play/debug/app-play-debug.apk
+          path: 01-nen-tang/apps/host-shell/android/app/build/outputs/apk/play/debug/app-play-debug.apk
           if-no-files-found: error
           retention-days: 30
 
       - uses: actions/upload-artifact@v4
         with:
           name: app-apk-debug
-          path: apps/host-shell/android/app/build/outputs/apk/apk/debug/app-apk-debug.apk
+          path: 01-nen-tang/apps/host-shell/android/app/build/outputs/apk/apk/debug/app-apk-debug.apk
           if-no-files-found: error
           retention-days: 30

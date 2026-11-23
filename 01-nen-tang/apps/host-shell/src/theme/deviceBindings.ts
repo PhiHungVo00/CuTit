@@ -2,7 +2,7 @@ import type { DeviceSettings, ThemeChoice } from '@vietlearning/state';
 
 export type AppTheme = 'dark' | 'light';
 
-/** Màu thanh trạng thái/`theme-color` theo giao diện (khớp --ct-canvas của packages/ui) */
+/** Màu thanh trạng thái/`theme-color` theo giao diện (khớp --ct-canvas của 01-nen-tang/packages/ui) */
 export const THEME_COLOR: Record<AppTheme, string> = { dark: '#1F1710', light: '#FBF3E4' };
 
 export const resolveTheme = (choice: ThemeChoice, prefersDark: boolean): AppTheme =>

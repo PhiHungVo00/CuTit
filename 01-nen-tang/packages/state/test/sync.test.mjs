@@ -231,7 +231,7 @@ test('Đồng ý bị rút ở máy khác (ảnh chụp server không còn khóa
 
 test('Đồng ý có trên máy nhưng chưa lên server (bóng chưa có) => vẫn được gửi consent.grant, không bị ảnh chụp rỗng xóa mất', async () => {
   s().giveConsent('voice'); // trước khi engine chạy: chỉ có trong store, chưa trong bóng/hàng đợi
-  // server giả giống Gateway thật: áp lô rồi mới trả ảnh chụp (xem apps/gateway/test/sync.test.mjs)
+  // server giả giống Gateway thật: áp lô rồi mới trả ảnh chụp (xem 01-nen-tang/apps/gateway/test/sync.test.mjs)
   const server = new Map();
   const tr = {
     batches: [],

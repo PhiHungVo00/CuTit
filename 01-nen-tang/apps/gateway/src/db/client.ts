@@ -11,7 +11,7 @@ import type { GatewayConfig } from '../config.js';
  *
  * - Có DATABASE_URL (production: Neon/Supabase) => postgres-js.
  * - Không có => PGlite (Postgres nhúng, WASM): `memory://` cho test, thư mục `.data/pglite` cho dev.
- * Migration SQL đánh số trong apps/gateway/drizzle/ chạy tự động lúc mở.
+ * Migration SQL đánh số trong 01-nen-tang/apps/gateway/drizzle/ chạy tự động lúc mở.
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type Db = PgDatabase<PgQueryResultHKT, typeof schema>;

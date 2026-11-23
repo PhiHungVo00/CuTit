@@ -6,7 +6,7 @@ import { GatewayError } from '../../pipeline/RequestPipeline.js';
 
 /**
  * Các tác vụ AI một lượt (M4 dán nhãn ảnh, M10 hỏi văn hóa, STT cho M1/M7).
- * Mỗi tác vụ: prompt có phiên bản (packages/prompts) + schema đầu ra + xác thực Zod (Nguyên tắc 6).
+ * Mỗi tác vụ: prompt có phiên bản (02-hoi-thoai-ai/packages/prompts) + schema đầu ra + xác thực Zod (Nguyên tắc 6).
  */
 
 // ---------- M4: dán nhãn đồ vật ----------
