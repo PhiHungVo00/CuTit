@@ -1,0 +1,53 @@
+# Chủ sở hữu mã theo thư mục (nhóm 4 người). Thay @NGUOI-1..@NGUOI-4 bằng tên GitHub thật.
+# Quy tắc GitHub: dòng SAU thắng dòng trước, nên các ngoại lệ trong Gateway đặt cuối.
+# Bản đồ và quy ước: docs/CAU-TRUC-4-THU-MUC.md
+
+# Mặc định (tệp gốc, CI, tài liệu, cấu hình chung): người phụ trách nền tảng
+*                          @NGUOI-1
+
+/01-nen-tang/              @NGUOI-1
+/02-hoi-thoai-ai/          @NGUOI-2
+/03-hoc-tap/               @NGUOI-3
+/04-am-thanh-tri-thuc/     @NGUOI-4
+
+# Gateway là một ứng dụng chung (thư mục 01-), chia theo chức năng.
+# Mọi thứ không liệt kê bên dưới (auth, tài khoản, đồng bộ, hạn mức, phiên bản app, bạn bè, thư, audit, sao lưu,
+# hạ tầng pipeline/providers/config/db/drizzle) thuộc @NGUOI-1.
+
+# 02 — Hội thoại & AI: chat, gia sư, ảnh/vision, nhà cung cấp LLM
+/01-nen-tang/apps/gateway/src/routes/chat.ts                       @NGUOI-2
+/01-nen-tang/apps/gateway/src/routes/content.ts                    @NGUOI-2
+/01-nen-tang/apps/gateway/src/services/chat/                       @NGUOI-2
+/01-nen-tang/apps/gateway/src/services/ai/                         @NGUOI-2
+/01-nen-tang/apps/gateway/src/providers/llm.ts                     @NGUOI-2
+/01-nen-tang/apps/gateway/scripts/ai-chat-smoke.mjs                @NGUOI-2
+/01-nen-tang/apps/gateway/test/chat.test.mjs                       @NGUOI-2
+/01-nen-tang/apps/gateway/test/chat-image-summary.test.mjs         @NGUOI-2
+/01-nen-tang/apps/gateway/test/gd3-chat.test.mjs                   @NGUOI-2
+/01-nen-tang/apps/gateway/test/vision.test.mjs                     @NGUOI-2
+/01-nen-tang/apps/gateway/test/llm.test.mjs                        @NGUOI-2
+
+# 03 — Học tập: tiến độ, bài tập, luyện tập, xếp lớp, giải thích đáp án
+/01-nen-tang/apps/gateway/src/routes/practice.ts                   @NGUOI-3
+/01-nen-tang/apps/gateway/src/services/learner/                    @NGUOI-3
+/01-nen-tang/apps/gateway/src/services/placement/                  @NGUOI-3
+/01-nen-tang/apps/gateway/src/services/explain/                    @NGUOI-3
+/01-nen-tang/apps/gateway/test/learner.test.mjs                    @NGUOI-3
+/01-nen-tang/apps/gateway/test/placement.test.mjs                  @NGUOI-3
+/01-nen-tang/apps/gateway/test/explain.test.mjs                    @NGUOI-3
+
+# 04 — Âm thanh & Tri thức: chấm phát âm, giọng nói, TTS/STT, âm thanh dựng sẵn
+/01-nen-tang/apps/gateway/src/routes/speech.ts                     @NGUOI-4
+/01-nen-tang/apps/gateway/src/routes/audio.ts                      @NGUOI-4
+/01-nen-tang/apps/gateway/src/services/assessment/                 @NGUOI-4
+/01-nen-tang/apps/gateway/src/services/tts/                        @NGUOI-4
+/01-nen-tang/apps/gateway/src/cache/                               @NGUOI-4
+/01-nen-tang/apps/gateway/src/providers/stt.ts                     @NGUOI-4
+/01-nen-tang/apps/gateway/src/providers/tts.ts                     @NGUOI-4
+/01-nen-tang/apps/gateway/src/lib/audioUpload.ts                   @NGUOI-4
+/01-nen-tang/apps/gateway/scripts/prebuild-tts.ts                  @NGUOI-4
+/01-nen-tang/apps/gateway/scripts/ai-stt-smoke.mjs                 @NGUOI-4
+/01-nen-tang/apps/gateway/test/assessment.test.mjs                 @NGUOI-4
+/01-nen-tang/apps/gateway/test/tts.test.mjs                        @NGUOI-4
+/01-nen-tang/apps/gateway/test/audio-upload.test.mjs               @NGUOI-4
+/tools/tts-local/                            @NGUOI-4

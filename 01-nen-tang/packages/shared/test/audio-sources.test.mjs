@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readdirSync, readFileSync, statSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -8,7 +8,16 @@ import { fileURLToPath } from 'node:url';
  * Giữ nguyên tắc: MỌI nguồn phát/thu âm báo vào điều phối (acquireAudio) để nhạc nền dừng.
  * Thêm nguồn mới ⇒ test này đỏ cho tới khi bọc nguồn và thêm vào danh sách trắng bên dưới.
  */
-const ROOT = join(fileURLToPath(new URL('.', import.meta.url)), '..', '..', '..', '..');
+// Gốc monorepo = thư mục chứa pnpm-workspace.yaml (tìm ngược lên, không phụ thuộc bố cục 4 thư mục hay bố cục phẳng)
+function findRoot(dir) {
+  while (!existsSync(join(dir, 'pnpm-workspace.yaml'))) {
+    const up = join(dir, '..');
+    if (up === dir) throw new Error('không tìm thấy pnpm-workspace.yaml');
+    dir = up;
+  }
+  return dir;
+}
+const ROOT = findRoot(fileURLToPath(new URL('.', import.meta.url)));
 
 const WRAPPED = [
   'packages/native/src/speech.ts', // Web Speech + TTS native

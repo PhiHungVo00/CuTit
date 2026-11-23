@@ -9,28 +9,36 @@
 
 Hệ thống được tổ chức theo **Turborepo + PNPM Workspaces**. Mỗi thành viên sở hữu các module độc lập:
 
-- `apps/host-shell` (M3 - FE Lead): Khung app **ghép MFE lúc build** (route lazy, không Module Federation runtime), thanh tab, PWA, Capacitor 7 (Android), cấu hình Gateway + phiên tài khoản khách + khởi động đồng bộ (`src/account/`).
-- `apps/gateway` (M1 - BE Lead, M2): Backend Fastify, Adapter STT/TTS/LLM/Vision (Gemini), Rate Limit & Quota theo user, **DB qua Drizzle** (`DATABASE_URL` → Postgres; không có → PGlite), migration đánh số trong `apps/gateway/drizzle/`, tài khoản khách + JWT (`/v1/auth/*`), `/v1/sync`, `DELETE /v1/me`.
-- `apps/mfe-conversation` (M3 FE, M1 BE): Màn hình M1 (Chat Canvas), M7 (Roleplay Simulator).
-- `apps/mfe-practice` (M4 FE, M2 BE): Màn hình M5 (Adaptive Drills), M8 (Sentence Builder).
-- `apps/mfe-learner` (M4 FE, M2 BE): Màn hình M9 (Analytics), M11 (Onboarding), M12 (Preferences).
-- `apps/mfe-speech-lab` (M5): Màn hình M2 (Pitch Visualizer), M6 (Dialect Switcher).
-- `apps/mfe-vision` (M5 FE, M1 BE): Màn hình M4 (AR Camera Surface).
-- `apps/mfe-knowledge` (M2): Màn hình M3 (Honorific Matrix), M10 (Culture Guide).
-- `packages/contracts`: Hợp đồng Zod Schema & Drizzle ORM Schema dùng chung.
-- `packages/audio-dsp`: Xử lý âm thanh F0 YIN, DTW (Thuật toán A1, A2).
-- `packages/content`: Kho dữ liệu JSON (Xưng hô, Phương ngữ, Văn hóa, Kịch bản).
-- `packages/prompts`: Thư viện Prompt có phiên bản cho Bé Cu Tít (PromptBuilder).
-- `packages/shared`: EventBus (Singleton + Observer), Thuật toán SM-2 (A4).
-- `packages/ui`: Design System, Design Tokens, Thành phần giao diện dùng chung (M3).
-- `packages/api-client`: Client Gateway có kiểu (Zod theo contract, lỗi chuẩn hóa, SSE, gửi lại một lần khi 401); subpath `./session` = phiên tài khoản khách (tạo lười, refresh xoay vòng, mã khôi phục) — import lười.
-- `packages/native`: Cầu nối năng lực thiết bị (TTS native/Web Speech, mở Cài đặt app).
-- `packages/state`: Kho người học Zustand + lưu bền (hồ sơ, tùy chỉnh, thẻ SM-2, lượt làm bài, thời gian học, đồng ý), i18n `defineMessages`; subpath `./sync` = hàng đợi đồng bộ local-first (KHÔNG re-export từ `index.ts`).
+- `01-nen-tang/apps/host-shell` (M3 - FE Lead): Khung app **ghép MFE lúc build** (route lazy, không Module Federation runtime), thanh tab, PWA, Capacitor 7 (Android), cấu hình Gateway + phiên tài khoản khách + khởi động đồng bộ (`src/account/`).
+- `01-nen-tang/apps/gateway` (M1 - BE Lead, M2): Backend Fastify, Adapter STT/TTS/LLM/Vision (Gemini), Rate Limit & Quota theo user, **DB qua Drizzle** (`DATABASE_URL` → Postgres; không có → PGlite), migration đánh số trong `01-nen-tang/apps/gateway/drizzle/`, tài khoản khách + JWT (`/v1/auth/*`), `/v1/sync`, `DELETE /v1/me`.
+- `02-hoi-thoai-ai/apps/mfe-conversation` (M3 FE, M1 BE): Màn hình M1 (Chat Canvas), M7 (Roleplay Simulator).
+- `03-hoc-tap/apps/mfe-practice` (M4 FE, M2 BE): Màn hình M5 (Adaptive Drills), M8 (Sentence Builder).
+- `03-hoc-tap/apps/mfe-learner` (M4 FE, M2 BE): Màn hình M9 (Analytics), M11 (Onboarding), M12 (Preferences).
+- `04-am-thanh-tri-thuc/apps/mfe-speech-lab` (M5): Màn hình M2 (Pitch Visualizer), M6 (Dialect Switcher).
+- `02-hoi-thoai-ai/apps/mfe-vision` (M5 FE, M1 BE): Màn hình M4 (AR Camera Surface).
+- `04-am-thanh-tri-thuc/apps/mfe-knowledge` (M2): Màn hình M3 (Honorific Matrix), M10 (Culture Guide).
+- `01-nen-tang/packages/contracts`: Hợp đồng Zod Schema & Drizzle ORM Schema dùng chung.
+- `04-am-thanh-tri-thuc/packages/audio-dsp`: Xử lý âm thanh F0 YIN, DTW (Thuật toán A1, A2).
+- `04-am-thanh-tri-thuc/packages/content`: Kho dữ liệu JSON (Xưng hô, Phương ngữ, Văn hóa, Kịch bản).
+- `02-hoi-thoai-ai/packages/prompts`: Thư viện Prompt có phiên bản cho Bé Cu Tít (PromptBuilder).
+- `01-nen-tang/packages/shared`: EventBus (Singleton + Observer), Thuật toán SM-2 (A4).
+- `01-nen-tang/packages/ui`: Design System, Design Tokens, Thành phần giao diện dùng chung (M3).
+- `01-nen-tang/packages/api-client`: Client Gateway có kiểu (Zod theo contract, lỗi chuẩn hóa, SSE, gửi lại một lần khi 401); subpath `./session` = phiên tài khoản khách (tạo lười, refresh xoay vòng, mã khôi phục) — import lười.
+- `01-nen-tang/packages/native`: Cầu nối năng lực thiết bị (TTS native/Web Speech, mở Cài đặt app).
+- `01-nen-tang/packages/state`: Kho người học Zustand + lưu bền (hồ sơ, tùy chỉnh, thẻ SM-2, lượt làm bài, thời gian học, đồng ý), i18n `defineMessages`; subpath `./sync` = hàng đợi đồng bộ local-first (KHÔNG re-export từ `index.ts`).
+
+### Bốn thư mục sở hữu (23/11/2026)
+Mã nguồn chia 4 thư mục cấp một cho nhóm 4 người, **vẫn một workspace pnpm** (glob `0[1-4]-*/apps/*` và `0[1-4]-*/packages/*`), tên gói `@vietlearning/*` không đổi, đường dẫn mới `0N-…/apps|packages/<tên>`:
+- `01-nen-tang/`: host-shell, gateway, landing, contracts, shared, state, api-client, ui, native.
+- `02-hoi-thoai-ai/`: mfe-conversation, mfe-vision, prompts.
+- `03-hoc-tap/`: mfe-path, mfe-practice, mfe-learner, exercises.
+- `04-am-thanh-tri-thuc/`: mfe-speech-lab, mfe-knowledge, audio-dsp, content.
+Bản đồ, chủ sở hữu, quy ước nhánh/PR và bảng chia Gateway: `docs/CAU-TRUC-4-THU-MUC.md`; chủ sở hữu từng đường dẫn: `.github/CODEOWNERS`; gộp lại bố cục phẳng cũ: `node scripts/gop-lai-monorepo.mjs`. Các đường dẫn `apps/…`, `packages/…` ghi ở phần còn lại của tệp này (và trong `docs/`) hiểu là nằm dưới thư mục sở hữu tương ứng.
 
 ### Lệch TDD có chủ đích (đã ghi trong nhật ký)
 - **Ghép MFE lúc build thay cho Module Federation runtime** (offline, đóng gói store, không trùng React). Nguyên tắc 7 được ép bằng `pnpm lint:boundaries` (dependency-cruiser).
 - **Capacitor 7** thay vì 6 (targetSdk 35 của Google Play).
-- **i18n tự viết** (`defineMessages` trong `packages/state`) thay i18next — ngân sách bundle đầu.
+- **i18n tự viết** (`defineMessages` trong `01-nen-tang/packages/state`) thay i18next — ngân sách bundle đầu.
 - **Đăng nhập = tài khoản khách + mã khôi phục** (chưa có email/Google); dev/test dùng **PGlite** thay Postgres; `AUTH_REQUIRED` bật ở mọi môi trường (chỉ test cô lập đặt `false`).
 - Nhật ký: `docs/NHAT_KY_CHUYEN_DOI_MOBILE.md`, theo giai đoạn: `docs/nhat-ky/`; kế hoạch tổng: `docs/KE_HOACH_PHAT_TRIEN_TOAN_DIEN.md`.
 
@@ -44,7 +52,7 @@ Mọi dòng mã do AI Agent hoặc thành viên viết bắt buộc phải tuân
 2. **Client mỏng - Zero Secret Key:** Trình duyệt và ứng dụng client tuyệt đối không giữ API Key. Mọi Secret Key nằm ở biến môi trường server.
 3. **Tự viết có kiểm soát:** Chỉ tự viết khi không có API thương mại, và chỉ nằm trong danh mục đóng 8 thuật toán (A1 đến A8).
 4. **Hướng năng lực trừu tượng:** Code gọi `stt.transcribe`, `tts.synthesize`, không gọi trực tiếp tên hãng. Đổi nhà cung cấp qua cấu hình môi trường.
-5. **Contract-first:** Sửa đổi API phải cập nhật `packages/contracts` trước. Frontend làm việc với Mock Server từ ngày đầu.
+5. **Contract-first:** Sửa đổi API phải cập nhật `01-nen-tang/packages/contracts` trước. Frontend làm việc với Mock Server từ ngày đầu.
 6. **Đầu ra LLM luôn có cấu trúc JSON:** Bắt buộc có Zod Schema xác thực ở Gateway. UI không render HTML thô từ LLM.
 7. **Độc lập triển khai:** Mỗi Remote MFE build độc lập, không import chéo remote khác. Giao tiếp qua URL, Event Bus hoặc State Slice do Host cấp.
 
@@ -54,14 +62,14 @@ Mọi dòng mã do AI Agent hoặc thành viên viết bắt buộc phải tuân
 
 Tuyệt đối không tự ý bổ sung thuật toán ngoài danh mục sau nếu chưa có sự phê duyệt của Lead Dev:
 
-- **A1:** Trích xuất cao độ F0 YIN/McLeod & Semitone (`packages/audio-dsp/src/pitch/yin.ts`).
-- **A2:** So sánh contour DTW & Pearson 6 thanh điệu (`packages/audio-dsp/src/pitch/dtw.ts`).
-- **A3:** Chấm phát âm tổng hợp so khớp từ NFC kết hợp A2 (`apps/gateway/src/services/assessment/`).
-- **A4:** Lặp lại ngắt quãng SuperMemo-2 (`packages/shared/src/srs/sm2.ts`).
-- **A5:** Kiểm tra xếp lớp thích ứng Staircase/Elo (`apps/gateway`).
-- **A6:** Bộ luật đại từ xưng hô tiếng Việt 20 cặp (`packages/content/src/honorifics/`).
-- **A7:** Ánh xạ từ vựng phương ngữ 3 miền (`packages/content/src/dialects/`).
-- **A8:** Kiểm tra trật tự câu ghép đốt tre (`packages/contracts` & `apps/gateway`).
+- **A1:** Trích xuất cao độ F0 YIN/McLeod & Semitone (`04-am-thanh-tri-thuc/packages/audio-dsp/src/pitch/yin.ts`).
+- **A2:** So sánh contour DTW & Pearson 6 thanh điệu (`04-am-thanh-tri-thuc/packages/audio-dsp/src/pitch/dtw.ts`).
+- **A3:** Chấm phát âm tổng hợp so khớp từ NFC kết hợp A2 (`01-nen-tang/apps/gateway/src/services/assessment/`).
+- **A4:** Lặp lại ngắt quãng SuperMemo-2 (`01-nen-tang/packages/shared/src/srs/sm2.ts`).
+- **A5:** Kiểm tra xếp lớp thích ứng Staircase/Elo (`01-nen-tang/apps/gateway`).
+- **A6:** Bộ luật đại từ xưng hô tiếng Việt 20 cặp (`04-am-thanh-tri-thuc/packages/content/src/honorifics/`).
+- **A7:** Ánh xạ từ vựng phương ngữ 3 miền (`04-am-thanh-tri-thuc/packages/content/src/dialects/`).
+- **A8:** Kiểm tra trật tự câu ghép đốt tre (`01-nen-tang/packages/contracts` & `01-nen-tang/apps/gateway`).
 
 ---
 
@@ -83,7 +91,7 @@ pnpm test
 # Kiểm tra ranh giới MFE (Nguyên tắc 7)
 pnpm lint:boundaries
 
-# Sinh migration sau khi sửa packages/contracts/src/db/schema.ts (không sửa migration đã phát hành)
+# Sinh migration sau khi sửa 01-nen-tang/packages/contracts/src/db/schema.ts (không sửa migration đã phát hành)
 pnpm --filter @vietlearning/gateway db:generate --name <ten>
 
 # e2e (Gateway thật PGlite tự chạy kèm; bản build phải trỏ đúng cổng gateway)

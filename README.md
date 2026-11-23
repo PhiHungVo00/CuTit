@@ -6,26 +6,24 @@
 
 ## 🏛️ 1. Cấu Trúc Monorepo
 
-Hệ thống được tổ chức theo mô hình **Turborepo + PNPM Workspaces**, bao gồm 1 Host Shell, 6 Remote Micro Frontends (MFE), 1 Backend SaaS Gateway và 5 Thư viện dùng chung:
+Hệ thống được tổ chức theo mô hình **Turborepo + PNPM Workspaces**, chia thành **4 thư mục cấp một** (mỗi thành viên nhóm sở hữu một thư mục, vẫn là MỘT workspace pnpm; xem [docs/CAU-TRUC-4-THU-MUC.md](docs/CAU-TRUC-4-THU-MUC.md)):
 
 ```text
-├── apps/
-│   ├── host-shell/          # Host Shell: ghép MFE lúc build, lazy theo route, PWA offline
-│   ├── gateway/             # SaaS Gateway Backend (Fastify, Zod, Redis, Drizzle)
-│   ├── mfe-conversation/    # Remote MFE: Chat canvas, Voice turn state machine, Roleplay
-│   ├── mfe-speech-lab/      # Remote MFE: Biểu đồ cao độ F0, DTW 6 thanh điệu, Phương ngữ
-│   ├── mfe-knowledge/       # Remote MFE: Ma trận xưng hô, Cẩm nang văn hóa
-│   ├── mfe-vision/          # Remote MFE: Camera AR dán nhãn từ vựng
-│   ├── mfe-practice/        # Remote MFE: Bài tập thích ứng, Ghép câu đốt tre (Memento)
-│   └── mfe-learner/         # Remote MFE: Bảng phân tích SM-2, Khảo sát xếp lớp A5
-├── packages/
-│   ├── contracts/           # Hợp đồng API (Zod) & Lược đồ cơ sở dữ liệu (Drizzle)
-│   ├── ui/                  # Design System, Design Tokens & Thành phần giao diện dùng chung
-│   ├── audio-dsp/           # Xử lý âm thanh Web Worker: YIN F0, DTW, AudioBridge
-│   ├── content/             # Ma trận xưng hô, Từ điển phương ngữ, Kịch bản mẫu
-│   ├── prompts/             # Lắp ráp Prompt Bé Cu Tít đa tầng (PromptBuilder)
-│   └── shared/              # EventBus (Singleton + Observer), Thuật toán SM-2, Factory
-└── docs/                    # Toàn bộ tài liệu kiến trúc, file Word, PDF, Web tương tác
+├── 01-nen-tang/             # Nền tảng (người dùng sở hữu): khung app + Gateway + gói lõi
+│   ├── apps/host-shell/     # Host Shell: ghép MFE lúc build, lazy theo route, PWA offline, Capacitor
+│   ├── apps/gateway/        # SaaS Gateway Backend (Fastify, Zod, Drizzle)
+│   ├── apps/landing/        # Trang giới thiệu
+│   └── packages/            # contracts, shared, state, api-client, ui, native
+├── 02-hoi-thoai-ai/         # Hội thoại & AI
+│   ├── apps/                # mfe-conversation (Chat, Roleplay), mfe-vision (Camera AR)
+│   └── packages/prompts/    # Lắp ráp Prompt Bé Cu Tít đa tầng (PromptBuilder)
+├── 03-hoc-tap/              # Học tập
+│   ├── apps/                # mfe-path (Lộ trình), mfe-practice (Luyện tập, Ghép câu), mfe-learner (Phân tích, Onboarding, Cài đặt)
+│   └── packages/exercises/  # Bài tập dùng chung
+├── 04-am-thanh-tri-thuc/    # Âm thanh & Tri thức
+│   ├── apps/                # mfe-speech-lab (Thanh điệu, Phương ngữ), mfe-knowledge (Xưng hô, Văn hóa)
+│   └── packages/            # audio-dsp (YIN F0, DTW), content (Xưng hô, Phương ngữ, Kịch bản)
+└── docs/                    # Tài liệu (bản đồ 4 thư mục: docs/CAU-TRUC-4-THU-MUC.md)
 ```
 
 ---
@@ -54,7 +52,7 @@ Hệ thống được tổ chức theo mô hình **Turborepo + PNPM Workspaces**
 pnpm install
 
 # 2. Tạo tệp cấu hình môi trường
-cp .env.example apps/gateway/.env
+cp .env.example 01-nen-tang/apps/gateway/.env
 
 # 3. Khởi chạy toàn bộ hệ thống (Dev Mode)
 pnpm dev
@@ -69,7 +67,7 @@ pnpm dev
   (Service Worker chỉ đăng ký ở bản build, không chạy ở `pnpm dev`).
 
 ### Gateway
-- Cấu hình nằm ở `apps/gateway/.env` (được nạp qua dotenv và kiểm tra bằng Zod khi khởi động).
+- Cấu hình nằm ở `01-nen-tang/apps/gateway/.env` (được nạp qua dotenv và kiểm tra bằng Zod khi khởi động).
 - `CORS_ORIGIN` là danh sách origin được phép; không chấp nhận `*`.
 - Production bắt buộc `JWT_SECRET`; môi trường dev mặc định cho phép khách ẩn danh (`AUTH_REQUIRED=false`).
 
