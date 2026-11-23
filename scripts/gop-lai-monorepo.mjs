@@ -12,8 +12,8 @@
  *   4. Sửa các đường dẫn tương đối bị lệch vì chuyển cấp (bảng LEGACY_EDITS) và bỏ tiền tố `0N-…/` khỏi mọi
  *      đường dẫn trong tệp mã, cấu hình, CI, skill (KHÔNG đụng docs/ — tài liệu và nhật ký giữ nguyên lịch sử).
  *   5. `pnpm install --no-frozen-lockfile` để sinh lại pnpm-lock.yaml và node_modules (pnpm 12 không viết lại đường dẫn link khi chỉ chạy --lockfile-only) (bỏ bằng --no-lockfile).
+ *      (pnpm-lock.yaml do pnpm tự viết lại, script không sửa tay.)
  *
-   (pnpm-lock.yaml được pnpm tự viết lại, script không sửa tay.)
  * Không tự commit: xem `git status`, chạy build/test rồi commit tay.
  * Đã chạy thử trên bản sao tạm (xem mô tả PR); KHÔNG chạy trên nhánh đang làm việc nếu chưa muốn gộp.
  */
@@ -131,7 +131,7 @@ for (const [target, pattern, repl] of LEGACY_EDITS) {
 // bỏ tiền tố 0N-… khỏi mọi đường dẫn còn lại (xuôi `/` và ngược `\`), trừ docs/ và chính tập lệnh gộp/chia
 const PREFIX_FWD = /\b0[1-4]-[a-z0-9-]+\/(apps|packages)\//g;
 const PREFIX_BACK = /\b0[1-4]-[a-z0-9-]+\\(apps|packages)\\/g;
-const SKIP = /^(docs\/|scripts\/(gop-lai-monorepo|chia-4-thu-muc)\.mjs$)/;
+const SKIP = /^(docs\/|pnpm-lock\.yaml$|scripts\/(gop-lai-monorepo|chia-4-thu-muc)\.mjs$)/;
 for (const f of trackedFiles()) {
   if (!existsSync(join(ROOT, f)) || SKIP.test(f) || !TEXT_EXT.test(f)) continue;
   const full = join(ROOT, f);
