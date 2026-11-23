@@ -94,17 +94,17 @@ Chỉ cần kiểm màn hiển thị được danh sách kịch bản (từ `@vi
 4. Không commit khóa, `.env` hay dữ liệu cá nhân (repo công khai).
 
 _Nguồn: Màn M7 chưa có test riêng. Backlog đầy đủ: `docs/nhom/backlog.xlsx`._","thu-muc-02,vao-nghe,test,P2","02"
-"[02-06] Viết test cho mô tả khóa tiếng Việt/Anh của màn Gọi (`call/i18n.ts`)","**Mã việc:** 02-06 · **Ưu tiên:** P2 · **Ước lượng:** 1 giờ · **Loại:** test · **Cụm:** Vào nghề
+"[02-06] Rà soát chữ vi/en của màn Gọi (`call/i18n.ts`)","**Mã việc:** 02-06 · **Ưu tiên:** P2 · **Ước lượng:** 1 giờ · **Loại:** tài liệu · **Cụm:** Vào nghề
 
 ## Việc cần làm
-Theo quy tắc song ngữ: mọi chuỗi UI phải có cả vi và en. Viết test duyệt qua mọi khóa và kiểm cả hai ngôn ngữ đều có chuỗi không rỗng.
+TypeScript đã bắt thiếu/thừa khóa giữa vi và en, nhưng không bắt lỗi chữ. Đọc từng chuỗi, so bản vi với bản en: sửa lỗi chính tả, dịch sai/gượng, tham số `{n}` đặt khác nhau, dấu câu. Lời Cu Tít nói là nội dung học nên giữ tiếng Việt.
 
 ## Tệp liên quan
 - `02-hoi-thoai-ai/apps/mfe-conversation/src/call/i18n.ts`
 - `02-hoi-thoai-ai/apps/mfe-conversation/src/call/i18n.test.ts (tạo mới)`
 
 ## Tiêu chí đạt
-Test xanh; nếu thấy khóa thiếu thì sửa luôn chuỗi thiếu trong `i18n.ts` và nêu trong PR.
+PR liệt kê từng chuỗi đã sửa (trước ⇒ sau) hoặc ghi 'không thấy lỗi'; `corepack pnpm --filter @vietlearning/mfe-conversation test` xanh (test cũ có thể so chuỗi, sửa theo nếu cần).
 
 ## Cách làm
 1. Mở nhánh `02/<tên-việc-ngắn>` từ `main` mới nhất.
@@ -112,18 +112,17 @@ Test xanh; nếu thấy khóa thiếu thì sửa luôn chuỗi thiếu trong `i1
 3. Làm xong chạy test của gói liên quan (lệnh ghi ở Tiêu chí đạt) rồi mở PR, ghi mã việc `02-06` trong mô tả, nói rõ đã chạy gì.
 4. Không commit khóa, `.env` hay dữ liệu cá nhân (repo công khai).
 
-_Nguồn: Quy tắc song ngữ (bộ nhớ dự án: bilingual-ui-rule). Backlog đầy đủ: `docs/nhom/backlog.xlsx`._","thu-muc-02,vao-nghe,test,P2","02"
-"[02-07] Viết test song ngữ cho `mfe-vision/src/i18n.ts`","**Mã việc:** 02-07 · **Ưu tiên:** P2 · **Ước lượng:** 1 giờ · **Loại:** test · **Cụm:** Vào nghề
+_Nguồn: Quy tắc song ngữ (bộ nhớ dự án: bilingual-ui-rule). Backlog đầy đủ: `docs/nhom/backlog.xlsx`._","thu-muc-02,vao-nghe,tai-lieu,P2","02"
+"[02-07] Rà soát chữ vi/en của `mfe-vision/src/i18n.ts`","**Mã việc:** 02-07 · **Ưu tiên:** P2 · **Ước lượng:** 1 giờ · **Loại:** tài liệu · **Cụm:** Vào nghề
 
 ## Việc cần làm
-Giống việc trên nhưng cho màn Camera AI: mọi khóa có vi và en, không rỗng.
+Giống việc rà màn Gọi nhưng cho màn Camera AI: so bản vi với bản en, sửa chính tả/dịch gượng, tham số đặt khác nhau giữa hai ngôn ngữ.
 
 ## Tệp liên quan
 - `02-hoi-thoai-ai/apps/mfe-vision/src/i18n.ts`
-- `02-hoi-thoai-ai/apps/mfe-vision/src/i18n.test.ts (tạo mới)`
 
 ## Tiêu chí đạt
-Test xanh bằng `corepack pnpm --filter @vietlearning/mfe-vision test`.
+PR liệt kê chuỗi đã sửa hoặc ghi 'không thấy lỗi'; `corepack pnpm --filter @vietlearning/mfe-vision test` xanh.
 
 ## Cách làm
 1. Mở nhánh `02/<tên-việc-ngắn>` từ `main` mới nhất.
@@ -131,7 +130,7 @@ Test xanh bằng `corepack pnpm --filter @vietlearning/mfe-vision test`.
 3. Làm xong chạy test của gói liên quan (lệnh ghi ở Tiêu chí đạt) rồi mở PR, ghi mã việc `02-07` trong mô tả, nói rõ đã chạy gì.
 4. Không commit khóa, `.env` hay dữ liệu cá nhân (repo công khai).
 
-_Nguồn: Quy tắc song ngữ. Backlog đầy đủ: `docs/nhom/backlog.xlsx`._","thu-muc-02,vao-nghe,test,P2","02"
+_Nguồn: Quy tắc song ngữ. Backlog đầy đủ: `docs/nhom/backlog.xlsx`._","thu-muc-02,vao-nghe,tai-lieu,P2","02"
 "[02-08] Viết README cho `mfe-conversation`: sơ đồ trạng thái lượt chat","**Mã việc:** 02-08 · **Ưu tiên:** P2 · **Ước lượng:** 1.5 giờ · **Loại:** tài liệu · **Cụm:** Vào nghề
 
 ## Việc cần làm
@@ -344,17 +343,17 @@ Tệp `tone/toneAnalyzer.ts` chưa có test. Đọc tệp, chọn các hàm khô
 4. Không commit khóa, `.env` hay dữ liệu cá nhân (repo công khai).
 
 _Nguồn: Tệp chưa có test riêng. Backlog đầy đủ: `docs/nhom/backlog.xlsx`._","thu-muc-03,vao-nghe,test,P2","03"
-"[03-03] Viết test khói cho `SessionRunner` (chạy một phiên bài học)","**Mã việc:** 03-03 · **Ưu tiên:** P2 · **Ước lượng:** 2 giờ · **Loại:** test · **Cụm:** Vào nghề
+"[03-03] Viết test khói cho `SessionRunner` (chạy một phiên bài học)","**Mã việc:** 03-03 · **Ưu tiên:** P2 · **Ước lượng:** 1.5 giờ · **Loại:** test · **Cụm:** Vào nghề
 
 ## Việc cần làm
-Dùng 1–2 bài từ `@vietlearning/exercises` giả, kiểm chạy hết bài thì gọi `onComplete` (hoặc tương đương, đọc code để biết).
+Chỉ cần 1–2 ca: dựng `SessionRunner` với một bài giả đơn giản và kiểm bài đầu tiên hiện ra; (nếu dễ) làm hết bài thì gọi hàm hoàn tất (đọc code để biết tên). Có thể mock `@vietlearning/exercises`.
 
 ## Tệp liên quan
 - `03-hoc-tap/apps/mfe-path/src/session/SessionRunner.tsx`
 - `03-hoc-tap/apps/mfe-path/src/session/SessionRunner.test.tsx (tạo mới)`
 
 ## Tiêu chí đạt
-≥ 2 ca test xanh bằng `corepack pnpm --filter @vietlearning/mfe-path test`; mẫu: `lessonSession.test.ts`.
+≥ 1 ca test xanh bằng `corepack pnpm --filter @vietlearning/mfe-path test`; mẫu: `lessonSession.test.ts`. Không cần phủ hết màn.
 
 ## Cách làm
 1. Mở nhánh `03/<tên-việc-ngắn>` từ `main` mới nhất.
@@ -363,17 +362,17 @@ Dùng 1–2 bài từ `@vietlearning/exercises` giả, kiểm chạy hết bài 
 4. Không commit khóa, `.env` hay dữ liệu cá nhân (repo công khai).
 
 _Nguồn: Tệp chưa có test riêng. Backlog đầy đủ: `docs/nhom/backlog.xlsx`._","thu-muc-03,vao-nghe,test,P2","03"
-"[03-04] Viết test khói cho màn xếp câu (`SentenceBuilderScreen`)","**Mã việc:** 03-04 · **Ưu tiên:** P2 · **Ước lượng:** 2 giờ · **Loại:** test · **Cụm:** Vào nghề
+"[03-04] Viết test khói cho màn xếp câu (`SentenceBuilderScreen`)","**Mã việc:** 03-04 · **Ưu tiên:** P2 · **Ước lượng:** 1.5 giờ · **Loại:** test · **Cụm:** Vào nghề
 
 ## Việc cần làm
-Màn M8 chưa có test màn. Kiểm hiển thị các từ để xếp và xếp xong thì hiện kết quả đúng/sai.
+Chỉ cần 1–2 ca: render màn và kiểm có các từ để xếp; (nếu dễ) xếp sai/đúng rồi hiện kết quả. Có thể mock `@vietlearning/exercises`.
 
 ## Tệp liên quan
 - `03-hoc-tap/apps/mfe-practice/src/sentence/SentenceBuilderScreen.tsx`
 - `03-hoc-tap/apps/mfe-practice/src/sentence/SentenceBuilderScreen.test.tsx (tạo mới)`
 
 ## Tiêu chí đạt
-≥ 2 ca test xanh bằng `corepack pnpm --filter @vietlearning/mfe-practice test`.
+≥ 1 ca test xanh bằng `corepack pnpm --filter @vietlearning/mfe-practice test`. Không cần phủ hết màn.
 
 ## Cách làm
 1. Mở nhánh `03/<tên-việc-ngắn>` từ `main` mới nhất.
@@ -385,14 +384,14 @@ _Nguồn: Màn M8 chưa có test màn. Backlog đầy đủ: `docs/nhom/backlog.
 "[03-05] Viết test cho danh sách nhóm cài đặt (`settings/groups.ts`)","**Mã việc:** 03-05 · **Ưu tiên:** P2 · **Ước lượng:** 1 giờ · **Loại:** test · **Cụm:** Vào nghề
 
 ## Việc cần làm
-Kiểm id nhóm không trùng, mỗi nhóm có nhãn vi và en không rỗng, thứ tự ổn định.
+`SETTINGS_GROUPS` là danh sách id nhóm (đồng thời là đường dẫn /cai-dat/:nhom) và `GROUP_ICON` ánh xạ nhóm sang icon. Viết test: id không trùng, id chỉ gồm chữ thường, số và dấu gạch ngang (an toàn cho URL), mọi nhóm đều có icon, không có icon thừa.
 
 ## Tệp liên quan
 - `03-hoc-tap/apps/mfe-learner/src/settings/groups.ts`
 - `03-hoc-tap/apps/mfe-learner/src/settings/groups.test.ts (tạo mới)`
 
 ## Tiêu chí đạt
-Test xanh bằng `corepack pnpm --filter @vietlearning/mfe-learner test`.
+≥ 3 ca test xanh bằng `corepack pnpm --filter @vietlearning/mfe-learner test`; không đổi mã app.
 
 ## Cách làm
 1. Mở nhánh `03/<tên-việc-ngắn>` từ `main` mới nhất.
@@ -401,17 +400,16 @@ Test xanh bằng `corepack pnpm --filter @vietlearning/mfe-learner test`.
 4. Không commit khóa, `.env` hay dữ liệu cá nhân (repo công khai).
 
 _Nguồn: Quy tắc song ngữ. Backlog đầy đủ: `docs/nhom/backlog.xlsx`._","thu-muc-03,vao-nghe,test,P2","03"
-"[03-06] Viết test song ngữ cho `friends/i18n.ts` của mfe-learner","**Mã việc:** 03-06 · **Ưu tiên:** P2 · **Ước lượng:** 1 giờ · **Loại:** test · **Cụm:** Vào nghề
+"[03-06] Rà soát chữ vi/en của `friends/i18n.ts` (mfe-learner)","**Mã việc:** 03-06 · **Ưu tiên:** P2 · **Ước lượng:** 1 giờ · **Loại:** tài liệu · **Cụm:** Vào nghề
 
 ## Việc cần làm
-Mọi khóa có chuỗi vi và en không rỗng; chuỗi có tham số `{x}` thì vi và en dùng cùng tên tham số.
+So bản vi với bản en, sửa chính tả/dịch gượng, tham số `{x}` khác nhau giữa hai ngôn ngữ. Nhớ: không bảng xếp hạng, không so sánh người học (nguyên tắc D7), chữ không được gợi ý thi đua.
 
 ## Tệp liên quan
 - `03-hoc-tap/apps/mfe-learner/src/friends/i18n.ts`
-- `03-hoc-tap/apps/mfe-learner/src/friends/i18n.test.ts (tạo mới)`
 
 ## Tiêu chí đạt
-Test xanh; nếu có khóa thiếu thì sửa luôn.
+PR liệt kê chuỗi đã sửa hoặc 'không thấy lỗi'; `corepack pnpm --filter @vietlearning/mfe-learner test` xanh.
 
 ## Cách làm
 1. Mở nhánh `03/<tên-việc-ngắn>` từ `main` mới nhất.
@@ -419,18 +417,18 @@ Test xanh; nếu có khóa thiếu thì sửa luôn.
 3. Làm xong chạy test của gói liên quan (lệnh ghi ở Tiêu chí đạt) rồi mở PR, ghi mã việc `03-06` trong mô tả, nói rõ đã chạy gì.
 4. Không commit khóa, `.env` hay dữ liệu cá nhân (repo công khai).
 
-_Nguồn: Quy tắc song ngữ. Backlog đầy đủ: `docs/nhom/backlog.xlsx`._","thu-muc-03,vao-nghe,test,P2","03"
-"[03-07] Thêm 5 câu 'Bạn có biết?' vào kho động lực (`motivation/facts.ts`)","**Mã việc:** 03-07 · **Ưu tiên:** P2 · **Ước lượng:** 1.5 giờ · **Loại:** tính năng · **Cụm:** Vào nghề
+_Nguồn: Quy tắc song ngữ. Backlog đầy đủ: `docs/nhom/backlog.xlsx`._","thu-muc-03,vao-nghe,tai-lieu,P2","03"
+"[03-07] Viết README cho `mfe-learner`: hồ sơ, tiến độ, cài đặt, tài khoản, bạn bè","**Mã việc:** 03-07 · **Ưu tiên:** P2 · **Ước lượng:** 1.5 giờ · **Loại:** tài liệu · **Cụm:** Vào nghề
 
 ## Việc cần làm
-Thêm 5 mẩu thông tin ngắn, đúng về tiếng Việt/văn hóa, có cả vi và en. Ghi nguồn trong PR. Không chép nguyên văn từ sách/báo.
+Đọc thư mục `src/` của mfe-learner, mỗi thư mục con (account, friends, onboarding, preferences, profile, progress, settings) một đoạn: màn nào, tệp vào chính, dữ liệu lấy từ đâu (gói `@vietlearning/state` hay Gateway).
 
 ## Tệp liên quan
-- `03-hoc-tap/apps/mfe-path/src/motivation/facts.ts`
-- `03-hoc-tap/apps/mfe-path/src/motivation/motivation.test.tsx`
+- `03-hoc-tap/apps/mfe-learner/README.md (tạo mới)`
+- `03-hoc-tap/apps/mfe-learner/src/index.ts`
 
 ## Tiêu chí đạt
-Có 5 mục mới đủ vi/en; test motivation xanh; PR nêu nguồn từng mục.
+README tiếng Việt ≤ 1,5 trang; mỗi thư mục con đã đọc đều có mặt; đối chiếu được với tên tệp thật.
 
 ## Cách làm
 1. Mở nhánh `03/<tên-việc-ngắn>` từ `main` mới nhất.
@@ -438,7 +436,7 @@ Có 5 mục mới đủ vi/en; test motivation xanh; PR nêu nguồn từng mụ
 3. Làm xong chạy test của gói liên quan (lệnh ghi ở Tiêu chí đạt) rồi mở PR, ghi mã việc `03-07` trong mô tả, nói rõ đã chạy gì.
 4. Không commit khóa, `.env` hay dữ liệu cá nhân (repo công khai).
 
-_Nguồn: Dữ liệu có sẵn. Backlog đầy đủ: `docs/nhom/backlog.xlsx`._","thu-muc-03,vao-nghe,tinh-nang,P2","03"
+_Nguồn: Mô-đun chưa có README. Backlog đầy đủ: `docs/nhom/backlog.xlsx`._","thu-muc-03,vao-nghe,tai-lieu,P2","03"
 "[03-08] Viết test cho `placementClient` của màn Làm quen","**Mã việc:** 03-08 · **Ưu tiên:** P2 · **Ước lượng:** 1.5 giờ · **Loại:** test · **Cụm:** Vào nghề
 
 ## Việc cần làm
@@ -540,14 +538,14 @@ _Nguồn: docs/thiet-ke/soi-fe/BAO-CAO.md mục 5 (P1-4). Backlog đầy đủ: 
 "[04-01] Thêm 5 mục phương ngữ mới vào `dialects.json`","**Mã việc:** 04-01 · **Ưu tiên:** P1 · **Ước lượng:** 1.5 giờ · **Loại:** tính năng · **Cụm:** Vào nghề
 
 ## Việc cần làm
-Thêm 5 từ khác nhau giữa Bắc/Trung/Nam (đối chiếu nguồn đáng tin, ghi nguồn trong PR). Mỗi mục có id mới theo dạng dN, đặt `reviewed: false` cho tới khi có người duyệt.
+Thêm 5 từ khác nhau giữa Bắc/Trung/Nam (đối chiếu nguồn đáng tin, ghi nguồn trong PR). Mỗi mục có id mới theo dạng dN, đặt `reviewed: false`. Lưu ý: từ điển này cũng được bộ tạo bài luyện (mfe-practice, exercises) và màn Phương ngữ dùng, nên mục chưa duyệt vẫn xuất hiện ở đó; chỉ thêm từ bạn chắc chắn đúng. Âm thanh dựng sẵn lấy từ nội dung khóa học (không từ từ điển này) nên không cần dựng lại.
 
 ## Tệp liên quan
 - `04-am-thanh-tri-thuc/packages/content/src/data/dialects.json`
 - `04-am-thanh-tri-thuc/packages/content/test/data.test.mjs`
 
 ## Tiêu chí đạt
-Kho có 35 mục, id không trùng; test `content` xanh bằng `corepack pnpm --filter @vietlearning/content test`; PR ghi nguồn từng mục.
+Kho có 35 mục, id không trùng; test của ba gói xanh: `corepack pnpm --filter @vietlearning/content test`, `... --filter @vietlearning/exercises test`, `... --filter @vietlearning/mfe-practice test` (bộ tạo bài dùng từ điển này; nếu test seed cố định đổi kết quả thì sửa test và nêu trong PR); PR ghi nguồn từng mục.
 
 ## Cách làm
 1. Mở nhánh `04/<tên-việc-ngắn>` từ `main` mới nhất.
@@ -559,7 +557,7 @@ _Nguồn: Dữ liệu A7 hiện có 30 mục. Backlog đầy đủ: `docs/nhom/b
 "[04-02] Thêm 3 thẻ văn hóa mới vào `culture.json` (song ngữ)","**Mã việc:** 04-02 · **Ưu tiên:** P2 · **Ước lượng:** 1.5 giờ · **Loại:** tính năng · **Cụm:** Vào nghề
 
 ## Việc cần làm
-Thẻ có đủ `title/category/content` và `titleEn/categoryEn/contentEn`, `reviewed:false`. Test M10 đang kiểm đúng 20 thẻ nên phải sửa số này lên 23 trong cùng PR.
+Thẻ có đủ `title/category/content` và `titleEn/categoryEn/contentEn`, `reviewed:false`. Test M10 trong `content/test/data.test.mjs` đang kiểm đúng 20 thẻ nên phải sửa số này lên 23 trong cùng PR. Màn Cẩm nang văn hóa hiện cả thẻ chưa duyệt, nên chỉ thêm thẻ bạn chắc chắn đúng.
 
 ## Tệp liên quan
 - `04-am-thanh-tri-thuc/packages/content/src/data/culture.json`
@@ -567,7 +565,7 @@ Thẻ có đủ `title/category/content` và `titleEn/categoryEn/contentEn`, `re
 - `04-am-thanh-tri-thuc/apps/mfe-knowledge/src/components/knowledgeScreens.test.tsx`
 
 ## Tiêu chí đạt
-Test content và mfe-knowledge xanh; ghi nguồn trong PR; không chép nguyên văn.
+Test content và mfe-knowledge xanh (`--filter @vietlearning/content`, `--filter @vietlearning/mfe-knowledge`); ghi nguồn trong PR; không chép nguyên văn.
 
 ## Cách làm
 1. Mở nhánh `04/<tên-việc-ngắn>` từ `main` mới nhất.
@@ -614,17 +612,16 @@ Hàm trong `gym/gymStore.ts` (`gymStore.get/subscribe/...`) chưa có test. Ki�
 4. Không commit khóa, `.env` hay dữ liệu cá nhân (repo công khai).
 
 _Nguồn: Tệp chưa có test riêng. Backlog đầy đủ: `docs/nhom/backlog.xlsx`._","thu-muc-04,vao-nghe,test,P2","04"
-"[04-05] Viết test song ngữ cho `mfe-knowledge/src/i18n.ts`","**Mã việc:** 04-05 · **Ưu tiên:** P2 · **Ước lượng:** 1 giờ · **Loại:** test · **Cụm:** Vào nghề
+"[04-05] Rà soát chữ vi/en của `mfe-knowledge/src/i18n.ts`","**Mã việc:** 04-05 · **Ưu tiên:** P2 · **Ước lượng:** 1 giờ · **Loại:** tài liệu · **Cụm:** Vào nghề
 
 ## Việc cần làm
-Mọi khóa có chuỗi vi và en không rỗng; tham số `{x}` khớp giữa hai ngôn ngữ.
+So bản vi với bản en của màn Xưng hô và Văn hóa: sửa chính tả/dịch gượng, tham số lệch nhau. Thuật ngữ xưng hô (anh, chị, em...) giữ nguyên tiếng Việt kèm giải nghĩa.
 
 ## Tệp liên quan
 - `04-am-thanh-tri-thuc/apps/mfe-knowledge/src/i18n.ts`
-- `04-am-thanh-tri-thuc/apps/mfe-knowledge/src/i18n.test.ts (tạo mới)`
 
 ## Tiêu chí đạt
-Test xanh; sửa luôn khóa thiếu nếu có.
+PR liệt kê chuỗi đã sửa hoặc 'không thấy lỗi'; `corepack pnpm --filter @vietlearning/mfe-knowledge test` xanh.
 
 ## Cách làm
 1. Mở nhánh `04/<tên-việc-ngắn>` từ `main` mới nhất.
@@ -632,7 +629,7 @@ Test xanh; sửa luôn khóa thiếu nếu có.
 3. Làm xong chạy test của gói liên quan (lệnh ghi ở Tiêu chí đạt) rồi mở PR, ghi mã việc `04-05` trong mô tả, nói rõ đã chạy gì.
 4. Không commit khóa, `.env` hay dữ liệu cá nhân (repo công khai).
 
-_Nguồn: Quy tắc song ngữ. Backlog đầy đủ: `docs/nhom/backlog.xlsx`._","thu-muc-04,vao-nghe,test,P2","04"
+_Nguồn: Quy tắc song ngữ. Backlog đầy đủ: `docs/nhom/backlog.xlsx`._","thu-muc-04,vao-nghe,tai-lieu,P2","04"
 "[04-06] Viết test ca biên cho `hzToSemitone` và `toRelativeSemitones` (A1)","**Mã việc:** 04-06 · **Ưu tiên:** P2 · **Ước lượng:** 1.5 giờ · **Loại:** test · **Cụm:** Vào nghề
 
 ## Việc cần làm
