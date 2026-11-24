@@ -8,6 +8,81 @@
 
 ---
 
+## 0. Bàn giao 24/11/2026 (đọc mục này trước)
+
+> Viết ngày 24/11/2026 sau khi kiểm lại trạng thái repo. Bảng chi tiết từng việc nằm ở mục 3; mục 5 và 5b bên dưới là ghi chú cũ (15–20/11), chỉ còn giá trị lịch sử.
+
+### 0.1 Tình trạng hiện tại (đã kiểm 24/11)
+
+| Hạng mục | Tình trạng |
+|---|---|
+| `main` | `f85b04f`, 511 commit, CI `verify` + `performance` xanh (lần chạy cuối 23/11). Repo **công khai** từ 22/11 |
+| PR đang mở | #35 slide giới thiệu nhóm, #36 gói cài đặt, #37 backlog + Issues nháp (đều **nháp**, chưa gộp). Tài liệu của ba PR đã xuất ra máy: `C:\Users\ADMIN\Downloads\BeCuTit-tai-lieu-nhom` (và `.zip`) |
+| PR đã đóng không gộp | #34 tách 4 thư mục (chủ repo đóng 23/11 15:09). Đã kiểm đạt, nhánh `claude/tach-4-thu-muc-1ce16d` vẫn còn |
+| Phiên con | Không còn phiên nào dang dở (các phiên `nhom-*` và `tach-4-thu-muc` đã xong) |
+| Cộng tác viên GitHub | `PhiHungVo00`, `AnhQuocHuynh`, `Hieu200405`, `NgokAnh` |
+| ⚠️ Lịch sử `main` | Có vấn đề cần quyết: xem 0.5 |
+
+### 0.2 Đã làm (21–24/11; chi tiết theo từng dòng ở mục 3)
+
+- **Dự án 1b (soi giao diện):** P0 sửa 4 lỗi thật (#8); P1 làm app "sống" hơn, gồm sửa LCP trang Học và nâng trần CSS 9→9,2 kB (#31).
+- **Dự án 2 (AI trong bong bóng Cu Tít):** lịch sử chat IndexedDB (#7), camera dùng chung (#9), Gateway ảnh/tóm tắt (#10), tình huống rẽ nhánh (#12), chính sách quyền riêng tư theo nhà cung cấp AI (#14), chat kiểu Messenger (#16), gọi thường/gọi video theo lượt (#17), kiểm toàn dự án trên Android ảo (#24), nguồn đọc ảnh dự phòng Groq/OpenRouter (#25).
+- **Dự án 3 (đăng nhập thật):** migration 0008 (#11), mật khẩu/OTP/mail/quên mật khẩu (#18), Google + liên kết (#15), xóa mềm 30 ngày/khôi phục (#13), gộp khách vào tài khoản + đồng bộ định kỳ (#23), phiên client (#21), giao diện đăng nhập (#32). Đã qua `kien-truc` rà, có sửa 2 lỗi nặng (#18, #21).
+- **Dự án 7 (trang giới thiệu):** khung landing (#28), âm thanh/ảnh (#27), trang `/xoa-tai-khoan` (#26).
+- **Dự án 8 (cập nhật app):** contract (#20), Gateway kiểm phiên bản + chặn 426 có ân hạn (#22), flavor Play/APK + số phiên bản (#30), api-client + tạm dừng đồng bộ (#29).
+- **Quy trình:** repo công khai để CI chạy lại miễn phí; nguyên tắc UI/UX (`docs/thiet-ke/NGUYEN-TAC-UI-UX.md`); a11y WCAG 2.2 bằng `@axe-core/playwright` (bỏ plugin Axe trả phí); phân vai model (xem 0.6).
+- **Nhóm 4 người (thầy yêu cầu):** tách 4 thư mục sở hữu bằng `git mv` (#34, đã kiểm đạt, đang đóng); bộ tài liệu nhóm (#35–#37, xem 0.3 mục C).
+
+### 0.3 Sắp làm (thứ tự đề xuất)
+
+**A. Dự án app còn lại**
+
+| # | Việc | Ghi chú |
+|---|---|---|
+| 1 | Dự án 8 đợt 3–4: Task 5 giao diện nhắc cập nhật (`host-shell/src/update/**`, hiện **chưa có**), Task 6 cài APK native (`ApkUpdaterPlugin`), Task 7 luồng APK + tài liệu phát hành + AVD, Task 8 kiểm tổng | Plan: `docs/superpowers/plans/2026-11-21-cap-nhat-ung-dung.md`. Task 6 đụng native/bảo mật nên cần `kien-truc` rà |
+| 2 | Dự án 3 Task 8: cấu hình thật (OAuth client Google, mật khẩu ứng dụng Gmail), cập nhật `/quyen-rieng-tu` + `docs/phap-ly/DATA-SAFETY.md`, thử AVD (Google, đăng ký, đăng xuất chờ mạng), kiểm tổng | Plan: `...-dang-nhap.md`. Có việc chỉ chủ tài khoản làm được |
+| 3 | Dự án 5a góp ý/báo lỗi + trang quản trị (`apps/admin`, hiện **chưa có**) | Plan 7 task: `...-gop-y-bao-loi.md`. Điều kiện (dự án 3 Task 2, 4, 5) đã có trên `main`, mở được |
+| 4 | Dự án 7 Task 4: kiểm toàn, chụp ảnh, CI; cần tên miền `.id.vn` thật | Plan: `...-trang-gioi-thieu.md` |
+| 5 | Dự án 1b P2: token chuyển động, vào màn trượt, nhãn tab ≥ 11px, giới hạn chu kỳ Cu Tít, nhân vật phụ (cần ảnh), kiểm AVD/en/giảm chuyển động | `docs/thiet-ke/soi-fe/BAO-CAO.md` mục 5 |
+| 6 | Dự án 2b (AI tương tác trong chat) chưa có thiết kế; dự án 4 (thiết kế) và dự án 6 chưa mở | `docs/thiet-ke/NGHIEN-CUU-AI-TUONG-TAC.md` |
+
+**B. Trước phát hành (cần người quyết hoặc tài khoản):** email liên hệ thật cho trang xóa tài khoản và chính sách; người am hiểu đọc lại phần pháp lý; chọn giấy phép (repo **chưa có `LICENSE`**); đổi các khóa từng dán trong chat (OpenRouter, Groq); OAuth client Google + SHA-1 khóa ký; mật khẩu ứng dụng Gmail (chưa có, mail đang ở chế độ dự phòng); keystore ký app (ngoài repo); tên miền; trần thư gửi theo người dùng và khóa đường quên mật khẩu (rà #18 mục 2, 4, 5); một lượt Opus rà tổng; triển khai (`docs/thiet-ke/DE-XUAT-TRIEN-KHAI.md`, hiện **chưa có CD**, chỉ có CI + build APK); thử máy thật; iOS (cần Mac).
+
+**C. Nhóm 4 người**
+- `backlog.xlsx` (PR #37): **72 việc** (thư mục `01`: 32, `02`: 16, `03`: 12, `04`: 12; ưu tiên P0: 7, P1: 18, P2: 47; ước tính khoảng 304 giờ), kèm 40 Issues nháp (script `scripts/nhom/tao-issues.mjs` chạy khô). Mỗi thư mục `02`–`04` có việc "vào nghề" 30–90 phút.
+- Gói cài đặt (PR #36): `CAI-DAT.md`, script kiểm máy, script tạo tệp cấu hình không in khóa, `.env.example` đã rà. Chạy được ở chế độ giả lập không cần khóa.
+- Slide giới thiệu (PR #35): 14 slide + PDF + 20 ảnh chụp app thật.
+- Còn thiếu: **ngày bảo vệ**; thầy chấm từng người thế nào; quyết định về cấu trúc 4 thư mục (đóng #34 hay mở lại/chia sau; đường dẫn trong backlog đang theo 4 thư mục nên cần khớp); giao Issues cho từng người.
+
+**D. Tài liệu nộp (chưa làm):** báo cáo PDF + Word chi tiết (nền: `docs/Bao_Cao_Thiet_Ke_Kien_Truc_Toan_Dien_TDD_UIT.docx`); 7 slide bảo vệ (tên/phạm vi, kiến trúc, tính năng kỹ thuật cao, lý do chọn đề tài, bài toán, thuật toán A1–A8 tâm đắc, sơ đồ phân tích thiết kế và luồng); chuẩn bị demo; video sản phẩm; hiểu cách điều chỉnh/sửa cơ bản code. Bảng phân công trong báo cáo phải ghi **trung thực** ai làm gì.
+
+### 0.4 Cần người quyết định
+
+| # | Việc | Gợi ý |
+|---|---|---|
+| 1 | **Lịch sử `main`** (0.5) | Khôi phục lịch sử thật |
+| 2 | Cấu trúc 4 thư mục: dùng lại nhánh #34 hay làm sau | #34 đã kiểm đạt nhưng đang đóng |
+| 3 | Ngày bảo vệ, cách thầy chấm, repo công khai hay riêng tư | Cần để chia việc cho 3 bạn |
+| 4 | Đóng hay giữ #35–#37 (tài liệu đã nằm ở máy) | Đóng nếu không muốn để trên GitHub |
+| 5 | Việc trước phát hành mục 0.3.B | Phần lớn chỉ chủ dự án làm được |
+
+### 0.5 Lịch sử git của `main` (ghi lại sự việc, chưa xử lý)
+
+- 23/11/2026 15:09 UTC, tài khoản chủ repo đóng PR #34 rồi ghi đè `main` (force-push). Sau đó 103 trong 511 commit có tác giả `Hieu200405` (40), `Trịnh Ngọc Ánh` (33), `AnhQuocHuynh H` (30); 408 commit còn lại của `Võ Phi Hùng`.
+- Đối chiếu: **nội dung từng commit giống hệt bản cũ** (cùng cây tệp, cùng thông điệp, cùng ngày, chỉ đổi tên tác giả). Ví dụ `479869d` (Hieu200405) trùng cây tệp với `47d537c` (Võ Phi Hùng). Ngày commit gốc từ 4/10 và 15/11, **trước khi 3 bạn vào repo**; 99 trong 103 commit còn dòng `Co-Authored-By: Claude`.
+- Bản gốc còn nguyên: `main` cũ là `605c574`, có thể khôi phục (còn nhánh `backup/pre-rewrite` ở máy và nhánh PR chứa nó). Việc khôi phục là ghi đè `main` lần nữa nên chỉ làm khi chủ repo cho phép.
+- **Đánh giá của trợ lý:** lịch sử công khai là bằng chứng thầy dùng để chấm; gán tên người chưa làm vào commit cũ là khai sai đóng góp, rủi ro dồn lên cả 4 người. Đề xuất khôi phục lịch sử thật, rồi cho 3 bạn có commit thật bằng Issues/PR (backlog 72 việc). Trợ lý sẽ không viết báo cáo, bảng phân công hay slide dựa trên cách phân tác giả này.
+
+### 0.6 Cách làm việc để người nhận bàn giao nắm
+
+- **Phân vai model:** Sonnet điều phối chính; Haiku làm router (phân loại, tóm tắt ngắn); Opus chỉ lập kế hoạch, việc Sonnet không làm được và **một lượt rà tổng trước phát hành**; `kien-truc` chạy Sonnet (`AGENTS.md` mục 5).
+- **Quy trình mỗi việc:** phiên con làm theo plan, mở PR nháp, bật Auto-fix, `kien-truc` rà khi đụng đăng nhập/dữ liệu người dùng/Android/pháp lý, gộp khi CI xanh. Không gộp khi chưa qua `kiem-truoc-khi-gop`.
+- **Kiểm:** dùng `corepack pnpm` (pnpm **12.9.1**; pnpm toàn cục bản 9 đọc sai lockfile 2 tài liệu); e2e dùng cổng riêng mỗi phiên; ngân sách hiệu năng không nới, ngân sách không ảnh hưởng hiệu năng thì nâng vừa đủ kèm lý do; a11y bằng `e2e/a11y.spec.ts` + Lighthouse.
+- **Bảo mật:** repo công khai nên không commit khóa/`.env`/keystore; khóa AI ở `~/.becutit/gateway.env`; mỗi thành viên tự tạo khóa miễn phí riêng.
+- **Tài liệu nên đọc:** `AGENTS.md`, `docs/QUY-TRINH-VIBE-CODING.md`, `docs/thiet-ke/NGUYEN-TAC-UI-UX.md`, `docs/superpowers/plans/` (mỗi dự án một plan), `docs/phap-ly/`, `docs/van-hanh/`.
+
+---
+
 ## 1. Mục tiêu
 
 Biến dự án thành **app mobile cài được (Android trước, iOS sau)** có hiệu năng tốt, từ cùng một codebase React.
@@ -36,6 +111,10 @@ Lưu ý: ban đầu tôi hiểu nhầm thành "web chạy trên trình duyệt �
 
 | # | Commit | Nội dung | Kiểm chứng |
 |---|---|---|---|
+| 135 | (commit này) | **Kiểm trạng thái repo và ghi bàn giao (24/11, bạn yêu cầu "kiểm tra và ghi lại tất cả cv sắp làm hay đã làm… để mai bàn giao"):** thêm **mục 0 "Bàn giao 24/11"** ở đầu nhật ký (tình trạng, đã làm, sắp làm, cần quyết, lịch sử `main`, cách làm việc); mục 5 và 5b cũ giữ làm lịch sử. Đã kiểm: `main` `f85b04f` CI xanh; PR mở #35–#37; không phiên nào dang dở; có/chưa có các mô-đun (chưa có `host-shell/src/update`, `apps/admin`, `LICENSE`). Bản sao ngoài repo: `Downloads\BeCuTit-tai-lieu-nhom\NHAT-KY-BAN-GIAO-24-11.md`. | Đã đối chiếu số liệu với `git`, `gh` và `backlog.xlsx`; chưa có ai khác đọc lại. |
+| 134 | (không có commit code) | **Phát hiện `main` bị ghi đè (23/11 15:09 UTC):** 103/511 commit đổi tác giả sang `Hieu200405`/`Trịnh Ngọc Ánh`/`AnhQuocHuynh H`; cây tệp, thông điệp, ngày giống hệt bản cũ; 99 commit còn `Co-Authored-By: Claude`; bản gốc `605c574` còn nguyên (nhánh `backup/pre-rewrite`). Trợ lý đã nêu quan điểm, không đổi gì trong repo, đề xuất khôi phục lịch sử thật; chủ repo trả lời "khoan" ⇒ **chờ quyết định**. Chi tiết ở mục 0.5. | Chưa xử lý. Không viết báo cáo/phân công dựa trên tác giả này. |
+| 133 | (nhánh PR #35–#37, nháp) | **Bộ tài liệu nhóm (23/11):** 3 phiên Sonnet song song. `nhom-backlog` (#37): `backlog.xlsx` 72 việc (01:32, 02:16, 03:12, 04:12; P0 7/P1 18/P2 47), 40 Issues nháp, script tạo Issues chạy khô, Excel tính lại 0 lỗi. `nhom-cai-dat` (#36): `CAI-DAT.md`, `kiem-tra-may.mjs`, `tao-env.mjs`, `.env.example` rà; chạy thử trên clone sạch ở chế độ giả lập. `nhom-slide` (#35): 14 slide + PDF + 20 ảnh chụp thật. Theo yêu cầu "không để trên GitHub" đã **xuất ra `Downloads\BeCuTit-tai-lieu-nhom` (+ `.zip`)**, quét không có khóa. | Chưa gộp, chưa đóng #35–#37. Chưa tạo Issue thật; chưa có tên GitHub để giao việc. |
+| 132 | (nhánh `claude/tach-4-thu-muc-1ce16d`, PR #34 đã đóng) | **Tách 4 thư mục sở hữu (23/11, bạn chọn "thử làm vậy"):** `01-nen-tang` (host-shell, gateway, landing, gói lõi), `02-hoi-thoai-ai`, `03-hoc-tap`, `04-am-thanh-tri-thuc`, bằng `git mv` (giữ lịch sử, `git log --follow` đạt), một workspace pnpm. Thêm `docs/CAU-TRUC-4-THU-MUC.md`, `CODEOWNERS` (`@NGUOI-1..4`), README từng thư mục, luật depcruise mới, `scripts/gop-lai-monorepo.mjs` (đảo ngược khớp `605c574`). Build 20/20, test 39/39, boundaries 0, size đạt, e2e 180, APK hai flavor đạt, CI xanh. PR bị chủ repo **đóng** 23/11 15:09 trước khi gộp. | Đạt trên máy và CI; chưa thử AVD. Chưa gộp; nhánh còn nguyên. |
 | 131 | (commit này) | **Đổi phân vai model + nới ngân sách không ảnh hưởng hiệu năng (22–23/11, bạn chốt):** Sonnet = điều phối chính; Haiku = router (phân loại, chọn agent, tóm tắt ngắn); Opus chỉ lập kế hoạch + vấn đề Sonnet không làm được + một lượt rà tổng trước phát hành; `kien-truc` chạy Sonnet. `AGENTS.md` mục 5 và `.claude/agents/kien-truc.md` cập nhật. Skill `kiem-truoc-khi-gop`: ngân sách hiệu năng (LCP, TBT, JS gói đầu, phản hồi chạm) vẫn không nới; ngân sách không ảnh hưởng hiệu năng thật (vd CSS +0,2 kB do Linux đo khác Windows) được nâng vừa đủ kèm lý do. Hủy dặn trước đó với #31 ("không nới CSS 9 kB"): giữ trần 9,2 kB. Gộp #26 (trang xóa tài khoản, `b6235eb`, CI xanh, `kien-truc` đã rà). | Gộp #26 sau CI xanh. #31 còn đỏ do LCP trên CI (3009 ms) và size-limit đã nâng; phiên #31 hết hạn mức đến 00:30. |
 | 130 | (không có commit code) | **Chuyển repo `PhiHungVo00/CuTit` sang CÔNG KHAI (22/11, bạn quyết: "chuyển repo sang công khai… đảm bảo CI ok") để GitHub Actions miễn phí không giới hạn.** Trước khi chuyển: quét toàn bộ 479 commit (mọi nhánh) tìm khóa (`sk-or-`, `gsk_`, `AIza`, `ghp_`, `sk-ant-`, `hf_`, private key, `*_KEY/TOKEN/SECRET=` dài) ⇒ không có, chỉ giá trị mẫu `your…`; không có tệp `.env` thật/keystore/`google-services.json`; không có email cá nhân hay số điện thoại trong nội dung. Lộ ra: tên và email tác giả commit (email trường). `gh repo edit --visibility public` ⇒ PUBLIC. Chạy lại CI cho #26–#32 và `main` ⇒ đang chạy thật (hết lỗi thanh toán). Lưu ý: repo chưa có tệp LICENSE ⇒ mặc định giữ bản quyền dù công khai; khóa đã dán trong chat vẫn phải đổi trước phát hành. | Đã kiểm quét bí mật; CI đã khởi động lại (chưa có kết quả). |
 | 129 | `80593c3` | **Đổi vai trò nguyên tắc UI/UX sang khâu thiết kế (22/11, bạn làm rõ: "dùng cho khâu thiết kế, không phải kiểm tra"):** `NGUYEN-TAC-UI-UX.md` đổi tên thành hướng dẫn thiết kế (giai đoạn 4: bản phác, mục giao diện của spec), cột "Cách kiểm" thành "Cách tự soát bản phác", bảng kiểm PR thành "12 câu tự hỏi khi chốt thiết kế". Skill `kiem-truoc-khi-gop` bỏ yêu cầu dán bảng kiểm vào PR (giữ a11y.spec + Lighthouse). `AGENTS.md` mục 6: giai đoạn 4 trỏ tới tài liệu. Báo 3 phiên UI bỏ yêu cầu dán bảng. | Chỉ tài liệu. |
@@ -195,6 +274,8 @@ Lưu ý: ban đầu tôi hiểu nhầm thành "web chạy trên trình duyệt �
 | Emulator | Đã cài | AVD `BeCuTit_Pixel_API35` (Pixel 7, Android 15, Google Play image). Mở: `%LOCALAPPDATA%\Android\Sdk\emulator\emulator.exe -avd BeCuTit_Pixel_API35`. App trong emulator gọi gateway qua `http://10.0.2.2:4000` (đặt trong `apps/host-shell/.env.local`, không commit) |
 
 ## 5. Việc còn lại (cập nhật liên tục)
+
+> ⚠️ Mục này **đã cũ** (15–20/11). Việc còn lại hiện hành nằm ở **mục 0** (Bàn giao 24/11).
 
 **Đã xong:** GĐ0 bảo mật gateway · GĐ1 ghép MFE lúc build + PWA · Capacitor 7 + APK Android · GĐ2 refactor M3 · GĐ3 DSP A1/A2 + màn hình M2 · GĐ4 size-limit, e2e, Lighthouse, CI · hàng chờ Q2–Q10, Q12, Q13, Q15, Q16.
 
