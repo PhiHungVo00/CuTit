@@ -148,7 +148,16 @@ export class FsBlobStore implements BlobStore {
     for (const e of entries) {
       const p = join(dir, e.name);
       if (e.isDirectory()) total += await this.walk(p);
-      else if (e.isFile()) total += (await stat(p)).size;
+      else if (e.isFile()) {
+        // Tệp tạm có thể vừa được rename/xóa bởi lần ghi song song giữa readdir và stat: bỏ qua, không lỗi
+        total += await stat(p).then(
+          (st) => st.size,
+          (err: NodeJS.ErrnoException) => {
+            if (err.code === 'ENOENT') return 0;
+            throw err;
+          }
+        );
+      }
     }
     return total;
   }

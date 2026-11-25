@@ -46,19 +46,14 @@ export async function drainBlobDeletions(db: Db, blob: BlobStore, keys?: string[
     for (const k of keys) await one(k);
     return done;
   }
-  // Hàng chung: ít lần thử trước (dòng hỏng vĩnh viễn dồn về cuối), có phân trang để >= BATCH dòng hỏng không chặn dòng tốt phía sau.
-  // `offset` chỉ tăng theo số dòng THẤT BẠI (dòng xóa được đã rời khỏi bảng).
-  let offset = 0;
-  for (let round = 0; round < MAX_ROUNDS; round++) {
-    const rows = await db
-      .select({ blobKey: blobDeletions.blobKey })
-      .from(blobDeletions)
-      .orderBy(asc(blobDeletions.attempts), asc(blobDeletions.createdAt), asc(blobDeletions.blobKey))
-      .limit(BATCH)
-      .offset(offset);
-    if (rows.length === 0) break;
-    for (const { blobKey } of rows) if (!(await one(blobKey))) offset++;
-  }
+  // Hàng chung: chụp danh sách MỘT lần (ít lần thử trước => dòng hỏng vĩnh viễn dồn về cuối), rồi xử lý lần lượt.
+  // Không phân trang theo offset vì attempts đổi làm thứ tự dịch chuyển. Tối đa BATCH * MAX_ROUNDS dòng mỗi lần chạy.
+  const rows = await db
+    .select({ blobKey: blobDeletions.blobKey })
+    .from(blobDeletions)
+    .orderBy(asc(blobDeletions.attempts), asc(blobDeletions.createdAt), asc(blobDeletions.blobKey))
+    .limit(BATCH * MAX_ROUNDS);
+  for (const { blobKey } of rows) await one(blobKey);
   return done;
 }
 

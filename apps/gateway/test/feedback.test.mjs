@@ -374,3 +374,31 @@ test('DELETE /v1/me khi kho tệp ném lỗi khi xóa => tài khoản vẫn xóa
 });
 
 void PG;
+
+test('M1: trần kho nhỏ + nhiều yêu cầu song song => tổng đĩa không vượt trần, có yêu cầu bị 507', async () => {
+  const t = await setup({ BLOB_TOTAL_CAP_MB: '1' });
+  const img = Buffer.concat([PNG, Buffer.alloc(400 * 1024 - PNG.length, 5)]); // ~400 KB
+  const gs = await Promise.all(Array.from({ length: 6 }, () => guest(t.app)));
+  const rs = await Promise.all(gs.map((g) => t.post(g, [metaPart(), filePart(img)])));
+  const codes = rs.map((r) => r.statusCode);
+  assert.ok(codes.every((c) => c === 200 || c === 507), codes.join() + ' ' + rs.map((r) => r.body.slice(0, 150)).join(' ; '));
+  assert.ok(codes.includes(507), 'phải có yêu cầu bị từ chối: ' + codes.join());
+  const total = walk(t.dir).reduce((n, f) => n + statSync(f).size, 0);
+  assert.ok(total <= 1 * MB, `đĩa ${total} > trần ${MB}`);
+  assert.equal(walk(t.dir).length, codes.filter((c) => c === 200).length);
+  await t.done();
+});
+
+test('M2: gửi góp ý song song với xóa tài khoản => không có tệp mồ côi, không còn dòng góp ý', async () => {
+  const t = await setup();
+  for (let i = 0; i < 4; i++) {
+    const g = await guest(t.app);
+    const [p, d] = await Promise.all([t.post(g, [metaPart(), filePart(PNG)]), t.app.inject({ method: 'DELETE', url: '/v1/me', headers: g.headers, payload: { mode: 'now' } })]);
+    assert.ok([200, 401, 404].includes(p.statusCode), `post ${p.statusCode} ${p.body}`);
+    assert.equal(d.statusCode, 200, d.body);
+    assert.deepEqual(walk(t.dir), [], `vòng ${i}: tệp mồ côi`);
+    assert.equal((await t.db.select().from(schema.feedbackReports)).length, 0);
+    assert.equal((await t.db.select().from(schema.blobDeletions)).length, 0);
+  }
+  await t.done();
+});

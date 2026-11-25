@@ -209,3 +209,37 @@ test('drainBlobDeletions: khóa không còn tệp vẫn coi là xong (idempotent
   assert.equal((await t.db.select().from(schema.blobDeletions)).length, 0);
   await t.done();
 });
+
+test('L1: tệp tạm .tmp cũ hơn 1 giờ bị dọn khi chạy job (đồng hồ giả), tệp mới giữ', async () => {
+  const { mkdirSync, writeFileSync, utimesSync } = await import('node:fs');
+  const t = await setup();
+  const tmp = join(t.dir, '.tmp');
+  mkdirSync(tmp, { recursive: true });
+  const old = join(tmp, 'old');
+  const fresh = join(tmp, 'fresh');
+  writeFileSync(old, 'x');
+  writeFileSync(fresh, 'y');
+  utimesSync(old, new Date(NOW.getTime() - 2 * 3600_000), new Date(NOW.getTime() - 2 * 3600_000));
+  utimesSync(fresh, new Date(NOW.getTime() - 10 * 60_000), new Date(NOW.getTime() - 10 * 60_000));
+  await runFeedbackPurge(t.db, t.blob, NOW);
+  assert.equal(existsSync(old), false);
+  assert.equal(existsSync(fresh), true);
+  await t.done();
+});
+
+test('L2: 501 khóa hỏng vĩnh viễn + 1 khóa tốt => khóa tốt vẫn được xử lý trong một lần chạy', async () => {
+  const t = await setup();
+  const goodKey = 'feedback/11111111-1111-4111-8111-111111111111/22222222-2222-4222-8222-222222222222.png';
+  await t.blob.put(goodKey, Readable.from([Buffer.alloc(5, 1)]), { contentType: 'image/png', maxBytes: 100 });
+  const bad = Array.from({ length: 501 }, (_, i) => `feedback/bad/${String(i).padStart(5, '0')}.png`);
+  await t.db.insert(schema.blobDeletions).values(bad.map((blobKey) => ({ blobKey, reason: 't', createdAt: ago(2) })));
+  await t.db.insert(schema.blobDeletions).values({ blobKey: goodKey, reason: 't', createdAt: NOW });
+  const flaky = { ...t.blob, put: t.blob.put, get: t.blob.get, totalBytes: () => t.blob.totalBytes(), delete: async (k) => { if (k.startsWith('feedback/bad/')) throw new Error('hỏng'); return t.blob.delete(k); } };
+  const done = await drainBlobDeletions(t.db, flaky);
+  assert.equal(done, 1);
+  assert.deepEqual(walk(t.dir), []);
+  const left = await t.db.select().from(schema.blobDeletions);
+  assert.equal(left.length, 501);
+  assert.ok(left.every((r) => r.attempts === 1));
+  await t.done();
+});
