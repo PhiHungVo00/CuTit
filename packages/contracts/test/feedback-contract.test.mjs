@@ -67,6 +67,9 @@ test('FeedbackCreateMeta: body 10–2000 ký tự (sau khi cắt khoảng trắn
   ok(FeedbackCreateMetaSchema, meta({ body: 'a'.repeat(2000) }));
   bad(FeedbackCreateMetaSchema, meta({ body: 'a'.repeat(9) }));
   bad(FeedbackCreateMetaSchema, meta({ body: 'a'.repeat(2001) }));
+  // DB đếm ký tự (code point), không phải đơn vị UTF-16: 5 emoji (length 10) phải bị từ chối, 10 emoji được nhận
+  bad(FeedbackCreateMetaSchema, meta({ body: '😀'.repeat(5) }));
+  ok(FeedbackCreateMetaSchema, meta({ body: '😀'.repeat(10) }));
   bad(FeedbackCreateMetaSchema, meta({ body: `   ${'a'.repeat(9)}   ` }));
   assert.equal(FeedbackCreateMetaSchema.parse(meta({ body: `  ${'a'.repeat(10)}  ` })).body.length, 10);
 });

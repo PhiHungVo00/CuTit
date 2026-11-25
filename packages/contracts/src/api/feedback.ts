@@ -84,7 +84,14 @@ export type FeedbackContext = z.infer<typeof FeedbackContextSchema>;
 export const FeedbackCreateMetaSchema = z
   .object({
     kind: FeedbackKindSchema,
-    body: z.string().trim().min(FEEDBACK_LIMITS.bodyMin).max(FEEDBACK_LIMITS.bodyMax),
+    body: z
+      .string()
+      .trim()
+      .min(FEEDBACK_LIMITS.bodyMin)
+      .max(FEEDBACK_LIMITS.bodyMax)
+      // DB CHECK đếm KÝ TỰ (code point); .length của JS đếm đơn vị UTF-16: 5 emoji = length 10 lọt .min nhưng DB từ chối => 500.
+      // (.max thì an toàn: UTF-16 ≥ code point nên đã ≤ 2000 ký tự.)
+      .refine((s) => [...s].length >= FEEDBACK_LIMITS.bodyMin, { message: 'Nội dung quá ngắn' }),
     context: FeedbackContextSchema
   })
   .strict();
