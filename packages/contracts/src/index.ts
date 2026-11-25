@@ -5,3 +5,5 @@ export * from './db/schema.js';
 export * from './a8/sentenceOrder.js';
 export * from './api/account.js';
 export * from './api/speech.js';
+export * from './api/feedback.js';
+export * from './api/admin.js';

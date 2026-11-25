@@ -149,6 +149,31 @@ test('discard_device: bỏ tiến độ khách, đích không đổi, khách b�
   assert.equal(rf.json().error, 'account_merged');
 });
 
+// ---------- Góp ý (dự án 5a) ----------
+
+const FB_CTX = { appVersion: '0.9.0', build: 'abc', platform: 'android', osVersion: '15', locale: 'vi', route: '/p', recentRoutes: [] };
+async function feedbackOf(userId, body) {
+  const d = await db();
+  const [fb] = await d.insert(schema.feedbackReports).values({ userId, kind: 'bug', body, context: FB_CTX }).returning();
+  await d.insert(schema.feedbackFiles).values({ feedbackId: fb.id, blobKey: `feedback/${fb.id}/a.png`, media: 'image', contentType: 'image/png', bytes: 10 });
+  await d.insert(schema.feedbackEvents).values({ feedbackId: fb.id, status: 'in_progress', message: 'Đang xem' });
+  return fb.id;
+}
+
+for (const strategy of ['merge', 'discard_device']) {
+  test(`Góp ý của khách chuyển sang tài khoản đích (${strategy}): kèm tệp và lời nhắn, không bị cascade xóa`, async () => {
+    const { A, B, t } = await pair();
+    const fbB = await feedbackOf(B.userId, 'Góp ý của khách trước khi gộp');
+    const fbA = await feedbackOf(A.userId, 'Góp ý sẵn có của tài khoản thật');
+    assert.equal((await merge(B.headers, t, strategy)).statusCode, 200);
+    const d = await db();
+    const mine = await d.select().from(schema.feedbackReports).where(eq(schema.feedbackReports.userId, A.userId));
+    assert.deepEqual(mine.map((r) => r.id).sort(), [fbA, fbB].sort());
+    assert.equal((await d.select().from(schema.feedbackFiles).where(eq(schema.feedbackFiles.feedbackId, fbB))).length, 1);
+    assert.equal((await d.select().from(schema.feedbackEvents).where(eq(schema.feedbackEvents.feedbackId, fbB))).length, 1);
+  });
+}
+
 // ---------- Từng bảng ----------
 
 test('XP: cộng (xp_events chuyển sang, daily_activity.xp cộng)', async () => {

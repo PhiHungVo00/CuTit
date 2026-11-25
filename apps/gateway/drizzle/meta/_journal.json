@@ -64,6 +64,20 @@
       "when": 1795259828891,
       "tag": "0008_auth_identities",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1795572702328,
+      "tag": "0009_feedback_admin",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1795572787886,
+      "tag": "0010_admin_audit_append_only",
+      "breakpoints": true
     }
   ]
 }
