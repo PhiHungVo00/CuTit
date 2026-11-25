@@ -1,6 +1,7 @@
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { defineConfig, devices } from '@playwright/test';
+import { VERSIONS_FILE } from './e2e/versions';
 
 /**
  * Test e2e trên cấu hình điện thoại, chạy bằng bản build thật (vite preview) => có cả Service Worker.
@@ -61,7 +62,7 @@ export default defineConfig({
       timeout: 180_000
     },
     {
-      command: 'node ../gateway/dist/index.js',
+      command: 'node e2e/reset-versions.mjs && node ../gateway/dist/index.js',
       url: `http://localhost:${GATEWAY_PORT}/healthz`,
       reuseExistingServer: false,
       timeout: 180_000,
@@ -76,6 +77,9 @@ export default defineConfig({
         // Thư mục âm thanh dựng sẵn RIÊNG, trống: không dùng apps/gateway/.data/tts của máy dev (có gói thì app phát
         // tệp dựng sẵn thay vì TTS của máy => test đếm lời đọc phụ thuộc máy)
         TTS_AUDIO_DIR: join(tmpdir(), `becutit-e2e-audio-${GATEWAY_PORT}`),
+        // Dự án 8: tệp phiên bản riêng + TTL 0 để e2e/update.spec.ts ghi tệp là Gateway thấy ngay (đường 426 thật)
+        APP_VERSIONS_FILE: VERSIONS_FILE,
+        APP_VERSIONS_TTL_MS: '0',
         AUTH_RATE_LIMIT_PER_MINUTE: '1000',
         RATE_LIMIT_PER_MINUTE: '1000'
       }

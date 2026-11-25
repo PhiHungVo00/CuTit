@@ -15,6 +15,8 @@ import { onNotice, readNotice } from './notice';
 const NoticeBanner = lazy(() => import('./NoticeBanner'));
 // Bong bóng Cu Tít: chunk lười, gắn sau lần vẽ đầu để không tranh LCP/gói đầu
 const CuTitBubble = lazy(() => import('./shell/CuTitBubble'));
+// Nhắc/ép cập nhật app (dự án 8): chunk lười, chỉ bản production; đọc engine của update/start
+const UpdateLayer = lazy(() => import('./update/UpdateLayer'));
 
 function useAfterFirstPaint(): boolean {
   const [ready, setReady] = useState(false);
@@ -90,6 +92,14 @@ export function App() {
       {notice && (
         <Suspense fallback={null}>
           <NoticeBanner notice={notice} />
+        </Suspense>
+      )}
+
+      {/* Nhắc/ép cập nhật (dự án 8): trước <main> để dải offline nằm đầu trang; màn bắt buộc/thẻ là position: fixed.
+          Chỉ mount sau lần vẽ đầu (cùng lúc bong bóng Cu Tít) để chunk của nó không tranh LCP. */}
+      {import.meta.env.PROD && bubbleReady && (
+        <Suspense fallback={null}>
+          <UpdateLayer />
         </Suspense>
       )}
 
