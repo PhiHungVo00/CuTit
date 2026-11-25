@@ -20,9 +20,9 @@ import { OtpService } from '../services/auth/otp.js';
 import { hashPassword, isWeakPassword, verifyPassword } from '../services/auth/password.js';
 import { RateCounters } from '../services/auth/rateCounter.js';
 import { formatRecoveryCode, issueTokens, newRecoveryCode, sha256 } from '../services/auth/tokens.js';
-import { refundMailQuota, tryConsumeMailQuota } from '../services/mail/dailyCap.js';
+import { mailResetReserve, refundMailQuota, tryConsumeMailQuota } from '../services/mail/dailyCap.js';
 import { otpEmail } from '../services/mail/templates.js';
-import { OTP_FAIL_EMAIL_MAX, OTP_SEND_EMAIL_MAX, OTP_SEND_IP_MAX, authKeys } from './authPassword.js';
+import { MAIL_USER_WINDOW_MS, OTP_FAIL_EMAIL_MAX, OTP_SEND_EMAIL_MAX, OTP_SEND_IP_MAX, authKeys } from './authPassword.js';
 
 /**
  * Dự án 3 Task 2 — luồng CÓ Bearer (scope /v1: hook xác thực + giới hạn theo người dùng):
@@ -107,7 +107,13 @@ export const authMeRoutes: FastifyPluginAsync<RouteDeps> = async (server, { db, 
     if (!mail.available()) return reply.status(503).send({ error: 'provider_unavailable' });
     if ((await counters.hit(d, authKeys.sendLink(body.email), 15 * MIN, now)) > OTP_SEND_EMAIL_MAX) return reply.status(429).send({ error: 'rate_limited' });
     if ((await counters.hit(d, authKeys.sendIp(req.ip), 60 * MIN, now)) > OTP_SEND_IP_MAX) return reply.status(429).send({ error: 'rate_limited' });
-    if (!(await tryConsumeMailQuota(d, config.MAIL_DAILY_CAP, now))) {
+    // Trần thư theo người dùng/ngày: một tài khoản (tạo hàng loạt không tốn gì) không đốt được trần chung (rà PR #18 mục 2)
+    if ((await counters.hit(d, authKeys.mailUser(userId), MAIL_USER_WINDOW_MS, now)) > config.MAIL_USER_DAILY_CAP) {
+      audit.record('auth.email_code_failed', { outcome: 'blocked', userId, metadata: { purpose: 'link', reason: 'user_daily_cap' } });
+      return reply.status(429).send({ error: 'rate_limited' });
+    }
+    // Luồng gắn email chỉ dùng tới cap − phần dành riêng cho quên/đặt lại mật khẩu
+    if (!(await tryConsumeMailQuota(d, config.MAIL_DAILY_CAP, now, mailResetReserve(config.MAIL_DAILY_CAP, config.MAIL_RESET_RESERVE_RATIO)))) {
       audit.record('auth.email_code_failed', { outcome: 'blocked', userId, metadata: { purpose: 'link', reason: 'daily_cap' } });
       return reply.status(503).send({ error: 'provider_unavailable' });
     }
@@ -117,6 +123,7 @@ export const authMeRoutes: FastifyPluginAsync<RouteDeps> = async (server, { db, 
       await mail.send(body.email, msg.subjectVi, msg.subjectEn, msg.body);
     } catch {
       await refundMailQuota(d, now).catch(() => undefined);
+      await counters.unhit(d, authKeys.mailUser(userId)).catch(() => undefined);
       req.log.warn({ mail: mail.name }, 'gửi mã xác minh email thất bại');
       audit.record('auth.email_code_failed', { outcome: 'failure', userId, metadata: { purpose: 'link', reason: 'send_failed' } });
       return reply.status(503).send({ error: 'provider_unavailable' });
