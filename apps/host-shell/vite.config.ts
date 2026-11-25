@@ -43,8 +43,8 @@ export default defineConfig({
     tailwindcss(),
     preloadFonts(),
     VitePWA({
-      registerType: 'autoUpdate',
-      injectRegister: false, // tự đăng ký trong main.tsx sau khi trang đã hiển thị
+      registerType: 'prompt', // SW mới đợi người dùng đồng ý (dự án 8, spec 5.6); nhắc ở src/update/web.ts
+      injectRegister: false, // đăng ký lười từ src/update/web.ts sau khi trang đã hiển thị
       includeAssets: ['icons/apple-touch-icon.png'],
       manifest: {
         name: 'Học Tiếng Việt Cùng Bé Cu Tít',
@@ -65,9 +65,8 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,woff2,png,svg,webp}'],
-        // Bản mới kích hoạt ngay và nhận quyền điều khiển tab đang mở; xóa precache cũ
-        skipWaiting: true,
-        clientsClaim: true,
+        // Không skipWaiting/clientsClaim: bản mới chờ tới khi người dùng bấm "Tải lại" (registerType 'prompt');
+        // tab khác thấy `controllerchange` thì hiện thẻ tải lại (src/update/web.ts). Xóa precache cũ khi kích hoạt.
         cleanupOutdatedCaches: true,
         navigateFallback: '/index.html',
         // Không bao giờ cache API của Gateway (dữ liệu cá nhân, có xác thực)
