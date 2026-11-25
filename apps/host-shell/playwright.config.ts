@@ -20,6 +20,7 @@ export const GATEWAY_PORT = Number(process.env.E2E_GATEWAY_PORT) || 4000;
 
 export default defineConfig({
   testDir: './e2e',
+  globalSetup: './e2e/global-setup.ts',
   timeout: 30_000,
   fullyParallel: false,
   // 1 worker: các ca micro giả (AudioWorklet, thời gian thực) và đồng bộ chập chờn khi 2 trình duyệt tranh CPU/thiết bị âm
@@ -50,18 +51,20 @@ export default defineConfig({
       }
     }
   ],
+  // Chờ sẵn sàng (không phải chờ bừa): dưới tải nặng Gateway/vite khởi động mất >60 s => "Timed out waiting from config.webServer"
+  // trước khi ca nào chạy. Cổng sẵn sàng tới sớm thì không chờ thêm.
   webServer: [
     {
       command: `npx vite preview --port ${PORT} --strictPort`,
       port: PORT,
       reuseExistingServer: !process.env.CI && !process.env.E2E_PORT,
-      timeout: 60_000
+      timeout: 180_000
     },
     {
       command: 'node ../gateway/dist/index.js',
       url: `http://localhost:${GATEWAY_PORT}/healthz`,
       reuseExistingServer: false,
-      timeout: 60_000,
+      timeout: 180_000,
       env: {
         NODE_ENV: 'development',
         PORT: String(GATEWAY_PORT),

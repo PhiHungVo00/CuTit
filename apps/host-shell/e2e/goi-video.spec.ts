@@ -3,7 +3,7 @@ import { installFakeMicStartHook } from './fake-mic';
 
 /**
  * Task 7 — gọi video theo lượt với camera giả của Chrome (--use-fake-device-for-media-stream) và micro giả
- * (0,4 s im → 1 s "giọng" → im). Gateway thật (PGlite, không khóa AI).
+ * (0,4 s im → 3 s "giọng" → im). Gateway thật (PGlite, không khóa AI).
  */
 test.use({ launchOptions: { args: ['--use-fake-device-for-media-stream', '--use-fake-ui-for-media-stream'] } });
 
@@ -25,8 +25,8 @@ async function fakeMic(page: import('@playwright/test').Page, opts: { denyCamera
       (dest.stream as MediaStream & { __start?: () => void }).__start = () => {
         const t = ctx.currentTime;
         gain.gain.setValueAtTime(0, t);
-        gain.gain.setValueAtTime(0.8, t + 0.4);
-        gain.gain.setValueAtTime(0, t + 1.4);
+        gain.gain.setValueAtTime(0.8, t + 0.4); // giọng 3 s (không phải 1 s): hai ngữ cảnh âm thanh chạy lệch giờ nên đầu luồng có thể mất ~0,3–0,4 s khi máy tải; 1 s thì chỉ còn <300 ms, dưới ngưỡng "đã nói" của app
+        gain.gain.setValueAtTime(0, t + 3.4);
         osc.start();
       };
       return dest.stream;
