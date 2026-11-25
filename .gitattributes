@@ -2,3 +2,6 @@ apps/host-shell/android/gradlew text eol=lf
 *.bat text eol=crlf
 *.png binary
 *.jar binary
+
+# Nhật ký: nhiều PR cùng thêm dòng ở đầu bảng => giữ cả hai dòng thay vì báo xung đột (chỉ dòng/append; số thứ tự vẫn đánh lại bằng tay)
+docs/NHAT_KY_CHUYEN_DOI_MOBILE.md merge=union
