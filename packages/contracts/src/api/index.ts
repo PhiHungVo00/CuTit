@@ -9,3 +9,5 @@ export * from './account.js';
 export * from './speech.js';
 export * from './friends.js';
 export * from './appVersion.js';
+export * from './feedback.js';
+export * from './admin.js';
