@@ -14,6 +14,7 @@ import { applySwapFontsForNativeApp } from './styles/nativeFonts';
 import { ThemeProvider } from './theme/ThemeContext';
 import { configureGateway } from '@vietlearning/api-client/config';
 import { startAudioOnFirstGesture } from './audio/lazyAudio';
+import { detectChannel } from './update/channel';
 
 // Tài khoản khách + đồng bộ: chunk lười, chỉ tải khi cần token hoặc sau lần vẽ đầu
 const account = () => import('./account/bootstrap');
@@ -24,7 +25,17 @@ configureGateway({
   baseUrl: import.meta.env.VITE_GATEWAY_URL ?? 'http://localhost:4000',
   timeoutMs: 10_000,
   getToken: async () => (await account()).session().getToken(),
-  onUnauthorized: async () => (await account()).session().handleUnauthorized()
+  onUnauthorized: async () => (await account()).session().handleUnauthorized(),
+  // Dự án 8: gửi số build + kênh để Gateway chặn bản quá cũ (426). Bản dev không gửi header.
+  // 426 ⇒ mô-đun cập nhật (chunk lười) hiện màn bắt buộc; hàm này chỉ là cái móc nhỏ.
+  ...(import.meta.env.PROD
+    ? {
+        appBuild: Number(import.meta.env.VITE_APP_BUILD),
+        appChannel: detectChannel(),
+        onUpdateRequired: (info: { minBuild: number; channel: 'web' | 'play' | 'apk' }) =>
+          void import('./update/start').then((m) => m.forceRequired(info))
+      }
+    : {})
 });
 
 // Âm thanh: cài đặt theo máy (deviceSettings) là nguồn duy nhất; Cài đặt chỉ ghi slice, host phản ứng.
@@ -60,10 +71,10 @@ const startSyncLater = () => setTimeout(() => void account().then((m) => m.start
 if (document.readyState === 'complete') startSyncLater();
 else window.addEventListener('load', startSyncLater, { once: true });
 
-// Đăng ký Service Worker sau khi trang tải xong để không tranh băng thông với lần hiển thị đầu.
-// Trong app Capacitor không cần SW: mọi file đã nằm sẵn trong gói cài đặt.
-if (import.meta.env.PROD && !isNativeApp && 'serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    import('virtual:pwa-register').then(({ registerSW }) => registerSW({ immediate: true }));
-  });
+// Mô-đun cập nhật (dự án 8) nạp lười sau khi trang tải xong: kiểm phiên bản mọi kênh; kênh web còn đăng ký
+// Service Worker (chế độ hỏi trước khi tải lại). Trong app Capacitor không có SW: file đã nằm trong gói cài đặt.
+if (import.meta.env.PROD) {
+  const startUpdatesLater = () => void import('./update/start').then((m) => m.startUpdates());
+  if (document.readyState === 'complete') startUpdatesLater();
+  else window.addEventListener('load', startUpdatesLater, { once: true });
 }

@@ -74,5 +74,10 @@ module.exports = [
   { name: 'GĐ2 Phát âm thanh dựng sẵn theo miền', path: 'dist/assets/coursePlayer-*.js', limit: '1.5 kB', gzip: true },
   // GĐ4a (đo 2026-11-18): huy hiệu theo thành thạo + tổng kết tuần + thông báo nhẹ, lazy
   { name: 'GĐ4 Huy hiệu + tổng kết tuần (lazy)', path: 'dist/assets/Motivation-*.js', limit: '3.5 kB', gzip: true },
-  { name: 'GĐ2 A7 đổi từ theo miền', path: 'dist/assets/dialectMap-*.js', limit: '2 kB', gzip: true }
+  { name: 'GĐ2 A7 đổi từ theo miền', path: 'dist/assets/dialectMap-*.js', limit: '2 kB', gzip: true },
+  // Dự án 8 Task 5 (2026-11-25): mô-đun cập nhật app, lazy (nạp ở sự kiện load). Chunk `start` = engine + lịch kiểm + kênh;
+  // `UpdateLayer` = thẻ nhắc + màn bắt buộc + chuỗi vi/en. Plugin Play (`@capawesome/capacitor-app-update`) và SW web là chunk
+  // riêng, chỉ nạp ở kênh tương ứng. Đo: start 2.24 kB, UpdateLayer 2.91 kB (trần của spec cho phần cập nhật: 3.5 kB).
+  { name: 'Dự án 8 Kiểm/nhắc cập nhật app: engine (lazy)', path: 'dist/assets/start-*.js', limit: '3.5 kB', gzip: true },
+  { name: 'Dự án 8 Giao diện cập nhật app: thẻ nhắc + màn bắt buộc (lazy)', path: 'dist/assets/UpdateLayer-*.js', limit: '3.5 kB', gzip: true }
 ];
