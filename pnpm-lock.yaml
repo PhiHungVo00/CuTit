@@ -290,6 +290,9 @@ importers:
       '@capacitor/splash-screen':
         specifier: ^7.0.5
         version: 7.0.5(@capacitor/core@7.6.10)
+      '@capawesome/capacitor-app-update':
+        specifier: 7.2.0
+        version: 7.2.0(@capacitor/core@7.6.10)
       '@capgo/capacitor-social-login':
         specifier: 7.19.0
         version: 7.19.0(@capacitor/core@7.6.10)
@@ -1632,6 +1635,11 @@ packages:
 
   '@capacitor/splash-screen@7.0.5':
     resolution: {integrity: sha512-bPG2SamFL7VT5I3XsgsGgJhkiyxq3OXCOVKEDupSieVdtEiG7j2vLbSD0xL+91zteF/qLuxsjbugGy5LD8mS2A==}
+    peerDependencies:
+      '@capacitor/core': '>=7.0.0'
+
+  '@capawesome/capacitor-app-update@7.2.0':
+    resolution: {integrity: sha512-fwPxR9tV5qecn3FSgwS5wBwlHDV9JND5dnY1iqIYnqRG2s/Oq0h32u4hV6+/zpDARJFMZycb3pddEfwLwhglEg==}
     peerDependencies:
       '@capacitor/core': '>=7.0.0'
 
@@ -6592,6 +6600,10 @@ snapshots:
       '@capacitor/core': 7.6.10
 
   '@capacitor/splash-screen@7.0.5(@capacitor/core@7.6.10)':
+    dependencies:
+      '@capacitor/core': 7.6.10
+
+  '@capawesome/capacitor-app-update@7.2.0(@capacitor/core@7.6.10)':
     dependencies:
       '@capacitor/core': 7.6.10
 
