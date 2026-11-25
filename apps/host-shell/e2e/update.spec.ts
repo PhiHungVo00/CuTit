@@ -1,6 +1,5 @@
 import { expect, test } from '@playwright/test';
 import { readAppVersion } from '../scripts/version.mjs';
-import { GATEWAY_PORT } from '../playwright.config';
 import { writeVersions } from './versions';
 
 /**
@@ -16,11 +15,8 @@ test.afterEach(() => writeVersions());
 const forced = (page: import('@playwright/test').Page) => page.getByRole('alertdialog', { name: 'Cần cập nhật để học tiếp' });
 
 test.describe('Dự án 8 — cập nhật app (web)', () => {
-  test('(a) minBuild > build: màn bắt buộc, một nút, không đóng được; Gateway thật trả 426', async ({ page, request }) => {
+  test('(a) minBuild > build: màn bắt buộc, một nút, không đóng được (đường kiểm phiên bản)', async ({ page }) => {
     writeVersions({ minBuild: build + 1, latestBuild: build + 1, latestVersion: '99.0.0' });
-    // đường 426 thật của Gateway (hook /v1) với đúng header mà bản build gửi
-    const res = await request.post(`http://localhost:${GATEWAY_PORT}/v1/sync`, { data: { events: [] }, headers: { 'x-app-build': String(build), 'x-app-channel': 'web' } });
-    expect(res.status()).toBe(426);
     await page.goto('/');
     const dialog = forced(page);
     await expect(dialog).toBeVisible({ timeout: 15_000 });
@@ -30,6 +26,35 @@ test.describe('Dự án 8 — cập nhật app (web)', () => {
     await page.keyboard.press('Escape');
     await expect(dialog).toBeVisible();
     await expect(page.locator('main')).toHaveAttribute('inert', '');
+  });
+
+  test('(a2) đường 426 thật: lần kiểm đã "an toàn" trong 30 phút, request /v1 của app bị Gateway chặn ⇒ màn bắt buộc', async ({ page }) => {
+    // Lần kiểm lúc mở bị bỏ (đã kiểm <30 phút trước, bản đủ mới) nên chỉ còn 426 từ request thật của app mới làm hiện màn
+    await page.addInitScript(
+      ([key, b]) => {
+        localStorage.setItem(
+          key as string,
+          JSON.stringify({
+            lastCheckAt: Date.now(),
+            lastResponse: { channel: 'web', latestBuild: b, latestVersion: '1.0.0', minBuild: 0, status: 'up_to_date', notes: null, apkFile: null, downloadUrl: null, checkAfterSec: 21600 },
+            snoozedBuild: 0,
+            snoozedUntil: 0
+          })
+        );
+      },
+      [STATE_KEY, build]
+    );
+    writeVersions({ minBuild: build + 1, latestBuild: build + 1, latestVersion: '99.0.0', minBuildEnforceAt: null });
+    const blocked = page.waitForResponse((r) => r.status() === 426 && r.url().includes('/v1/'), { timeout: 30_000 });
+    await page.goto('/phuong-ngu');
+    await page.getByRole('searchbox').fill('heo');
+    await page
+      .getByRole('listitem')
+      .filter({ hasText: 'Con lợn' })
+      .getByRole('button', { name: /Lưu để ôn tập/ })
+      .click(); // sự kiện vào hàng đợi đồng bộ ⇒ đẩy lên /v1/sync ⇒ 426
+    await blocked;
+    await expect(forced(page)).toBeVisible({ timeout: 10_000 });
   });
 
   test('(b) offline + đã biết cần cập nhật: chỉ dải nhỏ, KHÔNG màn chặn; bài đã tải vẫn học được', async ({ page, context }) => {
@@ -65,7 +90,7 @@ test.describe('Dự án 8 — cập nhật app (web)', () => {
     );
     await context.setOffline(true);
     await page.goto('/phat-am');
-    await expect(page.getByRole('status').filter({ hasText: 'Cần cập nhật khi có mạng' })).toBeVisible();
+    await expect(page.getByRole('status').filter({ hasText: 'Cần cập nhật khi có mạng' })).toBeInViewport(); // dải ở đầu trang, không rơi xuống đáy
     await expect(page.getByRole('alertdialog')).toHaveCount(0);
     await expect(page.getByRole('heading', { name: 'Luyện 6 thanh điệu' })).toBeVisible();
     await context.setOffline(false);

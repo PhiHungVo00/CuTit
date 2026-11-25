@@ -95,6 +95,14 @@ export function App() {
         </Suspense>
       )}
 
+      {/* Nhắc/ép cập nhật (dự án 8): trước <main> để dải offline nằm đầu trang; màn bắt buộc/thẻ là position: fixed.
+          Chỉ mount sau lần vẽ đầu (cùng lúc bong bóng Cu Tít) để chunk của nó không tranh LCP. */}
+      {import.meta.env.PROD && bubbleReady && (
+        <Suspense fallback={null}>
+          <UpdateLayer />
+        </Suspense>
+      )}
+
       <main className={focus ? 'shell-main focus' : 'shell-main'}>
         <ScreenErrorBoundary resetKey={pathname}>
           <Suspense fallback={<ScreenLoading />}>
@@ -109,12 +117,6 @@ export function App() {
           </Suspense>
         </ScreenErrorBoundary>
       </main>
-
-      {import.meta.env.PROD && (
-        <Suspense fallback={null}>
-          <UpdateLayer />
-        </Suspense>
-      )}
 
       {!focus && <TabBar />}
       {bubbleReady && !focus && (

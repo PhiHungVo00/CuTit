@@ -73,6 +73,8 @@ export function createEngine(deps: EngineDeps): Engine {
   let ready: (() => Promise<void>) | null = null;
   let webReload = false;
   let error: UpdateErrorKey | null = null;
+  /** Lần kiểm gần nhất hỏng vì mạng (timeout/không tới được Gateway, vd. cổng đăng nhập Wi-Fi): coi như offline */
+  let networkFailed = false;
   let syncPaused = false;
   let lastFailAt = 0;
   let inflight: Promise<void> | null = null;
@@ -93,7 +95,7 @@ export function createEngine(deps: EngineDeps): Engine {
     const st = readState();
     const r = st.lastResponse;
     const req = isRequired(r);
-    const online = deps.isOnline();
+    const online = deps.isOnline() && !networkFailed;
     const idle = !busy();
     const snoozed = !!r && st.snoozedBuild === r.latestBuild && deps.now() < st.snoozedUntil;
     const softOk = !!r && !req && r.status === 'update_available' && deps.build < r.latestBuild && !snoozed;
@@ -140,6 +142,7 @@ export function createEngine(deps: EngineDeps): Engine {
     const url = `${deps.baseUrl()}/v1/app/version?channel=${deps.channel}&build=${deps.build}`;
     const signal = typeof AbortSignal !== 'undefined' && 'timeout' in AbortSignal ? AbortSignal.timeout(FETCH_TIMEOUT_MS) : undefined;
     const res = await deps.fetch(url, { signal, headers: { accept: 'application/json' } });
+    networkFailed = false; // Gateway trả lời (kể cả lỗi HTTP) ⇒ có mạng
     if (!res.ok) return null; // 5xx/429: im lặng, thử lại ở lần kích hoạt kế
     const parsed = AppVersionResponseSchema.safeParse(await res.json());
     return parsed.success ? parsed.data : null;
@@ -155,7 +158,8 @@ export function createEngine(deps: EngineDeps): Engine {
       writeState({ lastCheckAt: deps.now(), lastResponse: r });
       if (r.status !== 'update_required') forcedBy426 = null; // Gateway đã hạ yêu cầu
       arm(r.checkAfterSec);
-    } catch {
+    } catch (e) {
+      networkFailed = e instanceof TypeError || (e as { name?: string })?.name === 'TimeoutError' || (e as { name?: string })?.name === 'AbortError';
       lastFailAt = deps.now(); // mạng lỗi/timeout/JSON hỏng: im lặng
     }
   }
@@ -249,6 +253,7 @@ export function createEngine(deps: EngineDeps): Engine {
     check,
     forceRequired(info) {
       forcedBy426 = info.minBuild;
+      networkFailed = false; // vừa nhận 426 từ Gateway ⇒ rõ ràng có mạng
       evaluate();
       void check({ force: true }); // lấy ghi chú/đường tải (nếu mạng cho phép)
     },

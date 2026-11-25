@@ -273,6 +273,31 @@ describe('bắt buộc', () => {
     expect(e.getView().forcedOffline).toBe(false);
   });
 
+  it('có mạng nhưng lần kiểm hỏng vì mạng (cổng Wi-Fi/Gateway không tới được) ⇒ coi như offline: chỉ dải, KHÔNG chặn', async () => {
+    localStorage.setItem(
+      STATE_KEY,
+      JSON.stringify({ lastCheckAt: Date.now() - 2 * MIN, lastResponse: required(), snoozedBuild: 0, snoozedUntil: 0 })
+    );
+    const h = harness({ fetch: vi.fn(async () => Promise.reject(new TypeError('Failed to fetch'))) as unknown as typeof fetch });
+    const e = createEngine(h.deps);
+    begin(e);
+    await flush();
+    expect(e.getView().forced).toBe(false);
+    expect(e.getView().forcedOffline).toBe(true);
+  });
+
+  it('lỗi HTTP 5xx KHÔNG phải offline: màn bắt buộc vẫn hiện nếu đã biết cần cập nhật', async () => {
+    localStorage.setItem(
+      STATE_KEY,
+      JSON.stringify({ lastCheckAt: Date.now() - 2 * MIN, lastResponse: required(), snoozedBuild: 0, snoozedUntil: 0 })
+    );
+    const h = harness({ fetch: vi.fn(async () => ({ ok: false, status: 503, json: async () => ({}) })) as unknown as typeof fetch });
+    const e = createEngine(h.deps);
+    begin(e);
+    await flush();
+    expect(e.getView().forced).toBe(true);
+  });
+
   it('lastResponse cũ (app đã lên bản mới) không còn ép cập nhật', async () => {
     localStorage.setItem(
       STATE_KEY,
