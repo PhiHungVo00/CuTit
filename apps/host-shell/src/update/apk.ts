@@ -11,6 +11,21 @@ import { safeHttpsUrl } from './safeUrl';
 export const MAX_AUTO_FAILS = 3;
 const FAIL_KEY = 'becutit.apkFail';
 
+/**
+ * URL tải APK: https, hoặc http CHỈ tới máy dev (`10.0.2.2` của AVD / `localhost`) để thử trên máy ảo.
+ * Bản release không bao giờ tới đây với http: contract chỉ nhận https và native từ chối http ngoài BuildConfig.DEBUG.
+ */
+export function apkDownloadUrl(raw: unknown): string | null {
+  const https = safeHttpsUrl(raw);
+  if (https) return https;
+  try {
+    const u = new URL(String(raw));
+    return u.protocol === 'http:' && !u.username && !u.password && (u.hostname === '10.0.2.2' || u.hostname === 'localhost') ? u.toString() : null;
+  } catch {
+    return null;
+  }
+}
+
 export interface ApkDeps {
   plugin(): Promise<ApkUpdaterPlugin>;
   /** Đẩy hàng đợi đồng bộ một lần; có thể treo/lỗi (đã bọc giới hạn thời gian ở dưới) */
@@ -77,6 +92,7 @@ export function createApkFlow(d: ApkDeps): ChannelUpdater {
     if (count) bumpFail(build);
     awaitingAllow = false;
     showProgress = false;
+    downloaded = null; // tệp có thể đã bị native xóa (verify_failed): "Thử lại" phải tải lại, không cài lại tệp không còn
     hooks?.setProgress(null);
     card({
       kind: 'failed',
@@ -116,7 +132,7 @@ export function createApkFlow(d: ApkDeps): ChannelUpdater {
   async function startDownload(allowMetered: boolean, show: boolean): Promise<void> {
     const r = resp;
     const file = r?.apkFile;
-    const url = safeHttpsUrl(file?.url);
+    const url = apkDownloadUrl(file?.url);
     if (!r || !file || !url) return fail(r?.latestBuild ?? 0, false);
     showProgress = show;
     card(null);
@@ -139,12 +155,16 @@ export function createApkFlow(d: ApkDeps): ChannelUpdater {
         .canInstall()
         .then(({ allowed }) => {
           if (!allowed || !awaitingAllow) return; // vẫn chưa bật: để nguyên thẻ, KHÔNG tự mở Cài đặt lại
-          awaitingAllow = false;
-          if (mode === 'forced') void install();
-          else showReady();
+          void onAllowed();
         })
         .catch(() => undefined);
     });
+  }
+
+  async function onAllowed(): Promise<void> {
+    awaitingAllow = false;
+    if (mode === 'forced') await install();
+    else showReady();
   }
 
   async function install(): Promise<void> {
@@ -156,7 +176,14 @@ export function createApkFlow(d: ApkDeps): ChannelUpdater {
       await ensureListeners(p);
       if (!(await p.canInstall()).allowed) {
         installing = false;
-        card({ kind: 'allow', openSettings: () => p.openInstallSettings() });
+        card({
+          kind: 'allow',
+          // Bấm: nếu đã được bật (quay lại mà app chưa kịp biết) thì đi tiếp; chưa thì mới mở Cài đặt (chỉ khi người dùng bấm)
+          openSettings: async () => {
+            if ((await p.canInstall()).allowed) return onAllowed();
+            await p.openInstallSettings();
+          }
+        });
         waitResume(p);
         return;
       }
@@ -242,8 +269,18 @@ export const updater: ChannelUpdater = createApkFlow({
   // `_system`: Capacitor mở bằng trình duyệt ngoài
   openUrl: (url) => void window.open(url, '_system'),
   onResume: (cb) => {
+    // Quay lại từ Cài đặt Android: sự kiện `resume` của Capacitor là chắc chắn nhất; visibilitychange dự phòng
     const h = () => document.visibilityState === 'visible' && cb();
     document.addEventListener('visibilitychange', h);
-    return () => document.removeEventListener('visibilitychange', h);
+    let off: (() => void) | undefined;
+    let gone = false;
+    void import('@capacitor/app').then(({ App }) =>
+      App.addListener('resume', cb).then((l) => (gone ? void l.remove() : (off = () => void l.remove())))
+    );
+    return () => {
+      gone = true;
+      off?.();
+      document.removeEventListener('visibilitychange', h);
+    };
   }
 });

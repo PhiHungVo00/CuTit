@@ -64,6 +64,8 @@ export interface Engine {
   markWebRefresh(): void;
   dismissWebRefresh(): void;
   dismissError(): void;
+  /** Đóng thẻ APK (xin quyền/lỗi) — thẻ "sẵn sàng cài" dùng `snooze` */
+  dismissCard(): void;
   getView(): UpdateView;
   subscribe(cb: () => void): () => void;
 }
@@ -298,6 +300,10 @@ export function createEngine(deps: EngineDeps): Engine {
     },
     dismissError() {
       error = null;
+      evaluate();
+    },
+    dismissCard() {
+      card = null;
       evaluate();
     },
     getView: () => view,

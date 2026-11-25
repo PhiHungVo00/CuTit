@@ -18,7 +18,7 @@ export default function UpdateLayer() {
     <>
       {view.forcedOffline && <ForcedOfflineBanner />}
       {view.card ? (
-        <UpdatePrompt kind="apk" card={view.card} onLater={engine.snooze} />
+        <UpdatePrompt kind="apk" card={view.card} onLater={view.card.kind === 'ready' ? engine.snooze : engine.dismissCard} />
       ) : view.ready ? (
         <UpdatePrompt kind="ready" onPrimary={() => void view.ready?.()} />
       ) : view.progress !== null ? (

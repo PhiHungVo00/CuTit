@@ -2,7 +2,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AppVersionResponse } from '@vietlearning/contracts/api';
 import type { ApkCard, UpdaterHooks } from './channel';
-import { createApkFlow, MAX_AUTO_FAILS, type ApkDeps } from './apk';
+import { apkDownloadUrl, createApkFlow, MAX_AUTO_FAILS, type ApkDeps } from './apk';
 import { createEngine, type EngineDeps } from './scheduler';
 
 /** Test luồng APK với plugin giả (không có native): mọi phụ thuộc được tiêm qua `ApkDeps`. */
@@ -270,11 +270,46 @@ describe('apk: cài đặt', () => {
     expect(t.lastCard()).toMatchObject({ kind: 'failed' });
   });
 
+  it('Thử lại sau verify_failed ⇒ tải lại (tệp đã bị native xóa), không cài lại tệp không còn', async () => {
+    const s = setup();
+    const c = await ready(s);
+    s.plugin.install.mockRejectedValueOnce(Object.assign(new Error('x'), { code: 'verify_failed' }));
+    await c.install();
+    const failed = s.lastCard() as Extract<ApkCard, { kind: 'failed' }>;
+    s.plugin.download.mockClear();
+    await failed.retry();
+    expect(s.plugin.download).toHaveBeenCalledTimes(1);
+    expect(s.plugin.install).toHaveBeenCalledTimes(1); // chỉ lần bị từ chối ban đầu
+  });
+
+  it('thẻ xin quyền: bấm "Mở Cài đặt" khi đã được bật ⇒ đi tiếp thay vì mở Cài đặt', async () => {
+    const s = setup();
+    s.plugin.canInstall.mockResolvedValueOnce({ allowed: false });
+    const c = await ready(s);
+    await c.install();
+    s.plugin.canInstall.mockResolvedValue({ allowed: true });
+    await (s.lastCard() as Extract<ApkCard, { kind: 'allow' }>).openSettings();
+    expect(s.plugin.openInstallSettings).not.toHaveBeenCalled();
+    expect(s.lastCard()).toMatchObject({ kind: 'ready' });
+  });
+
   it('bấm Cài đặt hai lần liền ⇒ chỉ cài một lần', async () => {
     const s = setup({ flushSync: () => new Promise((r) => setTimeout(r, 10)) });
     const c = await ready(s);
     await Promise.all([c.install(), c.install()]);
     expect(s.plugin.install).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('apk: URL tải', () => {
+  it('https; http chỉ tới 10.0.2.2/localhost (thử trên máy ảo); còn lại bị từ chối', () => {
+    expect(apkDownloadUrl('https://cdn.example.com/a.apk')).toBe('https://cdn.example.com/a.apk');
+    expect(apkDownloadUrl('http://10.0.2.2:4800/a.apk')).toBe('http://10.0.2.2:4800/a.apk');
+    expect(apkDownloadUrl('http://localhost:8080/a.apk')).toBe('http://localhost:8080/a.apk');
+    expect(apkDownloadUrl('http://evil.example/a.apk')).toBeNull();
+    expect(apkDownloadUrl('http://10.0.2.2@evil.example/a.apk')).toBeNull();
+    expect(apkDownloadUrl('javascript:alert(1)')).toBeNull();
+    expect(apkDownloadUrl(null)).toBeNull();
   });
 });
 

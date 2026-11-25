@@ -60,13 +60,13 @@ export function UpdatePrompt({ kind, version, notes, percent, errorKey, card: ap
             later: false
           }
         : apk.kind === 'allow'
-          ? { title: t('apkAllowTitle'), body: t('apkAllowBody'), secondary: null, primary: { label: t('apkAllowAction'), run: run(apk.openSettings) }, later: false }
+          ? { title: t('apkAllowTitle'), body: t('apkAllowBody'), secondary: null, primary: { label: t('apkAllowAction'), run: run(apk.openSettings) }, later: true }
           : {
               title: t('apkFailed'),
               body: null,
               secondary: apk.openPage ? { label: t('apkOpenPage'), run: apk.openPage } : null,
               primary: { label: t('softUpdate'), run: run(apk.retry) },
-              later: false
+              later: true
             }
     : null;
   const title =
