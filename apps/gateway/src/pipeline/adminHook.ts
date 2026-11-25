@@ -4,7 +4,7 @@ import { AdminErrorCode } from '@vietlearning/contracts/api';
 import type { DbProvider } from '../db/client.js';
 import type { Clock } from './QuotaStore.js';
 import { getRoles, hasRole } from '../services/admin/roles.js';
-import { isSessionActive, verifyAccess, type AdminKey } from '../services/admin/sessions.js';
+import { accountUsable, isSessionActive, verifyAccess, type AdminKey } from '../services/admin/sessions.js';
 
 /**
  * Hook quản trị cho `/admin/v1` (spec §5.4) — TÁCH BIỆT với `RequestPipeline.authenticate` của `/v1`:
@@ -46,7 +46,7 @@ export function createAdminGuard({ db, clock, key }: AdminGuardDeps) {
     // Vai trò trước, KHÔNG cache: bị thu quyền => 403 ngay ở request kế tiếp, dù phiên còn hạn
     const roles = await getRoles(d, claims.userId);
     if (!hasRole(roles)) return reply.status(403).send({ error: AdminErrorCode.forbidden });
-    if (!(await isSessionActive(d, claims.sessionId, claims.userId, now))) {
+    if (!(await accountUsable(d, claims.userId)) || !(await isSessionActive(d, claims.sessionId, claims.userId, now))) {
       return reply.status(401).send({ error: AdminErrorCode.sessionExpired });
     }
     request.admin = { userId: claims.userId, roles, sessionId: claims.sessionId };

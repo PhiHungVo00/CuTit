@@ -11,12 +11,20 @@ import { withAdminAudit } from '../services/admin/audit.js';
 import { grantRole, getRoles, revokeRole } from '../services/admin/roles.js';
 import { revokeAllSessions } from '../services/admin/sessions.js';
 import { findPasswordAccount } from '../services/auth/accounts.js';
+import { AdminCrypto } from '../services/admin/crypto.js';
+import { issueInvite } from '../services/admin/invite.js';
+import { adminRateKeys } from '../services/admin/rateKeys.js';
+import { getTotpRow } from '../services/admin/totp.js';
+import { RateCounters } from '../services/auth/rateCounter.js';
 
 /**
  * CLI cấp quyền quản trị (spec §5.4) — KHÔNG có API hay biến môi trường nào cấp quyền; chỉ ai chạy được lệnh này (có quyền vào DB) mới cấp được.
  *   pnpm --filter @vietlearning/gateway admin:grant --username <x> --role owner
  *   pnpm --filter @vietlearning/gateway admin:revoke --username <x> --role <owner|editor|reviewer|support>
  *   pnpm --filter @vietlearning/gateway admin:reset-totp --username <x>
+ *   pnpm --filter @vietlearning/gateway admin:unlock --username <x>   (gỡ khóa đăng nhập theo tên + theo tài khoản; chạy cùng AUTH_OTP_PEPPER với Gateway)
+ * `grant` (khi chưa có mã 6 số xác nhận) và `reset-totp` IN RA MÃ MỜI dùng một lần (hết hạn 24 giờ): bắt buộc ở bước đăng ký mã 6 số đầu tiên
+ * => biết mật khẩu mà không có mã mời thì không giành được đăng ký TOTP của chủ. Cần ADMIN_MFA_KEY để băm mã mời.
  * Mỗi lệnh ghi `admin_audit_log` với tác nhân `cli` TRONG CÙNG transaction với thay đổi. Có hiệu lực ngay (hook đọc DB mỗi request).
  * - Tài khoản phải là tài khoản mật khẩu có thật (đăng ký qua /v1/auth/register) và chưa bị xóa.
  * - revoke: thu hết vai trò thì đóng luôn mọi phiên quản trị; reset-totp: xóa mã 6 số + mã dự phòng và đóng mọi phiên (mất điện thoại).
@@ -31,12 +39,18 @@ export interface CliContext {
   /** Có thì gửi cảnh báo "được cấp vai trò" (best effort); bỏ trống = không gửi */
   mail?: MailProvider;
   mailDailyCap?: number;
+  /** ADMIN_MFA_KEY (băm mã mời). Thiếu => grant/reset-totp từ chối (không cấp quyền mà không có cách đăng ký an toàn) */
+  mfaKey?: string;
+  /** AUTH_OTP_PEPPER của Gateway (HMAC khóa bộ đếm) — cần cho `unlock` */
+  pepper?: string;
   out?: (line: string) => void;
 }
 
 export interface CliResult {
   code: number;
   message: string;
+  /** Mã mời in ra (chỉ grant/reset-totp khi cần đăng ký mã 6 số) */
+  inviteCode?: string;
 }
 
 function parseFlags(argv: string[]): Record<string, string> {
@@ -51,14 +65,14 @@ function parseFlags(argv: string[]): Record<string, string> {
   return flags;
 }
 
-const USAGE = 'Cách dùng: admin-cli <grant|revoke|reset-totp> --username <tên> [--role <owner|editor|reviewer|support>]';
+const USAGE = 'Cách dùng: admin-cli <grant|revoke|reset-totp|unlock> --username <tên> [--role <owner|editor|reviewer|support>]';
 
 /** Chạy một lệnh; không gọi process.exit (test gọi trực tiếp). */
 export async function runAdminCli(argv: string[], ctx: CliContext): Promise<CliResult> {
   const [command, ...rest] = argv;
   const flags = parseFlags(rest);
   const parsed = Args.safeParse({ username: flags.username, role: flags.role });
-  if (!command || !['grant', 'revoke', 'reset-totp'].includes(command) || !parsed.success) {
+  if (!command || !['grant', 'revoke', 'reset-totp', 'unlock'].includes(command) || !parsed.success) {
     return { code: 2, message: USAGE };
   }
   const { username, role } = parsed.data;
@@ -69,8 +83,20 @@ export async function runAdminCli(argv: string[], ctx: CliContext): Promise<CliR
     return { code: 1, message: 'Không tìm thấy tài khoản mật khẩu với tên đăng nhập này (cần đăng ký qua /v1/auth/register trước).' };
   }
   const userId = account.userId;
+  const crypto = ctx.mfaKey ? new AdminCrypto(ctx.mfaKey) : null;
+  if ((command === 'grant' || command === 'reset-totp') && !crypto) {
+    return { code: 1, message: 'Thiếu ADMIN_MFA_KEY: cần khóa này để băm mã mời đăng ký mã 6 số. Đặt biến môi trường rồi chạy lại.' };
+  }
   const [user] = await ctx.db.select({ deleteAt: schema.users.deleteAt }).from(schema.users).where(eq(schema.users.id, userId));
   if (user?.deleteAt) return { code: 1, message: 'Tài khoản đang chờ xóa; khôi phục trước khi cấp quyền.' };
+
+  if (command === 'unlock') {
+    if (!ctx.pepper) return { code: 1, message: 'Thiếu AUTH_OTP_PEPPER: cần đúng giá trị mà Gateway đang dùng để gỡ bộ đếm.' };
+    const counters = new RateCounters(ctx.pepper);
+    await counters.clear(ctx.db, adminRateKeys.name(username));
+    await counters.clear(ctx.db, adminRateKeys.totpUser(userId));
+    return { code: 0, message: 'Đã gỡ khóa đăng nhập theo tên và theo tài khoản. (Bộ đếm theo IP của kẻ gõ sai không ảnh hưởng chủ app và tự hết sau 15 phút.)' };
+  }
 
   if (command === 'grant') {
     const granted = await withAdminAudit(
@@ -85,11 +111,18 @@ export async function runAdminCli(argv: string[], ctx: CliContext): Promise<CliR
       if (err instanceof AlreadyDone) return false;
       throw err;
     });
-    if (!granted) return { code: 0, message: `Tài khoản đã có vai trò ${role} (không đổi gì, không ghi nhật ký thêm).` };
-    if (ctx.mail) await sendAdminAlert(ctx.db, ctx.mail, { MAIL_DAILY_CAP: ctx.mailDailyCap ?? 450 }, 'role_granted', userId, now).catch(() => undefined);
+    const confirmed = Boolean((await getTotpRow(ctx.db, userId))?.confirmedAt);
+    const inviteCode = confirmed ? undefined : await issueInvite(ctx.db, crypto!, userId, now);
+    if (!granted && !inviteCode) return { code: 0, message: `Tài khoản đã có vai trò ${role} (không đổi gì, không ghi nhật ký thêm).` };
+    if (granted && ctx.mail) await sendAdminAlert(ctx.db, ctx.mail, { MAIL_DAILY_CAP: ctx.mailDailyCap ?? 450 }, 'role_granted', userId, now).catch(() => undefined);
+    const lead = granted ? `Đã cấp vai trò ${role}.` : `Tài khoản đã có vai trò ${role}; cấp MÃ MỜI mới (mã cũ vô hiệu).`;
     return {
       code: 0,
-      message: `Đã cấp vai trò ${role}. Lần đăng nhập quản trị đầu tiên sẽ phải đăng ký mã 6 số: hãy làm NGAY, vì ai biết mật khẩu và vào trước sẽ đăng ký được.`
+      inviteCode,
+      message: inviteCode
+        ? `${lead} MÃ MỜI đăng ký mã 6 số (dùng một lần, hết hạn sau 24 giờ, chỉ hiện lần này): ${inviteCode}
+Đăng nhập quản trị NGAY, nhập mã mời rồi đăng ký mã 6 số.`
+        : `${lead} Tài khoản đã có mã 6 số nên không cần mã mời.`
     };
   }
 
@@ -113,15 +146,21 @@ export async function runAdminCli(argv: string[], ctx: CliContext): Promise<CliR
   }
 
   // reset-totp
-  await withAdminAudit(
+  const inviteCode = await withAdminAudit(
     ctx.db,
     { actorUserId: null, actorKind: 'cli', action: 'totp.reset', targetType: 'user', targetId: userId, meta: {} },
     async (tx) => {
       await tx.delete(schema.staffTotp).where(eq(schema.staffTotp.userId, userId));
       await revokeAllSessions(tx, userId, now);
+      // Mã mời mới trong CÙNG transaction: không có khoảng hở nơi chỉ cần mật khẩu là đăng ký lại được
+      return issueInvite(tx, crypto!, userId, now);
     }
   );
-  return { code: 0, message: 'Đã xóa mã 6 số + mã dự phòng và đóng mọi phiên quản trị. Lần đăng nhập tới sẽ phải đăng ký lại mã 6 số (làm ngay).' };
+  return {
+    code: 0,
+    inviteCode,
+    message: `Đã xóa mã 6 số + mã dự phòng và đóng mọi phiên quản trị. MÃ MỜI đăng ký lại (dùng một lần, hết hạn sau 24 giờ, chỉ hiện lần này): ${inviteCode}`
+  };
 }
 
 class AlreadyDone extends Error {}
@@ -137,7 +176,9 @@ async function main(): Promise<void> {
     const result = await runAdminCli(process.argv.slice(2), {
       db: await provider.get(),
       mail: createMailProvider(config),
-      mailDailyCap: config.MAIL_DAILY_CAP
+      mailDailyCap: config.MAIL_DAILY_CAP,
+      mfaKey: config.ADMIN_MFA_KEY,
+      pepper: config.AUTH_OTP_PEPPER
     });
     console.log(result.message);
     code = result.code;

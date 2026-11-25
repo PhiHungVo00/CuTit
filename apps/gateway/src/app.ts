@@ -52,6 +52,22 @@ declare module 'fastify' {
   }
 }
 
+/**
+ * URL có thuộc khối /admin/v1 không? Phân loại theo đường dẫn ĐÃ chuẩn hóa (giải mã %xx, gộp `//`, chữ thường) vì router giải mã
+ * trước khi khớp: `/%61dmin/v1/...` vẫn vào route admin nên phải nhận CORS kiểu admin (rà kien-truc PR #50, mục 7).
+ * Không giải mã được => coi như admin (nhánh chặt hơn: chỉ ADMIN_ORIGIN).
+ */
+export function isAdminPath(url: string): boolean {
+  let path = url.split(/[?#]/, 1)[0];
+  try {
+    path = decodeURIComponent(path);
+  } catch {
+    return true;
+  }
+  path = path.replace(/\/{2,}/g, '/').toLowerCase();
+  return path === '/admin/v1' || path.startsWith('/admin/v1/');
+}
+
 export interface RouteDeps {
   pipeline: RequestPipeline;
   ttsCache: TTSCacheProxy;
@@ -119,8 +135,7 @@ export async function buildApp(config: GatewayConfig, opts: BuildOptions = {}): 
   await app.register(cors, {
     delegator: (req, cb) => {
       const origin = req.headers.origin;
-      const isAdmin = req.raw.url === '/admin/v1' || req.raw.url?.startsWith('/admin/v1/') || req.raw.url?.startsWith('/admin/v1?');
-      if (isAdmin) cb(null, { origin: origin === config.ADMIN_ORIGIN, credentials: true });
+      if (isAdminPath(req.raw.url ?? '')) cb(null, { origin: origin === config.ADMIN_ORIGIN, credentials: true });
       else cb(null, { origin: !origin || allowed.has(origin), credentials: false });
     }
   });

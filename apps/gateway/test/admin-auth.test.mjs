@@ -65,13 +65,13 @@ test('login: sai mật khẩu, tên không có, và đúng mật khẩu nhưng K
 test('lần đầu: login => next=enroll; enroll trả otpauthUrl; confirm sai mã 401; confirm đúng => phiên + 10 mã dự phòng + cookie đúng cờ; bí mật lưu MÃ HÓA', async () => {
   const ctx = await makeAdminApp();
   try {
-    await makeStaff(ctx);
+    const staff0 = await makeStaff(ctx);
     const l = await login(ctx, 'chu.app');
     assert.equal(l.statusCode, 200);
     assert.equal(l.json().next, 'enroll');
     assert.equal(l.headers['cache-control'], 'no-store');
     const { ticket } = l.json();
-    const e = await post(ctx, '/admin/v1/auth/totp/enroll', { ticket });
+    const e = await post(ctx, '/admin/v1/auth/totp/enroll', { ticket, inviteCode: staff0.inviteCode });
     assert.equal(e.statusCode, 200);
     assert.match(e.json().otpauthUrl, /^otpauth:\/\/totp\//);
     assert.match(e.json().otpauthUrl, /algorithm=SHA1/);
@@ -130,12 +130,12 @@ test('đã xác nhận TOTP: login => next=totp; vé enroll cũ KHÔNG đăng k�
     // Người 1: giữ vé enroll, đăng ký xong ở "thiết bị khác", rồi dùng vé cũ để xin enroll lại
     const staleTicket = (await login(ctx, 'chu.app')).json().ticket;
     const first = await enrollFully(ctx, 'chu.app');
-    const again = await post(ctx, '/admin/v1/auth/totp/enroll', { ticket: staleTicket });
+    const again = await post(ctx, '/admin/v1/auth/totp/enroll', { ticket: staleTicket, inviteCode: 'aaaaa-bbbbb-ccccc' });
     assert.equal(again.statusCode, 403);
     const afterConfirm = await login(ctx, 'chu.app');
     assert.equal(afterConfirm.json().next, 'totp');
     // Vé next=totp không dùng được cho enroll/confirm
-    assert.equal((await post(ctx, '/admin/v1/auth/totp/enroll', { ticket: afterConfirm.json().ticket })).statusCode, 403);
+    assert.equal((await post(ctx, '/admin/v1/auth/totp/enroll', { ticket: afterConfirm.json().ticket, inviteCode: 'aaaaa-bbbbb-ccccc' })).statusCode, 403);
     assert.equal((await post(ctx, '/admin/v1/auth/totp/confirm', { ticket: afterConfirm.json().ticket, code: codeFor(first.secret, ctx.state.now) })).statusCode, 403);
     // Bí mật đã xác nhận không bị ghi đè: mã cũ vẫn dùng được ở bước kế
     ctx.advance(31_000);
@@ -357,10 +357,11 @@ test('hạn phiên: rảnh 31 phút => session_expired; làm mới đều thì s
     const r1 = await refresh(ctx, first.cookie);
     assert.equal(r1.statusCode, 200);
     ctx.advance(29 * MIN);
-    assert.equal((await refresh(ctx, first.cookie)).statusCode, 200);
+    const r2 = await refresh(ctx, cookieOf(r1)); // refresh xoay vòng: dùng cookie mới nhất
+    assert.equal(r2.statusCode, 200);
     // Rảnh 31 phút => hết
     ctx.advance(31 * MIN);
-    const dead = await refresh(ctx, first.cookie);
+    const dead = await refresh(ctx, cookieOf(r2));
     assert.equal(dead.statusCode, 401);
     assert.deepEqual(dead.json(), { error: 'session_expired' });
     assert.match([].concat(dead.headers['set-cookie']).join(';'), /Max-Age=0/);
@@ -368,16 +369,20 @@ test('hạn phiên: rảnh 31 phút => session_expired; làm mới đều thì s
     // Phiên mới: làm mới mỗi 25 phút; tại 12h + 1 phút phải hết dù vẫn đang dùng
     const s2 = await loginWithTotp(ctx, 'chu.app', first.secret);
     const t0 = ctx.state.now;
-    let last = 200;
+    let cookie = s2.cookie;
+    const step = async () => {
+      const r = await refresh(ctx, cookie);
+      cookie = cookieOf(r) ?? cookie; // refresh xoay vòng: dùng cookie mới nhất
+      return r.statusCode;
+    };
     while (ctx.state.now - t0 < 12 * HOUR - 30 * MIN) {
       ctx.advance(25 * MIN);
-      last = (await refresh(ctx, s2.cookie)).statusCode;
-      assert.equal(last, 200, `còn trong 12 giờ (${Math.round((ctx.state.now - t0) / MIN)} phút)`);
+      assert.equal(await step(), 200, `còn trong 12 giờ (${Math.round((ctx.state.now - t0) / MIN)} phút)`);
     }
     ctx.state.now = t0 + 12 * HOUR - MIN;
-    assert.equal((await refresh(ctx, s2.cookie)).statusCode, 200, 'còn 1 phút nữa');
+    assert.equal(await step(), 200, 'còn 1 phút nữa');
     ctx.state.now = t0 + 12 * HOUR + MIN;
-    const over = await refresh(ctx, s2.cookie);
+    const over = await refresh(ctx, cookie);
     assert.equal(over.statusCode, 401);
     assert.deepEqual(over.json(), { error: 'session_expired' });
   } finally {
@@ -450,14 +455,14 @@ test('vé hết hạn sau 5 phút => ticket_invalid; vé rác => ticket_invalid;
     const staff = await makeStaff(ctx);
     const l = await login(ctx, 'chu.app');
     ctx.advance(5 * MIN + 1000);
-    const late = await post(ctx, '/admin/v1/auth/totp/enroll', { ticket: l.json().ticket });
+    const late = await post(ctx, '/admin/v1/auth/totp/enroll', { ticket: l.json().ticket, inviteCode: 'aaaaa-bbbbb-ccccc' });
     assert.equal(late.statusCode, 401);
     assert.deepEqual(late.json(), { error: 'ticket_invalid' });
-    assert.equal((await post(ctx, '/admin/v1/auth/totp/enroll', { ticket: 'x'.repeat(40) })).statusCode, 401);
+    assert.equal((await post(ctx, '/admin/v1/auth/totp/enroll', { ticket: 'x'.repeat(40), inviteCode: 'aaaaa-bbbbb-ccccc' })).statusCode, 401);
     const l2 = await login(ctx, 'chu.app');
     const d = await ctx.db();
     await d.delete(schema.staffRoles).where(eq(schema.staffRoles.userId, staff.userId));
-    assert.equal((await post(ctx, '/admin/v1/auth/totp/enroll', { ticket: l2.json().ticket })).statusCode, 401);
+    assert.equal((await post(ctx, '/admin/v1/auth/totp/enroll', { ticket: l2.json().ticket, inviteCode: 'aaaaa-bbbbb-ccccc' })).statusCode, 401);
     // Đăng nhập lại khi đã mất vai trò: giống hệt sai mật khẩu
     assert.deepEqual((await login(ctx, 'chu.app')).json(), INVALID);
   } finally {

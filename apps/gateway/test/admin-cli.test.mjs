@@ -6,6 +6,8 @@ import { runAdminCli } from '../dist/scripts/admin-cli.js';
 import { listAdminAudit } from '../dist/services/admin/audit.js';
 import { getRoles } from '../dist/services/admin/roles.js';
 import {
+  MFA_KEY,
+  PEPPER,
   bearer,
   enrollFully,
   fakeMail,
@@ -21,7 +23,15 @@ import {
 
 /** Dự án 5a Task 4 — CLI `admin:grant | admin:revoke | admin:reset-totp` (tác nhân `cli`, có hiệu lực ngay, không cache). */
 
-const run = async (ctx, ...argv) => runAdminCli(argv, { db: await ctx.db(), now: ctx.clock });
+const run = async (ctx, ...argv) => {
+  const r = await runAdminCli(argv, { db: await ctx.db(), now: ctx.clock, mfaKey: MFA_KEY, pepper: PEPPER });
+  if (r.inviteCode && argv[0] !== 'unlock') {
+    const eq = argv.find((a) => a.startsWith('--username='));
+    const name = eq ? eq.slice('--username='.length) : argv[argv.indexOf('--username') + 1];
+    ctx.invites[name.toLowerCase()] = r.inviteCode;
+  }
+  return r;
+};
 
 test('CLI từ chối đầu vào sai: thiếu lệnh/tên/vai trò, vai trò lạ, tên sai dạng => mã 2, không đụng DB', async () => {
   const ctx = await makeAdminApp();
@@ -60,6 +70,7 @@ test('admin:grant: cấp vai trò + nhật ký tác nhân cli (cùng transaction
     const u = await registerUser(ctx, 'chu.app');
     const d = await ctx.db();
     const r1 = await run(ctx, 'grant', '--username=Chu.App', '--role', 'owner');
+    assert.match(r1.inviteCode, /^[a-z0-9]{5}-[a-z0-9]{5}-[a-z0-9]{5}$/);
     assert.equal(r1.code, 0);
     assert.deepEqual(await getRoles(d, u.userId), ['owner']);
     const r2 = await run(ctx, 'grant', '--username', 'chu.app', '--role', 'owner');
@@ -87,12 +98,12 @@ test('admin:grant gửi cảnh báo email (nếu có mail + email đã xác minh
     const u = await registerUser(ctx, 'chu.app');
     const d = await ctx.db();
     await d.insert(schema.identities).values({ userId: u.userId, provider: 'email', subject: 'chu@example.com', display: 'chu@example.com', emailVerified: true });
-    assert.equal((await runAdminCli(['grant', '--username', 'chu.app', '--role', 'owner'], { db: d, now: ctx.clock, mail })).code, 0);
+    assert.equal((await runAdminCli(['grant', '--username', 'chu.app', '--role', 'owner'], { db: d, now: ctx.clock, mail, mfaKey: MFA_KEY })).code, 0);
     assert.equal(mail.sent.length, 1);
     assert.match(mail.sent[0].subjectVi, /được cấp quyền/);
     // Lỗi gửi không làm hỏng lệnh
     const broken = { ...fakeMail(true), send: async () => { throw new Error('smtp down'); } };
-    assert.equal((await runAdminCli(['grant', '--username', 'chu.app', '--role', 'editor'], { db: d, now: ctx.clock, mail: broken })).code, 0);
+    assert.equal((await runAdminCli(['grant', '--username', 'chu.app', '--role', 'editor'], { db: d, now: ctx.clock, mail: broken, mfaKey: MFA_KEY })).code, 0);
   } finally {
     await ctx.close();
   }

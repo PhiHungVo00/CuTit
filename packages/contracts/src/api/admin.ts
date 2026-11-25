@@ -56,7 +56,13 @@ export const AdminLoginResponseSchema = z.object({ ticket: Ticket, next: z.enum(
 export type AdminLoginResponse = z.infer<typeof AdminLoginResponseSchema>;
 
 /** `POST /admin/v1/auth/totp/enroll` — chỉ khi next='enroll' */
-export const AdminEnrollRequestSchema = z.object({ ticket: Ticket }).strict();
+/** Mã mời do `admin:grant` / `admin:reset-totp` in ra: 3 nhóm 5 ký tự (chữ thường + số), gõ HOA vẫn nhận */
+export const AdminInviteCodeSchema = z
+  .string()
+  .trim()
+  .toLowerCase()
+  .regex(/^[a-z0-9]{5}-[a-z0-9]{5}-[a-z0-9]{5}$/);
+export const AdminEnrollRequestSchema = z.object({ ticket: Ticket, inviteCode: AdminInviteCodeSchema }).strict();
 export const AdminEnrollResponseSchema = z.object({
   otpauthUrl: z.string().startsWith('otpauth://'),
   /** chuỗi bí mật để nhập tay (base32) */

@@ -10,6 +10,7 @@ export const MFA_KEY = '00112233445566778899aabbccddeeff00112233445566778899aabb
 export const ADMIN_JWT_SECRET = 'test-admin-jwt-secret-0123456789-abcdefghij';
 export const APP_JWT_SECRET = 'test-app-jwt-secret-9876543210-zyxwvutsrq';
 export const PW = 'ca-phe-sua-da-42';
+export const PEPPER = 'p'.repeat(40);
 
 export const ADMIN_ENV = {
   AUTH_RATE_LIMIT_PER_MINUTE: '1000',
@@ -19,6 +20,7 @@ export const ADMIN_ENV = {
   ADMIN_MFA_KEY: MFA_KEY,
   ADMIN_JWT_SECRET,
   JWT_SECRET: APP_JWT_SECRET,
+  AUTH_OTP_PEPPER: PEPPER,
   // CORS_ORIGIN cố ý gồm cả ADMIN_ORIGIN: /v1 vẫn phải loại nó (không thì test "loại" đúng một cách tầm thường)
   CORS_ORIGIN: `${APP_ORIGIN},${ADMIN_ORIGIN}`
 };
@@ -51,6 +53,8 @@ export async function makeAdminApp(env = {}, { mail = fakeMail(false), startAt =
     mail,
     state,
     clock,
+    /** mã mời mới nhất do CLI in ra theo tên đăng nhập (grant/reset-totp ghi vào đây) */
+    invites: {},
     advance: (ms) => {
       state.now += ms;
     },
@@ -75,19 +79,21 @@ export async function registerUser(ctx, username, password = PW) {
     .select({ userId: schema.identities.userId })
     .from(schema.identities)
     .where(and(eq(schema.identities.provider, 'password'), eq(schema.identities.subject, username)));
-  return { userId: row.userId, appAccessToken: res.json().accessToken };
+  return { userId: row.userId, appAccessToken: res.json().accessToken, backupCode: res.json().backupCode };
 }
 
 export async function grant(ctx, username, role = 'owner') {
-  const r = await runAdminCli(['grant', '--username', username, '--role', role], { db: await ctx.db(), now: ctx.clock });
+  const r = await runAdminCli(['grant', '--username', username, '--role', role], { db: await ctx.db(), now: ctx.clock, pepper: PEPPER, mfaKey: MFA_KEY });
   if (r.code !== 0) throw new Error(`grant: ${r.message}`);
+  if (r.inviteCode) ctx.invites[username] = r.inviteCode;
+  return r;
 }
 
 /** Tạo tài khoản + cấp owner */
 export async function makeStaff(ctx, username = 'chu.app') {
   const u = await registerUser(ctx, username);
-  await grant(ctx, username);
-  return { username, ...u };
+  const g = await grant(ctx, username);
+  return { username, ...u, inviteCode: g.inviteCode };
 }
 
 export const login = (ctx, username, password = PW, extra = {}) => post(ctx, '/admin/v1/auth/login', { username, password }, extra);
@@ -106,7 +112,7 @@ export async function enrollFully(ctx, username, extra = {}) {
   const l = await login(ctx, username, PW, extra);
   if (l.statusCode !== 200 || l.json().next !== 'enroll') throw new Error(`login/enroll: ${l.statusCode} ${l.body}`);
   const ticket = l.json().ticket;
-  const e = await post(ctx, '/admin/v1/auth/totp/enroll', { ticket }, extra);
+  const e = await post(ctx, '/admin/v1/auth/totp/enroll', { ticket, inviteCode: ctx.invites[username] }, extra);
   if (e.statusCode !== 200) throw new Error(`enroll ${e.statusCode} ${e.body}`);
   const { secret, otpauthUrl } = e.json();
   const c = await post(ctx, '/admin/v1/auth/totp/confirm', { ticket, code: codeFor(secret, ctx.state.now) }, extra);

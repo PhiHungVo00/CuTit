@@ -5,6 +5,7 @@ import type { RouteDeps } from '../../app.js';
 import { createAdminGuard } from '../../pipeline/adminHook.js';
 import { respond } from '../../lib/validate.js';
 import { AuditLog } from '../../services/audit/audit.js';
+import { burnPasswordCheck } from '../../services/auth/password.js';
 import { AdminCrypto } from '../../services/admin/crypto.js';
 import { adminKeyOf } from '../../services/admin/sessions.js';
 import type { AdminAlerts } from '../../services/admin/alerts.js';
@@ -37,6 +38,9 @@ export const adminRoutes: FastifyPluginAsync<RouteDeps & { adminAlerts: AdminAle
     });
     return;
   }
+
+  // Làm nóng hash giả của đường "tên không tồn tại" ngay lúc khởi động: lần đầu băm chậm gấp đôi sẽ lộ tên không có (rà kien-truc PR #50, mục 6)
+  void burnPasswordCheck('khoi-dong').catch(() => undefined);
 
   const adminKey = adminKeyOf(config.ADMIN_JWT_SECRET);
   const adminCrypto = new AdminCrypto(config.ADMIN_MFA_KEY);
