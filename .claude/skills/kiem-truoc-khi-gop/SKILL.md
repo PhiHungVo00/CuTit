@@ -18,15 +18,16 @@ Ngân sách không ảnh hưởng hiệu năng thật (ví dụ vài trăm byte 
 5. e2e trong `apps/host-shell`: `E2E_PORT=<cổng UI> E2E_GATEWAY_PORT=<cổng GW> npx playwright test --reporter=line`. Mỗi phiên dùng **cổng riêng** để không đụng phiên khác.
 6. **Đụng native/khởi động/tài khoản/đồng bộ/camera/micro** ⇒ chạy skill `thu-tren-emulator`.
 6b. **Plugin và công cụ** (người dùng bật 20/11; Axe gỡ 22/11):
-   - **code-review**: chạy review nhiều agent trên PR/diff trước khi gộp. Chỉ sửa phát hiện có độ tin cậy cao; phát hiện còn nghi ngờ thì ghi vào PR.
+   - **`/code-review`** (lệnh có sẵn của Claude Code, thay plugin code-review — 25/11): chạy `/code-review high <số PR>` trên PR trước khi gộp. Chỉ sửa phát hiện có độ tin cậy cao (có thể thêm `--fix`); phát hiện còn nghi ngờ thì ghi vào PR. Mức `max` và `ultra` (đám mây, tính phí) chỉ chạy khi người dùng yêu cầu, ví dụ một lần trước khi phát hành.
+   - **`/simplify`** (mới, tùy chọn): PR lớn thì chạy một lượt dọn trùng lặp/đơn giản hóa trước khi mở PR; nó không tìm lỗi, việc đó là của `/code-review`.
    - **Trợ năng (miễn phí, không dùng plugin Axe trả phí — gỡ 22/11)**: PR có đổi giao diện thì
      (1) `npx playwright test a11y` (e2e/a11y.spec.ts, `@axe-core/playwright` mã nguồn mở, WCAG 2.0–2.2 A+AA gồm vùng chạm, 8 màn × sáng/tối × 2 cỡ) phải 0 vi phạm serious/critical — màn mới thì thêm vào `SCREENS`;
      (2) Lighthouse a11y giữ 100 (`pnpm --filter @vietlearning/host-shell perf`).
      (Nguyên tắc UI/UX `docs/thiet-ke/NGUYEN-TAC-UI-UX.md` dùng ở khâu thiết kế, không phải bước kiểm này.)
    - **Android Emulator QA**: dùng kèm skill `thu-tren-emulator` để chụp màn hình, xem UI và lấy logcat.
    - **Playwright MCP**: xem nhanh hoặc chụp màn hình trong trình duyệt. e2e chính thức vẫn chạy bằng `@playwright/test` của repo.
-   - **Security review**: plugin tự cảnh báo khi sửa code và khi commit. Cảnh báo nào đụng auth/Gateway thì chuyển cho `kien-truc` xem.
-7. Đẩy nhánh, mở draft PR, chờ CI: `verify` phải xanh; `performance` không chặn merge, nhưng đỏ thì phải biết là nhiễu hay thật.
+   - **`/security-review`** (lệnh có sẵn, thay plugin security review — 25/11): chạy trên PR có đụng auth, Gateway, tải tệp, dữ liệu người dùng. Phát hiện nào đụng auth/DB thì chuyển cho `kien-truc` xem.
+7. Đẩy nhánh, mở draft PR, bật Auto-fix (app tự lo CI đỏ, xung đột, bình luận; không tự `/loop` hay `gh` hỏi CI), chờ CI: `verify` phải xanh; `performance` không chặn merge, nhưng đỏ thì phải biết là nhiễu hay thật.
 8. Ghi một dòng vào đầu bảng nhật ký: việc gì, xung đột gì, số đo từng bước.
 9. Gộp (`gh pr ready` + `gh pr merge --merge`), rồi fast-forward nhánh làm việc và checkout gốc (`git merge --ff-only origin/main`).
 
