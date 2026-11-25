@@ -62,6 +62,7 @@ public class ApkUpdaterPlugin extends Plugin {
     private ScheduledFuture<?> pollTask;
     private BroadcastReceiver installReceiver;
     private int lastPercent = -1;
+    private int pollTicks = 0;
     private int currentSessionId = -1;
 
     @Override
@@ -187,14 +188,24 @@ public class ApkUpdaterPlugin extends Plugin {
         return r != null && ApkUpdateRules.matches((String) r[0], (Long) r[1], sha, size);
     }
 
+    /** Đọc số nguyên từ JS (JSON có thể là Integer/Long/Double); không phải số ⇒ null. */
+    private static Long readLong(PluginCall call, String key) {
+        Object v = call.getData().opt(key);
+        if (v instanceof Number) {
+            double d = ((Number) v).doubleValue();
+            if (d == Math.rint(d) && Math.abs(d) < 9e15) return ((Number) v).longValue();
+        }
+        return null;
+    }
+
     // ---------------------------------------------------------------- tải
 
     @PluginMethod
     public void download(final PluginCall call) {
         final String url = call.getString("url");
         final String sha = call.getString("sha256");
-        final Long sizeObj = call.getLong("sizeBytes");
-        final Long buildObj = call.getLong("build");
+        final Long sizeObj = readLong(call, "sizeBytes");
+        final Long buildObj = readLong(call, "build");
         final boolean allowMetered = Boolean.TRUE.equals(call.getBoolean("allowMetered", false));
 
         if (sizeObj == null || buildObj == null || !ApkUpdateRules.isValidSha256(sha)
@@ -235,14 +246,16 @@ public class ApkUpdaterPlugin extends Plugin {
                     int st = queryStatus(oldId);
                     boolean alive = st == DownloadManager.STATUS_RUNNING || st == DownloadManager.STATUS_PENDING
                             || st == DownloadManager.STATUS_PAUSED;
-                    if (alive && oldBuild == build) {
+                    // Đang chờ Wi-Fi (allowMetered=false) mà người dùng đồng ý dùng dữ liệu di động ⇒ phải xếp lại với allowMetered=true.
+                    boolean oldMetered = p.getBoolean("dl_metered", false);
+                    if (alive && oldBuild == build && (oldMetered || !allowMetered)) {
                         startPolling(oldId, build, sha, size);
                         call.resolve(new JSObject().put("state", "queued"));
                         return;
                     }
                     // lượt cũ (build khác hoặc đã hỏng) ⇒ hủy và dọn
                     try { dm().remove(oldId); } catch (Exception ignored) { }
-                    p.edit().remove("dl_id").remove("dl_build").apply();
+                    p.edit().remove("dl_id").remove("dl_build").remove("dl_metered").apply();
                 }
 
                 // 3. Đủ dung lượng? (ước lượng: kích thước tệp + lề)
@@ -260,7 +273,7 @@ public class ApkUpdaterPlugin extends Plugin {
                 req.setAllowedOverRoaming(allowMetered);
                 req.setNotificationVisibility(DownloadManager.Request.VISIBILITY_HIDDEN);
                 long id = dm().enqueue(req);
-                p.edit().putLong("dl_id", id).putLong("dl_build", build).apply();
+                p.edit().putLong("dl_id", id).putLong("dl_build", build).putBoolean("dl_metered", allowMetered).apply();
                 lastPercent = -1;
                 startPolling(id, build, sha, size);
                 call.resolve(new JSObject().put("state", "queued"));
@@ -291,6 +304,9 @@ public class ApkUpdaterPlugin extends Plugin {
                     return;
                 }
                 int status = c.getInt(c.getColumnIndexOrThrow(DownloadManager.COLUMN_STATUS));
+                if (++pollTicks % 10 == 1) {
+                    android.util.Log.d("ApkUpdater", "download " + id + " status=" + status + " reason=" + c.getInt(c.getColumnIndexOrThrow(DownloadManager.COLUMN_REASON)));
+                }
                 if (status == DownloadManager.STATUS_SUCCESSFUL) {
                     finishDownload(true, null, build, sha, size);
                 } else if (status == DownloadManager.STATUS_FAILED) {
@@ -387,7 +403,7 @@ public class ApkUpdaterPlugin extends Plugin {
 
     @PluginMethod
     public void install(final PluginCall call) {
-        final Long buildObj = call.getLong("build");
+        final Long buildObj = readLong(call, "build");
         if (buildObj == null || !ApkUpdateRules.isValidBuild(buildObj)) {
             call.reject("Tham số cài không hợp lệ", "invalid_args");
             return;
