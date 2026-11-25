@@ -4,6 +4,16 @@
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./apk-updater": {
+      "types": "./dist/apkUpdater.d.ts",
+      "default": "./dist/apkUpdater.js"
+    }
+  },
   "scripts": {
     "build": "tsc -b",
     "dev": "tsc -b -w",
