@@ -100,6 +100,25 @@ describe('nhập bằng giọng nói', () => {
     }
   });
 
+  it('autoStop: khung âm thanh tới dồn một cục (máy chậm) vẫn dùng GIỜ ÂM THANH, không dùng giờ lúc nhận => vẫn nhận ra nói rồi ngừng', async () => {
+    vi.useFakeTimers({ toFake: ['performance', 'setTimeout', 'clearTimeout'] });
+    request.mockResolvedValue({ text: 'Xin chào', confidence: 1, words: [], mock: true });
+    let level: ((rms: number, audioMs?: number) => void) | undefined;
+    const b = fakeBridge();
+    b.record.mockImplementation(async (cb?: (rms: number, audioMs?: number) => void) => {
+      level = cb;
+    });
+    const onText = vi.fn();
+    const { result } = renderHook(() => useVoiceInput(onText, async () => b, { autoStop: true }));
+    await act(() => result.current.start());
+    // Toàn bộ 2,9 s âm thanh (0,4 s im, 1 s nói, 1,5 s im) tới trong cùng một lúc: đồng hồ thật không nhúc nhích
+    await act(async () => {
+      for (let t = 0; t < 2900; t += 50) level?.(t < 400 || t >= 1400 ? 0.002 : 0.3, t);
+    });
+    await vi.waitFor(() => expect(onText).toHaveBeenCalledTimes(1));
+    expect(result.current.error).toBeNull();
+  });
+
   it('autoStop: không nói gì 8 giây => tắt micro, lỗi no-speech, không gửi', async () => {
     vi.useFakeTimers({ toFake: ['performance', 'setTimeout', 'clearTimeout'] });
     let level: ((rms: number) => void) | undefined;

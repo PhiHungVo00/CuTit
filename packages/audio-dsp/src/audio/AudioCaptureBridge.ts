@@ -18,7 +18,8 @@ export interface RecordingResult {
 }
 
 export interface AudioPlatformDriver {
-  start(onLevel?: (rms: number) => void): Promise<void>;
+  /** onLevel(rms, audioMs): audioMs = vị trí trong luồng thu (số mẫu đã nhận / tần số lấy mẫu), KHÔNG phụ thuộc lúc khung tới luồng chính */
+  start(onLevel?: (rms: number, audioMs?: number) => void): Promise<void>;
   stop(): Promise<RecordingResult>;
   cancel(): void;
 }
@@ -61,7 +62,7 @@ export class WebAudioDriver implements AudioPlatformDriver {
    */
   constructor(private readonly targetRate = 16000, private readonly speech = false) {}
 
-  async start(onLevel?: (rms: number) => void): Promise<void> {
+  async start(onLevel?: (rms: number, audioMs?: number) => void): Promise<void> {
     if (typeof navigator === 'undefined' || !navigator.mediaDevices?.getUserMedia || typeof AudioWorkletNode === 'undefined') {
       throw new CaptureError('unsupported', 'Thiết bị không hỗ trợ thu âm');
     }
@@ -88,9 +89,13 @@ export class WebAudioDriver implements AudioPlatformDriver {
     const source = this.ctx.createMediaStreamSource(this.stream);
     this.node = new AudioWorkletNode(this.ctx, 'vl-capture');
     this.chunks = [];
+    const rate = this.ctx.sampleRate;
+    let received = 0;
     this.node.port.onmessage = (e: MessageEvent<{ samples: Float32Array; rms: number }>) => {
       this.chunks.push(e.data.samples);
-      onLevel?.(e.data.rms);
+      received += e.data.samples.length;
+      // Giờ theo âm thanh: máy tải nặng thì tin nhắn từ worklet tới dồn cục, performance.now() lúc nhận sẽ nén/giãn thời lượng
+      onLevel?.(e.data.rms, (received / rate) * 1000);
     };
     source.connect(this.node);
     // Không nối ra loa (tránh hú); một số trình duyệt cần node được "kéo" nên nối qua gain = 0
@@ -136,7 +141,7 @@ export class AudioCaptureBridge {
     this.hold = null;
   }
 
-  async record(onLevel?: (rms: number) => void): Promise<void> {
+  async record(onLevel?: (rms: number, audioMs?: number) => void): Promise<void> {
     this.release();
     this.hold = acquireAudio('record');
     try {
