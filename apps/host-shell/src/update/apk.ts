@@ -49,6 +49,8 @@ export function createApkFlow(d: ApkDeps): ChannelUpdater {
   let prepared: number | null = null; // build đã được tự tải trong phiên này
   let listening = false;
   let installing = false;
+  let silent = false; // lượt tải ngầm (prepare): lỗi chỉ ghi đếm, không hiện thẻ
+  let inFlight: number | null = null; // build đang tải
   let awaitingAllow = false;
   let offResume: (() => void) | null = null;
 
@@ -90,10 +92,12 @@ export function createApkFlow(d: ApkDeps): ChannelUpdater {
 
   function fail(build: number, count = true): void {
     if (count) bumpFail(build);
+    inFlight = null;
     awaitingAllow = false;
     showProgress = false;
     downloaded = null; // tệp có thể đã bị native xóa (verify_failed): "Thử lại" phải tải lại, không cài lại tệp không còn
     hooks?.setProgress(null);
+    if (silent) return; // tải ngầm hỏng: không làm phiền, người dùng bấm Cập nhật mới thấy thẻ
     card({
       kind: 'failed',
       retry: () => (mode === 'forced' ? forcedUpdate(resp!, hooks) : softUpdate(resp!, hooks)),
@@ -104,6 +108,15 @@ export function createApkFlow(d: ApkDeps): ChannelUpdater {
   async function ensureListeners(p: ApkUpdaterPlugin): Promise<void> {
     if (listening) return;
     listening = true;
+    try {
+      await registerListeners(p);
+    } catch (e) {
+      listening = false; // đăng ký hỏng: lần sau phải thử lại, không bỏ qua
+      throw e;
+    }
+  }
+
+  async function registerListeners(p: ApkUpdaterPlugin): Promise<void> {
     await p.addListener('downloadProgress', ({ percent }) => {
       if (showProgress) hooks?.setProgress(Math.min(100, Math.max(0, Math.round(percent))));
     });
@@ -114,7 +127,7 @@ export function createApkFlow(d: ApkDeps): ChannelUpdater {
     });
     await p.addListener('installStatus', (s) => {
       if (!resp) return;
-      installing = false;
+      if (s.status === 'cancelled' || s.status === 'failed') installing = false; // pending_user/success: phiên cài còn đó, giữ khóa
       if (s.status === 'cancelled') card(mode === 'forced' ? null : { kind: 'ready', version: resp.latestVersion, install });
       else if (s.status === 'failed') fail(resp.latestBuild, false);
     });
@@ -123,6 +136,7 @@ export function createApkFlow(d: ApkDeps): ChannelUpdater {
   async function onDownloaded(): Promise<void> {
     if (!resp) return;
     downloaded = resp.latestBuild;
+    inFlight = null;
     showProgress = false;
     hooks?.setProgress(null);
     if (mode === 'forced') await install();
@@ -135,6 +149,8 @@ export function createApkFlow(d: ApkDeps): ChannelUpdater {
     const url = apkDownloadUrl(file?.url);
     if (!r || !file || !url) return fail(r?.latestBuild ?? 0, false);
     showProgress = show;
+    silent = !show;
+    inFlight = r.latestBuild;
     card(null);
     if (show) hooks?.setProgress(0);
     try {
@@ -171,6 +187,7 @@ export function createApkFlow(d: ApkDeps): ChannelUpdater {
     const r = resp;
     if (!r || installing) return;
     installing = true;
+    silent = false; // cài là việc người dùng đã bấm: lỗi phải hiện
     try {
       const p = await d.plugin();
       await ensureListeners(p);
@@ -245,6 +262,7 @@ export function createApkFlow(d: ApkDeps): ChannelUpdater {
   async function prepare(r: AppVersionResponse, h?: UpdaterHooks): Promise<void> {
     if (!r.apkFile || r.status !== 'update_available') return;
     if (prepared === r.latestBuild || fails(r.latestBuild) >= MAX_AUTO_FAILS) return;
+    if (inFlight !== null && inFlight !== r.latestBuild) return; // đang tải build khác: đợi xong, lần kiểm sau mới chuẩn bị bản mới hơn
     prepared = r.latestBuild;
     init(r, h, 'soft');
     try {
