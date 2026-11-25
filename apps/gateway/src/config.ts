@@ -141,7 +141,7 @@ const EnvSchema = z
     /** Trần thư/ngày (giờ VN) cả app — chừa dư dưới mức ~500/ngày của Gmail. Hết trần => provider_unavailable */
     MAIL_DAILY_CAP: z.coerce.number().int().min(0).default(450),
     /** Trần thư/ngày MỖI NGƯỜI DÙNG ở luồng gắn email (/v1/me/email/start) — một tài khoản không đốt được trần chung (rà PR #18 mục 2) */
-    MAIL_USER_DAILY_CAP: z.coerce.number().int().min(0).default(5),
+    MAIL_USER_DAILY_CAP: z.coerce.number().int().min(1).default(5),
     /** Phần trần chung dành riêng cho quên/đặt lại mật khẩu: luồng gắn email chỉ dùng tới cap × (1 − tỉ lệ) */
     MAIL_RESET_RESERVE_RATIO: z.coerce.number().min(0).max(0.9).default(0.2),
     /** Hạn mức AI của khách = hệ số × hạn mức tài khoản thật (khuyến khích đăng nhập; spec mục 6) */

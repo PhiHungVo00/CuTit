@@ -40,7 +40,7 @@ import { otpEmail } from '../services/mail/templates.js';
  * - sai đăng nhập / mã dự phòng: khóa cặp (IP, tên) sau 5 lần/15 phút; trần IP 30 lần/15 phút; một tên sai > 50 lần/giờ
  *   từ nhiều IP => làm chậm (không khóa, để kẻ xấu không khóa được tài khoản người khác).
  * - gửi mã: mỗi email 3 thư/15 phút, mỗi IP 10 thư/giờ, trần cả app MAIL_DAILY_CAP; sai mã: 5 lần mỗi mã, 10 lần mỗi
- *   (IP, tên/email đã gõ) và 30 lần mỗi IP mỗi ngày => otp_locked; một chuỗi đã gõ từ nhiều IP chỉ bị làm chậm.
+ *   (IP, tên/email đã gõ) và 30 lần mỗi IP mỗi giờ => otp_locked; một chuỗi đã gõ từ nhiều IP chỉ bị làm chậm.
  *   Luồng gắn email còn bị trần MAIL_USER_DAILY_CAP thư/người/ngày và chỉ dùng tới cap × (1 − MAIL_RESET_RESERVE_RATIO). Khóa gắn email và đặt lại mật khẩu tách riêng (xem `keys`).
  * Log/audit: KHÔNG bao giờ có mật khẩu, mã, tên đăng nhập hay email (bộ đếm lưu HMAC).
  */
@@ -56,6 +56,8 @@ export const OTP_SEND_IP_MAX = 10;
 const OTP_SEND_IP_WINDOW_MS = 60 * MIN;
 export const OTP_FAIL_EMAIL_MAX = 10;
 export const OTP_FAIL_IP_MAX = 30;
+/** Cửa sổ 1 giờ (không phải 1 ngày): nhiều người chung IP (CGNAT) không bị một kẻ gõ sai khóa lẫn nhau cả ngày (rà PR #40) */
+const OTP_FAIL_IP_WINDOW_MS = 60 * MIN;
 export const OTP_FAIL_TYPED_SLOW_AFTER = 50;
 const OTP_FAIL_EMAIL_WINDOW_MS = 24 * 60 * MIN;
 export const MAIL_USER_WINDOW_MS = 24 * 60 * MIN;
@@ -297,12 +299,12 @@ export const passwordAuthRoutes: FastifyPluginAsync<RouteDeps> = async (server, 
     if (!target || result !== 'ok') {
       await Promise.all([
         counters.hit(d, pairKey, OTP_FAIL_EMAIL_WINDOW_MS, now),
-        counters.hit(d, ipKey, OTP_FAIL_EMAIL_WINDOW_MS, now),
+        counters.hit(d, ipKey, OTP_FAIL_IP_WINDOW_MS, now),
         counters.hit(d, slowKey, OTP_FAIL_EMAIL_WINDOW_MS, now)
       ]);
       audit.record('auth.password_reset', { outcome: 'failure', userId: target?.userId ?? null, ctx, metadata: { method: 'email', reason: `otp_${result}` } });
       // Luôn otp_invalid ra ngoài: chỉ tài khoản CÓ mã đang chờ mới ra được otp_locked/otp_expired => lộ tài khoản nào tồn
-      // tại sau /forgot (rà kien-truc RA-DOT2). Khóa 10 lần/ngày theo (IP, chuỗi đã gõ) và 30 lần/ngày theo IP (ở trên) vẫn trả otp_locked như nhau.
+      // tại sau /forgot (rà kien-truc RA-DOT2). Khóa 10 lần/ngày theo (IP, chuỗi đã gõ) và 30 lần/giờ theo IP (ở trên) vẫn trả otp_locked như nhau.
       return reply.status(400).send({ error: 'otp_invalid' });
     }
     // Đúng mã rồi mới so với tên đăng nhập thật (người gõ email): mã đã dùng, xin mã mới

@@ -70,6 +70,30 @@ test('Cấu hình: trần thư theo người dùng và phần dành riêng cho q
   assert.equal(c.MAIL_RESET_RESERVE_RATIO, 0.2);
 });
 
+test('Cấu hình: MAIL_USER_DAILY_CAP tối thiểu 1 (0 sẽ chặn mọi luồng gắn email)', async () => {
+  const { loadConfig } = await import('../dist/config.js');
+  assert.throws(() => loadConfig({ NODE_ENV: 'development', MAIL_USER_DAILY_CAP: '0' }));
+  assert.equal(loadConfig({ NODE_ENV: 'development', MAIL_USER_DAILY_CAP: '1' }).MAIL_USER_DAILY_CAP, 1);
+});
+
+test('Trần IP đoán mã đặt lại: cửa sổ 1 giờ — sau 1 giờ người chung IP (CGNAT) hết bị khóa, trong 1 giờ vẫn bị chặn', async () => {
+  let now = Date.now();
+  const a = await makeAuthApp({}, { clock: () => new Date(now) });
+  try {
+    const ip = IP(71);
+    const attempt = (i) => post(a, '/v1/auth/password/reset-email', { usernameOrEmail: U('cg' + (i % 4)) + 'x', code: '000000', newPassword: 'mi-quang-ga-22' }, ip);
+    let last;
+    for (let i = 0; i < 31; i++) last = await attempt(i);
+    assert.equal(last.json().error, 'otp_locked');
+    now += 30 * 60_000;
+    assert.equal((await attempt(1)).json().error, 'otp_locked');
+    now += 31 * 60_000;
+    assert.equal((await attempt(2)).json().error, 'otp_invalid');
+  } finally {
+    await a.close();
+  }
+});
+
 test('Trần thư theo người dùng: một tài khoản chỉ xin được MAIL_USER_DAILY_CAP thư/ngày (email khác nhau vẫn tính chung); người khác không bị ảnh hưởng', async () => {
   const mail = fakeMail();
   const a = await makeAuthApp({ MAIL_USER_DAILY_CAP: '2' }, { mail });
@@ -144,7 +168,7 @@ test('Phá khóa: kẻ gõ sai tên nạn nhân nhiều lần (từ IP khác) KH
   }
 });
 
-test('Chống dò mã giữ nguyên: một IP đoán mã cho nhiều tên khác nhau vẫn bị chặn ở trần IP (30 lần/ngày)', async () => {
+test('Chống dò mã giữ nguyên: một IP đoán mã cho nhiều tên khác nhau vẫn bị chặn ở trần IP (30 lần/giờ)', async () => {
   const a = await makeAuthApp({});
   try {
     const ip = IP(31);
