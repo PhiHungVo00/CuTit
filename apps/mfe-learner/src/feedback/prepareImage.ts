@@ -10,7 +10,8 @@ const QUALITY = 0.82;
  * Trình duyệt không mã hóa được WebP (Safari cũ) vẫn trả ảnh vẽ lại (PNG) — vẫn không có EXIF.
  */
 export async function prepareImage(file: File): Promise<Blob> {
-  const bitmap = await createImageBitmap(file, { imageOrientation: 'from-image' });
+  // Trình duyệt/WebView cũ ném lỗi với tham số tùy chọn: thử lại không tham số trước khi bỏ cuộc
+  const bitmap = await createImageBitmap(file, { imageOrientation: 'from-image' }).catch(() => createImageBitmap(file));
   try {
     const scale = Math.min(1, IMAGE_MAX_EDGE / Math.max(bitmap.width, bitmap.height));
     const canvas = document.createElement('canvas');

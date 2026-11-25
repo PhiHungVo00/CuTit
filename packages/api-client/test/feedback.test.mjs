@@ -148,6 +148,16 @@ test('listMyFeedback / unreadFeedbackCount / markFeedbackRead: đúng đường 
   ]);
 });
 
+test('listMyFeedback: chưa có phiên => danh sách rỗng, KHÔNG gọi mạng', async () => {
+  const mem = new Map();
+  configureGateway({ baseUrl: 'http://gw.test', getToken: () => 't', storage: { get: async (k) => mem.get(k) ?? null, set: async (k, v) => void mem.set(k, v), remove: async (k) => void mem.delete(k) }, timeoutMs: 200 });
+  resetAuthSessionForTest();
+  let calls = 0;
+  globalThis.fetch = async () => (calls++, new Response('{}', { status: 500 }));
+  assert.deepEqual(await listMyFeedback(), { items: [] });
+  assert.equal(calls, 0);
+});
+
 test('unreadFeedbackCount: chưa có phiên => 0, KHÔNG gọi mạng (không tự tạo khách chỉ để hỏi chấm đỏ)', async () => {
   const mem = new Map();
   configureGateway({ baseUrl: 'http://gw.test', getToken: () => 't', storage: { get: async (k) => mem.get(k) ?? null, set: async (k, v) => void mem.set(k, v), remove: async (k) => void mem.delete(k) }, timeoutMs: 200 });

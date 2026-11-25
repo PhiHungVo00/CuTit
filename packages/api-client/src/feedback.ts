@@ -105,7 +105,9 @@ export async function submitFeedback(meta: FeedbackCreateMeta, files: Blob[], on
 }
 
 /** GET /v1/feedback/mine — góp ý của chính người gọi + lời nhắn của chủ app (không có tệp) */
-export function listMyFeedback(signal?: AbortSignal): Promise<MyFeedbackList> {
+export async function listMyFeedback(signal?: AbortSignal): Promise<MyFeedbackList> {
+  // Chưa có phiên => chưa thể có góp ý: không gọi mạng (không tự tạo khách chỉ để xem danh sách rỗng)
+  if (!(await getAuthSession().info())) return { items: [] };
   return request('/v1/feedback/mine', { schema: MyFeedbackListSchema, signal });
 }
 

@@ -21,12 +21,13 @@ export default function FeedbackDot() {
   const { pathname } = useLocation();
   const [host, setHost] = useState<Element | null>(null);
   useEffect(() => {
-    const on = (e: Event) => setCount(Math.max(0, Math.floor(Number((e as CustomEvent<number>).detail) || 0)));
+    let gotEvent = false;
+    const on = (e: Event) => ((gotEvent = true), setCount(Math.max(0, Math.floor(Number((e as CustomEvent<number>).detail) || 0))));
     window.addEventListener(FEEDBACK_UNREAD_EVENT, on);
     let alive = true;
     if (navigator.onLine) {
       unreadFeedbackCount().then(
-        (n) => alive && setCount(n),
+        (n) => alive && !gotEvent && setCount(n),
         () => undefined
       );
     }
