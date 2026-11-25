@@ -27,12 +27,21 @@ export const AdminErrorCode = {
   /** 401: thao tác cần mã 6 số (vé chưa qua bước mã) */
   totpRequired: 'totp_required',
   /** 401: phiên hết hạn (rảnh 30 phút / quá 12 giờ / bị thu hồi) */
-  sessionExpired: 'session_expired'
+  sessionExpired: 'session_expired',
+  /** 401: vé đăng nhập (5 phút) sai, hết hạn hoặc không còn khớp trạng thái trong DB */
+  ticketInvalid: 'ticket_invalid',
+  /** 401: access token thiếu/sai/hết hạn (client thử refresh một lần) */
+  invalidToken: 'invalid_token',
+  /** 403: sai bước (vd. enroll khi đã đăng ký mã 6 số) hoặc thiếu vai trò */
+  forbidden: 'forbidden',
+  /** 429: quá 5 lần sai / 15 phút (theo IP hoặc theo tên) */
+  rateLimited: 'rate_limited'
 } as const;
 export type AdminErrorCodeValue = (typeof AdminErrorCode)[keyof typeof AdminErrorCode];
 
 const IsoDate = z.string().datetime();
-const Ticket = z.string().min(16).max(256);
+/** Vé là JWT ký (~350 ký tự): trần 512 để chừa chỗ */
+const Ticket = z.string().min(16).max(512);
 
 // ---------- Đăng nhập ----------
 
@@ -85,6 +94,17 @@ export const AdminTotpRequestSchema = z
   .strict()
   .refine((v) => (v.code === undefined) !== (v.backupCode === undefined), { message: 'Cần đúng một trong code hoặc backupCode' });
 export type AdminTotpRequest = z.infer<typeof AdminTotpRequestSchema>;
+
+/** Vai trò nhân sự (spec §5.4; 5a chỉ dùng 'owner') */
+export const StaffRoleSchema = z.enum(['owner', 'editor', 'reviewer', 'support']);
+export type StaffRoleValue = z.infer<typeof StaffRoleSchema>;
+
+/** `GET /admin/v1/session` — ai đang đăng nhập + vai trò hiện tại (đọc DB mỗi lần, không cache); trang quản trị dùng sau khi refresh */
+export const AdminSessionInfoSchema = z.object({
+  userIdShort: z.string().min(1).max(16),
+  roles: z.array(StaffRoleSchema).min(1)
+});
+export type AdminSessionInfo = z.infer<typeof AdminSessionInfoSchema>;
 
 // ---------- Hàng chờ ----------
 
