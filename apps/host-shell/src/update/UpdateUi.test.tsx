@@ -62,6 +62,37 @@ describe('UpdatePrompt', () => {
   });
 });
 
+describe('thẻ APK (Task 7)', () => {
+  const noop = async () => undefined;
+  it('sẵn sàng cài / hỏi dữ liệu di động / xin quyền / lỗi: đúng chữ bảng 5.8, ≥ 44px', () => {
+    const ready = renderToStaticMarkup(<UpdatePrompt kind="apk" card={{ kind: 'ready', version: '1.5.2', install: noop }} onLater={() => undefined} />);
+    expect(ready).toContain('Đã tải xong bản mới 1.5.2');
+    expect(ready).toContain('>Cài đặt<');
+    expect(ready).toContain('Để sau');
+    const metered = renderToStaticMarkup(<UpdatePrompt kind="apk" card={{ kind: 'metered', sizeMb: 30, downloadNow: noop, waitWifi: () => undefined }} />);
+    expect(metered).toContain('Bản cập nhật khoảng 30 MB. Tải bằng dữ liệu di động?');
+    expect(metered).toContain('Tải ngay');
+    expect(metered).toContain('Đợi Wi-Fi');
+    const allow = renderToStaticMarkup(<UpdatePrompt kind="apk" card={{ kind: 'allow', openSettings: noop }} />);
+    expect(allow).toContain('Cho phép Bé Cu Tít cài bản cập nhật');
+    expect(allow).toContain('Mở Cài đặt');
+    const failed = renderToStaticMarkup(<UpdatePrompt kind="apk" card={{ kind: 'failed', retry: noop, openPage: () => undefined }} />);
+    expect(failed).toContain('Không cập nhật được.');
+    expect(failed).toContain('Mở trang tải');
+    expect((failed.match(/min-height:44px/g) ?? []).length).toBe(2);
+  });
+  it('màn bắt buộc hiện % tải (không cho bấm lại) và thẻ xin quyền thay nút chính', () => {
+    const dl = renderToStaticMarkup(<ForcedUpdate onUpdate={() => undefined} percent={42} />);
+    expect(dl).toContain('Đang tải bản mới… 42%');
+    expect(dl).toContain('role="progressbar"');
+    expect(dl).toContain('disabled');
+    const allow = renderToStaticMarkup(<ForcedUpdate onUpdate={() => undefined} card={{ kind: 'allow', openSettings: async () => undefined }} />);
+    expect(allow).toContain('Cho phép Bé Cu Tít cài bản cập nhật');
+    expect(allow).toContain('Mở Cài đặt');
+    expect((allow.match(/<button/g) ?? []).length).toBe(1);
+  });
+});
+
 describe('updateI18n', () => {
   it('tiếng Anh đúng bảng 5.8 (kiểm vài khóa) và có {version}', () => {
     // t() đọc ngôn ngữ từ store; ở đây chỉ kiểm khóa tồn tại cho vi (en được TypeScript ép đủ khóa)

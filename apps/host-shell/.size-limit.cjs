@@ -79,5 +79,7 @@ module.exports = [
   // `UpdateLayer` = thẻ nhắc + màn bắt buộc + chuỗi vi/en. Plugin Play (`@capawesome/capacitor-app-update`) và SW web là chunk
   // riêng, chỉ nạp ở kênh tương ứng. Đo: start 2.24 kB, UpdateLayer 2.91 kB (trần của spec cho phần cập nhật: 3.5 kB).
   { name: 'Dự án 8 Kiểm/nhắc cập nhật app: engine (lazy)', path: 'dist/assets/start-*.js', limit: '3.5 kB', gzip: true },
-  { name: 'Dự án 8 Giao diện cập nhật app: thẻ nhắc + màn bắt buộc (lazy)', path: 'dist/assets/UpdateLayer-*.js', limit: '3.5 kB', gzip: true }
+  { name: 'Dự án 8 Giao diện cập nhật app: thẻ nhắc + màn bắt buộc (lazy)', path: 'dist/assets/UpdateLayer-*.js', limit: '3.5 kB', gzip: true }, // Task 7: + thẻ APK/% tải ở màn bắt buộc (đo 3.33 kB)
+  // Task 7 (2026-11-25): luồng tự tải/cài APK, chunk riêng chỉ nạp ở kênh `apk` (đo 1.85 kB); cầu nối native là chunk `apkUpdater-*` riêng
+  { name: 'Dự án 8 Luồng tự tải và cài APK (lazy, chỉ kênh apk)', path: 'dist/assets/apk-*.js', limit: '2.5 kB', gzip: true }
 ];
