@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
-import { act, renderHook } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { act, cleanup, renderHook } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const grabFrame = vi.fn();
 const send = vi.fn();
@@ -28,6 +28,10 @@ vi.mock('../chat/useVoiceInput', () => ({
 import { useCall } from './useCall';
 
 const video = document.createElement('video');
+
+// Vitest chạy không bật globals nên Testing Library KHÔNG tự dọn: hook của ca trước vẫn gắn, và hẹn giờ "ừm" (1 200 ms)
+// của các ca đã vào pha thinking bắn trúng deviceSpeak của ca sau khi máy chậm => ca "ừm một lần" đếm 2–5 lần.
+afterEach(() => cleanup());
 
 beforeEach(() => {
   grabFrame.mockReset().mockResolvedValue({ base64: 'IMG', previewUrl: 'data:x' });

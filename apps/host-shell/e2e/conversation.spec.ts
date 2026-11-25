@@ -22,7 +22,7 @@ async function assertMobileLayout(page: Page) {
 
 const srsOf = (page: Page) => page.evaluate(() => JSON.parse(localStorage.getItem('becutit.learner') ?? '{"state":{"srs":{}}}').state.srs as Record<string, { front: string }>);
 
-/** Micro giả: mỗi lần mở micro phát 0.4 s im lặng → 1 s "giọng" (âm 220 Hz) → im lặng (để bộ phát hiện ngừng nói tự dừng) */
+/** Micro giả: mỗi lần mở micro phát 0.4 s im lặng → 3 s "giọng" (âm 220 Hz) → im lặng (để bộ phát hiện ngừng nói tự dừng) */
 async function fakeMicSpeechThenSilence(page: Page) {
   await installFakeMicStartHook(page);
   await page.addInitScript(() => {
@@ -36,8 +36,8 @@ async function fakeMicSpeechThenSilence(page: Page) {
       (dest.stream as MediaStream & { __start?: () => void }).__start = () => {
         const t = ctx.currentTime;
         gain.gain.setValueAtTime(0, t);
-        gain.gain.setValueAtTime(0.8, t + 0.4);
-        gain.gain.setValueAtTime(0, t + 1.4);
+        gain.gain.setValueAtTime(0.8, t + 0.4); // giọng 3 s (không phải 1 s): hai ngữ cảnh âm thanh chạy lệch giờ nên đầu luồng có thể mất ~0,3–0,4 s khi máy tải; 1 s thì chỉ còn <300 ms, dưới ngưỡng "đã nói" của app
+        gain.gain.setValueAtTime(0, t + 3.4);
         osc.start();
       };
       return dest.stream;

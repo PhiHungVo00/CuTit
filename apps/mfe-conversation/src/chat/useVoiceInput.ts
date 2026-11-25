@@ -40,6 +40,8 @@ export function useVoiceInput(onText: (t: Transcript) => void, createBridge?: ()
   const bridgeRef = useRef<AudioCaptureBridge | null>(null);
   const timerRef = useRef<number | undefined>(undefined);
   const startedRef = useRef(0);
+  // Thời lượng đã thu theo GIỜ ÂM THANH (ms); null = bộ thu không báo (dùng đồng hồ thường)
+  const audioMsRef = useRef<number | null>(null);
   const abortRef = useRef<AbortController | null>(null);
   const onTextRef = useRef(onText);
   onTextRef.current = onText;
@@ -53,7 +55,7 @@ export function useVoiceInput(onText: (t: Transcript) => void, createBridge?: ()
     bridgeRef.current = null;
     window.clearTimeout(timerRef.current);
     setLevel(0);
-    if (performance.now() - startedRef.current < MIN_VOICE_MS) {
+    if ((audioMsRef.current ?? performance.now() - startedRef.current) < MIN_VOICE_MS) {
       bridge.cancel();
       setError('too-short');
       setStatus('idle');
@@ -94,11 +96,13 @@ export function useVoiceInput(onText: (t: Transcript) => void, createBridge?: ()
       bridge = b;
       bridgeRef.current = b;
       let n = 0;
+      audioMsRef.current = null;
       const detector = autoStop ? new SilenceDetector({ maxMs: MAX_VOICE_MS }) : null;
-      await b.record((rms) => {
+      await b.record((rms, audioMs) => {
+        if (audioMs !== undefined) audioMsRef.current = audioMs;
         if (++n % 8 === 0) setLevel(Math.min(1, rms * 6));
         if (!detector || bridgeRef.current !== b) return;
-        const e = detector.push(rms, performance.now());
+        const e = detector.push(rms, audioMs ?? performance.now());
         if (e === 'end' || e === 'max') void stop();
         else if (e === 'no-speech') {
           bridgeRef.current = null;

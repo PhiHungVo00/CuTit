@@ -1,12 +1,20 @@
 // Review kiến trúc nhánh gateway-ai-du-phong (21/11/2026): các lỗi tái hiện trước khi sửa.
-import test from 'node:test';
+import test, { after } from 'node:test';
 import assert from 'node:assert/strict';
 import { QuotaStatusSchema } from '@vietlearning/contracts';
 import { InMemoryGlobalQuotaStore, InMemoryQuotaStore } from '../dist/pipeline/QuotaStore.js';
 import { GatewayError } from '../dist/pipeline/RequestPipeline.js';
 import { LlmProviderError } from '../dist/providers/llm.js';
 import { CircuitBreaker, FallbackLlmProvider } from '../dist/providers/chain.js';
-import { makeApp, guest } from './helpers.mjs';
+import { createDbProvider } from '../dist/db/client.js';
+import { makeApp as makeAppRaw, guest } from './helpers.mjs';
+
+// Một DB PGlite dùng chung cho cả tệp: mỗi makeApp() riêng phải mở PGlite + chạy toàn bộ migration ở request đầu
+// (~5 s CPU; dưới tải/chạy cùng cả bộ test thành hàng chục giây, 7 lần => hết giờ). Các ca chỉ dùng tài khoản khách
+// mới (userId riêng) và kho hạn mức trong RAM riêng từng app nên không đụng nhau.
+const dbp = createDbProvider({ PGLITE_DIR: 'memory://' });
+after(() => dbp.close());
+const makeApp = (env, opts = {}) => makeAppRaw(env, { db: dbp, ...opts });
 
 const SECRET = 'r'.repeat(40);
 const SID = '7d444840-9dc0-11d1-b245-5ffdce74fad2';
@@ -66,17 +74,22 @@ test('hoàn lượt qua 00:00 giờ VN: hoàn vào ngày ĐÃ trừ, không tặ
   const quotaStore = new InMemoryQuotaStore(clock);
   const globalQuotaStore = new InMemoryGlobalQuotaStore(clock);
   let release;
+  let started;
+  const reached = new Promise((r) => (started = r));
   const slow = {
     name: 'slow',
     async generateJson() {
-      await new Promise((r) => (release = r));
+      await new Promise((r) => {
+        release = r;
+        started();
+      });
       throw new LlmProviderError(503, 'llm_busy', '429', 429);
     }
   };
   const a = await makeApp({ JWT_SECRET: SECRET, MAX_CHAT_TURNS_PER_DAY: '5' }, { llm: slow, quotaStore, globalQuotaStore, clock });
   const g = await guest(a);
   const pending = turn(a, g.headers);
-  while (!release) await new Promise((r) => setImmediate(r));
+  await reached; // lời gọi AI đã chạy tới chỗ chờ (không quay vòng đợi: tốn CPU và nghẽn khi máy tải)
   now = at('2026-11-20T17:00:01Z'); // 00:00:01 VN ngày mới
   await quotaStore.tryConsume(g.body.userId, 'turn', 2, 5); // người dùng đã dùng 2 lượt ở ngày mới (request khác)
   await globalQuotaStore.tryConsume('turn', 2, 100);
