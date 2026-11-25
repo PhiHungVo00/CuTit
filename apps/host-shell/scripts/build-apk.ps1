@@ -72,6 +72,11 @@ if (-not (Test-Path "$env:ANDROID_HOME\platforms")) {
   throw "Chưa có Android SDK tại $env:ANDROID_HOME (xem docs/NHAT_KY_CHUYEN_DOI_MOBILE.md mục 4)."
 }
 
+# Dự án 8: APK release tự cập nhật chỉ tải từ host trong danh sách (cùng APK_DOWNLOAD_HOSTS của Gateway); rỗng ⇒ native từ chối mọi URL
+if ($Release -and $Flavor -eq 'apk' -and -not (($env:APK_DOWNLOAD_HOSTS -split ',' | ForEach-Object { $_.Trim() }) -join '')) {
+  throw 'Build -Release -Flavor apk cần APK_DOWNLOAD_HOSTS (host tải APK, cách nhau dấu phẩy, giống Gateway). Rỗng thì app không tự cập nhật được.'
+}
+
 if (-not $SkipWeb) {
   # Build trước các package dùng chung (native, content, shared...) vì host đọc dist/ của chúng
   Push-Location $repoRoot
@@ -95,6 +100,9 @@ if (-not $SkipWeb) {
   $mixedOn = [bool]$capJson.android.allowMixedContent
   Write-Host "capacitor.config.json: webContentsDebuggingEnabled=$debugOn, allowMixedContent=$mixedOn"
   if ($Release -and ($debugOn -or $mixedOn)) { throw 'Bản release vẫn bật debug/mixed content — dừng lại' }
+  $hosts = @($capJson.plugins.ApkUpdater.allowedHosts)
+  Write-Host "capacitor.config.json: ApkUpdater.allowedHosts=[$($hosts -join ', ')]"
+  if ($Release -and $Flavor -eq 'apk' -and $hosts.Count -eq 0) { throw 'allowedHosts rỗng trong capacitor.config.json — bản release sẽ từ chối mọi URL tải' }
 }
 
 $needsSubst = $repoRoot -match '[^\x00-\x7F]'
@@ -118,6 +126,14 @@ try {
     Join-Path $hostShell "android\app\build\outputs\apk\$Flavor\release\app-$Flavor-release-unsigned.apk"
   } else {
     Join-Path $hostShell "android\app\build\outputs\apk\$Flavor\debug\app-$Flavor-debug.apk"
+  }
+  if ($Release) {
+    # APK release KHÔNG được debuggable: native chỉ chặn host/https khi không debuggable
+    $aapt = Get-ChildItem "$env:ANDROID_HOMEuild-tools" -Recurse -Filter aapt.exe -ErrorAction SilentlyContinue | Sort-Object FullName | Select-Object -Last 1
+    if ($aapt) {
+      if (& $aapt.FullName dump badging $apk | Select-String 'application-debuggable') { throw 'APK release đang debuggable — dừng lại' }
+      Write-Host 'APK release: không debuggable (aapt)'
+    } else { Write-Warning 'Không thấy aapt.exe: chưa kiểm được APK release có debuggable không' }
   }
   Write-Host "`nAPK: $apk ($([math]::Round((Get-Item $apk).Length / 1MB, 1)) MB)"
 

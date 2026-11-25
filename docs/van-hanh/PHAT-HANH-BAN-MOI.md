@@ -24,7 +24,8 @@
       - Windows: `certutil -hashfile becutit-1.5.2.apk SHA256` (lấy dòng chuỗi 64 ký tự, đổi sang chữ thường); kích thước: `(Get-Item becutit-1.5.2.apk).Length`.
       - Linux/macOS: `sha256sum becutit-1.5.2.apk` và `stat -c %s becutit-1.5.2.apk`.
    2. Đăng APK lên **địa chỉ https cố định theo phiên bản** (dự án 7). Host của địa chỉ đó phải nằm trong biến môi trường Gateway `APK_DOWNLOAD_HOSTS`, nếu không Gateway **không khởi động**.
-   3. Sửa kênh `apk` trong `apps/gateway/config/app-versions.json`:
+   3. **Danh sách host trong app phải khớp `APK_DOWNLOAD_HOSTS` của Gateway.** Khi dựng APK release, đặt biến môi trường `APK_DOWNLOAD_HOSTS` (host cách nhau dấu phẩy, giống Gateway) trước `build-apk.ps1 -Release -Flavor apk`; script từ chối nếu rỗng và kiểm APK không debuggable. Bản release chỉ tải từ các host này (rỗng ⇒ app từ chối mọi URL, người dùng chỉ thấy "Mở trang tải"). Đổi host tải ⇒ phải phát hành APK mới có danh sách mới.
+   4. Sửa kênh `apk` trong `apps/gateway/config/app-versions.json`:
       - `latestBuild`, `latestVersion` (đúng `version` mới);
       - `apkFile`: `{ "url": "https://…", "sha256": "<64 ký tự hex thường>", "sizeBytes": <số byte> }`;
       - `downloadUrl`: trang tải dự phòng (người dùng bấm "Mở trang tải" khi tự cài lỗi);

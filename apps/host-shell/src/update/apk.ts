@@ -13,7 +13,7 @@ const FAIL_KEY = 'becutit.apkFail';
 
 /**
  * URL tải APK: https, hoặc http CHỈ tới máy dev (`10.0.2.2` của AVD / `localhost`) để thử trên máy ảo.
- * Bản release không bao giờ tới đây với http: contract chỉ nhận https và native từ chối http ngoài BuildConfig.DEBUG.
+ * Bản release không bao giờ tới đây với http: contract chỉ nhận https và native chỉ cho http khi app debuggable (ApplicationInfo.FLAG_DEBUGGABLE).
  */
 export function apkDownloadUrl(raw: unknown): string | null {
   const https = safeHttpsUrl(raw);
