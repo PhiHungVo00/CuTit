@@ -316,6 +316,12 @@ public class ApkUpdaterPlugin extends Plugin {
                     finishDownload(false, storage ? "storage" : "network", build, sha, size);
                 } else {
                     long soFar = c.getLong(c.getColumnIndexOrThrow(DownloadManager.COLUMN_BYTES_DOWNLOADED_SO_FAR));
+                    if (soFar > size) {
+                        // Máy chủ gửi nhiều hơn kích thước đã công bố: dừng ngay, không để tải tới đầy bộ nhớ rồi mới kiểm.
+                        try { dm().remove(id); } catch (Exception ignored) { }
+                        finishDownload(false, "verify_failed", build, sha, size);
+                        return;
+                    }
                     int pct = (int) Math.max(0, Math.min(100, soFar * 100 / size));
                     if (pct != lastPercent) {
                         lastPercent = pct;
