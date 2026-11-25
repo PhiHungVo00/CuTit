@@ -38,6 +38,15 @@ export class RateCounters {
     return row.attempts;
   }
 
+  /** Trả lại một lần (không xuống dưới 0) — nguyên tử; dùng khi lần thử đã đếm trước hóa ra hợp lệ */
+  async unhit(db: Db, key: string): Promise<void> {
+    const t = schema.authChallenges;
+    await db
+      .update(t)
+      .set({ attempts: sql`greatest(${t.attempts} - 1, 0)` })
+      .where(and(eq(t.kind, 'rate_counter'), eq(t.keyHash, this.hash(key))));
+  }
+
   /** Số lần trong cửa sổ còn hiệu lực (0 nếu chưa có / đã hết cửa sổ) — không cộng */
   async count(db: Db, key: string, now: Date): Promise<number> {
     const t = schema.authChallenges;

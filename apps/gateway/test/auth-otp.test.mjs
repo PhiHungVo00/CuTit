@@ -46,7 +46,9 @@ async function mailSentToday(dbp) {
 async function makeAuthApp(env = {}, opts = {}) {
   const dbp = createDbProvider(PG ? { DATABASE_URL: PG, PGLITE_DIR: 'memory://' } : { PGLITE_DIR: 'memory://' });
   let now = Date.now();
-  const cap = env.MAIL_DAILY_CAP && PG ? { MAIL_DAILY_CAP: String(Number(env.MAIL_DAILY_CAP) + (await mailSentToday(dbp))) } : {};
+  // Trên Postgres dùng chung: trần = cap + thư đã gửi hôm nay; tắt phần dành riêng 20% cho quên mật khẩu (nó tính theo TRẦN CHUNG nên
+  // cap + thư có sẵn làm ngưỡng luồng gắn email lệch). Phần dành riêng được kiểm riêng ở auth-hardening.test.mjs (PGlite).
+  const cap = env.MAIL_DAILY_CAP && PG ? { MAIL_DAILY_CAP: String(Number(env.MAIL_DAILY_CAP) + (await mailSentToday(dbp))), MAIL_RESET_RESERVE_RATIO: '0' } : {};
   const app = await makeApp({ ...ENV, ...env, ...cap }, { db: dbp, clock: () => new Date(now), ...opts });
   if (PG) {
     // bộ đếm theo IP là toàn cục => mỗi app một IP riêng
