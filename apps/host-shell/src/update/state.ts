@@ -1,4 +1,4 @@
-import type { AppVersionResponse } from '@vietlearning/contracts/api';
+import { AppVersionResponseSchema, type AppVersionResponse } from '@vietlearning/contracts/api';
 
 /** Trạng thái kiểm cập nhật lưu bền (localStorage `becutit.update`, bọc try/catch — chế độ riêng tư vẫn chạy) */
 export interface UpdateState {
@@ -14,6 +14,12 @@ export const STATE_KEY = 'becutit.update';
 
 const EMPTY: UpdateState = { lastCheckAt: 0, lastResponse: null, snoozedBuild: 0, snoozedUntil: 0 };
 
+/** Dữ liệu từ localStorage có thể hỏng/bị sửa: kiểm lại bằng đúng schema của contract */
+function parseResponse(v: unknown): AppVersionResponse | null {
+  const p = AppVersionResponseSchema.safeParse(v);
+  return p.success ? p.data : null;
+}
+
 export function readState(): UpdateState {
   try {
     const raw = localStorage.getItem(STATE_KEY);
@@ -21,7 +27,7 @@ export function readState(): UpdateState {
     const v = JSON.parse(raw) as Partial<UpdateState>;
     return {
       lastCheckAt: typeof v.lastCheckAt === 'number' ? v.lastCheckAt : 0,
-      lastResponse: v.lastResponse && typeof v.lastResponse === 'object' ? v.lastResponse : null,
+      lastResponse: parseResponse(v.lastResponse),
       snoozedBuild: typeof v.snoozedBuild === 'number' ? v.snoozedBuild : 0,
       snoozedUntil: typeof v.snoozedUntil === 'number' ? v.snoozedUntil : 0
     };

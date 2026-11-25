@@ -182,4 +182,17 @@ describe('apk (tạm, Task 5)', () => {
     await updater.forcedUpdate({ ...R, channel: 'apk' }, hooks);
     expect(hooks.setError).toHaveBeenCalledWith('apkNoLink');
   });
+
+  it.each(['http://becutit.example/tai', 'javascript:alert(1)', 'intent://x#Intent;scheme=https;end', 'https://becutit.example@evil.example/x', 'khong phai url'])(
+    'URL không an toàn không được mở, báo apkNoLink: %s',
+    async (bad) => {
+      const { updater } = await import('./apk');
+      const open = vi.spyOn(window, 'open').mockImplementation(() => null);
+      open.mockClear();
+      const hooks = mkHooks();
+      await updater.forcedUpdate({ ...R, channel: 'apk', downloadUrl: bad }, hooks);
+      expect(open).not.toHaveBeenCalled();
+      expect(hooks.setError).toHaveBeenCalledWith('apkNoLink');
+    }
+  );
 });
