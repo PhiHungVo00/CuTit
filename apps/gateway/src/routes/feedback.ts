@@ -72,6 +72,12 @@ function mapMultipartError(err: unknown): unknown {
  * DB chỉ ghi SAU khi mọi tệp đã nằm trong kho, lỗi bất kỳ thì xóa các tệp đã ghi.
  */
 export const feedbackRoutes: FastifyPluginAsync<RouteDeps> = async (server, { db, pipeline, config, blob }) => {
+  /**
+   * Byte đang nhận dở của MỌI yêu cầu trong tiến trình ("đặt chỗ"): cộng ngay khi nhận chunk, trừ khi tệp xong/lỗi/ngắt.
+   * Kiểm trần = số đo của kho (đã gồm tệp ghi xong) + phần đặt chỗ => gửi song song không vượt BLOB_TOTAL_CAP_MB.
+   * (Nhiều instance dùng chung một kho thì mỗi instance chỉ thấy phần của mình: trần là mềm ở mức đó.)
+   */
+  let inflight = 0;
   // POST /v1/feedback (multipart: phần `meta` JSON + các phần `files`)
   server.post(
     '/feedback',
@@ -102,7 +108,6 @@ export const feedbackRoutes: FastifyPluginAsync<RouteDeps> = async (server, { db
       let images = 0;
       let videos = 0;
       let totalIn = 0;
-      let used: number | null = null;
       const capBytes = config.BLOB_TOTAL_CAP_MB * MB;
 
       try {
@@ -143,22 +148,21 @@ export const feedbackRoutes: FastifyPluginAsync<RouteDeps> = async (server, { db
             if (!kind) throw badType();
             if (kind.media === 'image' ? ++images > FEEDBACK_LIMITS.images : ++videos > FEEDBACK_LIMITS.videos) throw tooMany();
             const maxBytes = kind.media === 'image' ? FEEDBACK_LIMITS.imageBytes : FEEDBACK_LIMITS.videoBytes;
-            used ??= await blob.totalBytes();
-            const usedAtStart = used;
-            let received = 0;
+            let reserved = 0;
             async function* body(): AsyncGenerator<Buffer> {
-              const check = (n: number) => {
-                received += n;
+              const check = async (n: number) => {
+                reserved += n;
+                inflight += n;
                 totalIn += n;
                 if (totalIn > TOTAL_BYTES) throw tooLarge('Tổng dung lượng tệp');
-                if (usedAtStart + totalIn > capBytes) throw storageFull();
+                if ((await blob.totalBytes()) + inflight > capBytes) throw storageFull();
               };
-              check(first.length);
+              await check(first.length);
               yield first;
               while (!ended) {
                 const r = await it.next();
                 if (r.done) break;
-                check(r.value.length);
+                await check(r.value.length);
                 yield r.value;
               }
             }
@@ -172,6 +176,9 @@ export const feedbackRoutes: FastifyPluginAsync<RouteDeps> = async (server, { db
             } catch (err) {
               if (err instanceof BlobTooLargeError) throw tooLarge(kind.media === 'image' ? 'Ảnh' : 'Video');
               throw err;
+            } finally {
+              // Tệp xong thì kho đã tính nó (put cộng vào số đo trước khi trả về); lỗi/ngắt thì không còn gì để tính
+              inflight -= reserved;
             }
             if (part.file.truncated) throw tooLarge('Tệp');
           }

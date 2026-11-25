@@ -1,4 +1,4 @@
-import { and, eq, inArray, isNotNull, isNull, lt, sql, type SQL } from 'drizzle-orm';
+import { and, asc, eq, inArray, isNotNull, isNull, lt, sql, type SQL } from 'drizzle-orm';
 import { schema, type Db } from '../../db/client.js';
 import type { BlobStore } from '../blob/BlobStore.js';
 
@@ -11,10 +11,12 @@ const DAY_MS = 24 * 3600 * 1000;
 export const IMAGE_RETENTION_DAYS = 180;
 export const VIDEO_RETENTION_DAYS = 90;
 export const STALE_RETENTION_DAYS = 365;
+/** Tệp tạm của lần gửi bị đứt (tiến trình chết giữa chừng) quá chừng này thì dọn */
+export const TMP_MAX_AGE_MS = 3600_000;
 const BATCH = 500;
 const MAX_ROUNDS = 20;
 
-const { feedbackFiles, feedbackReports, blobDeletions } = schema;
+const { feedbackFiles, feedbackReports, blobDeletions, users } = schema;
 type Tx = Parameters<Parameters<Db['transaction']>[0]>[0];
 type Exec = Db | Tx;
 
@@ -28,18 +30,34 @@ async function stageKeys(x: Exec, keys: string[], reason: string): Promise<void>
  * Chỉ xử lý đúng các khóa được truyền; bỏ trống = tối đa BATCH dòng cũ nhất.
  */
 export async function drainBlobDeletions(db: Db, blob: BlobStore, keys?: string[]): Promise<number> {
-  const rows = keys
-    ? keys.map((blobKey) => ({ blobKey }))
-    : await db.select({ blobKey: blobDeletions.blobKey }).from(blobDeletions).orderBy(blobDeletions.createdAt).limit(BATCH);
   let done = 0;
-  for (const { blobKey } of rows) {
+  const one = async (blobKey: string): Promise<boolean> => {
     try {
       await blob.delete(blobKey);
       await db.delete(blobDeletions).where(eq(blobDeletions.blobKey, blobKey));
       done++;
+      return true;
     } catch {
       await db.update(blobDeletions).set({ attempts: sql`${blobDeletions.attempts} + 1` }).where(eq(blobDeletions.blobKey, blobKey));
+      return false;
     }
+  };
+  if (keys) {
+    for (const k of keys) await one(k);
+    return done;
+  }
+  // Hàng chung: ít lần thử trước (dòng hỏng vĩnh viễn dồn về cuối), có phân trang để >= BATCH dòng hỏng không chặn dòng tốt phía sau.
+  // `offset` chỉ tăng theo số dòng THẤT BẠI (dòng xóa được đã rời khỏi bảng).
+  let offset = 0;
+  for (let round = 0; round < MAX_ROUNDS; round++) {
+    const rows = await db
+      .select({ blobKey: blobDeletions.blobKey })
+      .from(blobDeletions)
+      .orderBy(asc(blobDeletions.attempts), asc(blobDeletions.createdAt), asc(blobDeletions.blobKey))
+      .limit(BATCH)
+      .offset(offset);
+    if (rows.length === 0) break;
+    for (const { blobKey } of rows) if (!(await one(blobKey))) offset++;
   }
   return done;
 }
@@ -59,6 +77,9 @@ export async function deleteKeysOrQueue(db: Db, blob: BlobStore, keys: string[],
 
 /** Trong transaction `tx`: ghi MỌI khóa tệp còn của người dùng vào hàng xóa. Trả danh sách khóa (để xóa sau commit). */
 export async function stageUserBlobDeletions(tx: Tx, userId: string): Promise<string[]> {
+  // Khóa dòng user TRƯỚC khi đọc danh sách khóa: createFeedback cũng khóa dòng này => một góp ý gửi xen giữa lúc xóa tài khoản
+  // hoặc đã commit (khóa của nó được đọc ở dưới) hoặc phải chờ rồi thấy user không còn (tự xóa tệp của nó).
+  await tx.select({ id: users.id }).from(users).where(eq(users.id, userId)).for('update');
   const rows = await tx
     .select({ k: feedbackFiles.blobKey })
     .from(feedbackFiles)
@@ -129,6 +150,7 @@ async function purgeMatching(db: Db, blob: BlobStore, now: Date, media: 'image' 
  */
 export async function runFeedbackPurge(db: Db, blob: BlobStore, now: Date): Promise<FeedbackPurgeResult> {
   const retried = await drainBlobDeletions(db, blob);
+  await blob.sweepTemp?.(TMP_MAX_AGE_MS, now).catch(() => undefined);
   const ago = (days: number) => new Date(now.getTime() - days * DAY_MS);
   const images = await purgeMatching(db, blob, now, 'image', and(isNotNull(feedbackReports.doneAt), lt(feedbackReports.doneAt, ago(IMAGE_RETENTION_DAYS))), 'retention_image');
   const videos = await purgeMatching(db, blob, now, 'video', and(isNotNull(feedbackReports.doneAt), lt(feedbackReports.doneAt, ago(VIDEO_RETENTION_DAYS))), 'retention_video');

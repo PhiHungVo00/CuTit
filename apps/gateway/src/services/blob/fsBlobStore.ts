@@ -102,6 +102,32 @@ export class FsBlobStore implements BlobStore {
     await rmdir(dirname(abs)).catch(() => undefined); // dọn thư mục góp ý rỗng; còn tệp khác thì rmdir tự từ chối
   }
 
+  async sweepTemp(olderThanMs: number, now: Date): Promise<number> {
+    const tmpDir = join(this.root, '.tmp');
+    let names: string[];
+    try {
+      names = await readdir(tmpDir);
+    } catch (err) {
+      if ((err as NodeJS.ErrnoException).code === 'ENOENT') return 0;
+      throw err;
+    }
+    let n = 0;
+    for (const name of names) {
+      const p = join(tmpDir, name);
+      try {
+        const st = await stat(p);
+        if (st.isFile() && now.getTime() - st.mtimeMs > olderThanMs) {
+          await unlink(p);
+          n++;
+          if (this.cache) this.cache.value = Math.max(0, this.cache.value - st.size);
+        }
+      } catch {
+        /* tệp vừa được rename/xóa bởi lần ghi khác: bỏ qua */
+      }
+    }
+    return n;
+  }
+
   async totalBytes(): Promise<number> {
     const now = Date.now();
     if (this.cache && now - this.cache.at < TTL_MS) return this.cache.value;

@@ -13,6 +13,8 @@ export interface BlobStore {
   delete(key: string): Promise<void>;
   /** Tổng số byte đang lưu (để áp trần BLOB_TOTAL_CAP_MB). */
   totalBytes(): Promise<number>;
+  /** Tùy chọn: dọn tệp tạm bị bỏ lại (tiến trình chết giữa lúc ghi) cũ hơn `olderThanMs` so với `now`. Trả số tệp đã dọn. */
+  sweepTemp?(olderThanMs: number, now: Date): Promise<number>;
 }
 
 /** Lỗi có mã máy đọc được, khớp bộ xử lý lỗi của app.ts (statusCode + code) */
