@@ -1,7 +1,9 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Button, CuTit } from '@vietlearning/ui';
 import type { ApkCard } from './channel';
 import { updateMessages, type UpdateErrorKey } from './updateI18n';
+
+const STALL_MS = 15_000;
 
 export interface ForcedUpdateProps {
   onUpdate: () => void;
@@ -18,6 +20,14 @@ export interface ForcedUpdateProps {
  */
 export function ForcedUpdate({ onUpdate, errorKey, percent = null, card }: ForcedUpdateProps) {
   const t = updateMessages.useT();
+  // Tải đứng ở 0% (DownloadManager chờ mạng, cổng đăng nhập Wi-Fi…): sau STALL_MS bật lại nút để thử lại
+  const [stalled, setStalled] = useState(false);
+  useEffect(() => {
+    setStalled(false);
+    if (percent !== 0) return;
+    const id = setTimeout(() => setStalled(true), STALL_MS);
+    return () => clearTimeout(id);
+  }, [percent]);
   const root = useRef<HTMLDivElement>(null);
   const title = useRef<HTMLHeadingElement>(null);
 
@@ -84,7 +94,7 @@ export function ForcedUpdate({ onUpdate, errorKey, percent = null, card }: Force
       )}
       <Button
         size="lg"
-        disabled={percent !== null}
+        disabled={percent !== null && !stalled}
         onClick={card?.kind === 'allow' ? () => void card.openSettings() : onUpdate}
         style={{ minHeight: 52, minWidth: 220 }}
       >

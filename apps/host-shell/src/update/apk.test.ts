@@ -123,9 +123,39 @@ describe('apk: tự tải', () => {
     expect(other.plugin.download).toHaveBeenCalledTimes(1);
   });
 
-  it('lỗi tải ⇒ thẻ failed có Thử lại và Mở trang tải (downloadUrl)', async () => {
+  it('tải ngầm (prepare) hỏng ⇒ im lặng, không hiện thẻ lỗi nhưng vẫn đếm lần lỗi', async () => {
     const s = setup();
     await s.flow.prepare?.(resp(), s.hooks);
+    s.plugin.emit('downloadState', { state: 'failed', code: 'network' });
+    await tick();
+    expect(s.cards.some((c) => c?.kind === 'failed')).toBe(false);
+    expect(JSON.parse(s.store.get('becutit.apkFail') ?? 'null')).toMatchObject({ build: NEW_BUILD, count: 1 });
+  });
+
+  it('đang tải build cũ mà có phản hồi build mới hơn ⇒ prepare đợi, không ghi đè; xong build cũ ⇒ thẻ đúng bản cũ', async () => {
+    const s = setup();
+    await s.flow.prepare?.(resp(), s.hooks);
+    await s.flow.prepare?.(resp({ latestBuild: NEW_BUILD + 1, latestVersion: '1.5.3' }), s.hooks);
+    expect(s.plugin.download).toHaveBeenCalledTimes(1);
+    s.plugin.emit('downloadState', { state: 'done' });
+    await tick();
+    expect(s.lastCard()).toMatchObject({ kind: 'ready', version: '1.5.2' });
+  });
+
+  it('một addListener hỏng ⇒ lần sau đăng ký lại (không kẹt không nhận sự kiện)', async () => {
+    const s = setup();
+    s.plugin.addListener.mockRejectedValueOnce(new Error('boom'));
+    await s.flow.softUpdate(resp(), s.hooks); // lần này hỏng ⇒ thẻ lỗi
+    expect(s.lastCard()).toMatchObject({ kind: 'failed' });
+    await s.flow.softUpdate(resp(), s.hooks);
+    s.plugin.emit('downloadState', { state: 'done' });
+    await tick();
+    expect(s.lastCard()).toMatchObject({ kind: 'ready' });
+  });
+
+  it('lỗi tải do người dùng bấm ⇒ thẻ failed có Thử lại và Mở trang tải (downloadUrl)', async () => {
+    const s = setup();
+    await s.flow.softUpdate(resp(), s.hooks);
     s.plugin.emit('downloadState', { state: 'failed', code: 'storage' });
     await tick();
     const c = s.lastCard();
@@ -173,10 +203,13 @@ describe('apk: bấm Cập nhật (nhắc mềm)', () => {
     expect(b.hooks.setError).toHaveBeenCalledWith('apkNoLink');
   });
 
-  it('downloadUrl không phải https ⇒ không mở (apkNoLink)', async () => {
-    const s = setup();
-    await s.flow.softUpdate(resp({ apkFile: null, downloadUrl: null }), s.hooks);
-    expect(s.deps.openUrl).not.toHaveBeenCalled();
+  it('downloadUrl không phải https (http, javascript:) ⇒ không mở, báo apkNoLink', async () => {
+    for (const bad of ['http://evil.example/x', 'javascript:alert(1)']) {
+      const s = setup();
+      await s.flow.softUpdate(resp({ apkFile: null, downloadUrl: bad }), s.hooks);
+      expect(s.deps.openUrl).not.toHaveBeenCalled();
+      expect(s.hooks.setError).toHaveBeenCalledWith('apkNoLink');
+    }
   });
 });
 
@@ -244,6 +277,19 @@ describe('apk: cài đặt', () => {
     await tick();
     expect(s.lastCard()).toMatchObject({ kind: 'ready' });
     expect(s.plugin.install).not.toHaveBeenCalled();
+  });
+
+  it('pending_user (hộp xác nhận đang mở) ⇒ bấm cài lần nữa không mở thêm phiên; cancelled ⇒ cài lại được', async () => {
+    const s = setup();
+    const c = await ready(s);
+    await c.install();
+    s.plugin.emit('installStatus', { status: 'pending_user' });
+    await c.install();
+    expect(s.plugin.install).toHaveBeenCalledTimes(1);
+    s.plugin.emit('installStatus', { status: 'cancelled' });
+    await tick();
+    await (s.lastCard() as Extract<ApkCard, { kind: 'ready' }>).install();
+    expect(s.plugin.install).toHaveBeenCalledTimes(2);
   });
 
   it('installStatus cancelled ⇒ về thẻ Cài đặt', async () => {
