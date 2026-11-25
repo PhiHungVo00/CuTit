@@ -114,6 +114,8 @@ export const authMeRoutes: FastifyPluginAsync<RouteDeps> = async (server, { db, 
     }
     // Luồng gắn email chỉ dùng tới cap − phần dành riêng cho quên/đặt lại mật khẩu
     if (!(await tryConsumeMailQuota(d, config.MAIL_DAILY_CAP, now, mailResetReserve(config.MAIL_DAILY_CAP, config.MAIL_RESET_RESERVE_RATIO)))) {
+      // chưa gửi thư nào => trả lại lượt theo người dùng (rà PR #40)
+      await counters.unhit(d, authKeys.mailUser(userId)).catch(() => undefined);
       audit.record('auth.email_code_failed', { outcome: 'blocked', userId, metadata: { purpose: 'link', reason: 'daily_cap' } });
       return reply.status(503).send({ error: 'provider_unavailable' });
     }
