@@ -11,6 +11,9 @@ import {
   uniqueIndex,
   index,
   check,
+  bigint,
+  bigserial,
+  customType,
   type AnyPgColumn
 } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
@@ -25,6 +28,9 @@ import { sql } from 'drizzle-orm';
  * - Ngày học (`day`) là ngày ĐỊA PHƯƠNG 'YYYY-MM-DD' do client gửi — không tự tính theo UTC ở server.
  * - Khớp dữ liệu client trong packages/state (nguồn chuẩn hiện tại của hình dạng dữ liệu).
  */
+
+/** bytea <-> Uint8Array (Buffer của Node cũng là Uint8Array; bí mật TOTP đã mã hóa AES-256-GCM) */
+const bytea = customType<{ data: Uint8Array; driverData: Uint8Array }>({ dataType: () => 'bytea' });
 
 const ts = (name: string) => timestamp(name, { withTimezone: true });
 const userRef = (name = 'user_id') =>
@@ -530,4 +536,214 @@ export const reservedUsernames = pgTable(
     until: ts('until').notNull()
   },
   (t) => [check('reserved_usernames_lower_ck', sql`${t.username} = lower(${t.username})`), index('reserved_usernames_until_idx').on(t.until)]
+);
+
+/**
+ * 28–35. Dự án 5a — Góp ý/Báo lỗi + nền quản trị (spec docs/superpowers/specs/2026-11-21-gop-y-bao-loi-design.md §5.7).
+ * Mẫu "hộp thư + dòng thời gian sự kiện + hàng dọn tệp" tự thiết kế theo spec (không chép mã ngoài).
+ * Nhật ký chỉ-thêm ép bằng trigger BEFORE UPDATE OR DELETE + RAISE EXCEPTION theo tài liệu PostgreSQL về trigger
+ * (https://www.postgresql.org/docs/current/plpgsql-trigger.html) — chỉ lấy ý tưởng; trigger nằm ở migration tùy chỉnh.
+ *
+ * Xử lý khi xóa/gộp tài khoản (đã chốt trong spec §5.2):
+ * - Xóa mềm (users.delete_at): góp ý GIỮ NGUYÊN 30 ngày (hàng chờ gắn nhãn "đang chờ xóa").
+ * - Xóa cứng (DELETE FROM users): feedback_reports/files/events xóa theo CASCADE. Khóa tệp (blob_key) cũng mất theo
+ *   => `purgeUserFeedbackBlobs(userId)` PHẢI đọc khóa tệp TRƯỚC khi xóa user, xóa tệp SAU commit; lỗi thì ghi blob_deletions.
+ * - Gộp tài khoản (merge.ts): feedback_reports.user_id chuyển sang tài khoản đích ở CẢ hai chiến lược.
+ * - Nhân viên (staff_roles/staff_totp/admin_sessions): cascade theo tài khoản. staff_roles.granted_by và
+ *   feedback_events.actor_user_id: SET NULL (giữ dòng, bỏ liên kết tới tài khoản đã xóa).
+ * - admin_audit_log KHÔNG có khóa ngoại tới users: giữ nguyên khi xóa tài khoản (đúng mục đích điều tra), giữ 2 năm.
+ * Dữ liệu cá nhân tối thiểu: không email, không ảnh/video ở DB (chỉ khóa tệp), IP chỉ ở dạng băm (`ip_hash`).
+ */
+
+export const FEEDBACK_KINDS = ['bug', 'idea', 'other'] as const;
+export const FEEDBACK_STATUSES = ['received', 'in_progress', 'done'] as const;
+export const STAFF_ROLES = ['owner', 'editor', 'reviewer', 'support'] as const;
+export type StaffRole = (typeof STAFF_ROLES)[number];
+
+/** Ngữ cảnh chẩn đoán lưu ở feedback_reports.context (khớp FeedbackContextSchema ở api/feedback.ts) */
+export type FeedbackContextJson = {
+  appVersion: string;
+  build: string;
+  platform: 'android' | 'web';
+  osVersion: string;
+  locale: 'vi' | 'en';
+  route: string;
+  recentRoutes: string[];
+  error?: { name: string; firstFrame: string };
+};
+
+/**
+ * 28. Góp ý. `done_at` đặt khi chuyển 'done' và về NULL khi mở lại (CHECK ép hai cột luôn khớp) — mốc dọn tệp theo done_at.
+ * `user_unread` = người dùng có lời nhắn/đổi trạng thái chưa đọc (chấm đỏ).
+ */
+export const feedbackReports = pgTable(
+  'feedback_reports',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    userId: userRef(),
+    kind: text('kind').$type<(typeof FEEDBACK_KINDS)[number]>().notNull(),
+    body: text('body').notNull(),
+    context: jsonb('context').$type<FeedbackContextJson>().notNull(),
+    status: text('status').$type<(typeof FEEDBACK_STATUSES)[number]>().notNull().default('received'),
+    userUnread: boolean('user_unread').notNull().default(false),
+    createdAt: ts('created_at').notNull().defaultNow(),
+    updatedAt: ts('updated_at').notNull().defaultNow(),
+    doneAt: ts('done_at')
+  },
+  (t) => [
+    check('feedback_reports_kind_ck', sql`${t.kind} in ('bug', 'idea', 'other')`),
+    check('feedback_reports_status_ck', sql`${t.status} in ('received', 'in_progress', 'done')`),
+    check('feedback_reports_body_len_ck', sql`char_length(${t.body}) between 10 and 2000`),
+    check('feedback_reports_done_at_ck', sql`(${t.status} = 'done') = (${t.doneAt} is not null)`),
+    index('feedback_reports_status_created_idx').on(t.status, sql`${t.createdAt} desc`),
+    index('feedback_reports_user_created_idx').on(t.userId, sql`${t.createdAt} desc`),
+    /** đếm chấm đỏ nhanh (chỉ các dòng chưa đọc) */
+    index('feedback_reports_user_unread_idx')
+      .on(t.userId)
+      .where(sql`${t.userUnread}`),
+    /** job dọn tệp theo done_at */
+    index('feedback_reports_done_at_idx')
+      .on(t.doneAt)
+      .where(sql`${t.doneAt} is not null`)
+  ]
+);
+
+/** 29. Tệp đính kèm — chỉ giữ khóa trong kho tệp (`feedback/<id>/<uuid>.<ext>`, không tên gốc). `purged_at` = tệp đã dọn, dòng giữ lại. */
+export const feedbackFiles = pgTable(
+  'feedback_files',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    feedbackId: uuid('feedback_id')
+      .notNull()
+      .references(() => feedbackReports.id, { onDelete: 'cascade' }),
+    blobKey: text('blob_key').notNull(),
+    media: text('media').$type<'image' | 'video'>().notNull(),
+    contentType: text('content_type').notNull(),
+    bytes: integer('bytes').notNull(),
+    durationMs: integer('duration_ms'),
+    createdAt: ts('created_at').notNull().defaultNow(),
+    purgedAt: ts('purged_at')
+  },
+  (t) => [
+    uniqueIndex('feedback_files_blob_key_uq').on(t.blobKey),
+    index('feedback_files_feedback_idx').on(t.feedbackId),
+    check('feedback_files_media_ck', sql`${t.media} in ('image', 'video')`),
+    /** loại tệp và media phải khớp: ảnh ⇔ WebP/JPEG/PNG, video ⇔ MP4/WebM/MOV (SVG, PE… không lọt qua DB) */
+    check(
+      'feedback_files_type_ck',
+      sql`(${t.media} = 'image' and ${t.contentType} in ('image/webp', 'image/jpeg', 'image/png')) or (${t.media} = 'video' and ${t.contentType} in ('video/mp4', 'video/webm', 'video/quicktime'))`
+    ),
+    /** ảnh ≤ 5 MiB, video ≤ 50 MiB (FEEDBACK_LIMITS) */
+    check('feedback_files_bytes_ck', sql`${t.bytes} > 0 and ${t.bytes} <= case when ${t.media} = 'image' then 5242880 else 52428800 end`),
+    check('feedback_files_duration_ck', sql`${t.durationMs} is null or (${t.durationMs} >= 0 and ${t.durationMs} <= 60000)`)
+  ]
+);
+
+/** 30. Dòng thời gian của chủ app (đổi trạng thái / lời nhắn). `actor_user_id` SET NULL khi nhân viên bị xóa. */
+export const feedbackEvents = pgTable(
+  'feedback_events',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    feedbackId: uuid('feedback_id')
+      .notNull()
+      .references(() => feedbackReports.id, { onDelete: 'cascade' }),
+    actorUserId: uuid('actor_user_id').references(() => users.id, { onDelete: 'set null' }),
+    status: text('status').$type<(typeof FEEDBACK_STATUSES)[number]>(),
+    message: text('message'),
+    createdAt: ts('created_at').notNull().defaultNow()
+  },
+  (t) => [
+    index('feedback_events_feedback_idx').on(t.feedbackId, t.createdAt),
+    check('feedback_events_status_ck', sql`${t.status} is null or ${t.status} in ('received', 'in_progress', 'done')`),
+    check('feedback_events_message_len_ck', sql`${t.message} is null or char_length(${t.message}) between 1 and 1000`),
+    /** một sự kiện phải mang ít nhất đổi trạng thái hoặc lời nhắn */
+    check('feedback_events_nonempty_ck', sql`${t.status} is not null or ${t.message} is not null`)
+  ]
+);
+
+/** 31. Hàng dọn tệp khi xóa lỗi (thử lại hằng ngày). Chỉ khóa tệp + lý do — không dữ liệu người dùng. */
+export const blobDeletions = pgTable(
+  'blob_deletions',
+  {
+    blobKey: text('blob_key').primaryKey(),
+    reason: text('reason').notNull(),
+    createdAt: ts('created_at').notNull().defaultNow(),
+    attempts: integer('attempts').notNull().default(0)
+  },
+  (t) => [check('blob_deletions_attempts_ck', sql`${t.attempts} >= 0`), index('blob_deletions_created_idx').on(t.createdAt)]
+);
+
+/** 32. Vai trò nhân viên — CHỈ cấp bằng CLI (không API/biến môi trường). 5a chỉ dùng 'owner'. */
+export const staffRoles = pgTable(
+  'staff_roles',
+  {
+    userId: userRef(),
+    role: text('role').$type<StaffRole>().notNull(),
+    grantedAt: ts('granted_at').notNull().defaultNow(),
+    grantedBy: uuid('granted_by').references(() => users.id, { onDelete: 'set null' })
+  },
+  (t) => [primaryKey({ columns: [t.userId, t.role] }), check('staff_roles_role_ck', sql`${t.role} in ('owner', 'editor', 'reviewer', 'support')`)]
+);
+
+/** 33. TOTP của nhân viên: bí mật mã hóa AES-256-GCM (ADMIN_MFA_KEY); `last_used_step` chặn dùng lại mã; ≤ 10 mã dự phòng lưu BĂM. */
+export const staffTotp = pgTable(
+  'staff_totp',
+  {
+    userId: uuid('user_id')
+      .primaryKey()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    secretEnc: bytea('secret_enc').notNull(),
+    confirmedAt: ts('confirmed_at'),
+    lastUsedStep: bigint('last_used_step', { mode: 'number' }).notNull().default(0),
+    backupHashes: text('backup_hashes')
+      .array()
+      .notNull()
+      .default(sql`'{}'::text[]`)
+  },
+  (t) => [check('staff_totp_backup_count_ck', sql`cardinality(${t.backupHashes}) <= 10`)]
+);
+
+/** 34. Phiên quản trị (refresh = băm, token gốc nằm trong cookie HttpOnly): rảnh 30 phút / tối đa 12 giờ / thu hồi được. */
+export const adminSessions = pgTable(
+  'admin_sessions',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    userId: userRef(),
+    refreshHash: text('refresh_hash').notNull().unique(),
+    mfaAt: ts('mfa_at').notNull(),
+    lastSeenAt: ts('last_seen_at').notNull().defaultNow(),
+    expiresAt: ts('expires_at').notNull(),
+    revokedAt: ts('revoked_at'),
+    ipHash: text('ip_hash'),
+    userAgent: text('user_agent'),
+    createdAt: ts('created_at').notNull().defaultNow()
+  },
+  (t) => [index('admin_sessions_user_idx').on(t.userId), index('admin_sessions_expires_idx').on(t.expiresAt)]
+);
+
+/**
+ * 35. Nhật ký quản trị — CHỈ THÊM: trigger ở migration `admin_audit_append_only` chặn UPDATE/DELETE/TRUNCATE;
+ * chỉ hàm `admin_audit_purge(before)` (SECURITY DEFINER) xóa được, để job dọn bản quá 2 năm.
+ * KHÔNG khóa ngoại tới users (giữ khi xóa tài khoản). `actor_kind='cli'` thì `actor_user_id` NULL.
+ * Ghi trong CÙNG transaction với thao tác (spec §5.5).
+ */
+export const adminAuditLog = pgTable(
+  'admin_audit_log',
+  {
+    id: bigserial('id', { mode: 'number' }).primaryKey(),
+    actorUserId: uuid('actor_user_id'),
+    actorKind: text('actor_kind').$type<'user' | 'cli'>().notNull(),
+    action: text('action').notNull(),
+    targetType: text('target_type').notNull(),
+    targetId: text('target_id'),
+    meta: jsonb('meta').$type<Record<string, unknown>>().notNull().default({}),
+    ipHash: text('ip_hash'),
+    userAgent: text('user_agent'),
+    createdAt: ts('created_at').notNull().defaultNow()
+  },
+  (t) => [
+    check('admin_audit_log_actor_kind_ck', sql`${t.actorKind} in ('user', 'cli')`),
+    check('admin_audit_log_cli_actor_ck', sql`${t.actorKind} <> 'cli' or ${t.actorUserId} is null`),
+    index('admin_audit_log_created_idx').on(t.createdAt)
+  ]
 );

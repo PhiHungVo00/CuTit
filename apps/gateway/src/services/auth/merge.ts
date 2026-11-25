@@ -28,6 +28,9 @@ import { REFRESH_TTL_MS, sha256 } from './tokens.js';
  *  - sync_events: chép sổ chống trùng (bỏ trùng) => sự kiện còn trong hàng đợi máy khác của khách gửi lại vào đích không cộng hai lần
  *  - social_profiles: đích có thì giữ, chưa có thì lấy của khách · friend_invites: bỏ (cascade)
  *  - friendships: đổi khách thành đích, sắp lại user_a < user_b, bỏ cặp tự kết bạn, trùng cặp giữ dòng cũ hơn
+ *  - feedback_reports (dự án 5a): đổi user_id sang đích ở CẢ HAI chiến lược (góp ý không phải tiến độ học; người dùng vẫn muốn theo dõi) —
+ *    tệp/lời nhắn đi theo qua feedback_id, không cần chép
+ *  - staff_roles/staff_totp/admin_sessions: cascade (khách không có vai trò) · feedback_events.actor_user_id: set_null
  *  - audit_events: không sửa (FK SET NULL khi xóa khách) · refresh_tokens/auth_challenges/identities/password_credentials: cascade
  *
  * Tham khảo ý (không chép mã): Better Auth (MIT) plugin anonymous — móc `onLinkAccount({anonymousUser, newUser})` để ứng dụng tự
@@ -66,7 +69,12 @@ export const USER_TABLE_RULES = {
   identities: 'cascade',
   password_credentials: 'cascade',
   auth_challenges: 'cascade',
-  audit_events: 'set_null'
+  audit_events: 'set_null',
+  feedback_reports: 'move',
+  feedback_events: 'set_null',
+  staff_roles: 'cascade',
+  staff_totp: 'cascade',
+  admin_sessions: 'cascade'
 } as const;
 export const HANDLED_USER_TABLES = Object.keys(USER_TABLE_RULES);
 
@@ -114,6 +122,8 @@ export async function mergeGuestInto(db: Db, guestId: string, mergeTicket: strin
     if (consumed.length !== 1) return { kind: 'invalid_ticket' } as const;
 
     if (strategy === 'merge') await moveLearnerData(tx, guestId, targetId, now);
+    // Góp ý (dự án 5a) đi theo tài khoản ở cả hai chiến lược: 'discard_device' chỉ bỏ TIẾN ĐỘ học của máy này
+    await tx.execute(sql`update feedback_reports set user_id = ${targetId}::uuid where user_id = ${guestId}::uuid`);
 
     const tokens = await tx.select({ hash: refreshTokens.tokenHash }).from(refreshTokens).where(eq(refreshTokens.userId, guestId));
     const tombs = [
