@@ -22,6 +22,7 @@ export const { useT, t } = defineMessages(
     chunkFailed: 'Không tải được màn hình. Kiểm tra kết nối mạng rồi thử lại.',
     screenError: 'Màn hình này gặp lỗi.',
     retry: 'Thử lại',
+    reportBug: 'Báo lỗi',
   },
   {
     appTitle: 'Learn Vietnamese with Cu Tít',
@@ -43,6 +44,7 @@ export const { useT, t } = defineMessages(
     chunkFailed: 'Could not load this screen. Check your connection and try again.',
     screenError: 'Something went wrong on this screen.',
     retry: 'Try again',
+    reportBug: 'Report a bug',
   }
 );
 

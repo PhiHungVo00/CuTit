@@ -11,12 +11,15 @@ import { isFocusRoute } from './shell/navMap';
 import { ScreenErrorBoundary } from './components/ScreenErrorBoundary';
 import { useStudyTimer } from './useStudyTimer';
 import { onNotice, readNotice } from './notice';
+import { recordRoute } from './shell/routeTrail';
 
 const NoticeBanner = lazy(() => import('./NoticeBanner'));
 // Bong bóng Cu Tít: chunk lười, gắn sau lần vẽ đầu để không tranh LCP/gói đầu
 const CuTitBubble = lazy(() => import('./shell/CuTitBubble'));
 // Nhắc/ép cập nhật app (dự án 8): chunk lười, chỉ bản production; đọc engine của update/start
 const UpdateLayer = lazy(() => import('./update/UpdateLayer'));
+// Chấm đỏ "có lời nhắn chưa đọc" trên tab Hồ sơ (Góp ý): chunk lười, hỏi Gateway sau lần vẽ đầu
+const FeedbackDot = lazy(() => import('./shell/FeedbackDot'));
 
 function useAfterFirstPaint(): boolean {
   const [ready, setReady] = useState(false);
@@ -73,6 +76,9 @@ export function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Vết điều hướng (RAM, chỉ đường dẫn) cho màn Góp ý: màn trước + 5 đường dẫn gần nhất
+  useEffect(() => recordRoute(pathname), [pathname]);
+
   // Mỗi lần đổi màn hình: cuộn về đầu (hành vi giống app native)
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -119,6 +125,11 @@ export function App() {
       </main>
 
       {!focus && <TabBar />}
+      {bubbleReady && (
+        <Suspense fallback={null}>
+          <FeedbackDot />
+        </Suspense>
+      )}
       {bubbleReady && !focus && (
         <Suspense fallback={null}>
           <CuTitBubble />

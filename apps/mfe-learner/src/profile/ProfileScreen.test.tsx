@@ -1,9 +1,17 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { cleanup, render, screen, within } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { dayKey, learnerStore } from '@vietlearning/state';
 import { progressStore } from '@vietlearning/state/progress';
 import { ProfileScreen } from './ProfileScreen';
+
+const unreadFeedbackCount = vi.fn(async () => 0);
+vi.mock('@vietlearning/api-client/feedback', () => ({
+  unreadFeedbackCount: () => unreadFeedbackCount(),
+  listMyFeedback: vi.fn(),
+  markFeedbackRead: vi.fn(),
+  submitFeedback: vi.fn()
+}));
 
 const lang = (uiLanguage: 'vi' | 'en') => learnerStore.getState().setPreferences({ uiLanguage });
 const show = () =>
@@ -13,7 +21,11 @@ const show = () =>
     </MemoryRouter>
   );
 
-beforeEach(() => lang('vi'));
+beforeEach(() => {
+  lang('vi');
+  unreadFeedbackCount.mockReset();
+  unreadFeedbackCount.mockResolvedValue(0);
+});
 afterEach(() => {
   cleanup();
   learnerStore.getState().reset();
@@ -58,5 +70,26 @@ describe('ProfileScreen (phương án B)', () => {
     const hrefs = screen.getAllByRole('link').map((a) => a.getAttribute('href'));
     expect(hrefs).toContain('/ban-be');
     expect(hrefs).toContain('/tien-do');
+  });
+
+  it('có dòng "Góp ý / Báo lỗi" trỏ tới /gop-y (vi và en)', () => {
+    show();
+    const link = screen.getAllByRole('link').find((a) => a.getAttribute('href') === '/gop-y')!;
+    expect(link.textContent).toContain('Góp ý / Báo lỗi');
+    cleanup();
+    lang('en');
+    show();
+    expect(screen.getAllByRole('link').find((a) => a.getAttribute('href') === '/gop-y')!.textContent).toContain('Feedback / Report a bug');
+  });
+
+  it('có góp ý chưa đọc => chấm đỏ ở dòng Góp ý (có chữ cho trình đọc màn hình); không có => không chấm', async () => {
+    unreadFeedbackCount.mockResolvedValue(2);
+    show();
+    expect(await screen.findByText('Có tin mới')).toBeTruthy();
+    cleanup();
+    unreadFeedbackCount.mockResolvedValue(0);
+    show();
+    await waitFor(() => expect(unreadFeedbackCount).toHaveBeenCalledTimes(2));
+    expect(screen.queryByText('Có tin mới')).toBeNull();
   });
 });

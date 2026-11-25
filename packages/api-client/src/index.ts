@@ -94,7 +94,7 @@ export interface RequestOptions<S extends ZodTypeAny> {
 /** onUpdateRequired chỉ gọi một lần mỗi lần chạy (biến module, dự án 8) */
 let updateNotified = false;
 
-function kindForStatus(status: number): GatewayErrorKind {
+export function kindForStatus(status: number): GatewayErrorKind {
   if (status === 401) return 'unauthorized';
   if (status === 429) return 'quota';
   if (status === 503) return 'unavailable';
@@ -104,7 +104,8 @@ function kindForStatus(status: number): GatewayErrorKind {
   return 'server';
 }
 
-async function send(path: string, method: string, body: unknown, signal?: AbortSignal, accept = 'application/json', retried = false): Promise<Response> {
+/** Dùng nội bộ cho các module cùng gói (feedback.ts): gửi một request có Bearer, 401 => gửi lại một lần, lỗi chuẩn hóa. */
+export async function send(path: string, method: string, body: unknown, signal?: AbortSignal, accept = 'application/json', retried = false): Promise<Response> {
   const headers: Record<string, string> = { Accept: accept };
   const { appBuild, appChannel } = gatewayConfig();
   if (appBuild !== undefined) headers[APP_BUILD_HEADER] = String(appBuild);
