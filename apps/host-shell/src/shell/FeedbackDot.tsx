@@ -18,7 +18,8 @@ const LABEL = { vi: 'Có tin mới', en: 'New reply' } as const;
 export default function FeedbackDot() {
   const [count, setCount] = useState(0);
   const lang = useUiLanguage();
-  useLocation(); // vẽ lại khi đổi màn: thanh tab biến mất ở màn tập trung rồi hiện lại
+  const { pathname } = useLocation();
+  const [host, setHost] = useState<Element | null>(null);
   useEffect(() => {
     const on = (e: Event) => setCount(Math.max(0, Math.floor(Number((e as CustomEvent<number>).detail) || 0)));
     window.addEventListener(FEEDBACK_UNREAD_EVENT, on);
@@ -35,8 +36,11 @@ export default function FeedbackDot() {
     };
   }, []);
 
-  const host = count > 0 ? document.querySelector('.tabbar a[href="/ho-so"] .tab-icon') : null;
-  if (!host) return null;
+  // Tìm biểu tượng tab SAU khi vẽ xong (effect): ra khỏi màn tập trung thì TabBar mới mount cùng lượt commit
+  useEffect(() => {
+    setHost(count > 0 ? document.querySelector('.tabbar a[href="/ho-so"] .tab-icon') : null);
+  }, [count, pathname]);
+  if (!host || count <= 0) return null;
   return createPortal(
     <>
       <span aria-hidden="true" style={{ position: 'absolute', top: 0, right: -3, width: 10, height: 10, borderRadius: '50%', background: '#C0553A' }} />

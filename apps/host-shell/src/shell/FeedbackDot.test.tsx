@@ -1,23 +1,31 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, render, screen, waitFor } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { Link, MemoryRouter, useLocation } from 'react-router-dom';
 import { learnerStore } from '@vietlearning/state';
 import FeedbackDot, { FEEDBACK_UNREAD_EVENT } from './FeedbackDot';
 
 const unreadFeedbackCount = vi.fn(async () => 0);
 vi.mock('@vietlearning/api-client/feedback', () => ({ unreadFeedbackCount: () => unreadFeedbackCount() }));
 
-/** Thanh tab giả: đúng cấu trúc mà TabBar vẽ (link /ho-so có .tab-icon) */
-const show = () =>
+/** Thanh tab giả: đúng cấu trúc mà TabBar vẽ (link /ho-so có .tab-icon); ở "/bai-hoc/x" (màn tập trung) không có thanh tab */
+function Tabs() {
+  const { pathname } = useLocation();
+  return pathname.startsWith('/bai-hoc') ? (
+    <Link to="/ho-so">đi</Link>
+  ) : (
+    <nav className="tabbar">
+      <a href="/ho-so">
+        <span className="tab-icon" data-testid="icon" />
+        <span>Hồ sơ</span>
+      </a>
+    </nav>
+  );
+}
+const show = (start = '/') =>
   render(
-    <MemoryRouter>
-      <nav className="tabbar">
-        <a href="/ho-so">
-          <span className="tab-icon" data-testid="icon" />
-          <span>Hồ sơ</span>
-        </a>
-      </nav>
+    <MemoryRouter initialEntries={[start]}>
+      <Tabs />
       <FeedbackDot />
     </MemoryRouter>
   );
@@ -49,6 +57,14 @@ describe('FeedbackDot (chấm đỏ tab Hồ sơ)', () => {
     await waitFor(() => expect(dot()).not.toBeNull());
     act(() => void window.dispatchEvent(new CustomEvent(FEEDBACK_UNREAD_EVENT, { detail: 0 })));
     await waitFor(() => expect(dot()).toBeNull());
+  });
+
+  it('thanh tab mount SAU chấm (về từ màn tập trung) => chấm vẫn hiện', async () => {
+    unreadFeedbackCount.mockResolvedValue(3);
+    show('/bai-hoc/x');
+    await waitFor(() => expect(unreadFeedbackCount).toHaveBeenCalled());
+    fireEvent.click(screen.getByText('đi'));
+    await waitFor(() => expect(dot()).not.toBeNull());
   });
 
   it('en: chữ tiếng Anh', async () => {

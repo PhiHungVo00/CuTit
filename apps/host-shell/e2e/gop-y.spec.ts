@@ -60,9 +60,13 @@ test('Hồ sơ → Góp ý → gửi kèm ảnh: ảnh là WebP đã vẽ lại,
   await page.goto('/ho-so');
   const row = page.getByRole('link', { name: /Góp ý \/ Báo lỗi/ });
   await expect(row).toBeVisible();
-  await expect(row.getByText('Có tin mới')).toBeAttached();
-  // chấm đỏ ở tab Hồ sơ (chunk lười, hiện sau lần vẽ đầu)
-  await expect(page.locator('.tabbar a[href="/ho-so"]').getByText('Có tin mới')).toBeAttached({ timeout: 10_000 });
+  // Khách chưa có tài khoản thì app KHÔNG hỏi Gateway (không tự tạo khách chỉ để đếm tin) => giả sự kiện "có 2 tin chưa đọc"
+  // (cùng sự kiện mà chunk chấm đỏ và Hồ sơ phát sau khi hỏi Gateway). Phát lặp tới khi chunk lười đã gắn bộ nghe.
+  await expect(async () => {
+    await page.evaluate(() => window.dispatchEvent(new CustomEvent('becutit:feedback-unread', { detail: 2 })));
+    await expect(row.getByText('Có tin mới')).toBeAttached({ timeout: 300 });
+    await expect(page.locator('.tabbar a[href="/ho-so"]').getByText('Có tin mới')).toBeAttached({ timeout: 300 });
+  }).toPass({ timeout: 15_000 });
 
   await row.click();
   await expect(page).toHaveURL(/\/gop-y$/);

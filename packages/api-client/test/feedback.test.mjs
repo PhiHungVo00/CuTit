@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { configureGateway, GatewayRequestError } from '../dist/index.js';
+import { AUTH_STORAGE_KEY, resetAuthSessionForTest } from '../dist/session.js';
 import { submitFeedback, listMyFeedback, unreadFeedbackCount, markFeedbackRead } from '../dist/feedback.js';
 
 const realFetch = globalThis.fetch;
@@ -134,6 +135,9 @@ test('listMyFeedback / unreadFeedbackCount / markFeedbackRead: đúng đường 
     if (url.endsWith('/unread-count')) return new Response(JSON.stringify({ count: 2 }), { status: 200 });
     return new Response(null, { status: 204 });
   };
+  const mem = new Map([[AUTH_STORAGE_KEY, JSON.stringify({ userId: '00000000-0000-4000-8000-000000000001', refreshToken: 'refresh-0-xxxxxxxxxxxxxxxx', recoveryCode: null })]]);
+  configureGateway({ storage: { get: async (k) => mem.get(k) ?? null, set: async (k, v) => void mem.set(k, v), remove: async (k) => void mem.delete(k) } });
+  resetAuthSessionForTest();
   assert.deepEqual(await listMyFeedback(), { items: [] });
   assert.equal(await unreadFeedbackCount(), 2);
   await markFeedbackRead(ID);
@@ -142,4 +146,14 @@ test('listMyFeedback / unreadFeedbackCount / markFeedbackRead: đúng đường 
     ['GET', 'http://gw.test/v1/feedback/mine/unread-count'],
     ['POST', `http://gw.test/v1/feedback/${ID}/read`]
   ]);
+});
+
+test('unreadFeedbackCount: chưa có phiên => 0, KHÔNG gọi mạng (không tự tạo khách chỉ để hỏi chấm đỏ)', async () => {
+  const mem = new Map();
+  configureGateway({ baseUrl: 'http://gw.test', getToken: () => 't', storage: { get: async (k) => mem.get(k) ?? null, set: async (k, v) => void mem.set(k, v), remove: async (k) => void mem.delete(k) }, timeoutMs: 200 });
+  resetAuthSessionForTest();
+  let calls = 0;
+  globalThis.fetch = async () => (calls++, new Response('{}', { status: 500 }));
+  assert.equal(await unreadFeedbackCount(), 0);
+  assert.equal(calls, 0);
 });

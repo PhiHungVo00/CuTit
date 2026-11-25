@@ -16,6 +16,7 @@ import {
 import { APP_BUILD_HEADER, APP_CHANNEL_HEADER } from '@vietlearning/contracts/api';
 import { gatewayConfig } from './config.js';
 import { GatewayRequestError, kindForStatus, request, send } from './index.js';
+import { getAuthSession } from './session.js';
 
 /** Thời gian tối đa cho cả lần tải lên (video 50 MB trên mạng yếu): 5 phút */
 const UPLOAD_TIMEOUT_MS = 5 * 60_000;
@@ -108,8 +109,13 @@ export function listMyFeedback(signal?: AbortSignal): Promise<MyFeedbackList> {
   return request('/v1/feedback/mine', { schema: MyFeedbackListSchema, signal });
 }
 
-/** GET /v1/feedback/mine/unread-count — số góp ý có lời nhắn chưa đọc (chấm đỏ) */
+/**
+ * GET /v1/feedback/mine/unread-count — số góp ý có lời nhắn chưa đọc (chấm đỏ).
+ * Chưa có phiên trên máy => 0 và KHÔNG gọi mạng: hỏi chấm đỏ không được tự tạo tài khoản khách
+ * (người chưa có tài khoản thì chưa thể có lời nhắn).
+ */
 export async function unreadFeedbackCount(signal?: AbortSignal): Promise<number> {
+  if (!(await getAuthSession().info())) return 0;
   return (await request('/v1/feedback/mine/unread-count', { schema: UnreadCountSchema, signal })).count;
 }
 
