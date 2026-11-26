@@ -75,7 +75,20 @@ export const USER_TABLE_RULES = {
   staff_roles: 'cascade',
   staff_totp: 'cascade',
   staff_invites: 'cascade',
-  admin_sessions: 'cascade'
+  admin_sessions: 'cascade',
+  // Dự án 4 (bạn bè/chat/gọi): khách KHÔNG dùng chat (chatEligibility loại khách) nên không có dòng nào cần chuyển;
+  // `users.is_adult` của khách cũng KHÔNG ghi đè tài khoản đích (merge không đụng bảng users ngoài cờ khách).
+  friend_requests: 'cascade',
+  user_blocks: 'cascade',
+  conversation_members: 'cascade',
+  chat_restrictions: 'cascade',
+  push_tokens: 'cascade',
+  call_participants: 'cascade',
+  conversations: 'set_null',
+  chat_messages: 'set_null',
+  chat_attachments: 'set_null',
+  chat_reports: 'set_null',
+  calls: 'set_null'
 } as const;
 export const HANDLED_USER_TABLES = Object.keys(USER_TABLE_RULES);
 

@@ -85,6 +85,13 @@
       "when": 1795625439434,
       "tag": "0011_staff_invite_session_rotation",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1795666349754,
+      "tag": "0012_ban_be",
+      "breakpoints": true
     }
   ]
 }
