@@ -14,7 +14,8 @@ import type { RouteDeps } from '../app.js';
 import { parseOr400, respond } from '../lib/validate.js';
 import { AuditLog } from '../services/audit/audit.js';
 import { requireUserId } from '../pipeline/RequestPipeline.js';
-import { hardDeleteUser, restoreAccount, scheduleDeletion } from '../services/auth/lifecycle.js';
+import { hardDeleteUserTx, restoreAccount, scheduleDeletion } from '../services/auth/lifecycle.js';
+import { purgeUserFeedbackBlobs } from '../services/feedback/purge.js';
 import { applyEvents, dueCards, getPreferences, putPreferences, snapshot, summary } from '../services/learner/repo.js';
 
 /** Mặc định khi người học chưa từng lưu tùy chỉnh (khớp giá trị mặc định của client) */
@@ -33,7 +34,7 @@ const SummaryQuery = z.object({ today: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).o
  * Dữ liệu của CHÍNH người đang đăng nhập (userId lấy từ token, không bao giờ từ request)
  * => không có đường nào đọc/ghi dữ liệu người khác.
  */
-export const meRoutes: FastifyPluginAsync<RouteDeps> = async (server, { db, pipeline, audit }) => {
+export const meRoutes: FastifyPluginAsync<RouteDeps> = async (server, { db, pipeline, audit, blob }) => {
   // GET /v1/srs/due
   server.get('/srs/due', async (req) => {
     const userId = requireUserId(req);
@@ -111,7 +112,8 @@ export const meRoutes: FastifyPluginAsync<RouteDeps> = async (server, { db, pipe
       req.log.info('account deletion scheduled');
       return respond(DeleteMeResultSchema, { deleteAt: deleteAt.toISOString() });
     }
-    await hardDeleteUser(d, userId, now);
+    // Góp ý + tệp đính kèm: lấy khóa tệp TRƯỚC khi xóa user (cascade làm mất khóa), xóa tệp SAU commit; lỗi => blob_deletions
+    await purgeUserFeedbackBlobs(d, blob, userId, (tx) => hardDeleteUserTx(tx, userId, now));
     pipeline.forgetUser(userId);
     // Các dòng audit cũ của user đã tự ẩn danh (FK ON DELETE SET NULL); dòng này cũng KHÔNG gắn user_id
     audit.record('account.deleted', { outcome: 'success', userId: null, ctx: AuditLog.context(req) });

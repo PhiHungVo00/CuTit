@@ -24,6 +24,8 @@ loadDotenv({ path: process.env.BECUTIT_ENV_FILE ?? join(homedir(), '.becutit', '
 const DEFAULT_PGLITE_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', '.data', 'pglite');
 /** apps/gateway/.data/tts: âm thanh dựng sẵn (GĐ2), không commit */
 const DEFAULT_TTS_AUDIO_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', '.data', 'tts');
+/** ~/.becutit/blobs: tệp đính kèm góp ý (dự án 5a), NGOÀI repo */
+const DEFAULT_BLOB_DIR = join(homedir(), '.becutit', 'blobs');
 /** apps/gateway/config/app-versions.json: phiên bản app mới nhất/tối thiểu theo kênh (dự án 8) */
 const DEFAULT_APP_VERSIONS_FILE = join(dirname(fileURLToPath(import.meta.url)), '..', 'config', 'app-versions.json');
 
@@ -154,7 +156,16 @@ const EnvSchema = z
     /** Giới hạn theo IP cho GET /v1/app/version */
     APP_VERSION_RATE_LIMIT_PER_MINUTE: z.coerce.number().int().positive().default(30),
     /** Host (cách nhau bằng dấu phẩy) được phép trong apkFile.url của kênh apk; rỗng = không cho phép apkFile */
-    APK_DOWNLOAD_HOSTS: z.string().default('')
+    APK_DOWNLOAD_HOSTS: z.string().default(''),
+    // ---- Dự án 5a: góp ý/báo lỗi + kho tệp (spec docs/superpowers/specs/2026-11-21-gop-y-bao-loi-design.md §5.3) ----
+    /** Kho tệp đính kèm. `fs` (mặc định, dev/test) hoặc `r2` (làm ở dự án triển khai) */
+    BLOB_PROVIDER: z.enum(['fs', 'r2']).default('fs'),
+    /** Thư mục kho tệp `fs`; mặc định ~/.becutit/blobs (ngoài repo) */
+    BLOB_DIR: z.string().min(1).optional(),
+    /** Trần dung lượng kho tệp (MB). Vượt => 507 storage_full cho yêu cầu CÓ tệp; bản chỉ có chữ vẫn nhận */
+    BLOB_TOTAL_CAP_MB: z.coerce.number().positive().default(8000),
+    /** Giới hạn số lần gửi góp ý theo IP mỗi giờ (cộng 5 góp ý/người/ngày) */
+    FEEDBACK_IP_PER_HOUR: z.coerce.number().int().positive().default(20)
   })
   .transform((env) => ({
     ...env,
@@ -169,6 +180,7 @@ const EnvSchema = z
     AUTH_OTP_PEPPER: env.AUTH_OTP_PEPPER ?? (env.NODE_ENV === 'production' ? undefined : randomBytes(32).toString('hex')),
     PGLITE_DIR: env.PGLITE_DIR ?? (env.NODE_ENV === 'test' ? 'memory://' : DEFAULT_PGLITE_DIR),
     TTS_AUDIO_DIR: env.TTS_AUDIO_DIR ?? DEFAULT_TTS_AUDIO_DIR,
+    BLOB_DIR: env.BLOB_DIR ?? DEFAULT_BLOB_DIR,
     APP_VERSIONS_FILE: env.APP_VERSIONS_FILE ?? DEFAULT_APP_VERSIONS_FILE,
     apkDownloadHosts: env.APK_DOWNLOAD_HOSTS.split(',')
       .map((h) => h.trim().toLowerCase())
