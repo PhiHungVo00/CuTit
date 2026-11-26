@@ -25,7 +25,9 @@ export function EnrollPage({ client, ticket, onDone, onRestart }: { client: Admi
       await fn();
     } catch (err) {
       if (err instanceof AdminRequestError && err.code === 'ticket_invalid') return onRestart(t('errTicket'));
-      setError(errorText(t, err, phase.t === 'invite' ? 'other' : 'totp'));
+      // 403 ở bước mã mời = mã sai/hết hạn (không phải thiếu quyền)
+      if (phase.t === 'invite' && err instanceof AdminRequestError && err.kind === 'forbidden') setError(t('errInvite'));
+      else setError(errorText(t, err, phase.t === 'invite' ? 'other' : 'totp'));
     } finally {
       setBusy(false);
     }

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState, type FormEvent } from 'react';
+import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
 import { Button } from '@vietlearning/ui';
 import type { AdminClient } from '@vietlearning/api-client/admin';
 import { FEEDBACK_LIMITS, type AdminFeedbackDetail, type FeedbackStatus, type StaffRoleValue } from '@vietlearning/contracts/api';
@@ -12,6 +12,9 @@ export function DetailPanel({ client, id, roles, onUpdated }: { client: AdminCli
   const { t } = useI18n();
   const [detail, setDetail] = useState<AdminFeedbackDetail | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // đổi ngôn ngữ không được kích hoạt tải lại chi tiết (và càng không xin lại URL tệp: mỗi lần xin ghi một dòng nhật ký)
+  const tRef = useRef(t);
+  tRef.current = t;
 
   const load = useCallback(() => {
     let live = true;
@@ -19,11 +22,11 @@ export function DetailPanel({ client, id, roles, onUpdated }: { client: AdminCli
     client
       .detail(id)
       .then((d) => live && setDetail(d))
-      .catch((e) => live && setError(errorText(t, e)));
+      .catch((e) => live && setError(errorText(tRef.current, e)));
     return () => {
       live = false;
     };
-  }, [client, id, t]);
+  }, [client, id]);
   useEffect(() => load(), [load]);
 
   if (error)
@@ -107,6 +110,8 @@ function FileView({ client, feedbackId, file, index, allowed }: { client: AdminC
   const { t } = useI18n();
   const [u, setU] = useState<Url>({ s: 'loading' });
   const [nonce, setNonce] = useState(0);
+  const tRef = useRef(t);
+  tRef.current = t;
   const label = file.media === 'image' ? t('fileImage', { n: index }) : t('fileVideo', { n: index });
 
   useEffect(() => {
@@ -116,11 +121,11 @@ function FileView({ client, feedbackId, file, index, allowed }: { client: AdminC
     client
       .fileUrl(feedbackId, file.id)
       .then((r) => live && setU({ s: 'ready', url: r.url }))
-      .catch((e) => live && setU({ s: 'error', message: errorText(t, e) }));
+      .catch((e) => live && setU({ s: 'error', message: errorText(tRef.current, e) }));
     return () => {
       live = false;
     };
-  }, [client, feedbackId, file.id, file.purged, allowed, nonce, t]);
+  }, [client, feedbackId, file.id, file.purged, allowed, nonce]);
 
   if (file.purged) return <p className="muted">{label}: {t('filePurged')}</p>;
   if (!allowed) return <p className="muted">{label}: {t('errForbidden')}</p>;
@@ -137,9 +142,9 @@ function FileView({ client, feedbackId, file, index, allowed }: { client: AdminC
   return (
     <figure className="file">
       {file.media === 'image' ? (
-        <img src={u.url} alt={label} referrerPolicy="no-referrer" loading="lazy" onError={() => setU({ s: 'error', message: t('errGone') })} />
+        <img src={u.url} alt={label} referrerPolicy="no-referrer" loading="lazy" onError={() => setU({ s: 'error', message: t('errFile') })} />
       ) : (
-        <video src={u.url} controls preload="metadata" playsInline onError={() => setU({ s: 'error', message: t('errGone') })} aria-label={label} />
+        <video src={u.url} controls preload="metadata" playsInline onError={() => setU({ s: 'error', message: t('errFile') })} aria-label={label} />
       )}
       <figcaption className="muted small">{label} · {reload}</figcaption>
     </figure>

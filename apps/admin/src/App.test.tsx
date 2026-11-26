@@ -174,6 +174,17 @@ describe('hàng chờ và chi tiết', () => {
     expect(await screen.findByRole('img', { name: 'Ảnh đính kèm 1' })).toBeTruthy();
   });
 
+  it('đổi ngôn ngữ KHÔNG tải lại hàng chờ/chi tiết và không xin lại URL tệp (mỗi lần xin ghi nhật ký)', async () => {
+    const g = setup();
+    fireEvent.click(await screen.findByRole('button', { name: /App bị đứng/ }));
+    await screen.findByRole('img', { name: 'Ảnh đính kèm 1' });
+    const before = g.calls.length;
+    fireEvent.click(screen.getByRole('button', { name: 'English' }));
+    await screen.findByRole('heading', { name: 'Feedback detail' });
+    await new Promise((r) => setTimeout(r, 50));
+    expect(g.calls.length).toBe(before);
+  });
+
   it('lưu trạng thái + lời nhắn: gửi đúng body, danh sách cập nhật', async () => {
     const g = setup();
     fireEvent.click(await screen.findByRole('button', { name: /App bị đứng/ }));

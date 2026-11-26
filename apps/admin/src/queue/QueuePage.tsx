@@ -22,6 +22,9 @@ export function QueuePage({ client, roles }: { client: AdminClient; roles: reado
   const [selected, setSelected] = useState<string | null>(null);
   // Bỏ kết quả của lần tải cũ khi bộ lọc đổi nhanh
   const seq = useRef(0);
+  // `t` đổi khi bấm đổi ngôn ngữ: giữ trong ref để KHÔNG tải lại danh sách (mất các trang đã "Tải thêm")
+  const tRef = useRef(t);
+  tRef.current = t;
 
   const load = useCallback(
     async (after: string | null) => {
@@ -39,12 +42,12 @@ export function QueuePage({ client, roles }: { client: AdminClient; roles: reado
         setCursor(r.nextCursor);
         setPending(r.pendingCount);
       } catch (e) {
-        if (mine === seq.current) setError(errorText(t, e));
+        if (mine === seq.current) setError(errorText(tRef.current, e));
       } finally {
         if (mine === seq.current) setLoading(false);
       }
     },
-    [client, status, kind, t]
+    [client, status, kind]
   );
 
   useEffect(() => {
