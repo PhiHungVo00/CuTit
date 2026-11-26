@@ -168,6 +168,11 @@ const EnvSchema = z
     APP_VERSION_RATE_LIMIT_PER_MINUTE: z.coerce.number().int().positive().default(30),
     /** Host (cách nhau bằng dấu phẩy) được phép trong apkFile.url của kênh apk; rỗng = không cho phép apkFile */
     APK_DOWNLOAD_HOSTS: z.string().default(''),
+    // ---- Dự án 4 (Task 5): WebSocket /ws ----
+    /** Cờ chat/gọi. Mặc định: TẮT ở production, BẬT ở dev/test. Tắt => /ws không đăng ký (404). (Task 4 dùng chung cờ này.) */
+    CHAT_ENABLED: boolFromEnv.optional(),
+    /** Giới hạn bắt tay GET /ws theo IP (số lần nối/phút); sau khi nối còn giới hạn khung/giây theo kết nối */
+    WS_RATE_LIMIT_PER_MINUTE: z.coerce.number().int().positive().default(30),
     // ---- Dự án 5a: trang quản trị /admin/v1 (spec docs/superpowers/specs/2026-11-21-gop-y-bao-loi-design.md mục 5.4) ----
     /** Bật khối /admin/v1. Mặc định: TẮT ở production, BẬT ở dev/test. Tắt => các đường dẫn /admin/v1 trả 404 (không đăng ký) */
     ADMIN_API_ENABLED: boolFromEnv.optional(),
@@ -206,8 +211,6 @@ const EnvSchema = z
     /** Giới hạn số lần gửi góp ý theo IP mỗi giờ (cộng 5 góp ý/người/ngày) */
     FEEDBACK_IP_PER_HOUR: z.coerce.number().int().positive().default(20),
     // ---- Dự án 4: bạn bè (chat, gọi, nhóm) ----
-    /** Cờ bật chat/gọi. Mặc định: TẮT ở production, BẬT ở dev/test. Tắt => mọi route /v1/chat/conversations|messages trả 404 chat_disabled */
-    CHAT_ENABLED: boolFromEnv.optional(),
     /** Trần số yêu cầu/phút/người cho các route chat (cao hơn RATE_LIMIT_PER_MINUTE chung vì tải chat > 60/phút; chống spam thật nằm ở ChatLimiter) */
     CHAT_RATE_LIMIT_PER_MINUTE: z.coerce.number().int().positive().default(600)
   })
