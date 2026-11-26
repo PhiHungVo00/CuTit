@@ -144,3 +144,20 @@ test('Gửi trong 1-1 sau khi hết là bạn / người kia không đủ điề
   // vẫn đọc được lịch sử
   assert.equal((await call(t, a, 'GET', `/v1/chat/conversations/${cid}/messages`)).statusCode, 200);
 });
+
+test('Tin của người đã xóa tài khoản (sender_id NULL, nội dung còn trong DB) KHÔNG lộ nội dung qua danh sách tin lẫn xem trước', async () => {
+  const a = await person(t, 'Xóa A');
+  const b = await person(t, 'Xóa B');
+  const cid = await openDm(t, a, b);
+  await sendHttp(t, a, cid, 'nội dung của người đã xóa');
+  const db = await t.dbp.get();
+  const { eq } = await import('drizzle-orm');
+  await db.update(schema.chatMessages).set({ senderId: null }).where(eq(schema.chatMessages.conversationId, cid));
+  const m = (await msgs(b, cid))[0];
+  assert.equal(m.deleted, true);
+  assert.equal(m.body, undefined);
+  assert.equal(m.sender, undefined);
+  const lb = (await call(t, b, 'GET', '/v1/chat/conversations')).json().conversations.find((c) => c.id === cid);
+  assert.equal(lb.lastMessage.preview, undefined);
+  assert.equal(JSON.stringify([m, lb]).includes('đã xóa'), false);
+});

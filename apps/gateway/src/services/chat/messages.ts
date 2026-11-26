@@ -42,7 +42,9 @@ export function toMessage(r: MessageRow, viewerId: string, blockedSenders: Reado
   const mine = m.senderId === viewerId;
   const base = { id: m.id, cid: m.conversationId, seq: m.seq, kind: m.kind, createdAt: m.createdAt.toISOString(), mine };
   if (m.kind === 'system') return { ...base, system: m.systemEvent as Message['system'] };
-  if (!mine && m.senderId && blockedSenders.has(m.senderId)) return { ...base, blocked: true };
+  // người gửi đã xóa tài khoản (sender_id NULL do FK) nhưng dòng còn nội dung: luôn che, không phụ thuộc job dọn
+  if (!m.senderId) return { ...base, deleted: true };
+  if (!mine && blockedSenders.has(m.senderId)) return { ...base, blocked: true };
   const sender = m.senderId ? { sender: { id: m.senderId, displayName: r.name ?? '' } } : {};
   const content = {
     ...(m.body !== null ? { body: m.body } : {}),

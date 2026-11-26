@@ -128,7 +128,7 @@ async function toViews(db: Db, userId: string, rows: Array<{ conv: ConversationR
   return rows.map(({ conv, m }) => {
     const p = peerOf.get(conv.id);
     const l = lastOf.get(conv.id);
-    const hidePreview = !l || !!l.deletedAt || l.kind !== 'text' || (l.senderId !== null && l.senderId !== userId && blocked.has(l.senderId));
+    const hidePreview = !l || !!l.deletedAt || l.senderId === null || l.kind !== 'text' || (l.senderId !== null && l.senderId !== userId && blocked.has(l.senderId));
     return {
       id: conv.id,
       kind: conv.kind,
