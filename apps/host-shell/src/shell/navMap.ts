@@ -26,6 +26,9 @@ const TAB_BY_SEGMENT: Record<string, TabId> = {
   '/luyen-tap-chung': 'luyen-tap',
   '/ghep-cau': 'luyen-tap',
   '/ban-be': 'ban-be',
+  // Dự án 4: tin nhắn mở từ Hồ sơ (không thêm tab mới); mã mời thuộc tab Bạn bè
+  '/tin-nhan': 'ho-so',
+  '/moi': 'ban-be',
   '/ho-so': 'ho-so',
   '/tien-do': 'ho-so',
   '/cai-dat': 'ho-so',
@@ -40,8 +43,10 @@ export function tabOf(pathname: string): TabId | null {
 }
 
 /** Màn tập trung: ẩn thanh tab và bong bóng (bài học, kiểm tra, màn Cu Tít — đã có nút quay lại) */
-const FOCUS = new Set(['/bai-hoc', '/kiem-tra', '/hoi-thoai', '/nhap-vai', '/goi-thoai', '/camera']);
-export const isFocusRoute = (pathname: string): boolean => FOCUS.has(first(pathname));
+const FOCUS = new Set(['/bai-hoc', '/kiem-tra', '/hoi-thoai', '/nhap-vai', '/goi-thoai', '/camera', '/goi']);
+/** Một cuộc trò chuyện (/tin-nhan/<id>, trừ /tin-nhan/moi) và màn gọi (/goi/<id>) chiếm cả màn: ô soạn tin không bị thanh tab che */
+const CHAT_ROOM = /^\/tin-nhan\/(?!moi\/?$)[^/]+\/?$/;
+export const isFocusRoute = (pathname: string): boolean => FOCUS.has(first(pathname)) || CHAT_ROOM.test(pathname);
 
 /** Các màn của Cu Tít (bong bóng mở) */
 export const CUTIT_MODES = ['/hoi-thoai', '/nhap-vai', '/goi-thoai', '/camera'] as const;

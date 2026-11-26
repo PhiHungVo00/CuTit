@@ -40,6 +40,7 @@
     "@vietlearning/mfe-learner": "workspace:*",
     "@vietlearning/mfe-path": "workspace:*",
     "@vietlearning/mfe-practice": "workspace:*",
+    "@vietlearning/mfe-social": "workspace:*",
     "@vietlearning/mfe-speech-lab": "workspace:*",
     "@vietlearning/mfe-vision": "workspace:*",
     "@vietlearning/native": "workspace:*",

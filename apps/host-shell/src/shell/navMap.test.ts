@@ -24,7 +24,10 @@ describe('tabOf', () => {
     ['/gop-y', 'ho-so'],
     ['/gop-y/cua-toi', 'ho-so'],
     ['/dang-nhap', 'ho-so'],
-    ['/quyen-rieng-tu', 'ho-so']
+    ['/quyen-rieng-tu', 'ho-so'],
+    ['/tin-nhan', 'ho-so'],
+    ['/tin-nhan/moi', 'ho-so'],
+    ['/moi/ABCD2345', 'ban-be']
   ])('%s ⇒ %s', (p, tab) => expect(tabOf(p)).toBe(tab));
 
   it('màn Cu Tít và đường lạ không thuộc tab nào', () => {
@@ -36,10 +39,10 @@ describe('tabOf', () => {
 });
 
 describe('isFocusRoute', () => {
-  it.each(['/bai-hoc/u1l1', '/kiem-tra/u1', '/hoi-thoai', '/nhap-vai', '/goi-thoai', '/camera'])('%s là màn tập trung', (p) =>
+  it.each(['/bai-hoc/u1l1', '/kiem-tra/u1', '/hoi-thoai', '/nhap-vai', '/goi-thoai', '/camera', '/goi/abc', '/tin-nhan/11111111-1111-4111-8111-111111111111'])('%s là màn tập trung', (p) =>
     expect(isFocusRoute(p)).toBe(true)
   );
-  it.each(['/', '/van-hoa', '/xung-ho', '/phat-am', '/ho-so', '/cai-dat/hoc', '/on-tap'])('%s giữ thanh tab', (p) => expect(isFocusRoute(p)).toBe(false));
+  it.each(['/', '/van-hoa', '/xung-ho', '/phat-am', '/ho-so', '/cai-dat/hoc', '/on-tap', '/tin-nhan', '/tin-nhan/moi', '/ban-be/tim', '/moi/ABCD2345'])('%s giữ thanh tab', (p) => expect(isFocusRoute(p)).toBe(false));
 });
 
 describe('đường cũ', () => {
