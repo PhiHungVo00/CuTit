@@ -25,6 +25,8 @@ const CLOSE_GRACE_MS = 2_000;
 /** "đang gõ": chuyển tiếp tối đa 1 khung / khoảng này cho mỗi (kết nối, cuộc trò chuyện) */
 const TYPING_MIN_INTERVAL_MS = 2_000;
 /** Ngân sách truy vấn DB cho khung cần chạm DB (typing): tối đa chừng này lần / cửa sổ mỗi kết nối, vượt thì bỏ khung (không đóng) */
+/** Khung `auth` (verify = truy vấn DB): chỉ nhận khung mới sau chừng này kể từ khung `auth` trước trên cùng kết nối (gia hạn thật chỉ ~15 phút/lần) */
+const AUTH_MIN_INTERVAL_MS = 10_000;
 const DB_FRAME_BUDGET = 10;
 const DB_FRAME_WINDOW_MS = 10_000;
 
@@ -61,6 +63,7 @@ interface Conn {
   rateBucket: number;
   rateCount: number;
   readonly typingAt: Map<string, number>;
+  lastAuthAt: number;
   dbWindowStart: number;
   dbWindowCount: number;
 }
@@ -217,6 +220,7 @@ export class RealtimeHub implements RealtimeBus {
       rateBucket: Math.floor(now / 1000),
       rateCount: 0,
       typingAt: new Map(),
+      lastAuthAt: Number.NEGATIVE_INFINITY,
       dbWindowStart: now,
       dbWindowCount: 0
     };
@@ -278,6 +282,11 @@ export class RealtimeHub implements RealtimeBus {
           this.closeConn(conn, WsClose.policy, 'auth_in_progress');
           return;
         }
+        if (now - conn.lastAuthAt < AUTH_MIN_INTERVAL_MS) {
+          this.closeConn(conn, WsClose.policy, 'auth_too_frequent');
+          return;
+        }
+        conn.lastAuthAt = now;
         await this.onAuth(conn, frame.token);
         return;
       case 'pong':

@@ -193,3 +193,21 @@ test('typing với cid ngẫu nhiên dồn dập: số truy vấn DB bị chặn
   assert.deepEqual(sent, [['u2']]);
   hub.dispose();
 });
+
+test('khung auth dồn dập: chỉ nhận khung đầu, khung kế trong 10 giây bị đóng 1008 (không thêm truy vấn verify)', async () => {
+  const u = await s.user();
+  const c = await s.ready(u.id);
+  c.send({ t: 'auth', token: s.token(u.id) });
+  await sleep(150);
+  assert.equal(c.closed, null, 'khung auth đầu tiên được nhận');
+  c.send({ t: 'auth', token: s.token(u.id) });
+  assert.equal((await c.waitClosed()).code, 1008);
+  // sau 10 giây (đồng hồ giả) gia hạn lại bình thường
+  const d = await s.ready(u.id);
+  d.send({ t: 'auth', token: s.token(u.id) });
+  await sleep(150);
+  s.clock.t += 10_100;
+  d.send({ t: 'auth', token: s.token(u.id) });
+  await sleep(150);
+  assert.equal(d.closed, null);
+});
