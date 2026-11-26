@@ -175,19 +175,28 @@ test('Streak chung: tuần liên tiếp cùng đạt, chỉ tính từ tuần k�
   assert.equal((await list(tom, '2026-10-29')).json().friends[0].quest.streakWeeks, 1);
 });
 
-test('Tối đa 5 bạn mỗi người; vượt giới hạn => friend_limit và mã không bị tiêu', async () => {
+test('Dự án 4: bạn thứ 6 vẫn kết bạn được (mã không bị tiêu) nhưng không có nhiệm vụ tuần; trần 5 áp cho questActive', async () => {
   const lan = await person('Lan');
   for (let i = 0; i < 5; i++) await befriend(await person(`Bạn ${i}`), lan);
   const extra = await person('Thừa');
   const { code } = (await invite(extra)).json();
   const r = await accept(lan, code);
-  assert.equal(r.statusCode, 409);
-  assert.equal(r.json().error, 'friend_limit');
-  const r2 = await accept(await person('Khác'), code);
-  assert.equal(r2.statusCode, 200, 'mã vẫn dùng được cho người khác');
-  // Phía người mời đầy cũng bị chặn
+  assert.equal(r.statusCode, 200, r.body);
+  assert.equal(r.json().questActive, false, 'bạn thứ 6 không có nhiệm vụ tuần');
+  const first = (await list(lan)).json().friends[0];
+  assert.equal(first.questActive, true);
+  assert.equal((await list(lan)).json().friends.length, 6);
+  // Phía người mời đầy cũng chỉ làm cặp mới không có nhiệm vụ, vẫn là bạn
   const { code: lanCode } = (await invite(lan)).json();
-  assert.equal((await accept(await person('Mới'), lanCode)).json().error, 'friend_limit');
+  const fresh = await accept(await person('Mới'), lanCode);
+  assert.equal(fresh.statusCode, 200);
+  assert.equal(fresh.json().questActive, false);
+  // Bật cặp thứ 6 khi đã đủ 5 => friend_limit; tắt một cặp thì bật được
+  const r6 = await call(lan.headers, 'POST', `/v1/friends/${r.json().id}/quest-active`, { questActive: true });
+  assert.equal(r6.statusCode, 409);
+  assert.equal(r6.json().error, 'friend_limit');
+  assert.equal((await call(lan.headers, 'POST', `/v1/friends/${first.id}/quest-active`, { questActive: false })).statusCode, 200);
+  assert.equal((await call(lan.headers, 'POST', `/v1/friends/${r.json().id}/quest-active`, { questActive: true })).json().questActive, true);
 });
 
 test('Hủy kết bạn: cả hai không còn thấy nhau, kết bạn lại được', async () => {

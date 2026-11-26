@@ -47,7 +47,12 @@ const METADATA = {
   // Task 5: ghi trên tài khoản đích, KHÔNG chứa id khách (đề xuất A8)
   'auth.account_merged': z.object({ strategy: z.enum(['merge', 'discard_device']) }),
   'friends.invite_created': z.object({}),
-  'friends.invite_accepted': z.object({ reason: reason.optional() })
+  'friends.invite_accepted': z.object({ reason: reason.optional() }),
+  // Dự án 4 Task 3 — KHÔNG ghi năm sinh, handle, id người kia: chỉ kết quả
+  'age.declared': z.object({}),
+  'friends.request_sent': z.object({}),
+  'friends.request_accepted': z.object({}),
+  'chat.user_blocked': z.object({})
 } as const;
 
 export type AuditEventType = keyof typeof METADATA;

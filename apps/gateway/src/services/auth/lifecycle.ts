@@ -1,3 +1,4 @@
+import { invalidateChatEligibility } from '../social/eligibility.js';
 import { and, eq, gt, isNotNull, isNull, lte } from 'drizzle-orm';
 import { ACCOUNT_DELETE_GRACE_DAYS } from '@vietlearning/contracts/api';
 import { schema, type Db } from '../../db/client.js';
@@ -31,7 +32,7 @@ export const CHALLENGE_PURGE_AFTER_MS = DAY_MS;
  * Gọi lại khi đã chờ xóa => giữ nguyên hạn đầu (không gia hạn). Trả hạn xóa cứng, hoặc null nếu không có user.
  */
 export async function scheduleDeletion(db: Db, userId: string, now: Date): Promise<Date | null> {
-  return db.transaction(async (tx) => {
+  const result = await db.transaction(async (tx) => {
     const [u] = await tx.select({ deleteAt: users.deleteAt }).from(users).where(eq(users.id, userId)).for('update');
     if (!u) return null;
     const deleteAt = u.deleteAt ?? new Date(now.getTime() + GRACE_MS);
@@ -42,6 +43,8 @@ export async function scheduleDeletion(db: Db, userId: string, now: Date): Promi
     await tx.delete(friendInvites).where(eq(friendInvites.userId, userId));
     return deleteAt;
   });
+  invalidateChatEligibility(userId); // chờ xóa => đóng cổng chat NGAY (không chờ hết cache 60 giây)
+  return result;
 }
 
 /** Còn trong hạn khôi phục? => {deleteAt} (ISO) để đăng nhập trả `restorable`; null nếu đang hoạt động hoặc đã quá hạn. */
@@ -68,6 +71,7 @@ export async function restoreAccount(db: Db, userId: string, now: Date): Promise
     .set({ deleteAt: null })
     .where(and(eq(users.id, userId), gt(users.deleteAt, now)))
     .returning({ id: users.id });
+  invalidateChatEligibility(userId);
   return res.length > 0;
 }
 
@@ -107,7 +111,9 @@ export async function hardDeleteUserTx(tx: Tx, userId: string, now: Date): Promi
 
 /** Xóa cứng ngay (mode 'now'). */
 export async function hardDeleteUser(db: Db, userId: string, now: Date): Promise<boolean> {
-  return db.transaction((tx) => hardDeleteUserTx(tx, userId, now));
+  const ok = await db.transaction((tx) => hardDeleteUserTx(tx, userId, now));
+  invalidateChatEligibility(userId);
+  return ok;
 }
 
 /** Dọn bia mộ + tên giữ chỗ hết hạn (theo expires_at / until, KHÔNG theo deleted_at; expires_at null = giữ mãi). */
@@ -136,6 +142,7 @@ export async function purgeExpiredAccounts(db: Db, now: Date, onError?: (err: un
         const k = blob ? await stageUserBlobDeletions(tx, id) : [];
         return { ok: await hardDeleteUserTx(tx, id, now), keys: k };
       });
+      invalidateChatEligibility(id);
       if (ok) n++;
       if (ok && blob) await drainBlobDeletions(db, blob, keys);
     } catch (err) {

@@ -39,11 +39,13 @@ import { redactSignedUrl } from './lib/logRedact.js';
 import { AdminAlerts } from './services/admin/alerts.js';
 import { purgeAdminData } from './services/admin/purge.js';
 import { feedbackRoutes } from './routes/feedback.js';
+import { meAgeRoutes } from './routes/meAge.js';
 import { createBlobStore } from './services/blob/index.js';
 import type { BlobStore } from './services/blob/BlobStore.js';
 import { startFeedbackPurgeJob } from './jobs/feedbackPurge.js';
 import { chatSocialRoutes } from './routes/chatSocial.js';
-import { defaultChatEligibility, type ChatEligibilityFn } from './services/chat/eligibility.js';
+import type { ChatEligibilityFn } from './services/chat/eligibility.js';
+import { chatEligibility } from './services/social/eligibility.js';
 import { createChatLimiter, type ChatLimiter } from './services/chat/limits.js';
 import websocket from '@fastify/websocket';
 import type { RealtimeBus } from './services/realtime/RealtimeBus.js';
@@ -114,7 +116,8 @@ export interface RouteDeps {
 }
 
 export interface BuildOptions {
-  logger?: boolean;
+  /** Test tiêm luồng ghi log để quét nội dung log (dự án 4: năm sinh không được lọt vào log) */
+  logger?: boolean | { level: string; stream: NodeJS.WritableStream };
   quotaStore?: QuotaStore;
   /** Test tiêm kho trần toàn cục; bỏ trống = DB */
   globalQuotaStore?: GlobalQuotaStore;
@@ -137,7 +140,7 @@ export interface BuildOptions {
   identity?: IdentityProvider | null;
   /** Test tiêm kho tệp giả (vd. kho ném lỗi khi xóa); bỏ trống = theo BLOB_PROVIDER/BLOB_DIR */
   blob?: BlobStore;
-  /** Dự án 4: cổng điều kiện chat. Bỏ trống = bản giả tạm (Task 3 thay bằng `chatEligibility`); test tiêm cổng giả */
+  /** Dự án 4: cổng điều kiện chat. Bỏ trống = `chatEligibility` thật của Task 3; test tiêm cổng giả */
   chatEligibility?: ChatEligibilityFn;
   /** Dự án 4: bộ đếm giới hạn tốc độ chat; test tiêm để kiểm đồng hồ */
   chatLimiter?: ChatLimiter;
@@ -154,6 +157,8 @@ export async function buildApp(config: GatewayConfig, opts: BuildOptions = {}): 
       opts.logger === false
         ? false
         : {
+            // Test (dự án 4) tiêm luồng ghi log để quét nội dung log; mặc định ghi ra stdout như trước
+            ...(typeof opts.logger === 'object' ? { level: opts.logger.level, stream: opts.logger.stream } : {}),
             serializers: {
               req: (req: { method?: string; url?: string; host?: string; ip?: string; socket?: { remotePort?: number } }) => ({
                 method: req.method,
@@ -353,7 +358,8 @@ export async function buildApp(config: GatewayConfig, opts: BuildOptions = {}): 
       await v1.register(identityRoutes, deps);
       await v1.register(authMeRoutes, deps);
       await v1.register(feedbackRoutes, deps);
-      await v1.register(chatSocialRoutes, { ...deps, eligibility: opts.chatEligibility ?? defaultChatEligibility(config.NODE_ENV), limiter: opts.chatLimiter ?? createChatLimiter() });
+      await v1.register(chatSocialRoutes, { ...deps, eligibility: opts.chatEligibility ?? chatEligibility, limiter: opts.chatLimiter ?? createChatLimiter() });
+      await v1.register(meAgeRoutes, deps);
     },
     { prefix: '/v1' }
   );

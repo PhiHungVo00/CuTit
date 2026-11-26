@@ -14,6 +14,7 @@ import {
 } from '@vietlearning/contracts/api';
 import { schema, type Db } from '../../db/client.js';
 import { GatewayError } from '../../pipeline/RequestPipeline.js';
+import { isBlockedEitherWay, lockUsers } from './blocks.js';
 
 /**
  * GĐ4c — bạn học HỢP TÁC. Mọi hàm nhận userId của principal đã xác thực; bạn bè chỉ đọc được tên hiển thị +
@@ -72,12 +73,32 @@ export async function createInvite(db: Db, userId: string, now = new Date()): Pr
 
 const pair = (x: string, y: string): [string, string] => (x < y ? [x, y] : [y, x]);
 
-async function friendCount(tx: Tx, userId: string): Promise<number> {
-  const [{ n }] = await tx
-    .select({ n: sql<number>`count(*)::int` })
+/**
+ * Dự án 4: MAX_FRIENDS = 5 là giới hạn của NHIỆM VỤ TUẦN CHUNG (cặp có `quest_active`), không còn là giới hạn của việc
+ * "là bạn" (nhắn tin). `excludeId` = bỏ một quan hệ khỏi phép đếm (khi bật lại chính nó).
+ */
+async function activeQuestCount(tx: Tx, userId: string, excludeId?: string): Promise<number> {
+  const rows = await tx
+    .select({ id: friendships.id })
     .from(friendships)
-    .where(or(eq(friendships.userA, userId), eq(friendships.userB, userId)));
-  return n;
+    .where(and(or(eq(friendships.userA, userId), eq(friendships.userB, userId)), eq(friendships.questActive, true)));
+  return rows.filter((r) => r.id !== excludeId).length;
+}
+
+/**
+ * Tạo quan hệ bạn bè (gọi SAU `lockUsers`). Cặp đã là bạn => trả quan hệ cũ (`created:false`).
+ * `quest_active` = cả hai bên còn chỗ trong 5 nhiệm vụ tuần; bạn thứ 6+ vẫn là bạn nhưng không có nhiệm vụ.
+ */
+export async function createFriendship(tx: Tx, x: string, y: string, now: Date): Promise<{ id: string; created: boolean }> {
+  const [a, b] = pair(x, y);
+  const [existing] = await tx.select({ id: friendships.id }).from(friendships).where(and(eq(friendships.userA, a), eq(friendships.userB, b)));
+  if (existing) return { id: existing.id, created: false };
+  const questActive = (await activeQuestCount(tx, x)) < MAX_FRIENDS && (await activeQuestCount(tx, y)) < MAX_FRIENDS;
+  const [f] = await tx
+    .insert(friendships)
+    .values({ userA: a, userB: b, goalMinutes: DEFAULT_QUEST_GOAL, createdAt: now, questActive })
+    .returning({ id: friendships.id });
+  return { id: f.id, created: true };
 }
 
 /**
@@ -93,17 +114,13 @@ export async function acceptInvite(db: Db, userId: string, code: string, today: 
       .returning({ inviter: friendInvites.userId });
     if (!inv) throw new GatewayError(404, FriendErrorCode.inviteInvalid, 'Mã mời không đúng hoặc đã hết hạn');
     if (inv.inviter === userId) throw new GatewayError(400, FriendErrorCode.selfInvite, 'Đây là mã của chính bạn');
-    const [a, b] = pair(userId, inv.inviter);
-    // Khóa hai hàng user theo thứ tự id (chống deadlock) trước khi đếm: hai lượt nhập mã đồng thời chạm cùng một người
-    // phải chờ nhau, lượt sau đếm lại thấy bạn mới của lượt trước (READ COMMITTED) => không vượt MAX_FRIENDS.
-    // NO KEY UPDATE: vẫn tự loại trừ nhau nhưng không chặn insert có khóa ngoại tới users (sync, daily_activity…).
-    await tx.select({ id: users.id }).from(users).where(inArray(users.id, [a, b])).orderBy(users.id).for('no key update');
-    const [existing] = await tx.select({ id: friendships.id }).from(friendships).where(and(eq(friendships.userA, a), eq(friendships.userB, b)));
-    if (existing) throw new GatewayError(409, FriendErrorCode.alreadyFriends, 'Hai bạn đã là bạn học');
-    if ((await friendCount(tx, userId)) >= MAX_FRIENDS || (await friendCount(tx, inv.inviter)) >= MAX_FRIENDS) {
-      throw new GatewayError(409, FriendErrorCode.friendLimit, `Mỗi người tối đa ${MAX_FRIENDS} bạn học`);
-    }
-    const [f] = await tx.insert(friendships).values({ userA: a, userB: b, goalMinutes: DEFAULT_QUEST_GOAL, createdAt: now }).returning({ id: friendships.id });
+    // Khóa hai hàng user theo thứ tự id trước khi đếm/tạo: hai lượt đồng thời chạm cùng một người xếp hàng nhau
+    // (chặn và kết bạn cũng dùng chung khóa này => không còn cặp bạn bè đã bị chặn).
+    await lockUsers(tx, userId, inv.inviter);
+    // Đang chặn nhau: cùng lỗi `invite_invalid` (không lộ ai đã chặn ai), mã còn nguyên vì rollback
+    if (await isBlockedEitherWay(tx, userId, inv.inviter)) throw new GatewayError(404, FriendErrorCode.inviteInvalid, 'Mã mời không đúng hoặc đã hết hạn');
+    const f = await createFriendship(tx, userId, inv.inviter, now);
+    if (!f.created) throw new GatewayError(409, FriendErrorCode.alreadyFriends, 'Hai bạn đã là bạn học');
     return f.id;
   });
   return (await friendQuest(db, userId, friendshipId, today))!;
@@ -148,6 +165,7 @@ async function questFor(db: Db, userId: string, f: FriendshipRow, today: string)
   const totalMinutes = total(weekStart);
   return {
     id: f.id,
+    questActive: f.questActive,
     displayName: friendName ?? '—',
     since: f.createdAt.toISOString(),
     quest: {
@@ -209,4 +227,21 @@ export async function setGoal(db: Db, userId: string, friendshipId: string, goal
 export async function removeFriend(db: Db, userId: string, friendshipId: string): Promise<void> {
   const del = await db.delete(friendships).where(and(eq(friendships.id, friendshipId), mine(userId))).returning({ id: friendships.id });
   if (!del.length) throw new GatewayError(404, FriendErrorCode.friendNotFound, 'Không tìm thấy bạn học');
+}
+
+/** Bật/tắt nhiệm vụ tuần của một cặp. Bật khi một trong hai bên đã đủ 5 nhiệm vụ => `friend_limit`. */
+export async function setQuestActive(db: Db, userId: string, friendshipId: string, active: boolean, today: string): Promise<FriendQuest> {
+  const f = await db.transaction(async (tx) => {
+    const [cur] = await tx.select().from(friendships).where(and(eq(friendships.id, friendshipId), mine(userId)));
+    if (!cur) throw new GatewayError(404, FriendErrorCode.friendNotFound, 'Không tìm thấy bạn học');
+    await lockUsers(tx, cur.userA, cur.userB);
+    if (active && !cur.questActive) {
+      if ((await activeQuestCount(tx, cur.userA, cur.id)) >= MAX_FRIENDS || (await activeQuestCount(tx, cur.userB, cur.id)) >= MAX_FRIENDS) {
+        throw new GatewayError(409, FriendErrorCode.friendLimit, `Mỗi người tối đa ${MAX_FRIENDS} nhiệm vụ tuần cùng lúc`);
+      }
+    }
+    const [upd] = await tx.update(friendships).set({ questActive: active }).where(eq(friendships.id, cur.id)).returning();
+    return upd;
+  });
+  return questFor(db, userId, f, today);
 }

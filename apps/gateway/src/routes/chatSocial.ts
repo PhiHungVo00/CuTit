@@ -19,7 +19,7 @@ import { parseOr400, respond } from '../lib/validate.js';
 import { GatewayError, requireUserId } from '../pipeline/RequestPipeline.js';
 import type { RealtimeBus } from '../services/realtime/RealtimeBus.js';
 import { getOrCreateDm, getConversation, hideConversation, listConversations, muteConversation, unhideConversation, unreadSummary } from '../services/chat/conversations.js';
-import { assertEligible, type ChatEligibilityFn } from '../services/chat/eligibility.js';
+import { assertEligible, closedChatEligibility, type ChatEligibilityFn } from '../services/chat/eligibility.js';
 import type { ChatLimiter } from '../services/chat/limits.js';
 import { listMessages, sendMessage } from '../services/chat/messages.js';
 import { markRead } from '../services/chat/reads.js';
@@ -28,7 +28,7 @@ import { recallMessage, restoreMessage } from '../services/chat/recall.js';
 export interface ChatSocialDeps extends RouteDeps {
   bus: RealtimeBus;
   /** Cổng điều kiện chat (Task 3 `chatEligibility`; tạm là bản giả — xem services/chat/eligibility.ts) */
-  eligibility: ChatEligibilityFn;
+  eligibility?: ChatEligibilityFn;
   limiter: ChatLimiter;
 }
 
@@ -50,7 +50,9 @@ const MessagesQuery = z
  * chạy TRƯỚC khi đọc body/tham số nên người không đủ điều kiện không chạm được tới DB chat.
  * userId của tin gửi: tin chỉ dựng từ id trong token (không có trường "người gửi" nào nhận từ client).
  */
-export const chatSocialRoutes: FastifyPluginAsync<ChatSocialDeps> = async (server, { db, config, bus, eligibility, limiter, clock }) => {
+export const chatSocialRoutes: FastifyPluginAsync<ChatSocialDeps> = async (server, { db, config, bus, eligibility: gate, limiter, clock }) => {
+  // không có cổng => ĐÓNG (không bao giờ mở ngầm)
+  const eligibility = gate ?? closedChatEligibility;
   const perRoute = { config: { rateLimit: { max: config.CHAT_RATE_LIMIT_PER_MINUTE, timeWindow: '1 minute' } } };
 
   server.addHook('preHandler', async (req: FastifyRequest) => {

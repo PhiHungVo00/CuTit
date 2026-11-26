@@ -68,7 +68,7 @@ test('Cổng điều kiện: mỗi lý do ra đúng mã, và KHÔNG ghi gì vào
   await sendHttp(t, b, cid, 'xin chào');
   const snapshot = await dbCounts(t);
   const expected = {
-    guest: 'adult_required',
+    guest: 'forbidden',
     minor: 'adult_required',
     age_unknown: 'age_required',
     no_handle: 'handle_required',
@@ -78,7 +78,7 @@ test('Cổng điều kiện: mỗi lý do ra đúng mã, và KHÔNG ghi gì vào
   for (const [reason, code] of Object.entries(expected)) {
     t.gate.set(a.userId, reason);
     const send = await sendHttp(t, a, cid, 'không được gửi');
-    assert.equal(send.statusCode, 403, reason);
+    assert.equal(send.statusCode, reason === 'no_handle' ? 409 : 403, reason);
     assert.equal(send.json().error, code, reason);
     assert.equal((await call(t, a, 'POST', `/v1/chat/conversations/${cid}/read`, { seq: 1 })).json().error, code);
     assert.equal((await call(t, a, 'GET', `/v1/chat/conversations/${cid}/messages`)).json().error, code);
@@ -356,10 +356,8 @@ test('Cursor hỏng (id không phải uuid, ngày không hợp lệ/ngoài kho�
   }
 });
 
-test('Cổng mặc định ngoài test là ĐÓNG; chỉ NODE_ENV=test dùng bản giả', async () => {
-  const { defaultChatEligibility, closedChatEligibility, stubChatEligibility } = await import('../dist/services/chat/eligibility.js');
-  for (const env of ['production', 'development', undefined]) assert.equal(defaultChatEligibility(env), closedChatEligibility, String(env));
-  assert.equal(defaultChatEligibility('test'), stubChatEligibility);
+test('Cổng ĐÓNG khi route chat được dựng mà không có cổng nào', async () => {
+  const { closedChatEligibility } = await import('../dist/services/chat/eligibility.js');
   assert.deepEqual(await closedChatEligibility(null, 'x'), { ok: false, reason: 'age_unknown' });
 });
 
