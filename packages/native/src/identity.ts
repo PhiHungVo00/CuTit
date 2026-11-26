@@ -48,7 +48,7 @@ async function nativeIdToken(clientId: string, nonce: string): Promise<string> {
     const { SocialLogin } = await import('@capgo/capacitor-social-login');
     nativeReady ??= SocialLogin.initialize({ google: { webClientId: clientId } });
     await nativeReady;
-    const res = await SocialLogin.login({ provider: 'google', options: { nonce, scopes: ['openid', 'email', 'profile'] } });
+    const res = await SocialLogin.login({ provider: 'google', options: { nonce } });
     const r = res.result;
     if (r.responseType !== 'online' || !r.idToken) throw new IdentityError('failed', 'Google không trả ID token');
     return r.idToken;
