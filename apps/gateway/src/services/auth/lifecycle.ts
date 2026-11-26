@@ -1,6 +1,8 @@
 import { and, eq, gt, isNotNull, isNull, lte } from 'drizzle-orm';
 import { ACCOUNT_DELETE_GRACE_DAYS } from '@vietlearning/contracts/api';
 import { schema, type Db } from '../../db/client.js';
+import type { BlobStore } from '../blob/BlobStore.js';
+import { drainBlobDeletions, stageUserBlobDeletions } from '../feedback/purge.js';
 
 /**
  * Vòng đời tài khoản (dự án 3, Task 4): xóa mềm 30 ngày, khôi phục, xóa cứng + bia mộ, thu hồi token.
@@ -119,18 +121,21 @@ export async function purgeExpiredTombstones(db: Db, now: Date): Promise<void> {
  * (một tài khoản lỗi không chặn các tài khoản khác), rồi dọn bia mộ/tên giữ chỗ hết hạn. Trả số tài khoản đã xóa.
  * Idempotent: chạy lại hoặc chạy trên nhiều instance cùng lúc đều an toàn (hàng bị khóa `for update`, đã xóa thì bỏ qua).
  */
-export async function purgeExpiredAccounts(db: Db, now: Date, onError?: (err: unknown, userId: string) => void): Promise<number> {
+export async function purgeExpiredAccounts(db: Db, now: Date, onError?: (err: unknown, userId: string) => void, blob?: BlobStore): Promise<number> {
   const due = await db.select({ id: users.id }).from(users).where(and(isNotNull(users.deleteAt), lte(users.deleteAt, now)));
   let n = 0;
   for (const { id } of due) {
     try {
-      const ok = await db.transaction(async (tx) => {
+      const { ok, keys } = await db.transaction(async (tx) => {
         // Kiểm lại trong transaction: có thể vừa được khôi phục hoặc đã bị xóa bởi instance khác
         const [u] = await tx.select({ deleteAt: users.deleteAt }).from(users).where(eq(users.id, id)).for('update');
-        if (!u?.deleteAt || u.deleteAt.getTime() > now.getTime()) return false;
-        return hardDeleteUserTx(tx, id, now);
+        if (!u?.deleteAt || u.deleteAt.getTime() > now.getTime()) return { ok: false, keys: [] as string[] };
+        // Dự án 5a: ghi khóa tệp góp ý vào hàng xóa TRƯỚC khi xóa user (cascade làm mất khóa); tệp xóa sau commit
+        const k = blob ? await stageUserBlobDeletions(tx, id) : [];
+        return { ok: await hardDeleteUserTx(tx, id, now), keys: k };
       });
       if (ok) n++;
+      if (ok && blob) await drainBlobDeletions(db, blob, keys);
     } catch (err) {
       onError?.(err, id);
     }
