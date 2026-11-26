@@ -37,6 +37,10 @@ import { AuditLog, purgeAuditEvents } from './services/audit/audit.js';
 import { adminRoutes } from './routes/admin/index.js';
 import { AdminAlerts } from './services/admin/alerts.js';
 import { purgeAdminData } from './services/admin/purge.js';
+import { feedbackRoutes } from './routes/feedback.js';
+import { createBlobStore } from './services/blob/index.js';
+import type { BlobStore } from './services/blob/BlobStore.js';
+import { startFeedbackPurgeJob } from './jobs/feedbackPurge.js';
 
 /** Dọn audit_events quá hạn: mỗi ngày một lần, lần đầu sau 1 phút (không mở DB lúc khởi động/test) */
 const AUDIT_PURGE_FIRST_MS = 60_000;
@@ -91,6 +95,8 @@ export interface RouteDeps {
   mail: MailProvider;
   /** Đồng hồ cho hạn mã OTP / cửa sổ giới hạn đăng nhập (test tiêm) */
   clock: Clock;
+  /** Dự án 5a: kho tệp đính kèm góp ý (BLOB_PROVIDER) */
+  blob: BlobStore;
 }
 
 export interface BuildOptions {
@@ -115,6 +121,8 @@ export interface BuildOptions {
   db?: DbProvider;
   /** Test tiêm bộ kiểm token giả (khóa cục bộ); null = chưa cấu hình; bỏ trống = theo env GOOGLE_WEB_CLIENT_ID */
   identity?: IdentityProvider | null;
+  /** Test tiêm kho tệp giả (vd. kho ném lỗi khi xóa); bỏ trống = theo BLOB_PROVIDER/BLOB_DIR */
+  blob?: BlobStore;
 }
 
 export async function buildApp(config: GatewayConfig, opts: BuildOptions = {}): Promise<FastifyInstance> {
@@ -159,6 +167,8 @@ export async function buildApp(config: GatewayConfig, opts: BuildOptions = {}): 
   // Dự án 5a: cảnh báo email + việc nền của khối quản trị (chỉ dựng khi bật)
   const adminAlerts = config.ADMIN_API_ENABLED ? new AdminAlerts(db, mail, config, clock, app.log) : undefined;
   if (adminAlerts) app.decorate('adminAlerts', adminAlerts);
+  const blob = opts.blob ?? createBlobStore(config);
+  const stopFeedbackPurge = startFeedbackPurgeJob({ db, blob, log: app.log, enabled: config.NODE_ENV !== 'test', now: opts.clock });
 
   const purge = () =>
     db
@@ -181,7 +191,7 @@ export async function buildApp(config: GatewayConfig, opts: BuildOptions = {}): 
   const purgeAccounts = () =>
     db
       .get()
-      .then((d) => purgeExpiredAccounts(d, (opts.clock ?? (() => new Date()))(), (err) => app.log.error({ err }, 'account purge failed for one user')))
+      .then((d) => purgeExpiredAccounts(d, (opts.clock ?? (() => new Date()))(), (err) => app.log.error({ err }, 'account purge failed for one user'), blob))
       .then((n) => n && app.log.info({ deleted: n }, 'expired accounts purged'))
       .catch((err: unknown) => app.log.warn({ err }, 'account purge failed'));
   let accountTimer: NodeJS.Timeout | undefined = setTimeout(() => {
@@ -198,6 +208,7 @@ export async function buildApp(config: GatewayConfig, opts: BuildOptions = {}): 
     clearInterval(accountTimer);
     accountTimer = undefined;
     await adminAlerts?.flush();
+    stopFeedbackPurge();
     await audit.flush();
     if (!opts.db) await db.close();
   });
@@ -212,7 +223,7 @@ export async function buildApp(config: GatewayConfig, opts: BuildOptions = {}): 
   const tts = opts.tts !== undefined ? opts.tts : createTtsProvider(config);
   const audioStore = new FileAudioStore(config.TTS_AUDIO_DIR);
   const ttsCache = opts.ttsCache ?? new TTSCacheProxy(fileSynthesizer(audioStore, tts), Boolean(tts));
-  const deps: RouteDeps = { pipeline, ttsCache, config, llm, vision, stt, tts, tutor: createTutor(llm, app.log, vision), db, audit, mail, clock };
+  const deps: RouteDeps = { pipeline, ttsCache, config, llm, vision, stt, tts, tutor: createTutor(llm, app.log, vision), db, audit, mail, clock, blob };
   deps.identity = opts.identity !== undefined ? opts.identity : createIdentityProviderFromEnv();
   app.log.info({ llm: llm?.name ?? 'mock', vision: vision?.name ?? 'mock', stt: stt?.name ?? 'mock' }, 'AI providers');
 
@@ -295,6 +306,7 @@ export async function buildApp(config: GatewayConfig, opts: BuildOptions = {}): 
       await v1.register(friendsRoutes, deps);
       await v1.register(identityRoutes, deps);
       await v1.register(authMeRoutes, deps);
+      await v1.register(feedbackRoutes, deps);
     },
     { prefix: '/v1' }
   );
