@@ -32,3 +32,19 @@
 - Nhật ký quản trị `admin_audit_log` chỉ thêm (trigger ở DB), giữ 2 năm rồi `admin_audit_purge` xóa. Hành động: `auth.login`, `auth.totp_enrolled`, `auth.failed`, `role.grant`, `role.revoke`, `totp.reset` (Task 5 thêm `feedback.*`).
 - Cảnh báo email (nếu `MAIL_PROVIDER` bật và tài khoản có email đã xác minh): đăng nhập quản trị thành công, sai mã 6 số quá 5 lần, được cấp vai trò. `MAIL_PROVIDER=none` thì bỏ qua, đăng nhập vẫn chạy.
 - Triển khai thật (Postgres): vai trò DB của Gateway phải là chủ bảng (xem migration `0010`). `ADMIN_API_ENABLED` mặc định **tắt** ở production, bật có chủ đích.
+
+## 4. Chạy trang quản trị web trên máy (Task 6)
+
+Trang `apps/admin` chỉ chạy **localhost** (chưa triển khai production). Nó là ứng dụng riêng, không nằm trong app học.
+
+1. Gateway đã bật khối quản trị (mục 1) và `ADMIN_ORIGIN` **trùng nguồn của trang** (mặc định `http://localhost:5180`). Muốn kèm xem ảnh/video của góp ý thì đặt thêm `ADMIN_BLOB_URL_SECRET` (≥ 32 ký tự, khác các khóa khác).
+2. Chạy trang: `corepack pnpm --filter @vietlearning/admin dev` (cổng 5180; đổi bằng `ADMIN_PORT`, nhớ đổi `ADMIN_ORIGIN` của Gateway cho khớp). Mở `http://localhost:5180`.
+3. Gốc Gateway chọn **lúc build** bằng `VITE_GATEWAY_URL` (mặc định `http://localhost:4000`, không phải bí mật). Bản build thử: `VITE_GATEWAY_URL=http://localhost:4000 corepack pnpm --filter @vietlearning/admin build` rồi `... preview`.
+4. Lần đầu: nhập tên + mật khẩu → trang hỏi **MÃ MỜI** (mục 1.5) → quét QR hoặc gõ chuỗi bí mật vào ứng dụng xác thực → nhập mã 6 số → chép 10 mã dự phòng → bấm "Tôi đã lưu". Những lần sau: mật khẩu → mã 6 số (hoặc mã dự phòng).
+
+Điều cần biết:
+- Token truy cập (10 phút) chỉ nằm trong bộ nhớ của tab; phiên dài hơn do cookie HttpOnly của Gateway giữ. Tải lại trang không hỏi lại mã; đóng tab rồi mở lại trong thời hạn phiên cũng vậy. Không có gì trong localStorage/sessionStorage.
+- Trang có CSP chặt (bản build: thẻ `<meta>`; `preview`: thêm header): script chỉ từ chính trang; kết nối, ảnh, video chỉ tới Gateway. Bản `dev` không áp CSP (HMR cần script nội tuyến).
+- Ảnh/video góp ý hiện bằng `<img>`/`<video controls>` lấy thẳng từ URL ký (sống 5 phút). Hết hạn thì bấm "Tải lại tệp". Trang không bao giờ nhúng nội dung người dùng như tài liệu và không render HTML do người dùng viết.
+- Vai trò: ẩn/khóa nút theo vai trò (chỉ owner/editor đổi trạng thái; chỉ owner xem nhật ký), nhưng quyền thật do Gateway kiểm mỗi request (hiện Gateway chỉ cho `owner`; vai trò khác nhận 403 và trang báo "không có quyền").
+- Chạy thử đầy đủ (Gateway thật PGlite tạm + trình duyệt): `corepack pnpm --filter @vietlearning/gateway... build` rồi `corepack pnpm --filter @vietlearning/admin e2e` (cổng `E2E_ADMIN_PORT`/`E2E_GATEWAY_PORT`; ảnh chụp ra thư mục `E2E_SHOTS` nếu đặt). Bộ e2e tự sinh khóa ngẫu nhiên và tài khoản thử, rồi xóa thư mục tạm.
