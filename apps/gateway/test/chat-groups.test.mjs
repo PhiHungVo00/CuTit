@@ -259,7 +259,7 @@ test('Tin hệ thống đủ cho mọi thay đổi, KHÔNG chứa chữ tiếng 
   await kick(owner, cid, ms[0]);
   await call(t, ms[1], 'POST', `${GP}/${cid}/leave`);
   const db = await t.dbp.get();
-  const rows = await db.select().from(schema.chatMessages).where(eq(schema.chatMessages.conversationId, cid));
+  const rows = (await db.select().from(schema.chatMessages).where(eq(schema.chatMessages.conversationId, cid))).sort((a, b) => a.seq - b.seq);
   assert.deepEqual(rows.map((r) => r.systemEvent.type), ['group_created', 'member_added', 'title_changed', 'member_removed', 'member_left']);
   for (const r of rows) {
     assert.equal(r.kind, 'system');
@@ -556,4 +556,119 @@ test('Đua: người bị xóa gửi tin cùng lúc → tin (nếu nhận) có s
     const removedSeq = rows.find((r) => r.systemEvent?.type === 'member_removed').seq;
     assert.ok(rows.filter((r) => r.senderId === ms[0].userId).every((r) => r.seq < removedSeq));
   }
+});
+
+// ───────── vá theo rà kien-truc PR #63 ─────────
+const pin = async (cid, pinned, key = `chat/${cid}/${randomUUID()}.webp`) => {
+  const db = await t.dbp.get();
+  await db.insert(schema.chatAttachments).values({ conversationId: cid, blobKey: key, media: 'image', contentType: 'image/webp', bytes: 100, pinnedByReport: pinned });
+  return key;
+};
+
+test('Xóa nhóm / người cuối rời: tệp ghim làm bằng chứng báo cáo KHÔNG bị xóa; tệp thường vào hàng dọn blob_deletions', async () => {
+  const db = await t.dbp.get();
+  // giải tán có tệp ghim → giữ nguyên tệp (và tin), nhóm biến mất với mọi thành viên
+  const g = await group('pn1', 2);
+  const pinned = await pin(g.cid, true);
+  await sendHttp(t, g.owner, g.cid, 'bằng chứng');
+  assert.equal((await call(t, g.owner, 'DELETE', `${GP}/${g.cid}`)).statusCode, 204);
+  assert.equal((await db.select().from(schema.chatAttachments).where(eq(schema.chatAttachments.blobKey, pinned))).length, 1, 'tệp ghim còn');
+  assert.ok((await db.select().from(schema.chatMessages).where(eq(schema.chatMessages.conversationId, g.cid))).length >= 1, 'tin còn');
+  for (const u of [g.owner, ...g.ms]) {
+    assert.equal((await call(t, u, 'GET', `/v1/chat/conversations/${g.cid}`)).statusCode, 403);
+    assert.equal((await call(t, u, 'GET', '/v1/chat/conversations')).json().conversations.filter((c) => c.id === g.cid).length, 0);
+  }
+  assert.equal((await call(t, g.owner, 'POST', `${GP}/${g.cid}/leave`)).statusCode, 403, 'nhóm đã giải tán không thao tác tiếp được');
+  // người cuối rời, có tệp ghim → giữ
+  const h = await group('pn2', 1);
+  const pinned2 = await pin(h.cid, true);
+  await call(t, h.ms[0], 'POST', `${GP}/${h.cid}/leave`);
+  await call(t, h.owner, 'POST', `${GP}/${h.cid}/leave`);
+  assert.equal((await db.select().from(schema.chatAttachments).where(eq(schema.chatAttachments.blobKey, pinned2))).length, 1);
+  // không ghim → xóa hẳn và khóa tệp vào hàng dọn
+  const k = await group('pn3', 1);
+  const key = await pin(k.cid, false);
+  assert.equal((await call(t, k.owner, 'DELETE', `${GP}/${k.cid}`)).statusCode, 204);
+  assert.equal((await db.select().from(schema.conversations).where(eq(schema.conversations.id, k.cid))).length, 0);
+  assert.equal((await db.select().from(schema.blobDeletions).where(eq(schema.blobDeletions.blobKey, key))).length, 1, 'tệp không bị mồ côi');
+});
+
+test('Thêm/tạo nhóm: kiểm bạn bè TRƯỚC, cổng điều kiện chỉ chạy cho người đã là bạn (không khuếch đại tải), thất bại tính vào hạn mức', async () => {
+  const { createGroup, addMembers } = await import('../dist/services/chat/groups.js');
+  const db = await t.dbp.get();
+  let calls = 0;
+  const gate = async () => {
+    calls++;
+    return { ok: true };
+  };
+  const owner = await person(t, 'amp-chu');
+  const friend = await person(t, 'amp-f');
+  await befriend(t, owner, friend);
+  const strangers = Array.from({ length: 200 }, () => randomUUID());
+  await assert.rejects(() => createGroup(db, t.bus, owner.userId, { title: 'Lạ', memberIds: [friend.userId, ...strangers] }, { gate }), (e) => e.code === 'peer_unavailable');
+  assert.equal(calls, 0, 'cổng không chạy khi có id không phải bạn');
+  const ok = await createGroup(db, t.bus, owner.userId, { title: 'Ổn', memberIds: [friend.userId] }, { gate });
+  assert.equal(calls, 1, 'chỉ chạy cho đúng 1 người là bạn');
+  // thất bại lặp lại bị chặn bằng chat_rate
+  const spammer = await person(t, 'amp-spam');
+  let last;
+  for (let i = 0; i < 30; i++) {
+    last = await createGroup(db, t.bus, spammer.userId, { title: 'x', memberIds: [randomUUID()] }, { gate }).catch((e) => e);
+    if (last.code === 'chat_rate') break;
+  }
+  assert.equal(last.code, 'chat_rate');
+  assert.ok(ok.id);
+});
+
+test('addMembers: thành viên hiện tại đang bị khóa chat KHÔNG làm hỏng việc thêm người khác (cổng chỉ chạy cho người mới)', async () => {
+  const { owner, ms, cid } = await group('pre', 1);
+  const x = await person(t, 'pre-x');
+  await befriend(t, owner, x);
+  t.gate.set(ms[0].userId, 'restricted');
+  assert.equal((await add(owner, cid, [ms[0], x])).statusCode, 204);
+  assert.equal((await roleOf(cid, x)).leftAt, null);
+  t.gate.set(ms[0].userId, null);
+});
+
+test('"Đã xem bởi" cho tin có seq ≤ joined_seq của người hỏi → 0 (không lộ lịch sử trước khi vào)', async () => {
+  const { owner, ms, cid } = await group('rdj', 1);
+  const s = await sendHttp(t, owner, cid, 'tin cũ');
+  await call(t, ms[0], 'POST', `/v1/chat/conversations/${cid}/read`, { seq: s.json().seq });
+  const late = await person(t, 'rdj-late');
+  await befriend(t, owner, late);
+  await add(owner, cid, [late]);
+  assert.equal((await call(t, owner, 'GET', `${GP}/${cid}/readers?seq=${s.json().seq}`)).json().count, 1);
+  const r = (await call(t, late, 'GET', `${GP}/${cid}/readers?seq=${s.json().seq}`)).json();
+  assert.equal(r.count, 0);
+  assert.deepEqual(r.readers, []);
+});
+
+test('Nhóm bị xóa do người cuối rời: khung member removed chỉ tới người đang ở trong nhóm', async () => {
+  const { owner, ms, cid } = await group('aud', 1);
+  await call(t, ms[0], 'POST', `${GP}/${cid}/leave`);
+  t.bus.clear();
+  await call(t, owner, 'POST', `${GP}/${cid}/leave`);
+  assert.ok(t.bus.framesFor(owner.userId).some((f) => f.t === 'member'));
+  assert.ok(!t.bus.framesFor(ms[0].userId).some((f) => f.t === 'member'), 'người đã rời từ trước không nhận khung');
+});
+
+test('Danh sách thành viên: thành viên cùng joined_at đến micro giây vẫn phân trang đúng (không lặp dòng)', async () => {
+  const db = await t.dbp.get();
+  const owner = await person(t, 'pg-chu');
+  const [conv] = await db.insert(schema.conversations).values({ kind: 'group', title: 'Trang', createdBy: owner.userId }).returning({ id: schema.conversations.id });
+  const ids = Array.from({ length: 30 }, () => randomUUID());
+  await db.insert(schema.users).values(ids.map((id) => ({ id })));
+  await db.insert(schema.socialProfiles).values(ids.map((id, i) => ({ userId: id, displayName: `P${i}` })));
+  await db.insert(schema.conversationMembers).values([{ conversationId: conv.id, userId: owner.userId, role: 'owner' }, ...ids.map((id) => ({ conversationId: conv.id, userId: id, role: 'member' }))]);
+  const seen = [];
+  let cur;
+  do {
+    const res = await call(t, owner, 'GET', `${GP}/${conv.id}/members?limit=7${cur ? `&cursor=${cur}` : ''}`);
+    assert.equal(res.statusCode, 200, res.body);
+    const r = res.json();
+    seen.push(...r.members.map((m) => m.id));
+    cur = r.nextCursor;
+  } while (cur);
+  assert.equal(seen.length, 31);
+  assert.equal(new Set(seen).size, 31);
 });

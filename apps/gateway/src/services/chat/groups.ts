@@ -23,7 +23,7 @@ import { bestEffort, safePublish, toMessage, type MessageRow } from './messages.
  * (không lộ ai dưới 18 / ai chặn mình). Tin hệ thống chỉ lưu `system_event` (không có chữ tiếng nào).
  * Cổng điều kiện (`gate`) gọi NGOÀI giao dịch (PGlite một kết nối sẽ treo nếu gọi trong transaction).
  */
-const { conversations, conversationMembers, chatMessages, friendships, socialProfiles, userBlocks } = schema;
+const { conversations, conversationMembers, chatMessages, chatAttachments, blobDeletions, friendships, socialProfiles, userBlocks } = schema;
 
 export interface GroupOpts {
   /** cổng điều kiện chat (Task 3). Bỏ trống = chỉ kiểm bạn bè + chặn (route luôn truyền cổng) */
@@ -86,12 +86,40 @@ async function blockedWith(q: Q, me: string, ids: readonly string[]): Promise<Se
   return new Set(rows.map((r) => (r.blocker === me ? r.blocked : r.blocker)));
 }
 
-/** Cổng điều kiện từng người (ngoài giao dịch, từng đợt nhỏ). Một người không đủ điều kiện → cả yêu cầu bị từ chối. */
-async function assertAllEligible(db: Db, gate: ChatEligibilityFn | undefined, ids: readonly string[]): Promise<void> {
+/**
+ * Thất bại "không thêm được người này" tính vào hạn mức: tối đa 20 lần/giờ/người (tạo nhóm + thêm thành viên cộng chung), quá thì `chat_rate`.
+ * Bộ đếm trong bộ nhớ một instance (như ChatLimiter): chỉ chống dò/khuếch đại tải, không phải quota tính tiền.
+ */
+const FAIL_PER_HOUR = 20;
+const HOUR = 3_600_000;
+const failures = new Map<string, number[]>();
+function assertNotThrottled(userId: string, now: Date): void {
+  const recent = (failures.get(userId) ?? []).filter((x) => x > now.getTime() - HOUR);
+  if (recent.length) failures.set(userId, recent);
+  else failures.delete(userId);
+  if (recent.length >= FAIL_PER_HOUR) throw new GatewayError(429, ChatErrorCode.chatRate, 'Thử thêm người quá nhiều lần, hãy thử lại sau', { retryAfterSec: 3600 });
+}
+function failUnavailable(userId: string, now: Date): never {
+  const list = failures.get(userId) ?? [];
+  list.push(now.getTime());
+  failures.set(userId, list);
+  if (failures.size > 5000) for (const [k, v] of failures) if (!v.some((x) => x > now.getTime() - HOUR)) failures.delete(k);
+  throw unavailable();
+}
+
+/**
+ * Kiểm TRƯỚC khi chạm cổng điều kiện (ngoài giao dịch): hạn mức thất bại → MỘT truy vấn bạn bè + MỘT truy vấn chặn → chỉ khi mọi id đều là
+ * bạn không chặn mới chạy cổng (từng đợt nhỏ) cho đúng những người đó. Id lạ (không phải bạn / không tồn tại) không tốn truy vấn cổng nào.
+ */
+async function precheckCandidates(db: Db, gate: ChatEligibilityFn | undefined, me: string, ids: readonly string[], now: Date): Promise<void> {
+  assertNotThrottled(me, now);
+  const friends = await friendsAmong(db, me, ids);
+  if (ids.some((u) => !friends.has(u))) failUnavailable(me, now);
+  if ((await blockedWith(db, me, ids)).size) failUnavailable(me, now);
   if (!gate) return;
   for (let i = 0; i < ids.length; i += GATE_CHUNK) {
     const rs = await Promise.all(ids.slice(i, i + GATE_CHUNK).map((u) => gate(db, u)));
-    if (rs.some((r) => !r.ok)) throw unavailable();
+    if (rs.some((r) => !r.ok)) failUnavailable(me, now);
   }
 }
 
@@ -155,6 +183,28 @@ async function defaultMuteLargeGroup(tx: Tx, cid: string, oldCount: number, newC
     );
 }
 
+/**
+ * Bỏ nhóm (giải tán / người cuối rời). Còn tệp `pinned_by_report` (bằng chứng báo cáo, spec 5.8/5.9) → KHÔNG xóa: cho mọi thành viên rời
+ * (nhóm "tàn" không ai thấy, tin + tệp giữ nguyên; việc dọn khi báo cáo đóng là của Task 17/18). Không có tệp ghim → xóa hẳn (cascade) và
+ * đưa khóa tệp vào `blob_deletions` TRONG CÙNG giao dịch để job dọn xóa khỏi kho (không mồ côi). Trả `true` nếu xóa hẳn.
+ */
+async function dissolveConversation(tx: Tx, cid: string, now: Date): Promise<boolean> {
+  const files = await tx
+    .select({ key: chatAttachments.blobKey, pinned: chatAttachments.pinnedByReport })
+    .from(chatAttachments)
+    .where(and(eq(chatAttachments.conversationId, cid), isNull(chatAttachments.purgedAt)));
+  if (files.some((f) => f.pinned)) {
+    await tx
+      .update(conversationMembers)
+      .set({ leftAt: now, role: 'member' })
+      .where(and(eq(conversationMembers.conversationId, cid), isNull(conversationMembers.leftAt)));
+    return false;
+  }
+  if (files.length) await tx.insert(blobDeletions).values(files.map((f) => ({ blobKey: f.key, reason: 'chat_group_deleted' }))).onConflictDoNothing();
+  await tx.delete(conversations).where(eq(conversations.id, cid));
+  return true;
+}
+
 // ───────────────────────────── tạo nhóm ─────────────────────────────
 
 /**
@@ -170,7 +220,7 @@ export async function createGroup(db: Db, bus: RealtimeBus, userId: string, inpu
   if (!ids.length || ids.includes(userId)) throw badRequest('Danh sách thành viên không hợp lệ');
   if (ids.length + 1 > softCap) throw new GatewayError(409, ChatErrorCode.groupFull, `Nhóm tối đa ${softCap} thành viên`, { softCap });
 
-  await assertAllEligible(db, opts.gate, ids);
+  await precheckCandidates(db, opts.gate, userId, ids, now);
 
   const cid = await db.transaction(async (tx) => {
     // tuần tự hóa các lần tạo nhóm của CÙNG một người để hạn mức 5/ngày không bị vượt khi gửi song song
@@ -214,12 +264,17 @@ export async function addMembers(db: Db, bus: RealtimeBus, userId: string, cid: 
   const ids = [...new Set(memberIds)];
   if (!ids.length || ids.length > GROUP_ADD_BATCH_MAX || ids.includes(userId)) throw badRequest('Danh sách thành viên không hợp lệ');
 
-  // quyền TRƯỚC khi chạm cổng điều kiện (người ngoài/thành viên thường không dò được ai đủ điều kiện)
-  await db.transaction(async (tx) => {
+  // quyền TRƯỚC khi chạm bạn bè/cổng điều kiện (người ngoài/thành viên thường không dò được gì); người ĐÃ ở trong nhóm không cần qua cổng
+  const already = await db.transaction(async (tx) => {
     const { me } = await lockGroup(tx, userId, cid);
     if (!canManage(me.role)) throw forbidden('Chỉ chủ hoặc quản trị nhóm được thêm thành viên');
+    const present = await tx
+      .select({ u: conversationMembers.userId })
+      .from(conversationMembers)
+      .where(and(eq(conversationMembers.conversationId, cid), inArray(conversationMembers.userId, ids), isNull(conversationMembers.leftAt)));
+    return new Set(present.map((r) => r.u));
   });
-  await assertAllEligible(db, opts.gate, ids);
+  await precheckCandidates(db, opts.gate, userId, ids.filter((u) => !already.has(u)), now);
 
   const out = await db.transaction(async (tx) => {
     const { me } = await lockGroup(tx, userId, cid);
@@ -302,9 +357,8 @@ export async function leaveGroup(db: Db, bus: RealtimeBus, userId: string, cid: 
       .where(and(eq(conversationMembers.conversationId, cid), isNull(conversationMembers.leftAt), ne(conversationMembers.userId, userId)))
       .orderBy(asc(conversationMembers.joinedAt), asc(conversationMembers.userId));
     if (!others.length) {
-      const all = await tx.select({ u: conversationMembers.userId }).from(conversationMembers).where(eq(conversationMembers.conversationId, cid));
-      await tx.delete(conversations).where(eq(conversations.id, cid)); // cascade thành viên + tin
-      return { deleted: true as const, audience: all.map((r) => r.u), rows: [] as MessageRow[], successor: null as string | null };
+      await dissolveConversation(tx, cid, now); // chỉ còn mình người này đang ở trong nhóm ⇒ khung báo chỉ gửi cho họ
+      return { deleted: true as const, audience: [userId], rows: [] as MessageRow[], successor: null as string | null };
     }
     let successor: string | null = null;
     if (me.role === 'owner') {
@@ -399,7 +453,7 @@ export async function transferOwner(db: Db, bus: RealtimeBus, userId: string, ci
 }
 
 /** Giải tán nhóm (CHỈ chủ): xóa nhóm, thành viên và tin (cascade). Mọi thành viên nhận khung `member removed` của chính họ. */
-export async function deleteGroup(db: Db, bus: RealtimeBus, userId: string, cid: string): Promise<void> {
+export async function deleteGroup(db: Db, bus: RealtimeBus, userId: string, cid: string, now = new Date()): Promise<void> {
   const audience = await db.transaction(async (tx) => {
     const { me } = await lockGroup(tx, userId, cid);
     if (me.role !== 'owner') throw forbidden('Chỉ chủ nhóm được giải tán nhóm');
@@ -407,7 +461,7 @@ export async function deleteGroup(db: Db, bus: RealtimeBus, userId: string, cid:
       .select({ u: conversationMembers.userId })
       .from(conversationMembers)
       .where(and(eq(conversationMembers.conversationId, cid), isNull(conversationMembers.leftAt)));
-    await tx.delete(conversations).where(eq(conversations.id, cid));
+    await dissolveConversation(tx, cid, now);
     return all.map((r) => r.u);
   });
   await bestEffort(async () => {
@@ -419,8 +473,9 @@ export async function deleteGroup(db: Db, bus: RealtimeBus, userId: string, cid:
 
 const encodeCursor = (a: string, b: string): string => Buffer.from(`${a}|${b}`).toString('base64url');
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const ISO_RE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/;
-function decodeCursor(c: string | undefined, kind: 'iso+id' | 'id'): { at?: Date; id: string } | null {
+/** `timestamptz::text` của Postgres (GIỮ micro giây; `Date`/ISO của JS chỉ có mili giây nên cursor lặp dòng) */
+const PG_TS_RE = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}(\.\d{1,6})?[+-]\d{2}(:\d{2})?$/;
+function decodeCursor(c: string | undefined, kind: 'ts+id' | 'id'): { at?: string; id: string } | null {
   if (!c) return null;
   const bad = () => badRequest('Cursor không hợp lệ');
   const parts = Buffer.from(c, 'base64url').toString().split('|');
@@ -428,10 +483,10 @@ function decodeCursor(c: string | undefined, kind: 'iso+id' | 'id'): { at?: Date
     if (parts.length !== 1 || !UUID_RE.test(parts[0])) throw bad();
     return { id: parts[0] };
   }
-  if (parts.length !== 2 || !ISO_RE.test(parts[0]) || !UUID_RE.test(parts[1])) throw bad();
-  const at = new Date(parts[0]);
-  if (Number.isNaN(at.getTime()) || at.getUTCFullYear() < 2000 || at.getUTCFullYear() > 2200) throw bad();
-  return { at, id: parts[1] };
+  if (parts.length !== 2 || !PG_TS_RE.test(parts[0]) || !UUID_RE.test(parts[1])) throw bad();
+  const year = Number(parts[0].slice(0, 4));
+  if (Number.isNaN(new Date(parts[0].replace(' ', 'T').replace(/([+-]\d{2})$/, '$1:00')).getTime()) || year < 2000 || year > 2200) throw bad();
+  return { at: parts[0], id: parts[1] };
 }
 
 async function requireGroupMember(db: Db, userId: string, cid: string): Promise<{ conv: ConvRow; me: MemberRow }> {
@@ -454,16 +509,16 @@ export async function listMembers(
 ): Promise<{ members: Array<{ id: string; displayName: string; role: 'owner' | 'admin' | 'member'; joinedAt: string }>; nextCursor: string | null }> {
   await requireGroupMember(db, userId, cid);
   const limit = Math.min(Math.max(Math.floor(opts.limit ?? CHAT_LIMITS.pageDefault) || CHAT_LIMITS.pageDefault, 1), CHAT_LIMITS.pageMax);
-  const cur = decodeCursor(opts.cursor, 'iso+id');
+  const cur = decodeCursor(opts.cursor, 'ts+id');
   const rows = await db
-    .select({ id: conversationMembers.userId, name: socialProfiles.displayName, role: conversationMembers.role, joinedAt: conversationMembers.joinedAt })
+    .select({ id: conversationMembers.userId, name: socialProfiles.displayName, role: conversationMembers.role, joinedAt: conversationMembers.joinedAt, joinedText: sql<string>`${conversationMembers.joinedAt}::text` })
     .from(conversationMembers)
     .leftJoin(socialProfiles, eq(socialProfiles.userId, conversationMembers.userId))
     .where(
       and(
         eq(conversationMembers.conversationId, cid),
         isNull(conversationMembers.leftAt),
-        cur ? sql`(${conversationMembers.joinedAt}, ${conversationMembers.userId}) > (${cur.at!.toISOString()}::timestamptz, ${cur.id}::uuid)` : undefined
+        cur ? sql`(${conversationMembers.joinedAt}, ${conversationMembers.userId}) > (${cur.at!}::timestamptz, ${cur.id}::uuid)` : undefined
       )
     )
     .orderBy(asc(conversationMembers.joinedAt), asc(conversationMembers.userId))
@@ -472,7 +527,7 @@ export async function listMembers(
   const last = page[page.length - 1];
   return {
     members: page.map((r) => ({ id: r.id, displayName: r.name ?? '', role: r.role, joinedAt: r.joinedAt.toISOString() })),
-    nextCursor: rows.length > limit && last ? encodeCursor(last.joinedAt.toISOString(), last.id) : null
+    nextCursor: rows.length > limit && last ? encodeCursor(last.joinedText, last.id) : null
   };
 }
 
@@ -487,7 +542,9 @@ export async function listReaders(
   seq: number,
   opts: { cursor?: string; limit?: number } = {}
 ): Promise<{ count: number; readers: Array<{ id: string; displayName: string }>; nextCursor: string | null }> {
-  await requireGroupMember(db, userId, cid);
+  const { me: requester } = await requireGroupMember(db, userId, cid);
+  // tin có từ trước khi người hỏi vào nhóm: họ không có quyền thấy ⇒ không cho biết ai đã xem
+  if (seq <= requester.joinedSeq) return { count: 0, readers: [], nextCursor: null };
   const limit = Math.min(Math.max(Math.floor(opts.limit ?? CHAT_LIMITS.pageDefault) || CHAT_LIMITS.pageDefault, 1), CHAT_LIMITS.pageMax);
   const [mine] = await db.select({ v: sql<boolean>`coalesce(${socialProfiles.showReadReceipts}, true)` }).from(socialProfiles).where(eq(socialProfiles.userId, userId));
   if (mine && mine.v === false) return { count: 0, readers: [], nextCursor: null };
