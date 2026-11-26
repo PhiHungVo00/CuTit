@@ -1,0 +1,30 @@
+{
+  "name": "@vietlearning/mfe-social",
+  "version": "1.0.0",
+  "type": "module",
+  "private": true,
+  "description": "Dự án 4 Bạn bè: chat chữ, tìm bạn bằng tên/mã mời, lời mời, chặn/báo cáo, cổng tuổi (chat/gọi chỉ cho người đủ 18)",
+  "main": "./src/index.ts",
+  "sideEffects": false,
+  "scripts": {
+    "build": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@vietlearning/contracts": "workspace:*",
+    "@vietlearning/state": "workspace:*",
+    "@vietlearning/ui": "workspace:*",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.30.6"
+  },
+  "devDependencies": {
+    "@testing-library/dom": "^10.4.2",
+    "@testing-library/react": "^16.3.3",
+    "@vitejs/plugin-react": "^4.3.4",
+    "jsdom": "^25.0.1",
+    "typescript": "^5.7.3",
+    "vite": "^5.4.11",
+    "vitest": "^3.2.7"
+  }
+}
