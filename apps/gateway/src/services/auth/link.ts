@@ -192,6 +192,8 @@ async function otherOwner(tx: Tx, caller: { id: string; isGuest: boolean; code: 
     ...(caller.code ? [{ credentialHash: caller.code, reason: 'merged' as const, deletedAt: now, expiresAt: null }] : [])
   ];
   if (tombs.length) await tx.insert(deletedAccounts).values(tombs).onConflictDoNothing();
+  // Góp ý (dự án 5a) không tính là "tiến độ": khách rỗng vẫn có thể có góp ý => chuyển sang tài khoản đích, KHÔNG để cascade xóa (mất góp ý + tệp mồ côi)
+  await tx.execute(sql`update feedback_reports set user_id = ${owner}::uuid where user_id = ${caller.id}::uuid`);
   await tx.delete(users).where(eq(users.id, caller.id));
   await tx.update(identities).set({ lastUsedAt: now }).where(and(eq(identities.userId, owner), eq(identities.provider, 'google')));
   return { kind: 'switched', userId: owner, removedGuestId: caller.id };
