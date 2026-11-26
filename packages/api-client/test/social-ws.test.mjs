@@ -294,3 +294,25 @@ test('lỗi trong handler người nghe không làm sập luồng', async () => 
   s.last().receive({ t: 'msg', message: msg(1) });
   assert.equal(s.frames.at(-1).t, 'msg');
 });
+
+test('connect() lại sau signed_out: trạng thái 4401/backoff được đặt lại (vẫn thử làm mới một lần)', async () => {
+  const s = setup();
+  await s.goOnline();
+  s.last().serverClose(4401);
+  await flush();
+  s.last().open();
+  await flush();
+  s.last().serverClose(4401);
+  await flush();
+  assert.deepEqual(s.notices, ['signed_out']);
+  const before = s.calls.refresh;
+  s.rt.connect();
+  await s.scheduler.advance(1000);
+  s.last().open();
+  await flush();
+  s.last().receive(s.hello);
+  await flush();
+  s.last().serverClose(4401);
+  await flush();
+  assert.equal(s.calls.refresh, before + 1, 'lần này vẫn thử làm mới');
+});

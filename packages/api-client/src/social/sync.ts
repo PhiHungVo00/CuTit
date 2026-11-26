@@ -93,8 +93,15 @@ export function createConversationSync(opts: SyncOptions): ConversationSync {
             else if (m.seq > st.last + 1) st.buffer.set(m.seq, m); // lỗ giữa trang: để bộ đệm
           }
           drain(cid, st);
-          if (st.last === before && !page.hasMore) return; // máy chủ không có thêm: dừng, tránh lặp vô hạn
-          if (st.last === before && sorted.length === 0) return;
+          if (st.last === before && (!page.hasMore || sorted.length === 0)) {
+            // Máy chủ không có đoạn thiếu (vd. bị ẩn): KHÔNG kẹt mãi, áp phần đang đệm theo thứ tự để giao diện không mất tin mới
+            for (const seq of [...st.buffer.keys()].sort((x, y) => x - y)) {
+              const m = st.buffer.get(seq)!;
+              st.buffer.delete(seq);
+              if (seq > st.last) apply(cid, st, m);
+            }
+            return;
+          }
         }
       } catch (err) {
         emit(errCbs, err); // giữ bộ đệm; resync() bù tiếp

@@ -173,3 +173,12 @@ test('khung không phải msg bị bỏ qua; người nghe lỗi không làm h�
   s.sync.handleFrame({ t: 'msg', message: msg(3) });
   assert.deepEqual(s.got, ['A2', 'A3']);
 });
+
+test('máy chủ không có đoạn thiếu (6,7 bị ẩn): áp phần đang đệm theo thứ tự, không kẹt mãi', async () => {
+  const s = setup({ server: { [CID]: [] } });
+  s.sync.track(CID, 5);
+  s.sync.handleFrame({ t: 'msg', message: msg(8) });
+  await s.sync.idle();
+  s.sync.handleFrame({ t: 'msg', message: msg(9) });
+  assert.deepEqual(s.got, ['A8', 'A9']);
+});

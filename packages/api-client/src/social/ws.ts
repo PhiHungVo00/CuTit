@@ -401,6 +401,10 @@ export function createRealtime(opts: RealtimeOptions = {}): Realtime {
       return state;
     },
     connect() {
+      if (!wanted) {
+        attempt = 0;
+        refreshedInStreak = false;
+      }
       wanted = true;
       if (!unsubVisibility) unsubVisibility = visibility.subscribe(onVisibility);
       if (!visible()) return; // trở lại nền trước sẽ nối
