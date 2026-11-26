@@ -192,6 +192,10 @@ const EnvSchema = z
     ADMIN_JWT_SECRET: z.string().min(32, 'ADMIN_JWT_SECRET phải dài tối thiểu 32 ký tự').optional(),
     /** Khóa HMAC ký URL tệp đính kèm cho quản trị (sống 5 phút), RIÊNG với mọi khóa khác. Thiếu => chỉ cấp URL tệp và /admin/v1/blob trả 503 admin_disabled */
     ADMIN_BLOB_URL_SECRET: z.string().min(32, 'ADMIN_BLOB_URL_SECRET phải dài tối thiểu 32 ký tự').optional(),
+    /** Giới hạn theo IP mỗi phút cho các route quản trị cần đăng nhập (hàng chờ, chi tiết, nhật ký) */
+    ADMIN_API_RATE_LIMIT_PER_MINUTE: z.coerce.number().int().positive().default(120),
+    /** Giới hạn theo IP mỗi phút cho /admin/v1/blob (không cần đăng nhập, chữ ký là xác thực) */
+    ADMIN_BLOB_RATE_LIMIT_PER_MINUTE: z.coerce.number().int().positive().default(60),
     // ---- Dự án 5a: góp ý/báo lỗi + kho tệp (spec docs/superpowers/specs/2026-11-21-gop-y-bao-loi-design.md §5.3) ----
     /** Kho tệp đính kèm. `fs` (mặc định, dev/test) hoặc `r2` (làm ở dự án triển khai) */
     BLOB_PROVIDER: z.enum(['fs', 'r2']).default('fs'),

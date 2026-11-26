@@ -41,6 +41,16 @@ const FileParams = z.object({ id: z.string().uuid(), fileId: z.string().uuid() }
 const EXCERPT_MAX = 120;
 const CURSOR_TS = /^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}:\d{2}(\.\d{1,6})?(Z|[+-]\d{2}(:?\d{2})?)$/;
 
+/** Đúng lịch (tháng 1–12, ngày có thật, giờ 0–23...): Postgres sẽ ném lỗi (500) với "2020-13-45" nên chặn ở đây thành 400 */
+function validCalendar(ts: string): boolean {
+  const m = /^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2}):(\d{2})/.exec(ts);
+  if (!m) return false;
+  const [y, mo, d, h, mi, s] = m.slice(1).map(Number) as [number, number, number, number, number, number];
+  if (h > 23 || mi > 59 || s > 59 || y < 1) return false;
+  const dt = new Date(Date.UTC(y, mo - 1, d));
+  return dt.getUTCFullYear() === y && dt.getUTCMonth() === mo - 1 && dt.getUTCDate() === d;
+}
+
 function excerptOf(body: string): string {
   const flat = body.replace(/\s+/g, ' ').trim();
   let out = flat.slice(0, EXCERPT_MAX);
@@ -61,7 +71,7 @@ function decodeCursor(raw: string): { t: string; i: string } | null {
   try {
     const v = JSON.parse(Buffer.from(raw, 'base64url').toString('utf8')) as { t?: unknown; i?: unknown };
     if (typeof v.t !== 'string' || typeof v.i !== 'string') return null;
-    if (!CURSOR_TS.test(v.t) || !z.string().uuid().safeParse(v.i).success) return null;
+    if (!CURSOR_TS.test(v.t) || !validCalendar(v.t) || !z.string().uuid().safeParse(v.i).success) return null;
     return { t: v.t, i: v.i };
   } catch {
     return null;

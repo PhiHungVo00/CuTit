@@ -474,3 +474,48 @@ test('createBlobUrlSigner: chữ ký buộc cả k và exp, đổi bí mật th�
 test('ADMIN_ENV dùng chung không bị đổi: khối /admin/v1 cũ vẫn chạy khi không đặt ADMIN_BLOB_URL_SECRET', () => {
   assert.equal(ADMIN_ENV.ADMIN_BLOB_URL_SECRET, undefined);
 });
+
+test('con trỏ sai lịch (tháng 13) => 400, không phải 500', async () => {
+  const t = await setup();
+  const enc = (o) => Buffer.from(JSON.stringify(o)).toString('base64url');
+  for (const ts of ['2020-13-45 00:00:00+00', '2020-02-30 10:00:00+00', '2020-01-01 25:00:00+00']) {
+    const res = await t.get(`/admin/v1/queue?cursor=${enc({ t: ts, i: UUID })}`);
+    assert.equal(res.statusCode, 400, ts);
+  }
+  assert.equal((await t.get(`/admin/v1/queue?cursor=${enc({ t: '2020-01-01 00:00:00.123456+00', i: UUID })}`)).statusCode, 200);
+  await t.close();
+});
+
+test('sig phải đúng 43 ký tự base64url: thêm đệm "=" hoặc ký tự lạ => 403', async () => {
+  const t = await setup();
+  const r = await t.seed();
+  const f = await t.seedFile(r.id);
+  const u = new URL((await t.get(`/admin/v1/feedback/${r.id}/files/${f.id}/url`)).json().url, 'http://x');
+  const q = (sig) => `/admin/v1/blob?k=${encodeURIComponent(u.searchParams.get('k'))}&exp=${u.searchParams.get('exp')}&sig=${encodeURIComponent(sig)}`;
+  const sig = u.searchParams.get('sig');
+  assert.equal(sig.length, 43);
+  assert.equal((await t.ctx.app.inject({ method: 'GET', url: q(sig) })).statusCode, 200);
+  assert.equal((await t.ctx.app.inject({ method: 'GET', url: q(sig + '=') })).statusCode, 403);
+  assert.equal((await t.ctx.app.inject({ method: 'GET', url: q(sig + '!!') })).statusCode, 403);
+  await t.close();
+});
+
+test('giới hạn tốc độ theo IP: /blob chặt hơn các route cần đăng nhập; vượt => 429', async () => {
+  const t = await setup({ ADMIN_BLOB_RATE_LIMIT_PER_MINUTE: '3', ADMIN_API_RATE_LIMIT_PER_MINUTE: '6' });
+  const bad = () => t.ctx.app.inject({ method: 'GET', url: '/admin/v1/blob?k=a&exp=1&sig=b' });
+  const codes = [];
+  for (let i = 0; i < 5; i++) codes.push((await bad()).statusCode);
+  assert.deepEqual(codes, [403, 403, 403, 429, 429]);
+  // /blob bị chặn không kéo theo các route quản trị (bộ đếm riêng)
+  const q = [];
+  for (let i = 0; i < 8; i++) q.push((await t.get('/admin/v1/queue')).statusCode);
+  assert.deepEqual(q, [200, 200, 200, 200, 200, 200, 429, 429]);
+  await t.close();
+});
+
+test('redactSignedUrl: che sig trong URL ghi log, giữ phần còn lại', async () => {
+  const { redactSignedUrl } = await import('../dist/lib/logRedact.js');
+  assert.equal(redactSignedUrl('/admin/v1/blob?k=a&exp=1&sig=abcDEF-_123'), '/admin/v1/blob?k=a&exp=1&sig=[redacted]');
+  assert.equal(redactSignedUrl('/admin/v1/blob?sig=x&k=a'), '/admin/v1/blob?sig=[redacted]&k=a');
+  assert.equal(redactSignedUrl('/v1/chat'), '/v1/chat');
+});

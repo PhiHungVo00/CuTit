@@ -73,7 +73,22 @@ export const adminRoutes: FastifyPluginAsync<RouteDeps & { adminAlerts: AdminAle
 
   const signer = config.ADMIN_BLOB_URL_SECRET ? createBlobUrlSigner(config.ADMIN_BLOB_URL_SECRET, clock) : null;
   const feedbackDeps = { ...deps, guard: guard.requireAdmin, signer };
-  await server.register(adminFeedbackRoutes, feedbackDeps);
-  await server.register(adminAuditRoutes, feedbackDeps);
-  await server.register(adminBlobRoutes, feedbackDeps);
+  // Mỗi cụm một bộ đếm riêng theo IP: /blob bị dò chữ ký không kéo theo các route đã đăng nhập
+  const limited = (max: number) => async (scope: Parameters<FastifyPluginAsync>[0]) => {
+    await scope.register(rateLimit, {
+      max,
+      timeWindow: '1 minute',
+      keyGenerator: (req) => req.ip,
+      onExceeded: (req) => audit.noteRateLimited(AuditLog.context(req), req.url.split('?')[0])
+    });
+  };
+  await server.register(async (scope) => {
+    await limited(config.ADMIN_API_RATE_LIMIT_PER_MINUTE)(scope);
+    await scope.register(adminFeedbackRoutes, feedbackDeps);
+    await scope.register(adminAuditRoutes, feedbackDeps);
+  });
+  await server.register(async (scope) => {
+    await limited(config.ADMIN_BLOB_RATE_LIMIT_PER_MINUTE)(scope);
+    await scope.register(adminBlobRoutes, feedbackDeps);
+  });
 };

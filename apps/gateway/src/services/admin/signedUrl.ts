@@ -39,6 +39,8 @@ export function createBlobUrlSigner(secret: string, clock: Clock): BlobUrlSigner
     verifyBlobUrl(k, exp, sig) {
       if (typeof k !== 'string' || typeof exp !== 'string' || typeof sig !== 'string') return false;
       if (!/^\d{1,12}$/.test(exp) || k.length === 0 || k.length > 300) return false;
+      // HMAC-SHA256 base64url không đệm = đúng 43 ký tự; Buffer.from khoan dung (bỏ ký tự lạ/đệm) nên siết dạng chữ trước
+      if (!/^[A-Za-z0-9_-]{43}$/.test(sig)) return false;
       // Chữ ký phải đúng TRƯỚC khi xét hạn: không để kẻ lạ dò mốc hết hạn bằng thời gian/mã lỗi khác nhau
       const given = Buffer.from(sig, 'base64url');
       const expected = mac(k, exp);
