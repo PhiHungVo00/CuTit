@@ -239,3 +239,13 @@ test('Kết bạn bằng handle + questActive tương thích ngược', () => {
   ok(FriendQuestSchema, { ...quest, questActive: false });
   assert.equal(FriendErrorCode.handleNotFound, 'handle_not_found');
 });
+
+test('Task 3: schema phản hồi lời mời / chặn', async () => {
+  const c = await import('../dist/api/index.js');
+  assert.deepEqual(c.FriendRequestCreateResponseSchema.parse({ status: 'accepted' }), { status: 'accepted' });
+  assert.throws(() => c.FriendRequestCreateResponseSchema.parse({ status: 'x' }));
+  assert.deepEqual(c.FriendRequestDeclineResponseSchema.parse({ declined: true }), { declined: true });
+  assert.throws(() => c.FriendRequestDeclineResponseSchema.parse({ declined: false }));
+  assert.equal(c.BlockResponseSchema.parse({ blocked: false }).blocked, false);
+  assert.throws(() => c.BlockUserParamsSchema.parse({ userId: 'abc' }));
+});
