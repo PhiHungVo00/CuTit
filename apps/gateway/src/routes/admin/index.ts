@@ -10,13 +10,17 @@ import { AdminCrypto } from '../../services/admin/crypto.js';
 import { adminKeyOf } from '../../services/admin/sessions.js';
 import type { AdminAlerts } from '../../services/admin/alerts.js';
 import { adminAuthRoutes } from './auth.js';
+import { adminFeedbackRoutes } from './feedback.js';
+import { adminAuditRoutes } from './audit.js';
+import { adminBlobRoutes } from './blob.js';
+import { createBlobUrlSigner } from '../../services/admin/signedUrl.js';
 
 /**
  * Khối `/admin/v1` (chỉ đăng ký khi ADMIN_API_ENABLED). Gom ở đây để `app.ts` chỉ thêm một lời gọi register.
  * Thiếu ADMIN_MFA_KEY hoặc ADMIN_JWT_SECRET => MỌI đường dẫn dưới prefix trả 503 `admin_disabled` (không khởi động nửa vời,
  * không sinh khóa ngẫu nhiên: bí mật TOTP đã mã hóa sẽ không giải mã được sau khi khởi động lại).
- * Task 5 thêm route hàng chờ/chi tiết/nhật ký TẠI ĐÂY, mỗi route gắn `preHandler: server.requireAdmin('owner')`;
- * `/admin/v1/blob` (URL ký) đăng ký NGOÀI requireAdmin.
+ * Route hàng chờ/chi tiết/nhật ký (Task 5) gắn `preHandler: guard('owner')`; `/admin/v1/blob` (URL ký) đăng ký NGOÀI requireAdmin
+ * (chữ ký HMAC là xác thực). Thiếu ADMIN_BLOB_URL_SECRET: chỉ cấp URL tệp và /blob trả 503 admin_disabled.
  */
 export const adminRoutes: FastifyPluginAsync<RouteDeps & { adminAlerts: AdminAlerts }> = async (server, opts) => {
   // Bỏ `prefix` (Fastify nhét cả vào opts): chuyển tiếp xuống plugin con sẽ nhân đôi tiền tố đường dẫn
@@ -66,4 +70,10 @@ export const adminRoutes: FastifyPluginAsync<RouteDeps & { adminAlerts: AdminAle
     const a = req.admin!;
     return respond(AdminSessionInfoSchema, { userIdShort: a.userId.slice(0, 8), roles: a.roles });
   });
+
+  const signer = config.ADMIN_BLOB_URL_SECRET ? createBlobUrlSigner(config.ADMIN_BLOB_URL_SECRET, clock) : null;
+  const feedbackDeps = { ...deps, guard: guard.requireAdmin, signer };
+  await server.register(adminFeedbackRoutes, feedbackDeps);
+  await server.register(adminAuditRoutes, feedbackDeps);
+  await server.register(adminBlobRoutes, feedbackDeps);
 };
