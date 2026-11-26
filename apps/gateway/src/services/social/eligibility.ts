@@ -73,10 +73,14 @@ const REASON_HTTP: Record<ChatIneligibleReason, { status: number; code: string }
 };
 
 /** Ném GatewayError tương ứng nếu chưa đủ điều kiện; dùng ở đầu mọi route chat/bạn bè bằng handle */
+export function eligibilityError(reason: ChatIneligibleReason): GatewayError {
+  const { status, code } = REASON_HTTP[reason];
+  return new GatewayError(status, code, undefined, { reason });
+}
+
 export async function requireChatEligible(db: Db, userId: string, now: Date = new Date(), allow: ChatIneligibleReason[] = []): Promise<void> {
   const e = await chatEligibility(db, userId, now);
   if (!e.ok && !allow.includes(e.reason)) {
-    const { status, code } = REASON_HTTP[e.reason];
-    throw new GatewayError(status, code, undefined, { reason: e.reason });
+    throw eligibilityError(e.reason);
   }
 }

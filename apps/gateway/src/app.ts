@@ -43,6 +43,10 @@ import { meAgeRoutes } from './routes/meAge.js';
 import { createBlobStore } from './services/blob/index.js';
 import type { BlobStore } from './services/blob/BlobStore.js';
 import { startFeedbackPurgeJob } from './jobs/feedbackPurge.js';
+import { chatSocialRoutes } from './routes/chatSocial.js';
+import type { ChatEligibilityFn } from './services/chat/eligibility.js';
+import { chatEligibility } from './services/social/eligibility.js';
+import { createChatLimiter, type ChatLimiter } from './services/chat/limits.js';
 import websocket from '@fastify/websocket';
 import type { RealtimeBus } from './services/realtime/RealtimeBus.js';
 import { RealtimeHub, type RealtimeOptions } from './services/realtime/RealtimeHub.js';
@@ -136,6 +140,10 @@ export interface BuildOptions {
   identity?: IdentityProvider | null;
   /** Test tiêm kho tệp giả (vd. kho ném lỗi khi xóa); bỏ trống = theo BLOB_PROVIDER/BLOB_DIR */
   blob?: BlobStore;
+  /** Dự án 4: cổng điều kiện chat. Bỏ trống = `chatEligibility` thật của Task 3; test tiêm cổng giả */
+  chatEligibility?: ChatEligibilityFn;
+  /** Dự án 4: bộ đếm giới hạn tốc độ chat; test tiêm để kiểm đồng hồ */
+  chatLimiter?: ChatLimiter;
   /** Dự án 4: test tiêm bus (vd. InMemoryBus) cho service chat; /ws vẫn dùng hub thật */
   bus?: RealtimeBus;
   /** Dự án 4: test chỉnh hub (đồng hồ giả, giới hạn, tắt tự quét) */
@@ -350,6 +358,7 @@ export async function buildApp(config: GatewayConfig, opts: BuildOptions = {}): 
       await v1.register(identityRoutes, deps);
       await v1.register(authMeRoutes, deps);
       await v1.register(feedbackRoutes, deps);
+      await v1.register(chatSocialRoutes, { ...deps, eligibility: opts.chatEligibility ?? chatEligibility, limiter: opts.chatLimiter ?? createChatLimiter() });
       await v1.register(meAgeRoutes, deps);
     },
     { prefix: '/v1' }

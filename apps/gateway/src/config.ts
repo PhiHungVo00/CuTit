@@ -209,7 +209,10 @@ const EnvSchema = z
     /** Trần dung lượng kho tệp (MB). Vượt => 507 storage_full cho yêu cầu CÓ tệp; bản chỉ có chữ vẫn nhận */
     BLOB_TOTAL_CAP_MB: z.coerce.number().positive().default(8000),
     /** Giới hạn số lần gửi góp ý theo IP mỗi giờ (cộng 5 góp ý/người/ngày) */
-    FEEDBACK_IP_PER_HOUR: z.coerce.number().int().positive().default(20)
+    FEEDBACK_IP_PER_HOUR: z.coerce.number().int().positive().default(20),
+    // ---- Dự án 4: bạn bè (chat, gọi, nhóm) ----
+    /** Trần số yêu cầu/phút/người cho các route chat (cao hơn RATE_LIMIT_PER_MINUTE chung vì tải chat > 60/phút; chống spam thật nằm ở ChatLimiter) */
+    CHAT_RATE_LIMIT_PER_MINUTE: z.coerce.number().int().positive().default(600)
   })
   .transform((env) => ({
     ...env,
