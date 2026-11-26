@@ -15,11 +15,11 @@ import { InMemoryBus } from '../dist/services/realtime/RealtimeBus.js';
 
 /**
  * Migration dự án 4 (bạn bè: chat, nhóm, gọi): bảng mới + cột thêm, chỉ mục/ràng buộc có thật, ON DELETE đúng từng bảng,
- * chạy từ DB trống VÀ từ DB đang ở 0010 có dữ liệu. Mặc định PGlite; đặt TEST_DATABASE_URL để chạy trên Postgres thật
+ * chạy từ DB trống VÀ từ DB đang ở 0011 có dữ liệu. Mặc định PGlite; đặt TEST_DATABASE_URL để chạy trên Postgres thật
  * (mỗi test tự tạo một DATABASE riêng rồi xóa) — xem feedback-schema-migration.test.mjs.
  */
 const MIGRATIONS = fileURLToPath(new URL('../drizzle', import.meta.url));
-const LAST_RELEASED = 10; // 0010_admin_audit_append_only — bản trước dự án 4
+const LAST_RELEASED = 11; // 0011_staff_invite_session_rotation — bản trước dự án 4
 const PG_URL = process.env.TEST_DATABASE_URL;
 
 async function openDb() {
@@ -50,9 +50,9 @@ async function openDb() {
   };
 }
 
-/** Bản sao thư mục migration chỉ tới 0010 (giả lập DB production hiện tại) */
+/** Bản sao thư mục migration chỉ tới 0011 (giả lập DB production hiện tại) */
 function releasedFolder() {
-  const dir = mkdtempSync(join(tmpdir(), 'mig-0010-'));
+  const dir = mkdtempSync(join(tmpdir(), 'mig-0011-'));
   mkdirSync(join(dir, 'meta'));
   const journal = JSON.parse(readFileSync(join(MIGRATIONS, 'meta', '_journal.json'), 'utf8'));
   journal.entries = journal.entries.filter((e) => e.idx <= LAST_RELEASED);
@@ -84,12 +84,12 @@ async function newMsg(db, cid, seq, sender, extra = '') {
   return (await db.query(`insert into chat_messages (conversation_id, seq, sender_id, client_msg_id, kind, body) values ($1, $2, $3, gen_random_uuid(), 'text', 'xin chào'${extra}) returning id`, [cid, seq, sender])).rows[0].id;
 }
 
-test('Migration 4: nâng từ 0010 có dữ liệu — không mất dữ liệu cũ, tạo đủ bảng mới, bảng AI chat cũ nguyên vẹn', async () => {
+test('Migration 4: nâng từ 0011 có dữ liệu — không mất dữ liệu cũ, tạo đủ bảng mới, bảng AI chat cũ nguyên vẹn', async () => {
   const old = releasedFolder();
   const db = await openDb();
   try {
     await db.migrate(old);
-    for (const t of NEW_TABLES) assert.equal(await exists(db, t), false, `${t} chưa được có ở 0010`);
+    for (const t of NEW_TABLES) assert.equal(await exists(db, t), false, `${t} chưa được có ở 0011`);
     const u = await newUser(db);
     await db.query(`insert into social_profiles (user_id, display_name) values ($1, 'An')`, [u]);
     const u2 = await newUser(db);

@@ -30,7 +30,7 @@ import { REFRESH_TTL_MS, sha256 } from './tokens.js';
  *  - friendships: đổi khách thành đích, sắp lại user_a < user_b, bỏ cặp tự kết bạn, trùng cặp giữ dòng cũ hơn
  *  - feedback_reports (dự án 5a): đổi user_id sang đích ở CẢ HAI chiến lược (góp ý không phải tiến độ học; người dùng vẫn muốn theo dõi) —
  *    tệp/lời nhắn đi theo qua feedback_id, không cần chép
- *  - staff_roles/staff_totp/admin_sessions: cascade (khách không có vai trò) · feedback_events.actor_user_id: set_null
+ *  - staff_roles/staff_totp/staff_invites/admin_sessions: cascade (khách không có vai trò) · feedback_events.actor_user_id: set_null
  *  - audit_events: không sửa (FK SET NULL khi xóa khách) · refresh_tokens/auth_challenges/identities/password_credentials: cascade
  *
  * Tham khảo ý (không chép mã): Better Auth (MIT) plugin anonymous — móc `onLinkAccount({anonymousUser, newUser})` để ứng dụng tự
@@ -74,6 +74,7 @@ export const USER_TABLE_RULES = {
   feedback_events: 'set_null',
   staff_roles: 'cascade',
   staff_totp: 'cascade',
+  staff_invites: 'cascade',
   admin_sessions: 'cascade',
   // Dự án 4 (bạn bè/chat/gọi): khách KHÔNG dùng chat (chatEligibility loại khách) nên không có dòng nào cần chuyển;
   // `users.is_adult` của khách cũng KHÔNG ghi đè tài khoản đích (merge không đụng bảng users ngoài cờ khách).

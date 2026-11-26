@@ -11,7 +11,10 @@
     "db:generate": "drizzle-kit generate",
     "tts:prebuild": "tsx scripts/prebuild-tts.ts",
     "db:backup": "tsx scripts/backup-db.ts",
-    "db:restore-test": "tsx scripts/restore-test.ts"
+    "db:restore-test": "tsx scripts/restore-test.ts",
+    "admin:grant": "tsx src/scripts/admin-cli.ts grant",
+    "admin:revoke": "tsx src/scripts/admin-cli.ts revoke",
+    "admin:reset-totp": "tsx src/scripts/admin-cli.ts reset-totp"
   },
   "dependencies": {
     "@electric-sql/pglite": "^0.5.16",
@@ -31,6 +34,7 @@
     "fastify": "^4.28.1",
     "jose": "6.2.14",
     "nodemailer": "10.3.1",
+    "otpauth": "9.6.0",
     "postgres": "^3.4.9",
     "zod": "^3.24.2"
   },
