@@ -103,12 +103,13 @@ test('Quét DB, audit_events và log: năm sinh đã khai không xuất hiện �
   await ctx.app.audit.flush();
 
   const d = await ctx.db();
-  const re = '(^|[^0-9a-f])1963([^0-9a-f]|$)'; // không khớp nhầm vào đoạn uuid/băm hex
-  const tables = (await d.execute(sql`select table_name from information_schema.tables where table_schema = 'public'`)).rows.map((x) => x.table_name);
+  const re = '(^|[^0-9a-f-])1963([^0-9a-f-]|$)'; // không khớp nhầm vào đoạn uuid/băm hex (kể cả '-1963-' giữa uuid)
+  const rowsOf = (r) => (Array.isArray(r) ? r : r.rows); // postgres-js trả mảng, PGlite trả { rows }
+  const tables = rowsOf(await d.execute(sql`select table_name from information_schema.tables where table_schema = 'public'`)).map((x) => x.table_name);
   assert.ok(tables.includes('audit_events') && tables.includes('users'));
   for (const t of tables) {
     const hit = await d.execute(sql.raw(`select count(*)::int as n from "${t}" x where x::text ~ '${re}'`));
-    assert.equal(hit.rows[0].n, 0, `bảng ${t} chứa năm sinh`);
+    assert.equal(rowsOf(hit)[0].n, 0, `bảng ${t} chứa năm sinh`);
   }
   const events = await d.select().from(schema.auditEvents).where(eq(schema.auditEvents.userId, u.userId));
   const ages = events.filter((e) => e.type === 'age.declared');
@@ -124,6 +125,6 @@ test('declareAge trực tiếp: người dùng không tồn tại → 404', asyn
 test('Log Fastify không chứa năm sinh (logger bật mức trace)', async () => {
   assert.ok(logs.length > 0, 'logger có ghi (kiểm chứng test không rỗng)');
   const joined = logs.join('\n');
-  assert.doesNotMatch(joined, /(^|[^0-9a-f])1963([^0-9a-f]|$)/);
+  assert.doesNotMatch(joined, /(^|[^0-9a-f-])1963([^0-9a-f-]|$)/);
   assert.doesNotMatch(joined, /birthYear/);
 });

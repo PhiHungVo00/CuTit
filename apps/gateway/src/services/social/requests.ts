@@ -1,4 +1,4 @@
-import { and, count, desc, eq, gt, sql } from 'drizzle-orm';
+import { and, count, desc, eq, sql } from 'drizzle-orm';
 import {
   CHAT_LIMITS,
   FriendErrorCode,
@@ -34,30 +34,41 @@ export interface RequestEnv {
 }
 
 const badLookupKey = (userId: string) => `friend-bad-lookup:${userId}`;
+const dayKey = (userId: string) => `friend-req-day:${userId}`;
+const limited = (msg: string) => new GatewayError(429, FriendErrorCode.requestLimit, msg);
 
+/**
+ * Hai giới hạn là bộ đếm NGUYÊN TỬ (`RateCounters.hit` = INSERT … ON CONFLICT DO UPDATE … RETURNING): tăng TRƯỚC khi làm
+ * việc và kiểm số trả về, nên các yêu cầu song song không cùng thấy "số cũ" (rà kien-truc PR #60). Lượt đã đếm được hoàn
+ * (`unhit`) khi hóa ra không tốn hạn mức: không gửi được lời mời mới (tên không có, đã là bạn, trùng lời mời chờ, lời
+ * mời chéo thành bạn) hoặc tra cứu đúng. Yêu cầu bị từ chối vì quá hạn mức thì KHÔNG hoàn.
+ */
 export async function createFriendRequest(db: Db, fromId: string, handle: string, env: RequestEnv): Promise<FriendRequestCreateResponse> {
   const { now, counters } = env;
   await requireChatEligible(db, fromId, now);
 
-  // Hai giới hạn kiểm TRƯỚC khi tra: người gửi tự biết số lần của mình, không lộ gì về người nhận
-  const [{ n: sentToday }] = await db
-    .select({ n: count() })
-    .from(friendRequests)
-    .where(and(eq(friendRequests.fromUserId, fromId), gt(friendRequests.createdAt, new Date(now.getTime() - DAY_MS))));
-  if (sentToday >= CHAT_LIMITS.friendRequestsPerDay) throw new GatewayError(429, FriendErrorCode.requestLimit, 'Hôm nay bạn đã gửi quá nhiều lời mời');
-  if ((await counters.count(db, badLookupKey(fromId), now)) >= CHAT_LIMITS.badHandleLookupsPerHour) {
-    throw new GatewayError(429, FriendErrorCode.requestLimit, 'Bạn đã thử quá nhiều tên sai, hãy thử lại sau');
+  const perDay = await counters.hit(db, dayKey(fromId), DAY_MS, now);
+  if (perDay > CHAT_LIMITS.friendRequestsPerDay) throw limited('Hôm nay bạn đã gửi quá nhiều lời mời');
+  const lookups = await counters.hit(db, badLookupKey(fromId), HOUR_MS, now);
+  if (lookups > CHAT_LIMITS.badHandleLookupsPerHour) {
+    await counters.unhit(db, dayKey(fromId));
+    throw limited('Bạn đã thử quá nhiều tên sai, hãy thử lại sau');
   }
 
   try {
-    return await sendTo(db, fromId, handle, now);
+    const out = await sendTo(db, fromId, handle, now);
+    await counters.unhit(db, badLookupKey(fromId)); // tra cứu đúng không tính là "sai"
+    if (!out.created) await counters.unhit(db, dayKey(fromId)); // không có lời mời mới => không tốn hạn mức ngày
+    return { status: out.status };
   } catch (err) {
-    if (err instanceof GatewayError && err.code === FriendErrorCode.handleNotFound) await counters.hit(db, badLookupKey(fromId), HOUR_MS, now);
+    await counters.unhit(db, dayKey(fromId));
+    // chỉ "không thấy" mới tính là tra sai; lỗi khác (đã là bạn…) hoàn cả hai
+    if (!(err instanceof GatewayError && err.code === FriendErrorCode.handleNotFound)) await counters.unhit(db, badLookupKey(fromId));
     throw err;
   }
 }
 
-async function sendTo(db: Db, fromId: string, handle: string, now: Date): Promise<FriendRequestCreateResponse> {
+async function sendTo(db: Db, fromId: string, handle: string, now: Date): Promise<{ status: 'pending' | 'accepted'; created: boolean }> {
   const [target] = await db
     .select({ id: socialProfiles.userId, discoverable: socialProfiles.discoverable })
     .from(socialProfiles)
@@ -81,7 +92,7 @@ async function sendTo(db: Db, fromId: string, handle: string, now: Date): Promis
     if (reverse) {
       await tx.update(friendRequests).set({ status: 'accepted', resolvedAt: now }).where(eq(friendRequests.id, reverse.id));
       await createFriendship(tx, fromId, toId, now);
-      return { status: 'accepted' } as const;
+      return { status: 'accepted', created: false } as const;
     }
 
     // Đã là bạn: người gửi vốn biết điều này nên không lộ gì thêm
@@ -94,7 +105,7 @@ async function sendTo(db: Db, fromId: string, handle: string, now: Date): Promis
       .select({ id: friendRequests.id })
       .from(friendRequests)
       .where(and(eq(friendRequests.fromUserId, fromId), eq(friendRequests.toUserId, toId), eq(friendRequests.status, 'pending')));
-    if (dup) return { status: 'pending' } as const;
+    if (dup) return { status: 'pending', created: false } as const;
 
     // Người nhận bị dồn lời mời: cùng lỗi "không thấy" (không lộ rằng người đó có/được nhiều lời mời)
     const [{ n: pending }] = await tx
@@ -107,8 +118,9 @@ async function sendTo(db: Db, fromId: string, handle: string, now: Date): Promis
       await tx.insert(friendRequests).values({ fromUserId: fromId, toUserId: toId, createdAt: now });
     } catch (err) {
       if (!uniqueViolation(err)) throw err; // đã có lời mời chờ (đua): coi như trả lại lời mời cũ
+      return { status: 'pending', created: false } as const;
     }
-    return { status: 'pending' } as const;
+    return { status: 'pending', created: true } as const;
   });
 }
 

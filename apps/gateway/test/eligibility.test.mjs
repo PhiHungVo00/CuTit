@@ -6,7 +6,7 @@ import { schema } from '../dist/db/client.js';
 import { chatEligibility, clearChatEligibilityCache, invalidateChatEligibility } from '../dist/services/social/eligibility.js';
 import { mergeGuestInto } from '../dist/services/auth/merge.js';
 import { sha256 } from '../dist/services/auth/tokens.js';
-import { boot, member } from './social-helpers.mjs';
+import { boot, member, RUN } from './social-helpers.mjs';
 
 /** Dự án 4 Task 3 — chatEligibility: CỬA DUY NHẤT cho chat/gọi/nhóm/lời mời bằng handle */
 let ctx;
@@ -87,7 +87,7 @@ test('Khai tuổi / đặt handle có hiệu lực NGAY (tự invalidate), khôn
   assert.equal((await elig(u)).reason, 'age_unknown');
   await ctx.call(u, 'PUT', '/v1/me/age', { birthYear: 1990 });
   assert.equal((await elig(u)).reason, 'no_handle');
-  await ctx.call(u, 'PUT', '/v1/chat/handle', { handle: 'moi.nguoi' });
+  await ctx.call(u, 'PUT', '/v1/chat/handle', { handle: 'moi.nguoi' + RUN });
   assert.equal((await elig(u)).ok, true);
 });
 
@@ -114,4 +114,15 @@ test('Gộp khách is_adult=false vào tài khoản đích true: đích GIỮ tr
   assert.equal(tu.isAdult, true);
   fresh();
   assert.deepEqual(await elig(target), { ok: true });
+});
+
+test('Xin xóa / khôi phục tài khoản có hiệu lực NGAY với cổng (không chờ hết cache)', async () => {
+  const { scheduleDeletion, restoreAccount } = await import('../dist/services/auth/lifecycle.js');
+  const d = await ctx.db();
+  const u = await member(ctx, 'RoiDi');
+  assert.equal((await elig(u)).ok, true); // vào cache
+  await scheduleDeletion(d, u.userId, new Date(ctx.clock.now));
+  assert.deepEqual(await elig(u), { ok: false, reason: 'pending_deletion' });
+  assert.equal(await restoreAccount(d, u.userId, new Date(ctx.clock.now)), true);
+  assert.deepEqual(await elig(u), { ok: true });
 });

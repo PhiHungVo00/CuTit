@@ -205,7 +205,9 @@ test('Bạn thứ 6 vẫn là bạn nhưng questActive=false; bật khi đủ 5 
   for (let i = 0; i < 6; i++) ids.push(await befriend(ctx, await member(ctx, `Ban${i}`), lan));
   const list = await friendsOf(lan);
   assert.equal(list.length, 6);
-  assert.deepEqual(list.map((f) => f.questActive), [true, true, true, true, true, false]);
+  // đồng hồ giả => mọi quan hệ cùng createdAt, nên tìm theo id thay vì theo vị trí
+  assert.equal(list.filter((f) => f.questActive).length, 5);
+  assert.equal(list.find((f) => f.id === ids[5]).questActive, false, 'bạn thứ 6 không có nhiệm vụ');
 
   const full = await ctx.call(lan, 'POST', `/v1/friends/${ids[5]}/quest-active`, { questActive: true });
   assert.equal(full.statusCode, 409);
@@ -254,4 +256,24 @@ test('Luồng mã mời cũ vẫn mở cho khách và người dưới 18 (khôn
   const acc = await ctx.call(guestG, 'POST', '/v1/friends/accept', { code: inv.json().code });
   assert.equal(acc.statusCode, 200, acc.body);
   assert.equal(acc.json().questActive, true);
+});
+
+test('Đua: 40 tra cứu sai SONG SONG không vượt 10 lượt/giờ (phần còn lại 429), và không dò thêm được', async () => {
+  const me = await member(ctx, 'DoSong');
+  const rs = await Promise.all(Array.from({ length: 40 }, (_, i) => send(me, `khong.co${i}${RUN}`)));
+  const codes = rs.map((r) => r.statusCode);
+  assert.equal(codes.filter((c) => c === 404).length, 10, codes.join(','));
+  assert.equal(codes.filter((c) => c === 429).length, 30);
+});
+
+test('Đua: người đã gửi 15 lời mời, 10 lời mời hợp lệ SONG SONG nữa → đúng 5 thành công (không vượt 20/ngày)', async () => {
+  const me = await member(ctx, 'GuiSong');
+  const others = [];
+  for (let i = 0; i < 25; i++) others.push(await member(ctx, `NhanSong${i}`));
+  for (let i = 0; i < 15; i++) assert.equal((await send(me, others[i].handle)).statusCode, 200);
+  const rs = await Promise.all(others.slice(15).map((o) => send(me, o.handle)));
+  const codes = rs.map((r) => r.statusCode);
+  assert.equal(codes.filter((c) => c === 200).length, 5, codes.join(','));
+  assert.equal(codes.filter((c) => c === 429).length, 5);
+  assert.equal((await (await ctx.db()).select().from(friendRequests).where(eq(friendRequests.fromUserId, me.userId))).length, 20);
 });
