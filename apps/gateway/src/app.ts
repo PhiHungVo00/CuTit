@@ -34,6 +34,9 @@ import { updateGate } from './services/appVersion/updateGate.js';
 import { createMailProvider, type MailProvider } from './services/mail/MailProvider.js';
 import { createDbProvider, type DbProvider } from './db/client.js';
 import { AuditLog, purgeAuditEvents } from './services/audit/audit.js';
+import { adminRoutes } from './routes/admin/index.js';
+import { AdminAlerts } from './services/admin/alerts.js';
+import { purgeAdminData } from './services/admin/purge.js';
 import { feedbackRoutes } from './routes/feedback.js';
 import { createBlobStore } from './services/blob/index.js';
 import type { BlobStore } from './services/blob/BlobStore.js';
@@ -48,7 +51,25 @@ declare module 'fastify' {
   interface FastifyInstance {
     /** Nhật ký sự kiện bảo mật (test dùng `app.audit.flush()`) */
     audit: AuditLog;
+    /** Dự án 5a: cảnh báo email quản trị (chỉ khi ADMIN_API_ENABLED); test dùng `app.adminAlerts?.flush()` */
+    adminAlerts?: AdminAlerts;
   }
+}
+
+/**
+ * URL có thuộc khối /admin/v1 không? Phân loại theo đường dẫn ĐÃ chuẩn hóa (giải mã %xx, gộp `//`, chữ thường) vì router giải mã
+ * trước khi khớp: `/%61dmin/v1/...` vẫn vào route admin nên phải nhận CORS kiểu admin (rà kien-truc PR #50, mục 7).
+ * Không giải mã được => coi như admin (nhánh chặt hơn: chỉ ADMIN_ORIGIN).
+ */
+export function isAdminPath(url: string): boolean {
+  let path = url.split(/[?#]/, 1)[0];
+  try {
+    path = decodeURIComponent(path);
+  } catch {
+    return true;
+  }
+  path = path.replace(/\/{2,}/g, '/').toLowerCase();
+  return path === '/admin/v1' || path.startsWith('/admin/v1/');
 }
 
 export interface RouteDeps {
@@ -115,10 +136,16 @@ export async function buildApp(config: GatewayConfig, opts: BuildOptions = {}): 
 
   // Chỉ cho phép đúng các origin cấu hình; request không có Origin (app native, curl) vẫn đi qua
   // và sẽ bị chặn ở bước xác thực nếu cần.
-  const allowed = new Set(config.corsOrigins);
+  // Dự án 5a: CORS TÁCH THEO ĐƯỜNG DẪN trong MỘT chỗ đăng ký (delegator theo từng request, không có route nào thoát được):
+  //  - /admin/v1: chỉ ADMIN_ORIGIN, có credentials (cookie refresh).
+  //  - mọi đường dẫn khác: danh sách CORS_ORIGIN cũ, KHÔNG bao giờ gồm ADMIN_ORIGIN, không credentials.
+  const allowed = new Set(config.corsOrigins.filter((o) => o !== config.ADMIN_ORIGIN));
   await app.register(cors, {
-    origin: (origin, cb) => cb(null, !origin || allowed.has(origin)),
-    credentials: false
+    delegator: (req, cb) => {
+      const origin = req.headers.origin;
+      if (isAdminPath(req.raw.url ?? '')) cb(null, { origin: origin === config.ADMIN_ORIGIN, credentials: true });
+      else cb(null, { origin: !origin || allowed.has(origin), credentials: false });
+    }
   });
 
   // Âm thanh tải lên dạng nhị phân (multipart), không base64: giới hạn chặt để chống lạm dụng
@@ -135,13 +162,24 @@ export async function buildApp(config: GatewayConfig, opts: BuildOptions = {}): 
   const audit = new AuditLog(db, { salt: config.AUDIT_IP_SALT ?? '', log: app.log });
   app.decorate('audit', audit);
 
+  const mail = opts.mail ?? createMailProvider(config);
+  const clock: Clock = opts.clock ?? (() => new Date());
+  // Dự án 5a: cảnh báo email + việc nền của khối quản trị (chỉ dựng khi bật)
+  const adminAlerts = config.ADMIN_API_ENABLED ? new AdminAlerts(db, mail, config, clock, app.log) : undefined;
+  if (adminAlerts) app.decorate('adminAlerts', adminAlerts);
   const blob = opts.blob ?? createBlobStore(config);
   const stopFeedbackPurge = startFeedbackPurgeJob({ db, blob, log: app.log, enabled: config.NODE_ENV !== 'test', now: opts.clock });
 
   const purge = () =>
     db
       .get()
-      .then((d) => purgeAuditEvents(d))
+      .then(async (d) => {
+        const n = await purgeAuditEvents(d);
+        // Dự án 5a: phiên quản trị hết hạn quá 30 ngày + nhật ký quản trị quá 2 năm (mốc theo đồng hồ tiêm)
+        const a = await purgeAdminData(d, (opts.clock ?? (() => new Date()))());
+        if (a.sessions || a.auditRows) app.log.info(a, 'admin data purged');
+        return n;
+      })
       .then((n) => n && app.log.info({ deleted: n }, 'audit_events purged'))
       .catch((err: unknown) => app.log.warn({ err }, 'audit purge failed'));
   let purgeTimer: NodeJS.Timeout | undefined = setTimeout(() => {
@@ -169,6 +207,7 @@ export async function buildApp(config: GatewayConfig, opts: BuildOptions = {}): 
     clearTimeout(accountTimer);
     clearInterval(accountTimer);
     accountTimer = undefined;
+    await adminAlerts?.flush();
     stopFeedbackPurge();
     await audit.flush();
     if (!opts.db) await db.close();
@@ -184,7 +223,7 @@ export async function buildApp(config: GatewayConfig, opts: BuildOptions = {}): 
   const tts = opts.tts !== undefined ? opts.tts : createTtsProvider(config);
   const audioStore = new FileAudioStore(config.TTS_AUDIO_DIR);
   const ttsCache = opts.ttsCache ?? new TTSCacheProxy(fileSynthesizer(audioStore, tts), Boolean(tts));
-  const deps: RouteDeps = { pipeline, ttsCache, config, llm, vision, stt, tts, tutor: createTutor(llm, app.log, vision), db, audit, mail: opts.mail ?? createMailProvider(config), clock: opts.clock ?? (() => new Date()), blob };
+  const deps: RouteDeps = { pipeline, ttsCache, config, llm, vision, stt, tts, tutor: createTutor(llm, app.log, vision), db, audit, mail, clock, blob };
   deps.identity = opts.identity !== undefined ? opts.identity : createIdentityProviderFromEnv();
   app.log.info({ llm: llm?.name ?? 'mock', vision: vision?.name ?? 'mock', stt: stt?.name ?? 'mock' }, 'AI providers');
 
@@ -271,6 +310,9 @@ export async function buildApp(config: GatewayConfig, opts: BuildOptions = {}): 
     },
     { prefix: '/v1' }
   );
+
+  // Dự án 5a: khối quản trị /admin/v1 — CHỈ đăng ký khi ADMIN_API_ENABLED (tắt => 404, không có route nào)
+  if (adminAlerts) await app.register(adminRoutes, { ...deps, adminAlerts, prefix: '/admin/v1' });
 
   return app;
 }
