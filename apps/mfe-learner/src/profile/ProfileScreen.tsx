@@ -8,6 +8,7 @@ import { Rows } from '../settings/parts';
 import { useT } from '../settings/i18n';
 import { SignInInvite } from '../account/SignInInvite';
 import { useFeedbackUnread } from '../feedback/useFeedbackUnread';
+import { useChatUnread } from './useChatUnread';
 
 /** Thẻ "đã thuộc": đã lặp đúng từ 3 lần (SM-2 repetitions >= 3) */
 const MASTERED_REPS = 3;
@@ -22,13 +23,15 @@ function Stat({ label, value }: { label: string; value: string }) {
 }
 
 /** Hồ sơ (phương án B): 4 số liệu + danh sách gọn, Cài đặt là mục cuối. Dữ liệu offline trên máy. */
-export function ProfileScreen() {
+/** `messagesEnabled`: Host bật dòng Tin nhắn (Dự án 4); mfe-learner không biết gì về mfe-social, chỉ đi tới /tin-nhan. */
+export function ProfileScreen({ messagesEnabled = false }: { messagesEnabled?: boolean } = {}) {
   const t = useT();
   const navigate = useNavigate();
   const profile = useLearner((s) => s.profile);
   const activity = useLearner((s) => s.activity);
   const srs = useLearner((s) => s.srs);
   const { count: unread } = useFeedbackUnread();
+  const chatUnread = useChatUnread();
   const badgeCount = useProgress((s) => Object.keys(s.badges).length);
 
   const streak = computeStreak(activity);
@@ -48,6 +51,13 @@ export function ProfileScreen() {
     </span>
   ) : undefined;
 
+  const chatDot = chatUnread > 0 ? (
+    <span className="inline-flex items-center gap-1">
+      <span aria-hidden="true" className="inline-block rounded-full" style={{ width: 12, height: 12, background: '#C0553A' }} />
+      <span className="sr-only">{t('rowMessagesDot')}</span>
+    </span>
+  ) : undefined;
+
   return (
     <ScreenFrame title={t('profileTitle')}>
       <ul aria-label={t('statsLabel')} className="m-0 grid list-none grid-cols-2 gap-2 p-0">
@@ -61,6 +71,7 @@ export function ProfileScreen() {
         {row('hoc', t('rowProgress'), t('rowProgressHint'), '/tien-do')}
         {row('ban-be', t('rowFriends'), t('rowFriendsHint'), '/ban-be')}
         {row('luyen-tap', t('rowPlacement'), profile.onboarded ? t('rowPlacementRedo') : t('rowPlacementDo'), '/bat-dau')}
+        {messagesEnabled && row('chat', t('rowMessages'), t('rowMessagesHint'), '/tin-nhan', chatDot)}
         {row('chat', t('rowFeedback'), t('rowFeedbackHint'), '/gop-y', dot)}
         {row('cai-dat', t('rowSettings'), t('rowSettingsHint'), '/cai-dat')}
       </Rows>

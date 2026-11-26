@@ -93,3 +93,23 @@ describe('ProfileScreen (phương án B)', () => {
     expect(screen.queryByText('Có tin mới')).toBeNull();
   });
 });
+
+describe('Dòng Tin nhắn (Dự án 4)', () => {
+  it('ẩn khi Host chưa bật; bật thì có dòng dẫn tới /tin-nhan và chấm đỏ khi có tin chưa đọc', async () => {
+    show();
+    expect(screen.queryByText('Tin nhắn')).toBeNull();
+    cleanup();
+    render(
+      <MemoryRouter>
+        <ProfileScreen messagesEnabled />
+      </MemoryRouter>
+    );
+    const row = screen.getByText('Tin nhắn').closest('a')!;
+    expect(row.getAttribute('href')).toBe('/tin-nhan');
+    expect(screen.queryByText('Có tin nhắn chưa đọc')).toBeNull();
+    window.dispatchEvent(new CustomEvent('becutit:chat-unread', { detail: 3 }));
+    await waitFor(() => expect(screen.getByText('Có tin nhắn chưa đọc')).toBeTruthy());
+    window.dispatchEvent(new CustomEvent('becutit:chat-unread', { detail: 0 }));
+    await waitFor(() => expect(screen.queryByText('Có tin nhắn chưa đọc')).toBeNull());
+  });
+});

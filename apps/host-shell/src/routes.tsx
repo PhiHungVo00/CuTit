@@ -145,6 +145,7 @@ export const TONE_GYM_ROUTE = pathRoute('/phong-thanh', () => import('./screens/
 export const DELETE_ACCOUNT_INFO_ROUTE = pathRoute('/xoa-tai-khoan', () => import('./screens/DeleteAccountInfoRoute'));
 /** Dự án 5a: Góp ý / Báo lỗi (mfe-learner) — mở từ Hồ sơ hoặc nút "Báo lỗi" của màn lỗi; hai đường dẫn dùng chung một chunk */
 const loadFeedback = () => import('./screens/FeedbackRoute');
+const loadSocial = () => import('./screens/SocialRoute');
 export const PATH_ROUTES: PathRoute[] = [
   pathRoute('/bai-hoc/:lessonId', () => import('./screens/LessonRoute')),
   pathRoute('/kiem-tra/:unitId', () => import('./screens/TestOutRoute')),
@@ -155,6 +156,12 @@ export const PATH_ROUTES: PathRoute[] = [
   // Tiến độ chi tiết (M9: thống kê, ôn thẻ SM-2, 7 ngày, độ chính xác) — mở từ một dòng của tab Hồ sơ
   pathRoute('/tien-do', () => import('./screens/ProgressRoute')),
   pathRoute('/ban-be', () => import('./screens/FriendsRoute')),
+  // Dự án 4 (mfe-social), nạp lười, KHÔNG vào gói đầu. Một chunk SocialRoute cho /tin-nhan, /tin-nhan/:id, /ban-be/tim, /moi, /moi/:code;
+  // /goi/:callId (màn gọi) trỏ chunk "Sắp có" tới khi Task 15 đổi `load`; /tin-nhan/moi (tạo nhóm) tới khi Task 14.
+  pathRoute('/tin-nhan/*', loadSocial),
+  pathRoute('/ban-be/tim', loadSocial),
+  pathRoute('/moi/*', loadSocial),
+  pathRoute('/goi/:callId', () => import('./screens/SocialSoonRoute')),
   // Dự án 3: đăng nhập/đăng ký (mfe-learner); mở từ Hồ sơ, thẻ mời và Cài đặt › Tài khoản
   pathRoute('/dang-nhap', () => import('./screens/AuthRoute')),
   pathRoute('/gop-y', loadFeedback),
