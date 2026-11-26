@@ -47,6 +47,7 @@ import { chatSocialRoutes } from './routes/chatSocial.js';
 import { pushTokenRoutes } from './routes/pushTokens.js';
 import { createPushProvider, type PushProvider } from './services/push/PushProvider.js';
 import { startPushNotifier, type PushNotifier } from './services/push/notify.js';
+import { chatGroupRoutes } from './routes/chatGroups.js';
 import type { ChatEligibilityFn } from './services/chat/eligibility.js';
 import { chatEligibility } from './services/social/eligibility.js';
 import { createChatLimiter, type ChatLimiter } from './services/chat/limits.js';
@@ -384,6 +385,7 @@ export async function buildApp(config: GatewayConfig, opts: BuildOptions = {}): 
       await v1.register(authMeRoutes, deps);
       await v1.register(feedbackRoutes, deps);
       await v1.register(chatSocialRoutes, { ...deps, eligibility: opts.chatEligibility ?? chatEligibility, limiter: opts.chatLimiter ?? createChatLimiter() });
+      await v1.register(chatGroupRoutes, { ...deps, eligibility: opts.chatEligibility ?? chatEligibility });
       await v1.register(meAgeRoutes, deps);
       await v1.register(pushTokenRoutes, { ...deps, eligibility: opts.chatEligibility ?? chatEligibility });
     },

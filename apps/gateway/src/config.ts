@@ -216,7 +216,9 @@ const EnvSchema = z
     /** Thông báo đẩy: `none` (không đẩy) | `log` (ghi log, dev/test) | `fcm`. Mặc định: `log` ở dev/test, `none` ở production */
     PUSH_PROVIDER: z.enum(['none', 'log', 'fcm']).optional(),
     /** Đường dẫn tệp khóa tài khoản dịch vụ Firebase (KHÔNG commit, không in). Thiếu khi PUSH_PROVIDER=fcm => chạy bản log */
-    FCM_SERVICE_ACCOUNT_FILE: z.string().min(1).optional()
+    FCM_SERVICE_ACCOUNT_FILE: z.string().min(1).optional(),
+    /** Trần mềm số thành viên đang ở trong một nhóm học (spec 6.1: không giới hạn thật, nhưng Gateway không bị lạm dụng) */
+    GROUP_SOFT_CAP: z.coerce.number().int().positive().default(1000)
   })
   .transform((env) => ({
     ...env,
