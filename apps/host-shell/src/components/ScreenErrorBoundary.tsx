@@ -1,4 +1,5 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { t } from '../i18n';
 
 interface Props {
@@ -9,6 +10,16 @@ interface Props {
 
 interface State {
   error: Error | null;
+}
+
+/** Mở Góp ý ở loại "Báo lỗi", kèm tên lỗi + stack (qua state điều hướng, không qua URL; FeedbackRoute lười rút gọn còn tên + dòng đầu) */
+function ReportBugButton({ error }: { error: Error }) {
+  const navigate = useNavigate();
+  return (
+    <button className="btn" onClick={() => navigate('/gop-y?loai=loi', { state: { error: { name: error.name, stack: (error.stack ?? '').slice(0, 2000) } } })}>
+      {t('reportBug')}
+    </button>
+  );
 }
 
 /**
@@ -46,6 +57,7 @@ export class ScreenErrorBoundary extends Component<Props, State> {
         <button className="btn" onClick={() => window.location.reload()}>
           {t('retry')}
         </button>
+        <ReportBugButton error={this.state.error} />
       </div>
     );
   }

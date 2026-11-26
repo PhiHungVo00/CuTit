@@ -21,6 +21,9 @@ export const { useT, t } = defineMessages(
     rowPlacementRedo: 'Làm lại bài xếp lớp',
     rowSettings: 'Cài đặt',
     rowSettingsHint: 'Giao diện, âm thanh, tài khoản',
+    rowFeedback: 'Góp ý / Báo lỗi',
+    rowFeedbackHint: 'Gửi lỗi hoặc ý tưởng, xem lời trả lời',
+    rowFeedbackDot: 'Có tin mới',
 
     // Mục lục Cài đặt
     settingsTitle: 'Cài đặt',
@@ -85,6 +88,9 @@ export const { useT, t } = defineMessages(
     rowPlacementRedo: 'Retake the placement test',
     rowSettings: 'Settings',
     rowSettingsHint: 'Appearance, sound, account',
+    rowFeedback: 'Feedback / Report a bug',
+    rowFeedbackHint: 'Send a bug or idea, read replies',
+    rowFeedbackDot: 'New reply',
 
     settingsTitle: 'Settings',
     settingsBack: '← Settings',

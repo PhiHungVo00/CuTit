@@ -1,4 +1,4 @@
-import { useMemo, type MouseEvent } from 'react';
+import { useMemo, type MouseEvent, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ListRow } from '@vietlearning/ui';
 import { computeStreak, useLearner } from '@vietlearning/state';
@@ -7,6 +7,7 @@ import { ScreenFrame } from '../common/ui';
 import { Rows } from '../settings/parts';
 import { useT } from '../settings/i18n';
 import { SignInInvite } from '../account/SignInInvite';
+import { useFeedbackUnread } from '../feedback/useFeedbackUnread';
 
 /** Thẻ "đã thuộc": đã lặp đúng từ 3 lần (SM-2 repetitions >= 3) */
 const MASTERED_REPS = 3;
@@ -27,6 +28,7 @@ export function ProfileScreen() {
   const profile = useLearner((s) => s.profile);
   const activity = useLearner((s) => s.activity);
   const srs = useLearner((s) => s.srs);
+  const { count: unread } = useFeedbackUnread();
   const badgeCount = useProgress((s) => Object.keys(s.badges).length);
 
   const streak = computeStreak(activity);
@@ -37,7 +39,14 @@ export function ProfileScreen() {
     e.preventDefault();
     navigate(to);
   };
-  const row = (icon: Parameters<typeof ListRow>[0]['icon'], label: string, hint: string, to: string) => <ListRow icon={icon} label={label} hint={hint} to={to} onClick={go(to)} />;
+  const row = (icon: Parameters<typeof ListRow>[0]['icon'], label: string, hint: string, to: string, trailing?: ReactNode) => <ListRow icon={icon} label={label} hint={hint} to={to} onClick={go(to)} trailing={trailing} />;
+  // Chấm đỏ: có lời nhắn chưa đọc. Màu #C0553A (token lỗi của bản phác) + chữ ẩn cho trình đọc màn hình, không chỉ báo bằng màu
+  const dot = unread > 0 ? (
+    <span className="inline-flex items-center gap-1">
+      <span aria-hidden="true" className="inline-block rounded-full" style={{ width: 12, height: 12, background: '#C0553A' }} />
+      <span className="sr-only">{t('rowFeedbackDot')}</span>
+    </span>
+  ) : undefined;
 
   return (
     <ScreenFrame title={t('profileTitle')}>
@@ -52,6 +61,7 @@ export function ProfileScreen() {
         {row('hoc', t('rowProgress'), t('rowProgressHint'), '/tien-do')}
         {row('ban-be', t('rowFriends'), t('rowFriendsHint'), '/ban-be')}
         {row('luyen-tap', t('rowPlacement'), profile.onboarded ? t('rowPlacementRedo') : t('rowPlacementDo'), '/bat-dau')}
+        {row('chat', t('rowFeedback'), t('rowFeedbackHint'), '/gop-y', dot)}
         {row('cai-dat', t('rowSettings'), t('rowSettingsHint'), '/cai-dat')}
       </Rows>
     </ScreenFrame>
