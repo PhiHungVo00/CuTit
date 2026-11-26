@@ -26,7 +26,10 @@ const TODAY = '2026-11-18';
 const call = (headers, method, url, payload) => a.inject({ method, url, headers, ...(payload === undefined ? {} : { payload }) });
 const invite = (u) => call(u.headers, 'POST', '/v1/friends/invite');
 const accept = (u, code) => call(u.headers, 'POST', '/v1/friends/accept', { code });
-const count = async (u) => (await call(u.headers, 'GET', `/v1/friends?today=${TODAY}`)).json().friends.length;
+const list = async (u) => (await call(u.headers, 'GET', `/v1/friends?today=${TODAY}`)).json().friends;
+const count = async (u) => (await list(u)).length;
+/** Dự án 4: 5 là trần của NHIỆM VỤ TUẦN (quest_active), không còn chặn việc kết bạn */
+const activeCount = async (u) => (await list(u)).filter((f) => f.questActive).length;
 
 async function person(name) {
   const g = await guest(a);
@@ -39,27 +42,27 @@ async function befriend(x, y) {
   assert.equal(r.statusCode, 200, r.body);
 }
 
-test(`[${PG ? 'Postgres' : 'PGlite'}] Người có 4 bạn nhập 6 mã cùng lúc: chỉ đúng 1 lượt thành công, không vượt 5`, async () => {
+test(`[${PG ? 'Postgres' : 'PGlite'}] Người có 4 bạn nhập 6 mã cùng lúc: cả 6 thành bạn, nhưng chỉ đúng 1 cặp mới được nhiệm vụ tuần (trần 5)`, async () => {
   const lan = await person('Lan');
   for (let i = 0; i < 4; i++) await befriend(await person(`Cũ ${i}`), lan);
   const codes = [];
   for (let i = 0; i < 6; i++) codes.push((await invite(await person(`Mới ${i}`))).json().code);
   const res = await Promise.all(codes.map((c) => accept(lan, c)));
-  const ok = res.filter((r) => r.statusCode === 200).length;
-  assert.equal(ok, 1, res.map((r) => r.statusCode).join(','));
-  assert.ok(res.filter((r) => r.statusCode !== 200).every((r) => r.json().error === 'friend_limit'));
-  assert.equal(await count(lan), 5);
+  assert.ok(res.every((r) => r.statusCode === 200), res.map((r) => r.statusCode).join(','));
+  assert.equal(await count(lan), 10);
+  assert.equal(await activeCount(lan), 5, 'đúng 5 nhiệm vụ tuần dù đua nhau');
 });
 
-test(`[${PG ? 'Postgres' : 'PGlite'}] Phía người mời: người có 4 bạn vừa được nhập mã vừa tự nhập mã người khác cùng lúc => vẫn tối đa 5`, async () => {
+test(`[${PG ? 'Postgres' : 'PGlite'}] Phía người mời: người có 4 bạn vừa được nhập mã vừa tự nhập mã người khác cùng lúc => vẫn tối đa 5 nhiệm vụ`, async () => {
   const lan = await person('Lan');
   for (let i = 0; i < 4; i++) await befriend(await person(`Cũ ${i}`), lan);
   const others = await Promise.all([0, 1, 2, 3].map((i) => person(`Khác ${i}`)));
   const lanCode = (await invite(lan)).json().code;
   const theirCodes = await Promise.all(others.slice(1).map(async (o) => (await invite(o)).json().code));
   const res = await Promise.all([accept(others[0], lanCode), ...theirCodes.map((c) => accept(lan, c))]);
-  assert.equal(res.filter((r) => r.statusCode === 200).length, 1, res.map((r) => r.statusCode).join(','));
-  assert.equal(await count(lan), 5);
+  assert.ok(res.every((r) => r.statusCode === 200), res.map((r) => r.statusCode).join(','));
+  assert.equal(await count(lan), 8);
+  assert.equal(await activeCount(lan), 5);
 });
 
 test(`[${PG ? 'Postgres' : 'PGlite'}] Khóa không gây deadlock: nhiều cặp kết bạn chéo nhau cùng lúc đều xong`, async () => {
