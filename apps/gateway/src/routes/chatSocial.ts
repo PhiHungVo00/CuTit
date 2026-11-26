@@ -112,6 +112,7 @@ export const chatSocialRoutes: FastifyPluginAsync<ChatSocialDeps> = async (serve
       clientMsgId: body.clientMsgId,
       kind: body.kind,
       body: body.kind === 'text' ? body.body : undefined,
+      attachmentId: body.kind === 'text' ? undefined : body.attachmentId,
       peerGate: eligibility,
       limiter,
       now: clock()

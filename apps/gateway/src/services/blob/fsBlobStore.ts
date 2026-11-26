@@ -22,7 +22,11 @@ const EXT_TYPES: Record<string, string> = {
   png: 'image/png',
   mp4: 'video/mp4',
   webm: 'video/webm',
-  mov: 'video/quicktime'
+  mov: 'video/quicktime',
+  // giọng nói chat (dự án 4 Task 8): đuôi do SERVER chọn; Content-Type trả cho người xem lấy từ DB
+  weba: 'audio/webm',
+  ogg: 'audio/ogg',
+  m4a: 'audio/mp4'
 };
 const SEGMENT = /^[A-Za-z0-9_-]{1,80}$/;
 const TTL_MS = 60_000;
