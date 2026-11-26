@@ -638,3 +638,35 @@ test('production tắt chat, không có CHAT_BLOB_URL_SECRET: Gateway vẫn kh�
   const app = await makeApp({ NODE_ENV: 'production', CHAT_ENABLED: 'false', JWT_SECRET: long('a'), AUDIT_IP_SALT: long('b'), AUTH_OTP_PEPPER: long('c'), PGLITE_DIR: 'memory://' });
   await app.close();
 });
+
+test('nhóm: tệp theo quyền thành viên; người bị xóa/vào sau không tải được; giải tán nhóm → tệp vào blob_deletions rồi được dọn', async () => {
+  const { befriend } = await import('./chat-helpers.mjs');
+  const t = await setup();
+  const c = await person(t, 'Chi');
+  const d = await person(t, 'Dũng');
+  await befriend(t, t.a, c);
+  await befriend(t, t.a, d);
+  const g = await call(t, t.a, 'POST', '/v1/chat/conversations', { title: 'Lớp', memberIds: [t.b.userId, c.userId] });
+  assert.equal(g.statusCode, 200, g.body);
+  const gid = g.json().id;
+  const id = await uploadOk(t, t.b, PNG(), {}, gid);
+  assert.equal((await send(t, t.b, gid, 'image', id)).statusCode, 200);
+  assert.equal((await call(t, c, 'GET', `/v1/chat/attachments/${id}/url`)).statusCode, 200);
+  // thêm Dũng SAU: không xem được tệp của tin cũ (mốc vào nhóm)
+  assert.equal((await call(t, t.a, 'POST', `/v1/chat/groups/${gid}/members`, { memberIds: [d.userId] })).statusCode, 204);
+  assert.equal((await call(t, d, 'GET', `/v1/chat/attachments/${id}/url`)).statusCode, 404);
+  // xóa Chi khỏi nhóm: không tải lên, không xin URL
+  assert.equal((await call(t, t.a, 'DELETE', `/v1/chat/groups/${gid}/members/${c.userId}`)).statusCode, 204);
+  assert.equal((await call(t, c, 'GET', `/v1/chat/attachments/${id}/url`)).statusCode, 403);
+  const r = await t.upload(c, [meta(gid), file(PNG())]);
+  assert.equal(r.statusCode, 403);
+  assert.equal(r.json().error, 'not_a_member');
+  // giải tán: tệp thường vào hàng xóa, job dọn kho
+  assert.equal((await call(t, t.a, 'DELETE', `/v1/chat/groups/${gid}`)).statusCode, 204);
+  assert.equal((await t.db.select().from(schema.blobDeletions)).length, 1);
+  assert.equal(walk(t.dir).length, 1);
+  await runChatBlobMaintenance(t.db, t.blob, new Date());
+  assert.deepEqual(walk(t.dir), []);
+  assert.equal((await t.db.select().from(schema.blobDeletions)).length, 0);
+  await t.done();
+});
