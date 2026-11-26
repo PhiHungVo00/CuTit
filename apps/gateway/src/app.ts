@@ -35,6 +35,7 @@ import { createMailProvider, type MailProvider } from './services/mail/MailProvi
 import { createDbProvider, type DbProvider } from './db/client.js';
 import { AuditLog, purgeAuditEvents } from './services/audit/audit.js';
 import { adminRoutes } from './routes/admin/index.js';
+import { redactSignedUrl } from './lib/logRedact.js';
 import { AdminAlerts } from './services/admin/alerts.js';
 import { purgeAdminData } from './services/admin/purge.js';
 import { feedbackRoutes } from './routes/feedback.js';
@@ -141,7 +142,21 @@ export interface BuildOptions {
 
 export async function buildApp(config: GatewayConfig, opts: BuildOptions = {}): Promise<FastifyInstance> {
   const app = Fastify({
-    logger: opts.logger ?? true,
+    // Mặc định của Fastify, chỉ che `sig=` của URL tệp quản trị trong log truy cập
+    logger:
+      opts.logger === false
+        ? false
+        : {
+            serializers: {
+              req: (req: { method?: string; url?: string; host?: string; ip?: string; socket?: { remotePort?: number } }) => ({
+                method: req.method,
+                url: redactSignedUrl(req.url ?? ''),
+                host: req.host,
+                remoteAddress: req.ip,
+                remotePort: req.socket?.remotePort
+              })
+            }
+          },
     bodyLimit: 1024 * 1024, // 1MB cho JSON thường; route âm thanh nâng riêng
     trustProxy: config.NODE_ENV === 'production'
   });
