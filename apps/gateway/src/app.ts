@@ -44,6 +44,7 @@ import { createBlobStore } from './services/blob/index.js';
 import type { BlobStore } from './services/blob/BlobStore.js';
 import { startFeedbackPurgeJob } from './jobs/feedbackPurge.js';
 import { chatSocialRoutes } from './routes/chatSocial.js';
+import { chatAttachmentRoutes, chatBlobRoutes } from './routes/chatAttachments.js';
 import type { ChatEligibilityFn } from './services/chat/eligibility.js';
 import { chatEligibility } from './services/social/eligibility.js';
 import { createChatLimiter, type ChatLimiter } from './services/chat/limits.js';
@@ -360,6 +361,7 @@ export async function buildApp(config: GatewayConfig, opts: BuildOptions = {}): 
       await v1.register(feedbackRoutes, deps);
       await v1.register(chatSocialRoutes, { ...deps, eligibility: opts.chatEligibility ?? chatEligibility, limiter: opts.chatLimiter ?? createChatLimiter() });
       await v1.register(meAgeRoutes, deps);
+      await v1.register(chatAttachmentRoutes, { ...deps, eligibility: opts.chatEligibility ?? chatEligibility });
     },
     { prefix: '/v1' }
   );
@@ -380,6 +382,9 @@ export async function buildApp(config: GatewayConfig, opts: BuildOptions = {}): 
       await wsScope.register(wsRoutes, { hub });
     });
   }
+
+  // Dự án 4 (Task 8): GET /v1/chat/blob (URL ký) NGOÀI scope /v1 vì thẻ <img>/<audio> không gửi được Bearer; chỉ khi CHAT_ENABLED
+  if (config.CHAT_ENABLED) await app.register(chatBlobRoutes, deps);
 
   // Dự án 5a: khối quản trị /admin/v1 — CHỈ đăng ký khi ADMIN_API_ENABLED (tắt => 404, không có route nào)
   if (adminAlerts) await app.register(adminRoutes, { ...deps, adminAlerts, prefix: '/admin/v1' });

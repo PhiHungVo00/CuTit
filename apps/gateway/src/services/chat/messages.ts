@@ -6,6 +6,7 @@ import type { RealtimeBus } from '../realtime/RealtimeBus.js';
 import { activeMembers, assertDmReachable, blockersOf, dmPeerOf, getMembership, type Q } from './conversations.js';
 import type { ChatEligibilityFn } from './eligibility.js';
 import type { ChatLimiter } from './limits.js';
+import { claimAttachment } from './attachments.js';
 
 const { chatMessages, chatAttachments, conversations, conversationMembers, socialProfiles, userBlocks } = schema;
 
@@ -122,6 +123,8 @@ export interface SendArgs {
   clientMsgId: string;
   kind: 'text' | 'image' | 'voice';
   body?: string;
+  /** bắt buộc với kind image/voice: tệp đã tải lên bằng POST /v1/chat/attachments (đúng người, cùng cuộc, chưa gắn) */
+  attachmentId?: string;
   /** cổng điều kiện của NGƯỜI KIA (1-1). Bỏ trống = chỉ kiểm bạn bè + chặn */
   peerGate?: ChatEligibilityFn;
   limiter?: ChatLimiter;
@@ -150,10 +153,15 @@ const isUniqueViolation = (err: unknown, constraint: string): boolean => {
 export async function sendMessage(db: Db, bus: RealtimeBus, args: SendArgs): Promise<{ message: Message; duplicate: boolean }> {
   const { conversationId, userId, clientMsgId, kind } = args;
   const now = args.now ?? new Date();
-  if (kind !== 'text') throw new GatewayError(400, ChatErrorCode.attachmentInvalid, 'Tin kèm ảnh/giọng nói chưa được hỗ trợ ở API này');
   const body = args.body ?? '';
-  // NUL ( ) làm Postgres từ chối cột text → phải chặn ở đây (400), không để lọt thành 500
-  if (body.trim().length === 0 || body.length > CHAT_LIMITS.bodyMax || body.includes(' ')) throw new GatewayError(400, 'invalid_request', `Tin phải từ 1 đến ${CHAT_LIMITS.bodyMax} ký tự`);
+  if (kind === 'text') {
+    // NUL ( ) làm Postgres từ chối cột text → phải chặn ở đây (400), không để lọt thành 500
+    if (args.attachmentId || body.trim().length === 0 || body.length > CHAT_LIMITS.bodyMax || body.includes(' ')) {
+      throw new GatewayError(400, 'invalid_request', `Tin phải từ 1 đến ${CHAT_LIMITS.bodyMax} ký tự`);
+    }
+  } else if (!args.attachmentId || args.body !== undefined) {
+    throw new GatewayError(400, ChatErrorCode.attachmentInvalid, 'Tin ảnh/giọng nói cần attachmentId và không kèm chữ');
+  }
 
   const { conv } = await getMembership(db, userId, conversationId);
   // gửi lại tin đã lưu thì trả tin cũ KỂ CẢ khi sau đó người kia chặn/không còn khả dụng (client mới biết tin đã tới nơi)
@@ -173,7 +181,9 @@ export async function sendMessage(db: Db, bus: RealtimeBus, args: SendArgs): Pro
       await getMembership(tx, userId, conversationId);
       out.duplicate = (await existing(tx)) ?? undefined;
       if (out.duplicate) return;
-      out.release = args.limiter?.enforceChatLimits(userId, conversationId, now, body);
+      // kiểm tệp TRƯỚC giới hạn tốc độ: tệp sai không đốt lượt gửi
+      if (kind !== 'text') await claimAttachment(tx, { id: args.attachmentId!, userId, conversationId, kind, now });
+      out.release = args.limiter?.enforceChatLimits(userId, conversationId, now, kind === 'text' ? body : undefined);
       const [seqRow] = await tx
         .update(conversations)
         .set({ lastSeq: sql`${conversations.lastSeq} + 1`, lastMessageAt: sql`greatest(coalesce(${conversations.lastMessageAt}, ${now.toISOString()}::timestamptz), ${now.toISOString()}::timestamptz)` })
@@ -181,7 +191,16 @@ export async function sendMessage(db: Db, bus: RealtimeBus, args: SendArgs): Pro
         .returning({ seq: conversations.lastSeq });
       const [row] = await tx
         .insert(chatMessages)
-        .values({ conversationId, seq: seqRow.seq, senderId: userId, clientMsgId, kind: 'text', body, createdAt: now })
+        .values({
+          conversationId,
+          seq: seqRow.seq,
+          senderId: userId,
+          clientMsgId,
+          kind,
+          body: kind === 'text' ? body : null,
+          attachmentId: kind === 'text' ? null : args.attachmentId,
+          createdAt: now
+        })
         .returning({ id: chatMessages.id });
       // gửi tin = đã đọc tới tin này
       await tx
@@ -196,6 +215,8 @@ export async function sendMessage(db: Db, bus: RealtimeBus, args: SendArgs): Pro
       const again = await existing(db);
       if (again) return { message: again, duplicate: true };
     }
+    // hai tin cùng giành một tệp: tin thua nhận lỗi tệp không hợp lệ (như tệp đã gắn)
+    if (isUniqueViolation(err, 'chat_messages_attachment_uq')) throw new GatewayError(400, ChatErrorCode.attachmentInvalid, 'Tệp đính kèm không hợp lệ');
     throw err;
   }
   if (out.duplicate) return { message: out.duplicate, duplicate: true };

@@ -212,7 +212,11 @@ const EnvSchema = z
     FEEDBACK_IP_PER_HOUR: z.coerce.number().int().positive().default(20),
     // ---- Dự án 4: bạn bè (chat, gọi, nhóm) ----
     /** Trần số yêu cầu/phút/người cho các route chat (cao hơn RATE_LIMIT_PER_MINUTE chung vì tải chat > 60/phút; chống spam thật nằm ở ChatLimiter) */
-    CHAT_RATE_LIMIT_PER_MINUTE: z.coerce.number().int().positive().default(600)
+    CHAT_RATE_LIMIT_PER_MINUTE: z.coerce.number().int().positive().default(600),
+    /** Trần dung lượng ảnh/giọng nói CHAT (MB), RIÊNG với BLOB_TOTAL_CAP_MB của góp ý. Vượt => 507 storage_full cho tệp; tin chữ vẫn gửi được (Task 8) */
+    CHAT_BLOB_TOTAL_CAP_MB: z.coerce.number().positive().default(5000),
+    /** Khóa HMAC ký URL tệp chat (sống 5 phút), RIÊNG với mọi khóa khác. Dev/test thiếu => sinh ngẫu nhiên; production bật chat mà thiếu => lỗi cấu hình */
+    CHAT_BLOB_URL_SECRET: z.string().min(32, 'CHAT_BLOB_URL_SECRET phải dài tối thiểu 32 ký tự').optional()
   })
   .transform((env) => ({
     ...env,
@@ -231,6 +235,7 @@ const EnvSchema = z
     APP_VERSIONS_FILE: env.APP_VERSIONS_FILE ?? DEFAULT_APP_VERSIONS_FILE,
     ADMIN_API_ENABLED: env.ADMIN_API_ENABLED ?? env.NODE_ENV !== 'production',
     CHAT_ENABLED: env.CHAT_ENABLED ?? env.NODE_ENV !== 'production',
+    CHAT_BLOB_URL_SECRET: env.CHAT_BLOB_URL_SECRET ?? (env.NODE_ENV === 'production' ? undefined : randomBytes(32).toString('hex')),
     apkDownloadHosts: env.APK_DOWNLOAD_HOSTS.split(',')
       .map((h) => h.trim().toLowerCase())
       .filter(Boolean),
@@ -279,6 +284,20 @@ const EnvSchema = z
         code: z.ZodIssueCode.custom,
         path: ['ADMIN_BLOB_URL_SECRET'],
         message: 'ADMIN_BLOB_URL_SECRET phải khác JWT_SECRET, AUDIT_IP_SALT, AUTH_OTP_PEPPER và ADMIN_JWT_SECRET'
+      });
+    }
+    if (env.CHAT_ENABLED && !env.CHAT_BLOB_URL_SECRET) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['CHAT_BLOB_URL_SECRET'],
+        message: 'Bật chat ở production bắt buộc cấu hình CHAT_BLOB_URL_SECRET (≥ 32 ký tự, khác mọi khóa khác)'
+      });
+    }
+    if (env.CHAT_BLOB_URL_SECRET && [env.JWT_SECRET, env.AUDIT_IP_SALT, env.AUTH_OTP_PEPPER, env.ADMIN_JWT_SECRET, env.ADMIN_BLOB_URL_SECRET].includes(env.CHAT_BLOB_URL_SECRET)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['CHAT_BLOB_URL_SECRET'],
+        message: 'CHAT_BLOB_URL_SECRET phải khác JWT_SECRET, AUDIT_IP_SALT, AUTH_OTP_PEPPER, ADMIN_JWT_SECRET và ADMIN_BLOB_URL_SECRET'
       });
     }
     if (env.corsOrigins.includes('*')) {
