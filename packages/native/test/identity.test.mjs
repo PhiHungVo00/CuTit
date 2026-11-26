@@ -41,3 +41,11 @@ test('web: hộp bị bỏ qua/đóng => cancelled', async () => {
   };
   await assert.rejects(getGoogleIdToken('nonce-123456789012'), (e) => e.code === 'cancelled');
 });
+
+test('native: KHÔNG truyền `scopes` cho SocialLogin.login (Capgo từ chối khi MainActivity chưa cấu hình; ID token đã có email/profile)', async () => {
+  const { readFile } = await import('node:fs/promises');
+  const src = await readFile(new URL('../src/identity.ts', import.meta.url), 'utf8');
+  const call = src.slice(src.indexOf('SocialLogin.login('), src.indexOf('SocialLogin.login(') + 200);
+  assert.ok(call.includes('nonce'), 'phải tìm thấy lời gọi login có nonce');
+  assert.doesNotMatch(call, /scopes/);
+});
