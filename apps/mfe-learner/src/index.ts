@@ -7,3 +7,6 @@ export { FriendsScreen } from './friends/FriendsScreen';
 export { AuthScreen } from './account/AuthScreen';
 export { SignInInvite } from './account/SignInInvite';
 export { SETTINGS_GROUPS } from './settings/groups';
+export { FeedbackScreen, type FeedbackScreenProps } from './feedback/FeedbackScreen';
+export { MyFeedback } from './feedback/MyFeedback';
+export { FEEDBACK_UNREAD_EVENT } from './feedback/useFeedbackUnread';
