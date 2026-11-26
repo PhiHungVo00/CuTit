@@ -7,12 +7,13 @@ import type { PushMessage } from './payload.js';
 /**
  * Nhà cung cấp thông báo đẩy trừu tượng (nguyên tắc 4: code chỉ biết interface này, không biết tên hãng).
  * - `invalid`: token nhà cung cấp báo chết/không hợp lệ ⇒ người gọi đặt `disabled_at`.
+ * - `config`: số token bị từ chối vì lỗi cấu hình/nội dung (KHÔNG vô hiệu token; chỉ cảnh báo).
  * - `retry`: token gặp lỗi TẠM (mạng, 5xx, 429) ⇒ người gọi thử lại có giới hạn.
  * Ném lỗi chỉ khi cả mẻ hỏng (cấu hình/xác thực); thông điệp lỗi KHÔNG BAO GIỜ chứa khóa.
  */
 export interface PushProvider {
   readonly name: string;
-  send(tokens: string[], msg: PushMessage): Promise<{ invalid: string[]; retry?: string[] }>;
+  send(tokens: string[], msg: PushMessage): Promise<{ invalid: string[]; retry?: string[]; config?: number }>;
 }
 
 export type PushLog = { warn: (obj: object, msg?: string) => void; info: (obj: object, msg?: string) => void };

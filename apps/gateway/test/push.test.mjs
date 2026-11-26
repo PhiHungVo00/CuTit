@@ -371,15 +371,19 @@ test('FCM: ký JWT, gọi HTTP v1, phân loại lỗi (UNREGISTERED/INVALID_ARGU
     if (String(url).includes('oauth2')) return new Response(JSON.stringify({ access_token: 'AT-1', expires_in: 3600 }), { status: 200 });
     const body = JSON.parse(init.body);
     const tk = body.message.token;
-    if (tk === 'dead') return new Response('{}', { status: 404 });
-    if (tk === 'bad') return new Response(JSON.stringify({ error: { status: 'INVALID_ARGUMENT' } }), { status: 400 });
+    if (tk === 'dead') return new Response(JSON.stringify({ error: { status: 'NOT_FOUND', details: [{ '@type': 'type.googleapis.com/google.firebase.fcm.v1.FcmError', errorCode: 'UNREGISTERED' }] } }), { status: 404 });
+    if (tk === 'bad') return new Response(JSON.stringify({ error: { status: 'INVALID_ARGUMENT', details: [{ '@type': 'type.googleapis.com/google.rpc.BadRequest', fieldViolations: [{ field: 'message.token' }] }] } }), { status: 400 });
+    if (tk === 'wrongproject') return new Response(JSON.stringify({ error: { status: 'NOT_FOUND' } }), { status: 404 });
+    if (tk === 'badpayload') return new Response(JSON.stringify({ error: { status: 'INVALID_ARGUMENT', details: [{ fieldViolations: [{ field: 'message.android.ttl' }] }] } }), { status: 400 });
     if (tk === 'flaky') return new Response('{}', { status: 503 });
     return new Response('{}', { status: 200 });
   };
   const p = new FcmProvider(sa, { fetch: fetchStub });
-  const r = await p.send(['ok', 'dead', 'bad', 'flaky'], { ...msgOf(), priority: 'high', ttlSec: 30 });
+  const r = await p.send(['ok', 'dead', 'bad', 'flaky', 'wrongproject', 'badpayload'], { ...msgOf(), priority: 'high', ttlSec: 30 });
+  // 404 không UNREGISTERED (sai project_id) và 400 sai payload KHÔNG được coi là token chết, cũng không thử lại
   assert.deepEqual(r.invalid.sort(), ['bad', 'dead']);
   assert.deepEqual(r.retry, ['flaky']);
+  assert.equal(r.config, 2, 'đếm lỗi cấu hình/nội dung để cảnh báo');
   const auth = calls.find((c) => c.url.includes('oauth2'));
   const jwt = new URLSearchParams(auth.init.body.toString()).get('assertion');
   assert.equal(jwt.split('.').length, 3);
@@ -477,4 +481,53 @@ test('token FCM thật dài (~163 ký tự) đăng ký và hủy được qua đ
   } finally {
     await t.close();
   }
+});
+
+test('thu hồi trong lúc chờ 3 giây ⇒ KHÔNG đẩy (kể cả khi bật xem trước)', async () => {
+  const { t, a, b, cid, provider } = await setup();
+  try {
+    await reg(t, b);
+    const db = await t.dbp.get();
+    await db.update(schema.socialProfiles).set({ showPushPreview: true }).where(eq(schema.socialProfiles.userId, b.userId));
+    const r = await sendHttp(t, a, cid, 'MAT KHAU LA 123456');
+    const id = r.json().id;
+    assert.equal((await call(t, a, 'POST', `/v1/chat/messages/${id}/recall`)).statusCode, 204);
+    await t.app.push.flush();
+    assert.equal(provider.sent.length, 0);
+    assert.ok(!JSON.stringify(provider.sent).includes('MAT KHAU'));
+  } finally {
+    await t.close();
+  }
+});
+
+test('gộp nhiều tin: tin mới nhất bị thu hồi thì không đẩy tin cũ kèm nội dung của tin mới', async () => {
+  const { t, a, b, cid, provider } = await setup();
+  try {
+    await reg(t, b);
+    const db = await t.dbp.get();
+    await db.update(schema.socialProfiles).set({ showPushPreview: true }).where(eq(schema.socialProfiles.userId, b.userId));
+    await sendHttp(t, a, cid, 'tin cu');
+    const r = await sendHttp(t, a, cid, 'tin bi mat');
+    await call(t, a, 'POST', `/v1/chat/messages/${r.json().id}/recall`);
+    await t.app.push.flush();
+    assert.ok(!JSON.stringify(provider.sent).includes('bi mat'));
+  } finally {
+    await t.close();
+  }
+});
+
+test('FCM: làm mới token truy cập đồng thời chỉ gọi OAuth một lần', async () => {
+  const sa = fakeServiceAccount();
+  let oauth = 0;
+  const fetchStub = async (url) => {
+    if (String(url).includes('oauth2')) {
+      oauth++;
+      await new Promise((r) => setTimeout(r, 20));
+      return new Response(JSON.stringify({ access_token: 'AT', expires_in: 3600 }), { status: 200 });
+    }
+    return new Response('{}', { status: 200 });
+  };
+  const p = new FcmProvider(sa, { fetch: fetchStub });
+  await Promise.all([p.send(['a'], msgOf()), p.send(['b'], msgOf()), p.send(['c'], msgOf())]);
+  assert.equal(oauth, 1);
 });

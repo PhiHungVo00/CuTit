@@ -7,7 +7,7 @@ import { buildPayload, type PushLocale } from './payload.js';
 import type { PushLog, PushProvider } from './PushProvider.js';
 import { activeTokensOf, disableTokens, purgeStalePushTokens } from './tokens.js';
 
-const { conversationMembers, conversations, socialProfiles, userBlocks } = schema;
+const { chatMessages, conversationMembers, conversations, socialProfiles, userBlocks } = schema;
 
 /** Hằng số quy tắc gửi (spec 5.6/8.3). */
 export const PUSH_RULES = {
@@ -21,6 +21,8 @@ export const PUSH_RULES = {
   retryDelaysMs: [1_000, 5_000, 20_000] as readonly number[],
   /** trần số thông báo đang chờ (chặn phình bộ nhớ khi có bão tin) */
   maxPending: 20_000,
+  /** số `deliver` chạy đồng thời (một bão tin không được rút cạn kết nối DB) */
+  maxConcurrent: 20,
   purgeEveryMs: 6 * 3600_000
 } as const;
 
@@ -44,7 +46,9 @@ export interface PushNotifier {
   stop(): Promise<void>;
 }
 
-type Pending = { timer: NodeJS.Timeout; userId: string; msg: Message };
+/** hàng chờ KHÔNG giữ nội dung tin (chỉ định danh); nội dung đọc lại từ DB lúc gửi */
+type Ref = { cid: string; seq: number; senderId: string };
+type Pending = { timer: NodeJS.Timeout; userId: string; ref: Ref };
 const sanitize = (err: unknown): string => (err instanceof Error && err.name === 'PushError' ? err.message : err instanceof Error ? err.name : 'error');
 
 /**
@@ -88,6 +92,7 @@ export function startPushNotifier(deps: PushNotifierDeps): PushNotifier {
         const r = await provider.send(todo, msg);
         if (r.invalid.length) await disableTokens(await db.get(), r.invalid, now());
         retry = r.retry ?? [];
+        if (r.config) log.warn({ rejected: r.config }, 'push rejected by provider: kiểm project_id/nội dung (token KHÔNG bị vô hiệu)');
       } catch (err) {
         log.warn({ reason: sanitize(err), attempt }, 'push send failed');
         retry = todo;
@@ -102,10 +107,18 @@ export function startPushNotifier(deps: PushNotifierDeps): PushNotifier {
     }
   }
 
-  async function deliver(userId: string, m: Message): Promise<void> {
+  async function deliver(userId: string, ref: Ref): Promise<void> {
     if (!provider || stopped) return;
     if (bus.isForeground(userId)) return; // đang nhìn app: WS đã đưa tin
     const d = await db.get();
+    // Đọc lại tin từ DB ngay trước khi gửi: đã thu hồi/xóa (kể cả tài khoản người gửi bị xóa) ⇒ KHÔNG đẩy; nội dung lấy từ DB, không từ khung bus
+    const [row] = await d
+      .select({ kind: chatMessages.kind, body: chatMessages.body, deletedAt: chatMessages.deletedAt, senderId: chatMessages.senderId, name: socialProfiles.displayName })
+      .from(chatMessages)
+      .leftJoin(socialProfiles, eq(socialProfiles.userId, chatMessages.senderId))
+      .where(and(eq(chatMessages.conversationId, ref.cid), eq(chatMessages.seq, ref.seq)));
+    if (!row || row.deletedAt || !row.senderId || row.kind === 'system') return;
+    const m = { cid: ref.cid, seq: ref.seq, kind: row.kind, body: row.body ?? undefined, sender: { id: row.senderId, displayName: row.name ?? '' } };
     const [mem] = await d
       .select({
         lastRead: conversationMembers.lastReadSeq,
@@ -122,25 +135,37 @@ export function startPushNotifier(deps: PushNotifierDeps): PushNotifier {
     if (mem.lastRead >= m.seq) return; // đã đọc trong lúc chờ
     if (mem.mutedUntil && mem.mutedUntil > now()) return;
     if (mem.kind === 'group' && mem.members >= largeGroup) return;
-    if (m.sender) {
-      const [blocked] = await d
-        .select({ b: userBlocks.blockerId })
-        .from(userBlocks)
-        .where(and(eq(userBlocks.blockerId, userId), eq(userBlocks.blockedId, m.sender.id)))
-        .limit(1);
-      if (blocked) return;
-    }
+    const [blocked] = await d
+      .select({ b: userBlocks.blockerId })
+      .from(userBlocks)
+      .where(and(eq(userBlocks.blockerId, userId), eq(userBlocks.blockedId, m.sender.id)))
+      .limit(1);
+    if (blocked) return;
     if (!(await eligibility(d, userId)).ok) return;
     const tokens = await activeTokensOf(d, userId);
-    if (!tokens.length || m.kind === 'system') return;
+    if (!tokens.length) return;
     const kind = m.kind;
     for (const locale of ['vi', 'en'] as PushLocale[]) {
       const list = tokens.filter((t) => t.locale === locale).map((t) => t.token);
       if (!list.length) continue;
-      const payload = buildPayload({ cid: m.cid, kind, body: m.body, fromName: m.sender?.displayName ?? '' }, { showPreview: mem.preview, locale });
+      const payload = buildPayload({ cid: m.cid, kind, body: m.body, fromName: m.sender.displayName }, { showPreview: mem.preview, locale });
       for (let i = 0; i < list.length; i += PUSH_RULES.batchSize) await sendBatch(list.slice(i, i + PUSH_RULES.batchSize), payload);
     }
   }
+
+  // trần song song: việc dư xếp hàng (bộ nhớ chỉ là closure nhỏ; số mục chờ đã bị chặn bởi maxPending)
+  let running = 0;
+  const waiting: Array<() => void> = [];
+  const limited = async (fn: () => Promise<void>): Promise<void> => {
+    if (running >= PUSH_RULES.maxConcurrent) await new Promise<void>((resolve) => waiting.push(resolve));
+    running++;
+    try {
+      await fn();
+    } finally {
+      running--;
+      waiting.shift()?.();
+    }
+  };
 
   const fire = (key: string): void => {
     const p = pending.get(key);
@@ -148,7 +173,7 @@ export function startPushNotifier(deps: PushNotifierDeps): PushNotifier {
     pending.delete(key);
     clearTimeout(p.timer);
     track(
-      deliver(p.userId, p.msg).catch((err: unknown) => {
+      limited(() => deliver(p.userId, p.ref)).catch((err: unknown) => {
         log.warn({ reason: sanitize(err) }, 'push deliver failed');
       })
     );
@@ -164,11 +189,11 @@ export function startPushNotifier(deps: PushNotifierDeps): PushNotifier {
           const key = `${userId}:${m.cid}`;
           const cur = pending.get(key);
           if (cur) {
-            if (m.seq > cur.msg.seq) cur.msg = m; // gộp: giữ tin mới nhất, KHÔNG kéo dài thời gian chờ
+            if (m.seq > cur.ref.seq) cur.ref = { cid: m.cid, seq: m.seq, senderId: m.sender.id }; // gộp: giữ tin mới nhất, KHÔNG kéo dài thời gian chờ
             continue;
           }
           if (pending.size >= PUSH_RULES.maxPending) continue;
-          pending.set(key, { userId, msg: m, timer: setTimeout(() => fire(key), delayMs).unref() });
+          pending.set(key, { userId, ref: { cid: m.cid, seq: m.seq, senderId: m.sender.id }, timer: setTimeout(() => fire(key), delayMs).unref() });
         }
       })
     : () => undefined;

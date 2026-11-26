@@ -11,6 +11,8 @@ const DISABLED_KEEP_MS = 7 * 86_400_000;
 const STALE_MS = 60 * 86_400_000;
 
 /**
+ * GIẢ ĐỊNH BẢO MẬT: token FCM là bí mật có entropy cao, chỉ máy của chính người dùng biết; vì vậy ai trình được token thì được coi là
+ * chủ máy và token được CHUYỂN cho họ (cùng máy đổi tài khoản). Chỉ người đủ điều kiện chat mới đăng ký được (route kiểm cổng).
  * Đăng ký token thiết bị. Một thiết bị một người: token đã có của NGƯỜI KHÁC được CHUYỂN cho người mới (đăng nhập tài khoản khác
  * trên cùng máy) và bật lại; đăng ký lặp chỉ làm mới `last_seen_at`. Vượt trần ⇒ xóa các token cũ nhất của người này.
  */
