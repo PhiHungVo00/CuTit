@@ -17,7 +17,7 @@ export function Composer({ onSend }: { onSend: (body: string) => void }) {
   };
   return (
     <form
-      className="flex flex-col gap-1 border-t border-line bg-surface px-3 pb-[calc(12px+env(safe-area-inset-bottom))] pt-2"
+      className="flex flex-col gap-1 border-t border-line bg-surface px-3 pt-2" style={{ paddingBottom: "calc(12px + env(safe-area-inset-bottom))" }}
       onSubmit={(e) => {
         e.preventDefault();
         submit();
@@ -32,9 +32,9 @@ export function Composer({ onSend }: { onSend: (body: string) => void }) {
         <textarea
           aria-label={t('chat.compose')}
           placeholder={t('chat.compose')}
-          rows={1}
+          rows={2}
           value={text}
-          className="max-h-32 min-h-11 flex-1 resize-none rounded-xl border border-line-strong bg-surface px-3 py-2.5 text-[15px] text-ink"
+          className="min-h-11 flex-1 resize-none rounded-xl border border-line-strong bg-surface px-3 text-[15px] text-ink"
           onChange={(e) => setText(e.target.value)}
           onKeyDown={(e) => {
             if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {

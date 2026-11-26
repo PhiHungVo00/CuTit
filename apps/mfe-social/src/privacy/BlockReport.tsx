@@ -91,7 +91,7 @@ export function BlockReport({ client, cid, peer, onClose, onBlocked }: { client:
           <label htmlFor="report-note" className="text-sm text-ink-soft">
             {t('safety.note')}
           </label>
-          <textarea id="report-note" className={input + ' min-h-20 py-2'} maxLength={500} value={note} onChange={(e) => setNote(e.target.value)} />
+          <textarea id="report-note" className={input + ' py-2'} maxLength={500} value={note} onChange={(e) => setNote(e.target.value)} />
           {err && <Notice tone="error">{err}</Notice>}
           <button type="submit" className={primaryBtn} disabled={!reason || busy}>
             {t('safety.send')}

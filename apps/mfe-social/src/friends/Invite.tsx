@@ -63,7 +63,7 @@ export function InviteScreen({ client, code }: { client: SocialClient; code?: st
         <label htmlFor="invite-code" className="text-[15px] font-bold text-ink-soft">
           {t('invite.label')}
         </label>
-        <input id="invite-code" className={input + ' font-mono uppercase tracking-widest'} value={value} maxLength={12} autoCapitalize="characters" autoCorrect="off" spellCheck={false} aria-describedby="invite-hint" onChange={(e) => setValue(e.target.value)} />
+        <input id="invite-code" className={input + ''} value={value} maxLength={12} autoCapitalize="characters" autoCorrect="off" spellCheck={false} aria-describedby="invite-hint" onChange={(e) => setValue(e.target.value)} />
         <p id="invite-hint" className="m-0 text-sm text-ink-muted">
           {t('invite.hint')}
         </p>

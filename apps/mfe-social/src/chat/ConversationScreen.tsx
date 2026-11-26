@@ -102,7 +102,7 @@ function Conversation_({ client, cid }: { client: SocialClient; cid: string }) {
       )}
       <div ref={box} onScroll={onScroll} className="flex flex-1 flex-col overflow-y-auto px-3 py-3">
         {c.hasMore && (
-          <button type="button" className={secondaryBtn + ' mb-3 shrink-0'} onClick={() => void c.loadOlder()}>
+          <button type="button" className={secondaryBtn + ' mb-2 shrink-0'} onClick={() => void c.loadOlder()}>
             {t('chat.loadOlder')}
           </button>
         )}

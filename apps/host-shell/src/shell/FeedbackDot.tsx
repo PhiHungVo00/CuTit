@@ -3,6 +3,8 @@ import { createPortal } from 'react-dom';
 import { unreadFeedbackCount } from '@vietlearning/api-client/feedback';
 import { useUiLanguage } from '@vietlearning/state';
 import { useLocation } from 'react-router-dom';
+import { SOCIAL_ENTRY_ENABLED } from '../social/flag';
+import ChatUnreadProbe from './ChatUnreadProbe';
 
 /**
  * Chấm đỏ trên tab Hồ sơ khi có góp ý có lời nhắn chưa đọc (dự án 5a). Chunk LƯỜI (App nạp sau lần vẽ đầu) nên không
@@ -41,12 +43,19 @@ export default function FeedbackDot() {
   useEffect(() => {
     setHost(count > 0 ? document.querySelector('.tabbar a[href="/ho-so"] .tab-icon') : null);
   }, [count, pathname]);
-  if (!host || count <= 0) return null;
-  return createPortal(
+  // Dự án 4: cùng chunk lười này hỏi số tin nhắn chưa đọc (không thêm chunk/mã vào App)
+  const probe = SOCIAL_ENTRY_ENABLED ? <ChatUnreadProbe /> : null;
+  if (!host || count <= 0) return probe;
+  return (
+    <>
+      {probe}
+      {createPortal(
     <>
       <span aria-hidden="true" style={{ position: 'absolute', top: 0, right: -3, width: 10, height: 10, borderRadius: '50%', background: '#C0553A' }} />
       <span className="sr-only">{LABEL[lang]}</span>
     </>,
     host
+  )}
+    </>
   );
 }

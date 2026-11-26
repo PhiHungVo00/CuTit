@@ -82,5 +82,8 @@ module.exports = [
   // `UpdateLayer` = thẻ nhắc + màn bắt buộc + chuỗi vi/en. Plugin Play (`@capawesome/capacitor-app-update`) và SW web là chunk
   // riêng, chỉ nạp ở kênh tương ứng. Đo: start 2.24 kB, UpdateLayer 2.91 kB (trần của spec cho phần cập nhật: 3.5 kB).
   { name: 'Dự án 8 Kiểm/nhắc cập nhật app: engine (lazy)', path: 'dist/assets/start-*.js', limit: '3.5 kB', gzip: true },
-  { name: 'Dự án 8 Giao diện cập nhật app: thẻ nhắc + màn bắt buộc (lazy)', path: 'dist/assets/UpdateLayer-*.js', limit: '3.5 kB', gzip: true }
+  { name: 'Dự án 8 Giao diện cập nhật app: thẻ nhắc + màn bắt buộc (lazy)', path: 'dist/assets/UpdateLayer-*.js', limit: '3.5 kB', gzip: true },
+  // Dự án 4 Task 7 (2026-11-26): mfe-social (chat chữ, tìm bạn, mã mời, cổng tuổi, chặn/báo cáo). Một chunk lười, KHÔNG vào gói đầu, không kéo zod. Đo 12.8 kB (plan: trần 40 kB, đã siết theo số đo).
+  { name: 'Dự án 4 Bạn bè: chat chữ + tìm bạn + cổng tuổi (lazy)', path: 'dist/assets/SocialRoute-*.js', limit: '13.5 kB', gzip: true },
+  { name: 'Dự án 4 Chỗ giữ Sắp có cho /goi/:callId (lazy, Task 15 thay)', path: 'dist/assets/SocialSoonRoute-*.js', limit: '0.9 kB', gzip: true }
 ];

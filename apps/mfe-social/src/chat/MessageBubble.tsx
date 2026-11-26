@@ -16,10 +16,10 @@ export function MessageBubble({ m, onRecall, onRestore }: { m: Message; onRecall
     );
   if (m.deleted)
     return (
-      <li className={['flex flex-col gap-1 rounded-2xl border border-dashed border-line-strong px-3 py-2 text-sm italic text-ink-muted', m.mine ? 'self-end' : 'self-start'].join(' ')}>
-        <span>{m.mine ? t('chat.recalledMine') : t('chat.recalledTheirs')}</span>
+      <li className={['flex flex-col gap-1 rounded-2xl border border-dashed border-line-strong px-3 py-2 text-sm text-ink-muted', m.mine ? 'self-end' : 'self-start'].join(' ')}>
+        <span className="italic">{m.mine ? t('chat.recalledMine') : t('chat.recalledTheirs')}</span>
         {m.mine && onRestore && (
-          <button type="button" className={chip + ' self-start not-italic'} onClick={() => onRestore(m.id)}>
+          <button type="button" className={chip + ' self-start'} onClick={() => onRestore(m.id)}>
             {t('chat.restore')}
           </button>
         )}
@@ -27,7 +27,7 @@ export function MessageBubble({ m, onRecall, onRestore }: { m: Message; onRecall
     );
   const label = m.kind === 'image' ? t('list.image') : m.kind === 'voice' ? t('list.voice') : (m.body ?? t('chat.attachment'));
   return (
-    <li className={['flex max-w-[82%] flex-col gap-1', m.mine ? 'items-end self-end' : 'items-start self-start'].join(' ')}>
+    <li style={{ maxWidth: '82%' }} className={['flex flex-col gap-1', m.mine ? 'items-end self-end' : 'items-start self-start'].join(' ')}>
       {!m.mine && m.sender && <span className="px-1 text-sm text-ink-muted">{m.sender.displayName}</span>}
       <p className={['m-0 whitespace-pre-wrap break-words rounded-2xl border px-3 py-2 text-[15px]', m.mine ? 'border-accent bg-accent-soft text-ink' : 'border-line-strong bg-surface text-ink'].join(' ')}>{label}</p>
       <span className="flex items-center gap-2 px-1 text-sm text-ink-muted">
@@ -47,8 +47,8 @@ export function PendingBubble({ p, onResend, onDiscard }: { p: Pending; onResend
   const t = useT();
   const why = p.error === 'rate' ? t('chat.rate') : p.error === 'notMember' ? t('chat.notMember') : p.error === 'blocked' ? t('chat.blockedSend') : t('chat.cannotSend');
   return (
-    <li className="flex max-w-[82%] flex-col items-end gap-1 self-end">
-      <p className="m-0 whitespace-pre-wrap break-words rounded-2xl border border-accent bg-accent-soft px-3 py-2 text-[15px] text-ink opacity-80">{p.body}</p>
+    <li style={{ maxWidth: '82%' }} className="flex flex-col items-end gap-1 self-end">
+      <p className="m-0 whitespace-pre-wrap break-words rounded-2xl border border-accent bg-accent-soft px-3 py-2 text-[15px] text-ink">{p.body}</p>
       {p.status === 'sending' ? (
         <span role="status" className="px-1 text-sm text-ink-muted">
           {t('chat.sending')}

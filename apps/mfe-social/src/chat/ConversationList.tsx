@@ -17,8 +17,8 @@ function Row({ c, lang }: { c: Conversation; lang: 'vi' | 'en' }) {
   const preview = !lm ? t('list.noMessages') : lm.kind === 'image' ? t('list.image') : lm.kind === 'voice' ? t('list.voice') : (lm.preview ?? t('list.recalled'));
   const when = lm ? new Date(lm.createdAt).toLocaleDateString(lang === 'vi' ? 'vi-VN' : 'en-GB', { day: 'numeric', month: 'numeric' }) : '';
   return (
-    <li className="border-b border-line last:border-b-0">
-      <Link to={`/tin-nhan/${c.id}`} className="flex min-h-14 items-center gap-3 px-3 py-2 text-ink no-underline">
+    <li className="border-b border-line">
+      <Link to={`/tin-nhan/${c.id}`} className="flex min-h-12 items-center gap-3 px-3 py-2 text-ink no-underline">
         <span aria-hidden="true" className="inline-flex size-11 shrink-0 items-center justify-center rounded-full bg-accent-soft font-bold text-accent-text">
           {name.slice(0, 1).toUpperCase()}
         </span>
@@ -29,7 +29,7 @@ function Row({ c, lang }: { c: Conversation; lang: 'vi' | 'en' }) {
         <span className="flex shrink-0 flex-col items-end gap-1 text-sm text-ink-muted">
           <span>{when}</span>
           {c.unread > 0 && (
-            <span className="inline-flex min-w-6 items-center justify-center rounded-full bg-accent px-1.5 font-bold text-accent-ink">
+            <span className="inline-flex items-center justify-center rounded-full bg-accent px-2 font-bold text-accent-ink">
               <span aria-hidden="true">{c.unread}</span>
               <span className="sr-only">{t('list.unread', { n: c.unread })}</span>
             </span>
