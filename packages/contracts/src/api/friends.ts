@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { RECOVERY_ALPHABET } from './account.js';
+import { RECOVERY_ALPHABET, HandleSchema } from './account.js';
 
 /**
  * GĐ4c — Bạn học HỢP TÁC (D7 = không xếp hạng cạnh tranh).
@@ -30,7 +30,20 @@ export const FriendErrorCode = {
   /** 409: một trong hai bên đã đủ MAX_FRIENDS bạn */
   friendLimit: 'friend_limit',
   /** 404 */
-  friendNotFound: 'friend_not_found'
+  friendNotFound: 'friend_not_found',
+  // ----- Dự án 4: kết bạn bằng handle -----
+  /** 404: handle không tồn tại / ẩn / bị chặn / chờ xóa / dưới 18 / khách — MỘT lỗi, thân giống hệt (không dò người dùng) */
+  handleNotFound: 'handle_not_found',
+  /** 409: handle đã có người dùng (so không phân biệt hoa thường, cả tên đăng nhập của người khác) */
+  handleTaken: 'handle_taken',
+  /** 409: cần đặt handle trước khi chat/kết bạn bằng tên */
+  handleRequired: 'handle_required',
+  /** 429: đổi handle quá 1 lần/30 ngày */
+  handleCooldown: 'handle_cooldown',
+  /** 429: quá 20 lời mời/ngày hoặc 10 tra cứu sai/giờ */
+  requestLimit: 'request_limit',
+  /** 404 */
+  requestNotFound: 'request_not_found'
 } as const;
 
 /** 'abcd efgh' / 'ABCD-EFGH' => 'ABCDEFGH' (O→0, I/L→1 như mã khôi phục) */
@@ -100,6 +113,11 @@ export const QuestMemberSchema = z.object({
 /** Bạn học + nhiệm vụ tuần chung của cặp. `id` là id quan hệ bạn bè (không phải id người dùng) */
 export const FriendQuestSchema = z.object({
   id: z.string().uuid(),
+  /**
+   * Dự án 4: chỉ tối đa MAX_FRIENDS cặp có nhiệm vụ tuần cùng lúc; bạn thứ 6+ vẫn là bạn (nhắn tin được).
+   * `.optional()` tới khi Gateway (Task 3) trả trường này; client coi vắng mặt = true.
+   */
+  questActive: z.boolean().optional(),
   displayName: z.string(),
   since: z.string().datetime(),
   quest: z.object({
@@ -127,3 +145,27 @@ export const FriendsResponseSchema = z.object({
 export type FriendsResponse = z.infer<typeof FriendsResponseSchema>;
 
 export const FriendRemoveResponseSchema = z.object({ removed: z.literal(true) });
+
+// ---------- Dự án 4: lời mời kết bạn bằng handle + handle ----------
+// Spec: docs/superpowers/specs/2026-11-25-ban-be-design.md mục 5.2.
+
+export const FRIEND_REQUEST_STATUSES = ['pending', 'accepted', 'declined', 'canceled'] as const;
+export const FriendRequestStatusSchema = z.enum(FRIEND_REQUEST_STATUSES);
+
+// POST /v1/friends/requests
+export const FriendRequestCreateSchema = z.object({ handle: HandleSchema });
+export type FriendRequestCreate = z.infer<typeof FriendRequestCreateSchema>;
+
+/** Lời mời tới tôi: chỉ thấy tên hiển thị của người gửi (không userId) */
+export const FriendRequestSchema = z.object({
+  id: z.string().uuid(),
+  from: z.object({ displayName: z.string() }),
+  createdAt: z.string().datetime()
+});
+export type FriendRequest = z.infer<typeof FriendRequestSchema>;
+export const FriendRequestListSchema = z.object({ requests: z.array(FriendRequestSchema) });
+
+// POST /v1/friends/requests/:id/accept|decline
+export const FriendRequestIdParamsSchema = z.object({ id: z.string().uuid() });
+// POST /v1/friends/:id/quest-active
+export const FriendQuestActiveRequestSchema = z.object({ questActive: z.boolean() });

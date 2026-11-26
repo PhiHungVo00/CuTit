@@ -11,3 +11,5 @@ export * from './friends.js';
 export * from './appVersion.js';
 export * from './feedback.js';
 export * from './admin.js';
+export * from './chat-social.js';
+export * from './calls.js';

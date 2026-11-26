@@ -367,3 +367,43 @@ export const SyncResponseSchema = z.object({
   snapshot: ProgressSnapshotSchema
 });
 export type SyncResponse = z.infer<typeof SyncResponseSchema>;
+
+// ---------- Dự án 4: cổng tuổi (chỉ lưu cờ đủ/chưa đủ 18, KHÔNG lưu năm sinh) ----------
+
+/** Đủ 18 ⇔ năm hiện tại − năm sinh ≥ 18 (người dùng chốt 26/11; không có ngày sinh nên người sinh đúng 18 năm trước có thể chưa đủ 18 tuổi thực). */
+export const ADULT_AGE = 18;
+export const AGE_LOCK_MONTHS = 12;
+export const BIRTH_YEAR_MIN = 1900;
+
+export function isAdultFromBirthYear(birthYear: number, now: Date = new Date()): boolean {
+  return now.getUTCFullYear() - birthYear >= ADULT_AGE;
+}
+
+/**
+ * Năm sinh: số nguyên 1900..năm hiện tại (so lúc kiểm tra, không đóng băng lúc nạp mô-đun).
+ * Thông báo lỗi CỐ ĐỊNH — không phản chiếu giá trị đã gửi (năm sinh không được lọt vào log/phản hồi).
+ */
+export const AgeDeclareRequestSchema = z
+  .object({
+    birthYear: z
+      .number({ invalid_type_error: 'Năm sinh không hợp lệ', required_error: 'Năm sinh không hợp lệ' })
+      .int('Năm sinh không hợp lệ')
+      .min(BIRTH_YEAR_MIN, 'Năm sinh không hợp lệ')
+      .refine((y) => y <= new Date().getUTCFullYear(), 'Năm sinh không hợp lệ')
+  })
+  .strict();
+export type AgeDeclareRequest = z.infer<typeof AgeDeclareRequestSchema>;
+
+export const AgeDeclareResponseSchema = z.object({
+  isAdult: z.boolean(),
+  /** chỉ khi isAdult=false: tới lúc này mới khai lại được */
+  lockedUntil: z.string().datetime().nullable()
+});
+export type AgeDeclareResponse = z.infer<typeof AgeDeclareResponseSchema>;
+
+/**
+ * Handle (tên bạn bè, dự án 4): cùng luật tên đăng nhập (ASCII trước khi viết thường, 3–24, không đầu/cuối '.', danh sách cấm)
+ * và thêm: không có hai dấu '.' liền nhau. Chữ hoa được chuẩn hóa về chữ thường (không bị từ chối).
+ */
+export const HandleSchema = UsernameSchema.refine((s) => !s.includes('..'), 'Tên không dùng được');
+export type Handle = z.infer<typeof HandleSchema>;
