@@ -41,6 +41,12 @@ import { feedbackRoutes } from './routes/feedback.js';
 import { createBlobStore } from './services/blob/index.js';
 import type { BlobStore } from './services/blob/BlobStore.js';
 import { startFeedbackPurgeJob } from './jobs/feedbackPurge.js';
+import websocket from '@fastify/websocket';
+import type { RealtimeBus } from './services/realtime/RealtimeBus.js';
+import { RealtimeHub, type RealtimeOptions } from './services/realtime/RealtimeHub.js';
+import { buildAllowed, createWsVerifier } from './services/realtime/auth.js';
+import { createDbDirectory } from './services/realtime/presence.js';
+import { WS_SERVER_OPTIONS, wsRoutes } from './routes/ws.js';
 
 /** Dọn audit_events quá hạn: mỗi ngày một lần, lần đầu sau 1 phút (không mở DB lúc khởi động/test) */
 const AUDIT_PURGE_FIRST_MS = 60_000;
@@ -53,6 +59,8 @@ declare module 'fastify' {
     audit: AuditLog;
     /** Dự án 5a: cảnh báo email quản trị (chỉ khi ADMIN_API_ENABLED); test dùng `app.adminAlerts?.flush()` */
     adminAlerts?: AdminAlerts;
+    /** Dự án 4: bộ phát tin WebSocket (đóng kết nối khi thu hồi quyền: `app.realtime.closeUser`; test: `sweep()`) */
+    realtime: RealtimeHub;
   }
 }
 
@@ -97,6 +105,8 @@ export interface RouteDeps {
   clock: Clock;
   /** Dự án 5a: kho tệp đính kèm góp ý (BLOB_PROVIDER) */
   blob: BlobStore;
+  /** Dự án 4: bộ phát tin trừu tượng (service chat/gọi/push chỉ biết interface này). Mặc định là `RealtimeHub` của /ws */
+  bus: RealtimeBus;
 }
 
 export interface BuildOptions {
@@ -123,6 +133,10 @@ export interface BuildOptions {
   identity?: IdentityProvider | null;
   /** Test tiêm kho tệp giả (vd. kho ném lỗi khi xóa); bỏ trống = theo BLOB_PROVIDER/BLOB_DIR */
   blob?: BlobStore;
+  /** Dự án 4: test tiêm bus (vd. InMemoryBus) cho service chat; /ws vẫn dùng hub thật */
+  bus?: RealtimeBus;
+  /** Dự án 4: test chỉnh hub (đồng hồ giả, giới hạn, tắt tự quét) */
+  realtime?: Partial<Pick<RealtimeOptions, 'now' | 'limits' | 'sweepMs'>>;
 }
 
 export async function buildApp(config: GatewayConfig, opts: BuildOptions = {}): Promise<FastifyInstance> {
@@ -209,6 +223,7 @@ export async function buildApp(config: GatewayConfig, opts: BuildOptions = {}): 
     accountTimer = undefined;
     await adminAlerts?.flush();
     stopFeedbackPurge();
+    hub.dispose(); // đóng mọi WebSocket (1001) trước khi đóng DB
     await audit.flush();
     if (!opts.db) await db.close();
   });
@@ -223,7 +238,16 @@ export async function buildApp(config: GatewayConfig, opts: BuildOptions = {}): 
   const tts = opts.tts !== undefined ? opts.tts : createTtsProvider(config);
   const audioStore = new FileAudioStore(config.TTS_AUDIO_DIR);
   const ttsCache = opts.ttsCache ?? new TTSCacheProxy(fileSynthesizer(audioStore, tts), Boolean(tts));
-  const deps: RouteDeps = { pipeline, ttsCache, config, llm, vision, stt, tts, tutor: createTutor(llm, app.log, vision), db, audit, mail, clock, blob };
+  // Dự án 4: hub WebSocket (một instance Gateway). Dựng luôn (rẻ, chỉ Map + 1 bộ hẹn giờ unref) để `deps.bus` có sẵn cho mọi service.
+  const hub = new RealtimeHub({
+    verify: createWsVerifier({ jwtVerify: (token) => app.jwt.verify(token), db, now: opts.realtime?.now ?? Date.now, log: app.log }),
+    directory: createDbDirectory(db),
+    buildAllowed: (build, channel) => buildAllowed(appVersions, build, channel, (opts.realtime?.now ?? Date.now)()),
+    log: app.log,
+    ...opts.realtime
+  });
+  app.decorate('realtime', hub);
+  const deps: RouteDeps = { pipeline, ttsCache, config, llm, vision, stt, tts, tutor: createTutor(llm, app.log, vision), db, audit, mail, clock, blob, bus: opts.bus ?? hub };
   deps.identity = opts.identity !== undefined ? opts.identity : createIdentityProviderFromEnv();
   app.log.info({ llm: llm?.name ?? 'mock', vision: vision?.name ?? 'mock', stt: stt?.name ?? 'mock' }, 'AI providers');
 
@@ -310,6 +334,23 @@ export async function buildApp(config: GatewayConfig, opts: BuildOptions = {}): 
     },
     { prefix: '/v1' }
   );
+
+  // Dự án 4 (Task 5): WebSocket /ws — scope riêng NGOÀI /v1 (trình duyệt không gửi được Authorization khi mở WS); xác thực bằng khung
+  // `hello` (xem routes/ws.ts). Chỉ đăng ký khi CHAT_ENABLED (tắt => 404). Giới hạn bắt tay theo IP.
+  if (config.CHAT_ENABLED) {
+    await app.register(async (wsScope) => {
+      await wsScope.register(rateLimit, {
+        max: config.WS_RATE_LIMIT_PER_MINUTE,
+        timeWindow: '1 minute',
+        keyGenerator: (req) => req.ip,
+        onExceeded: (req) => audit.noteRateLimited(AuditLog.context(req), '/ws')
+      });
+      // Tắt Gateway: đóng sạch bằng 1001 TRƯỚC bước đóng mặc định của @fastify/websocket (hook đăng ký trước chạy trước)
+      wsScope.addHook('preClose', async () => hub.closeAll());
+      await wsScope.register(websocket, { options: WS_SERVER_OPTIONS });
+      await wsScope.register(wsRoutes, { hub });
+    });
+  }
 
   // Dự án 5a: khối quản trị /admin/v1 — CHỈ đăng ký khi ADMIN_API_ENABLED (tắt => 404, không có route nào)
   if (adminAlerts) await app.register(adminRoutes, { ...deps, adminAlerts, prefix: '/admin/v1' });
