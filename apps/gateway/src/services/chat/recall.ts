@@ -4,7 +4,7 @@ import { schema, type Db } from '../../db/client.js';
 import { GatewayError } from '../../pipeline/RequestPipeline.js';
 import type { RealtimeBus } from '../realtime/RealtimeBus.js';
 import { activeMembers } from './conversations.js';
-import { loadMessageRow, publishMessageFrame, safePublish } from './messages.js';
+import { bestEffort, loadMessageRow, publishMessageFrame, safePublish } from './messages.js';
 
 const { chatMessages, conversationMembers } = schema;
 
@@ -40,8 +40,10 @@ export async function recallMessage(db: Db, bus: RealtimeBus, userId: string, me
     .where(and(eq(chatMessages.id, messageId), isNull(chatMessages.deletedAt)))
     .returning({ id: chatMessages.id });
   if (!changed.length) return;
-  const members = (await activeMembers(db, row.m.conversationId)).map((m) => m.userId);
-  safePublish(bus, members, { t: 'recall', cid: row.m.conversationId, messageId, seq: row.m.seq });
+  await bestEffort(async () => {
+    const members = (await activeMembers(db, row.m.conversationId)).map((m) => m.userId);
+    safePublish(bus, members, { t: 'recall', cid: row.m.conversationId, messageId, seq: row.m.seq });
+  });
 }
 
 /** Hoàn tác thu hồi (chỉ người gửi, chỉ tin do CHÍNH họ thu hồi). Tin chưa thu hồi → không đổi gì. */
@@ -54,6 +56,8 @@ export async function restoreMessage(db: Db, bus: RealtimeBus, userId: string, m
     .where(and(eq(chatMessages.id, messageId), eq(chatMessages.deletedKind, 'recalled')))
     .returning({ id: chatMessages.id });
   if (!changed.length) return;
-  const fresh = await loadMessageRow(db, messageId);
-  if (fresh) await publishMessageFrame(db, bus, fresh, 'restore');
+  await bestEffort(async () => {
+    const fresh = await loadMessageRow(db, messageId);
+    if (fresh) await publishMessageFrame(db, bus, fresh, 'restore');
+  });
 }

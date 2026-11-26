@@ -89,6 +89,22 @@ export function safePublish(bus: RealtimeBus, userIds: readonly string[], frame:
  * người đã CHẶN người gửi KHÔNG nhận khung nào (sẽ thấy `blocked:true` khi bù bằng REST).
  */
 export async function publishMessageFrame(db: Db, bus: RealtimeBus, row: MessageRow, type: 'msg' | 'restore'): Promise<void> {
+  // SAU commit: lỗi đọc DB ở đây không được biến một thao tác đã lưu thành 500 (client bù bằng afterSeq)
+  await bestEffort(async () => {
+    await publishMessageFrameUnsafe(db, bus, row, type);
+  });
+}
+
+/** Chạy việc phát khung phụ; nuốt mọi lỗi (đã commit thì yêu cầu coi như thành công). */
+export async function bestEffort(fn: () => Promise<void>): Promise<void> {
+  try {
+    await fn();
+  } catch {
+    // client sẽ bù bằng GET messages?afterSeq=
+  }
+}
+
+async function publishMessageFrameUnsafe(db: Db, bus: RealtimeBus, row: MessageRow, type: 'msg' | 'restore'): Promise<void> {
   const members = (await activeMembers(db, row.m.conversationId)).map((x) => x.userId);
   const senderId = row.m.senderId;
   const blockers = senderId ? await blockersOf(db, senderId, members) : new Set<string>();
@@ -108,6 +124,11 @@ export interface SendArgs {
   peerGate?: ChatEligibilityFn;
   limiter?: ChatLimiter;
   now?: Date;
+}
+
+async function existingMessage(q: Q, conversationId: string, userId: string, clientMsgId: string): Promise<Message | null> {
+  const [r] = await selectMessages(q).where(and(eq(chatMessages.conversationId, conversationId), eq(chatMessages.senderId, userId), eq(chatMessages.clientMsgId, clientMsgId)));
+  return r ? toMessage(r as MessageRow, userId, new Set()) : null;
 }
 
 const isUniqueViolation = (err: unknown, constraint: string): boolean => {
@@ -132,16 +153,16 @@ export async function sendMessage(db: Db, bus: RealtimeBus, args: SendArgs): Pro
   if (body.trim().length === 0 || body.length > CHAT_LIMITS.bodyMax) throw new GatewayError(400, 'invalid_request', `Tin phải từ 1 đến ${CHAT_LIMITS.bodyMax} ký tự`);
 
   const { conv } = await getMembership(db, userId, conversationId);
+  // gửi lại tin đã lưu thì trả tin cũ KỂ CẢ khi sau đó người kia chặn/không còn khả dụng (client mới biết tin đã tới nơi)
+  const stored = await existingMessage(db, conversationId, userId, clientMsgId);
+  if (stored) return { message: stored, duplicate: true };
   if (conv.kind === 'dm') {
     const peer = await dmPeerOf(db, conversationId, userId);
     if (!peer) throw new GatewayError(404, ChatErrorCode.peerUnavailable, 'Người này không còn khả dụng để nhắn tin');
     await assertDmReachable(db, userId, peer, args.peerGate);
   }
 
-  const existing = async (q: Q): Promise<Message | null> => {
-    const [r] = await selectMessages(q).where(and(eq(chatMessages.conversationId, conversationId), eq(chatMessages.senderId, userId), eq(chatMessages.clientMsgId, clientMsgId)));
-    return r ? toMessage(r as MessageRow, userId, new Set()) : null;
-  };
+  const existing = (q: Q) => existingMessage(q, conversationId, userId, clientMsgId);
 
   const out: { release?: () => void; inserted?: MessageRow; duplicate?: Message } = {};
   try {

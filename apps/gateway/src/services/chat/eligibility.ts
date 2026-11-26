@@ -25,6 +25,12 @@ export const stubChatEligibility: ChatEligibilityFn = async (db, userId) => {
   return { ok: true };
 };
 
+/**
+ * ĐÓNG HẲN (mặc định ngoài test): cho tới khi Task 3 cắm cổng thật, không ai chat được — kể cả khi `CHAT_ENABLED` bật ở máy dev/staging
+ * có người dùng thật (bản giả ở trên không biết tuổi). `app.ts` dùng bản giả chỉ khi NODE_ENV=test.
+ */
+export const closedChatEligibility: ChatEligibilityFn = async () => ({ ok: false, reason: 'age_unknown' });
+
 /** Lý do không đủ điều kiện → lỗi chuẩn (mã trùng contract). */
 export function ineligibleError(reason: IneligibleReason): GatewayError {
   switch (reason) {

@@ -2,7 +2,7 @@ import { and, eq, isNull, lt, sql } from 'drizzle-orm';
 import { schema, type Db } from '../../db/client.js';
 import type { RealtimeBus } from '../realtime/RealtimeBus.js';
 import { activeMembers, getMembership } from './conversations.js';
-import { safePublish } from './messages.js';
+import { bestEffort, safePublish } from './messages.js';
 
 const { conversationMembers } = schema;
 
@@ -20,14 +20,16 @@ export async function markRead(db: Db, bus: RealtimeBus, userId: string, cid: st
     .where(and(eq(conversationMembers.conversationId, cid), eq(conversationMembers.userId, userId), isNull(conversationMembers.leftAt), lt(conversationMembers.lastReadSeq, target)))
     .returning({ v: conversationMembers.lastReadSeq });
   if (!updated) return { lastReadSeq: Math.max(m.lastReadSeq, target) };
-  const members = await activeMembers(db, cid);
-  const me = members.find((x) => x.userId === userId);
-  if (me?.showReadReceipts) {
-    safePublish(
-      bus,
-      members.filter((x) => x.userId !== userId && x.showReadReceipts).map((x) => x.userId),
-      { t: 'read', cid, userId, seq: target }
-    );
-  }
+  await bestEffort(async () => {
+    const members = await activeMembers(db, cid);
+    const me = members.find((x) => x.userId === userId);
+    if (me?.showReadReceipts) {
+      safePublish(
+        bus,
+        members.filter((x) => x.userId !== userId && x.showReadReceipts).map((x) => x.userId),
+        { t: 'read', cid, userId, seq: target }
+      );
+    }
+  });
   return { lastReadSeq: updated.v };
 }
