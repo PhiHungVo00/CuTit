@@ -22,7 +22,13 @@ const SCREENS: [string, string][] = [
   ['cai-dat-tai-khoan', '/cai-dat/tai-khoan'],
   // Dự án 5a: Góp ý / Báo lỗi + Góp ý của tôi
   ['gop-y', '/gop-y'],
-  ['gop-y-cua-toi', '/gop-y/cua-toi']
+  ['gop-y-cua-toi', '/gop-y/cua-toi'],
+  // Dự án 4 (mfe-social): chưa có Gateway chat nên màn hiện trạng thái "chưa mở" (vẫn là màn thật cần đạt trợ năng)
+  ['tin-nhan', '/tin-nhan'],
+  ['tin-nhan-cuoc-tro-chuyen', '/tin-nhan/11111111-1111-4111-8111-111111111111'],
+  ['ban-be-tim', '/ban-be/tim'],
+  ['moi-ma', '/moi/ABCD2345'],
+  ['goi-sap-co', '/goi/11111111-1111-4111-8111-111111111111']
 ];
 
 async function scan(page: Page) {
