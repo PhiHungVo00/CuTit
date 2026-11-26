@@ -33,6 +33,22 @@ module.exports = {
       to: { path: '^apps/' }
     },
     {
+      name: 'no-import-admin-app',
+      comment: 'Trang quản trị (apps/admin) là ứng dụng riêng: không gói/ứng dụng nào import nó.',
+      severity: 'error',
+      from: { path: '^(packages/|apps/(?!admin/))' },
+      to: { path: ['^apps/admin/', 'node_modules/@vietlearning/admin(/|$)'] }
+    },
+    {
+      name: 'admin-is-independent',
+      comment: 'apps/admin không import app/MFE/Gateway khác (Nguyên tắc 7); chỉ dùng packages/* (contracts, api-client, ui).',
+      severity: 'error',
+      from: { path: '^apps/admin/' },
+      to: {
+        path: ['^apps/(?!admin/)', 'node_modules/@vietlearning/(mfe-|host-shell|gateway|landing)']
+      }
+    },
+    {
       name: 'client-does-not-import-gateway',
       comment: 'Client mỏng: không kéo mã server (và secret) vào bundle trình duyệt.',
       severity: 'error',

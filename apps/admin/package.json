@@ -1,0 +1,39 @@
+{
+  "name": "@vietlearning/admin",
+  "version": "1.0.0",
+  "type": "module",
+  "private": true,
+  "description": "Dự án 5a Task 6: trang quản trị web cho chủ app (đăng nhập mật khẩu + TOTP, hàng chờ góp ý, nhật ký). Chạy localhost, KHÔNG nằm trong app học.",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "e2e": "playwright test"
+  },
+  "dependencies": {
+    "@vietlearning/api-client": "workspace:*",
+    "@vietlearning/contracts": "workspace:*",
+    "@vietlearning/ui": "workspace:*",
+    "qrcode-generator": "^1.4.4",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.3.5",
+    "@testing-library/dom": "^10.4.2",
+    "@testing-library/react": "^16.3.3",
+    "@testing-library/user-event": "^14.5.2",
+    "@types/react": "^18.3.31",
+    "@types/react-dom": "^18.3.7",
+    "@vitejs/plugin-react": "^4.3.4",
+    "jsdom": "^25.0.1",
+    "tailwindcss": "^4.3.5",
+    "typescript": "^5.7.3",
+    "vite": "^5.4.11",
+    "vitest": "^3.2.7",
+    "@playwright/test": "^1.65.1",
+    "@axe-core/playwright": "^4.14.0",
+    "@types/node": "20.19.43"
+  }
+}
