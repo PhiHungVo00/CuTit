@@ -38,6 +38,7 @@ import { adminRoutes } from './routes/admin/index.js';
 import { AdminAlerts } from './services/admin/alerts.js';
 import { purgeAdminData } from './services/admin/purge.js';
 import { feedbackRoutes } from './routes/feedback.js';
+import { meAgeRoutes } from './routes/meAge.js';
 import { createBlobStore } from './services/blob/index.js';
 import type { BlobStore } from './services/blob/BlobStore.js';
 import { startFeedbackPurgeJob } from './jobs/feedbackPurge.js';
@@ -100,7 +101,8 @@ export interface RouteDeps {
 }
 
 export interface BuildOptions {
-  logger?: boolean;
+  /** Test tiêm luồng ghi log để quét nội dung log (dự án 4: năm sinh không được lọt vào log) */
+  logger?: boolean | { level: string; stream: NodeJS.WritableStream };
   quotaStore?: QuotaStore;
   /** Test tiêm kho trần toàn cục; bỏ trống = DB */
   globalQuotaStore?: GlobalQuotaStore;
@@ -307,6 +309,7 @@ export async function buildApp(config: GatewayConfig, opts: BuildOptions = {}): 
       await v1.register(identityRoutes, deps);
       await v1.register(authMeRoutes, deps);
       await v1.register(feedbackRoutes, deps);
+      await v1.register(meAgeRoutes, deps);
     },
     { prefix: '/v1' }
   );
