@@ -353,3 +353,8 @@ export const WsClientFrameSchema = z.discriminatedUnion('t', [
   z.object({ t: z.literal('pong') }).strict()
 ]);
 export type WsClientFrame = z.infer<typeof WsClientFrameSchema>;
+
+// ---------- Dự án 4 Task 3: chặn người dùng (PUT/DELETE /v1/chat/blocks/:userId) ----------
+export const BlockUserParamsSchema = z.object({ userId: z.string().uuid() });
+/** `blocked` = trạng thái SAU lệnh (PUT => true, DELETE => false); cả hai idempotent */
+export const BlockResponseSchema = z.object({ blocked: z.boolean() });
