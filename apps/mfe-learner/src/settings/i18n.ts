@@ -24,6 +24,9 @@ export const { useT, t } = defineMessages(
     rowFeedback: 'Góp ý / Báo lỗi',
     rowFeedbackHint: 'Gửi lỗi hoặc ý tưởng, xem lời trả lời',
     rowFeedbackDot: 'Có tin mới',
+    rowMessages: 'Tin nhắn',
+    rowMessagesHint: 'Nhắn tin với bạn bè',
+    rowMessagesDot: 'Có tin nhắn chưa đọc',
 
     // Mục lục Cài đặt
     settingsTitle: 'Cài đặt',
@@ -91,6 +94,9 @@ export const { useT, t } = defineMessages(
     rowFeedback: 'Feedback / Report a bug',
     rowFeedbackHint: 'Send a bug or idea, read replies',
     rowFeedbackDot: 'New reply',
+    rowMessages: 'Messages',
+    rowMessagesHint: 'Chat with your friends',
+    rowMessagesDot: 'Unread messages',
 
     settingsTitle: 'Settings',
     settingsBack: '← Settings',
