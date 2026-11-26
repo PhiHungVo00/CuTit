@@ -176,6 +176,7 @@ export async function buildApp(config: GatewayConfig, opts: BuildOptions = {}): 
               })
             }
           },
+    maxParamLength: 4200, // token FCM dài ~160+ ký tự nằm trên đường dẫn DELETE /v1/chat/push-tokens/:token (mặc định Fastify 100 ⇒ 404)
     bodyLimit: 1024 * 1024, // 1MB cho JSON thường; route âm thanh nâng riêng
     trustProxy: config.NODE_ENV === 'production'
   });

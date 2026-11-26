@@ -464,3 +464,17 @@ test('nhật ký truy cập không chứa token thiết bị trong URL DELETE', 
     await t.close();
   }
 });
+
+test('token FCM thật dài (~163 ký tự) đăng ký và hủy được qua đường dẫn DELETE', async () => {
+  const { t, a } = await setup();
+  try {
+    const token = `${'a'.repeat(22)}:APA91b${'x'.repeat(134)}`;
+    assert.equal(token.length, 163);
+    assert.equal((await reg(t, a, token)).statusCode, 204);
+    assert.equal((await tokensOf(t, a.userId)).length, 1);
+    assert.equal((await call(t, a, 'DELETE', `/v1/chat/push-tokens/${token}`)).statusCode, 204);
+    assert.equal((await tokensOf(t, a.userId)).length, 0);
+  } finally {
+    await t.close();
+  }
+});
