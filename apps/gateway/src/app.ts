@@ -135,6 +135,8 @@ export async function buildApp(config: GatewayConfig, opts: BuildOptions = {}): 
       opts.logger === false
         ? false
         : {
+            // Test (dự án 4) tiêm luồng ghi log để quét nội dung log; mặc định ghi ra stdout như trước
+            ...(typeof opts.logger === 'object' ? { level: opts.logger.level, stream: opts.logger.stream } : {}),
             serializers: {
               req: (req: { method?: string; url?: string; host?: string; ip?: string; socket?: { remotePort?: number } }) => ({
                 method: req.method,
