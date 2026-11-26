@@ -143,6 +143,7 @@ textarea {
 }
 
 .tabbar a .tab-icon {
+  position: relative;
   font-size: 22px;
   line-height: 1;
 }
