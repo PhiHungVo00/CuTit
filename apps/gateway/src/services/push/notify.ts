@@ -95,6 +95,7 @@ export function startPushNotifier(deps: PushNotifierDeps): PushNotifier {
         if (r.config) log.warn({ rejected: r.config }, 'push rejected by provider: kiểm project_id/nội dung (token KHÔNG bị vô hiệu)');
       } catch (err) {
         log.warn({ reason: sanitize(err), attempt }, 'push send failed');
+        if (err instanceof Error && err.name === 'PushError' && !(err as { retryable?: boolean }).retryable) return; // lỗi vĩnh viễn: không giữ chỗ thử lại
         retry = todo;
       }
       if (!retry.length) return;
@@ -157,7 +158,10 @@ export function startPushNotifier(deps: PushNotifierDeps): PushNotifier {
   let running = 0;
   const waiting: Array<() => void> = [];
   const limited = async (fn: () => Promise<void>): Promise<void> => {
-    if (running >= PUSH_RULES.maxConcurrent) await new Promise<void>((resolve) => waiting.push(resolve));
+    if (running >= PUSH_RULES.maxConcurrent) {
+      if (waiting.length >= PUSH_RULES.maxPending) return; // hàng đợi đầy: bỏ (push là best-effort, client bù bằng REST)
+      await new Promise<void>((resolve) => waiting.push(resolve));
+    }
     running++;
     try {
       await fn();

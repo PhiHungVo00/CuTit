@@ -14,7 +14,11 @@ export interface ServiceAccount {
 }
 
 export class PushError extends Error {
-  constructor(readonly code: string) {
+  /** lỗi TẠM (mạng, 5xx) mới đáng thử lại; cấu hình/khóa/quyền sai thì thử lại vô ích */
+  constructor(
+    readonly code: string,
+    readonly retryable = false
+  ) {
     super(code);
     this.name = 'PushError';
   }
@@ -96,9 +100,9 @@ export class FcmProvider implements PushProvider {
         redirect: 'error'
       });
     } catch {
-      throw new PushError('fcm_auth_network');
+      throw new PushError('fcm_auth_network', true);
     }
-    if (!res.ok) throw new PushError(`fcm_auth_http_${res.status}`);
+    if (!res.ok) throw new PushError(`fcm_auth_http_${res.status}`, res.status >= 500 || res.status === 429);
     const j = (await res.json().catch(() => null)) as { access_token?: string; expires_in?: number } | null;
     if (!j?.access_token) throw new PushError('fcm_auth_bad_response');
     this.access = { token: j.access_token, exp: nowMs + (j.expires_in ?? 3600) * 1000 };

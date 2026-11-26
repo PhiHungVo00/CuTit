@@ -531,3 +531,19 @@ test('FCM: làm mới token truy cập đồng thời chỉ gọi OAuth một l�
   await Promise.all([p.send(['a'], msgOf()), p.send(['b'], msgOf()), p.send(['c'], msgOf())]);
   assert.equal(oauth, 1);
 });
+
+test('lỗi vĩnh viễn của nhà cung cấp (PushError không tạm thời) ⇒ không thử lại', async () => {
+  const { PushError } = await import('../dist/services/push/fcmProvider.js');
+  const provider = fakeProvider(() => {
+    throw new PushError('fcm_forbidden');
+  });
+  const { t, a, b, cid } = await setup(provider);
+  try {
+    await reg(t, b);
+    await sendHttp(t, a, cid, 'x');
+    await t.app.push.flush();
+    assert.equal(provider.sent.length, 1);
+  } finally {
+    await t.close();
+  }
+});
