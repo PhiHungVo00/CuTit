@@ -1,0 +1,503 @@
+<!doctype html>
+<html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Phác 4: Bạn bè, chat, gọi</title>
+<!-- Ảnh phác tĩnh, không phải code sản phẩm. Không tải mạng gì. Spec: docs/superpowers/specs/2026-11-25-ban-be-design.md (mục 9). Nguyên tắc: docs/thiet-ke/NGUYEN-TAC-UI-UX.md. Màu lấy từ packages/ui/src/theme.css (chế độ sáng). -->
+<style>
+  /* ===== Token (bản sao của packages/ui, chế độ sáng) ===== */
+  :root{
+    --ct-canvas:#fbf3e4; --ct-surface:#fffdf8; --ct-surface-2:#f6ecd8; --ct-line:#eadfcb;
+    --ct-ink:#3b2a1e; --ct-ink-soft:#5e4a39; --ct-ink-muted:#75624f; --ct-heading:#5a3e28;
+    --ct-accent:#6fa544; --ct-accent-text:#3f6b1c; --ct-accent-ink:#1f2e10; --ct-accent-soft:#e1f0d1;
+    --ct-gold:#e9b949; --ct-sky:#cfe8f3; --ct-danger:#c03a27; --ct-danger-soft:#fde4dc; --ct-danger-ink:#8a2616;
+    --ct-radius-sm:12px; --ct-radius-md:16px; --ct-radius-lg:24px;
+  }
+  @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+    --ct-canvas:#1f1710; --ct-surface:#2b2118; --ct-surface-2:#352a1e; --ct-line:#4b3b2b;
+    --ct-ink:#f7ecda; --ct-ink-soft:#dcc7a8; --ct-ink-muted:#b09b83; --ct-heading:#f0c25a;
+    --ct-accent:#8dbf5e; --ct-accent-text:#8dbf5e; --ct-accent-ink:#1b2a0e; --ct-accent-soft:#2f4a1c;
+    --ct-danger:#e4694f; --ct-danger-soft:#3f1f17; --ct-danger-ink:#fbcdbf;
+  }}
+  :root[data-theme="dark"]{
+    --ct-canvas:#1f1710; --ct-surface:#2b2118; --ct-surface-2:#352a1e; --ct-line:#4b3b2b;
+    --ct-ink:#f7ecda; --ct-ink-soft:#dcc7a8; --ct-ink-muted:#b09b83; --ct-heading:#f0c25a;
+    --ct-accent:#8dbf5e; --ct-accent-text:#8dbf5e; --ct-accent-ink:#1b2a0e; --ct-accent-soft:#2f4a1c;
+    --ct-danger:#e4694f; --ct-danger-soft:#3f1f17; --ct-danger-ink:#fbcdbf;
+  }
+
+  /* ===== Cỡ chữ: CHỈ 4 cỡ (NGUYEN-TAC-UI-UX mục 1) ===== */
+  /* 26 = tiêu đề · 18 = phụ đề · 15 = thân · 13 = chú thích */
+  *{box-sizing:border-box}
+  body{margin:0;background:#E7DCC4;color:var(--ct-ink);font-family:'Be Vietnam Pro',system-ui,-apple-system,'Segoe UI',sans-serif;font-size:15px;line-height:1.5;padding:16px}
+  :root[data-theme="dark"] body{background:#120c07}
+  button,input,select{font:inherit;color:inherit}
+  a{color:var(--ct-accent-text)}
+
+  header.page{max-width:1200px;margin:0 auto 16px}
+  .page h1{font-size:26px;line-height:1.25;margin:0 0 4px;color:var(--ct-heading)}
+  .page .sub{font-size:15px;color:#4a3a2c;margin:0 0 12px}
+  .toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+  .toolbar a{display:inline-flex;align-items:center;min-height:44px;padding:8px 12px;border-radius:var(--ct-radius-sm);background:var(--ct-surface);border:1px solid var(--ct-line);text-decoration:none;color:var(--ct-ink);font-size:13px}
+  .toolbar a:focus-visible,.btn:focus-visible,.ico:focus-visible{outline:3px solid var(--ct-accent);outline-offset:2px}
+  .langbtn{min-width:44px;min-height:44px;border-radius:var(--ct-radius-sm);border:1px solid var(--ct-heading);background:var(--ct-surface);padding:0 12px;cursor:pointer;font-size:13px;font-weight:700}
+  .langbtn[aria-pressed="true"]{background:var(--ct-heading);color:var(--ct-surface)}
+  .note{background:var(--ct-surface);border:1px solid var(--ct-line);border-radius:var(--ct-radius-md);padding:12px 16px;font-size:13px;color:var(--ct-ink-soft);margin:16px 0}
+
+  .grid{max-width:1200px;margin:0 auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(390px,1fr));gap:24px;justify-items:center}
+  .scr{display:flex;flex-direction:column;align-items:flex-start;gap:8px;scroll-margin-top:16px}
+  .cap{font-size:13px;color:#4a3a2c;margin:0;max-width:390px}
+  .cap b{font-size:15px;color:var(--ct-heading)}
+  .tag{display:inline-block;background:var(--ct-sky);color:#1f3a46;border-radius:99px;padding:2px 8px;font-size:13px;margin-right:4px}
+
+  /* ===== Khung điện thoại ~390px ===== */
+  .phone{width:390px;max-width:100%;height:760px;background:var(--ct-canvas);color:var(--ct-ink);border:8px solid #2B211A;border-radius:36px;overflow:hidden;display:flex;flex-direction:column;position:relative;box-shadow:0 10px 28px rgba(60,40,20,.25)}
+  .status{height:32px;flex-shrink:0;display:flex;justify-content:space-between;align-items:center;padding:0 24px;font-size:13px;font-weight:700}
+  .top{display:flex;align-items:center;gap:8px;min-height:56px;padding:4px 16px;border-bottom:1px solid var(--ct-line);background:var(--ct-surface)}
+  .top .title{font-size:18px;font-weight:700;flex:1;margin:0;color:var(--ct-heading)}
+  .body{flex:1;overflow:hidden;padding:12px 16px;display:flex;flex-direction:column;gap:12px}
+  .foot{flex-shrink:0;padding:12px 16px 16px;display:flex;flex-direction:column;gap:8px;background:var(--ct-surface);border-top:1px solid var(--ct-line)}
+
+  /* Nút: vùng chạm ≥ 44px, nút chính 48px */
+  .btn{min-height:44px;padding:10px 16px;border-radius:var(--ct-radius-md);border:1.5px solid transparent;background:transparent;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:8px;text-decoration:none;font-size:15px}
+  .btn-p{min-height:48px;width:100%;background:var(--ct-accent);color:var(--ct-accent-ink);border-color:var(--ct-accent)}
+  .btn-s{border-color:var(--ct-heading);color:var(--ct-heading);background:var(--ct-surface)}
+  .btn-d{color:var(--ct-danger-ink);background:var(--ct-danger-soft);border-color:var(--ct-danger)}
+  .btn-t{color:var(--ct-accent-text);background:transparent;padding:10px 8px}
+  .btn-x{color:var(--ct-danger);background:transparent;padding:10px 8px}
+  .btn-end{min-height:52px;width:100%;background:var(--ct-danger);color:#fff;border-color:var(--ct-danger)}
+  .ico{width:44px;height:44px;border-radius:50%;border:1px solid var(--ct-line);background:var(--ct-surface);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;flex-shrink:0}
+  .av{width:44px;height:44px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0;background:var(--ct-sky);color:#1f3a46}
+  .av.g{background:var(--ct-gold);color:#4a3206}.av.c3{background:var(--ct-accent-soft);color:var(--ct-accent-text)}.av.c1{background:var(--ct-danger-soft);color:var(--ct-danger-ink)}
+  .av.xl{width:96px;height:96px;font-size:26px}
+
+  .row{display:flex;align-items:center;gap:12px;min-height:56px;padding:8px 0;border-bottom:1px solid var(--ct-line)}
+  .row .mid{flex:1;min-width:0}
+  .row .name{font-weight:700}
+  .row .last{font-size:13px;color:var(--ct-ink-soft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .row .time{font-size:13px;color:var(--ct-ink-muted)}
+  .badge{min-width:24px;height:24px;border-radius:99px;background:var(--ct-danger);color:#fff;font-size:13px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;padding:0 6px}
+  .banner{font-size:13px;background:var(--ct-gold);color:#4a3206;border-radius:var(--ct-radius-sm);padding:8px 12px}
+  .banner.off{background:var(--ct-surface-2);color:var(--ct-ink)}
+  .seg{display:flex;gap:8px}
+  .seg span{flex:1;min-height:44px;display:flex;align-items:center;justify-content:center;border-radius:var(--ct-radius-sm);border:1px solid var(--ct-line);background:var(--ct-surface);font-size:13px;font-weight:700}
+  .seg span.on{background:var(--ct-accent-soft);border-color:var(--ct-accent);color:var(--ct-accent-text)}
+
+  /* Tin nhắn */
+  .msgs{flex:1;overflow:hidden;display:flex;flex-direction:column;gap:8px;padding:12px 16px;background:var(--ct-canvas)}
+  .day{align-self:center;font-size:13px;color:var(--ct-ink-muted);background:var(--ct-surface-2);border-radius:99px;padding:4px 12px}
+  .bub{max-width:78%;padding:8px 12px;border-radius:var(--ct-radius-md);font-size:15px;line-height:1.5;word-wrap:break-word}
+  .in{align-self:flex-start;background:var(--ct-surface);border:1px solid var(--ct-line);border-bottom-left-radius:6px}
+  .out{align-self:flex-end;background:var(--ct-accent-soft);border:1px solid var(--ct-accent);border-bottom-right-radius:6px}
+  .meta{align-self:flex-end;font-size:13px;color:var(--ct-ink-muted);margin-top:-4px}
+  .meta.err{color:var(--ct-danger-ink);font-weight:700}
+  .recalled{align-self:flex-end;font-size:13px;font-style:italic;color:var(--ct-ink-muted);border:1px dashed var(--ct-line);border-radius:var(--ct-radius-md);padding:6px 12px}
+  .img{width:160px;height:110px;border-radius:var(--ct-radius-md);background:linear-gradient(160deg,#cfe8f3,#e1f0d1);border:1px solid var(--ct-line);display:flex;align-items:flex-end;padding:8px;font-size:13px;color:var(--ct-ink-soft);align-self:flex-start}
+  .voice{align-self:flex-start;display:flex;align-items:center;gap:8px;background:var(--ct-surface);border:1px solid var(--ct-line);border-radius:99px;padding:6px 12px 6px 6px;font-size:13px}
+  .voice i{display:inline-block;width:100px;height:8px;border-radius:4px;background:repeating-linear-gradient(90deg,var(--ct-accent) 0 4px,transparent 4px 7px)}
+  .composer{display:flex;align-items:center;gap:8px;padding:8px 12px 12px;background:var(--ct-surface);border-top:1px solid var(--ct-line)}
+  .field{flex:1;min-height:44px;border:1.5px solid var(--ct-line);border-radius:var(--ct-radius-md);padding:10px 12px;background:var(--ct-surface);color:var(--ct-ink-muted);font-size:15px;display:flex;align-items:center}
+  .send{width:44px;height:44px;border-radius:50%;border:0;background:var(--ct-accent);color:var(--ct-accent-ink);font-weight:700;cursor:pointer;font-size:15px;flex-shrink:0}
+
+  /* Ghi âm */
+  .dim{flex:1;background:rgba(31,23,16,.72);display:flex;flex-direction:column;justify-content:flex-end;color:#fbf3e4}
+  .rec{background:var(--ct-surface);color:var(--ct-ink);border-radius:var(--ct-radius-lg) var(--ct-radius-lg) 0 0;padding:20px 16px 16px;display:flex;flex-direction:column;gap:16px;align-items:center}
+  .wave{display:flex;align-items:center;gap:4px;height:64px;width:100%;justify-content:center}
+  .wave i{width:6px;border-radius:3px;background:var(--ct-accent)}
+  .cancel-zone{width:100%;display:flex;justify-content:space-between;align-items:center;font-size:13px;color:var(--ct-danger-ink);background:var(--ct-danger-soft);border-radius:var(--ct-radius-md);padding:8px 12px;min-height:44px}
+  .hold{width:88px;height:88px;border-radius:50%;background:var(--ct-accent);color:var(--ct-accent-ink);display:flex;align-items:center;justify-content:center;font-weight:700;border:6px solid var(--ct-accent-soft)}
+
+  /* Gọi */
+  .callbg{flex:1;background:linear-gradient(180deg,#5a3e28,#2b211a);color:#fbf3e4;display:flex;flex-direction:column;align-items:center;padding:24px 16px;gap:16px}
+  .callbg .av{background:var(--ct-gold);color:#4a3206}
+  .ctrls{display:flex;justify-content:space-around;width:100%}
+  .ctrl{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:13px;min-width:64px}
+  .ctrl b{width:56px;height:56px;border-radius:50%;background:rgba(255,253,248,.16);display:inline-flex;align-items:center;justify-content:center;font-size:15px;color:#fff}
+  .tiles{display:grid;grid-template-columns:1fr 1fr;gap:8px;width:100%;flex:1}
+  .tile{border-radius:var(--ct-radius-md);background:#3b2a1e;color:#fbf3e4;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-size:13px;min-height:96px;border:2px solid transparent}
+  .tile.speak{border-color:var(--ct-accent);box-shadow:0 0 0 2px var(--ct-accent-soft)}
+  .tile .av{width:40px;height:40px;background:var(--ct-sky);color:#1f3a46}
+  .tile.wait{opacity:.7;border-style:dashed}
+
+  /* Trạng thái nối lại / ngoại tuyến / rỗng / lỗi */
+  .empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:12px;padding:16px}
+  .cutit{width:96px;height:96px;border-radius:50%;background:var(--ct-gold);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#4a3206;text-align:center;line-height:1.2}
+
+  /* Form */
+  label.lb{font-size:13px;color:var(--ct-ink-soft);font-weight:700}
+  .inp{min-height:48px;border:1.5px solid var(--ct-line);border-radius:var(--ct-radius-md);padding:10px 12px;background:var(--ct-surface);display:flex;align-items:center;color:var(--ct-ink)}
+  .inp.ph{color:var(--ct-ink-muted)}
+  .inp.focus{border-color:var(--ct-accent);box-shadow:0 0 0 3px var(--ct-accent-soft)}
+  .card{background:var(--ct-surface);border:1px solid var(--ct-line);border-radius:var(--ct-radius-md);padding:12px;display:flex;flex-direction:column;gap:8px}
+  .sec{font-size:13px;color:var(--ct-ink-muted);font-weight:700;margin-top:4px}
+  .chk{width:24px;height:24px;border-radius:6px;border:2px solid var(--ct-accent-text);display:inline-flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:var(--ct-accent-text);flex-shrink:0}
+  .chk.on{background:var(--ct-accent);color:var(--ct-accent-ink)}
+  .radio{width:24px;height:24px;border-radius:50%;border:2px solid var(--ct-heading);flex-shrink:0;display:inline-flex;align-items:center;justify-content:center}
+  .radio.on::after{content:'';width:12px;height:12px;border-radius:50%;background:var(--ct-heading)}
+  .tog{width:52px;height:32px;border-radius:99px;background:var(--ct-line);position:relative;flex-shrink:0}
+  .tog::after{content:'';position:absolute;top:4px;left:4px;width:24px;height:24px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.3)}
+  .tog.on{background:var(--ct-accent)}.tog.on::after{left:24px}
+  .hint{font-size:13px;color:var(--ct-ink-soft)}
+  .err-box{font-size:13px;color:var(--ct-danger-ink);background:var(--ct-danger-soft);border-radius:var(--ct-radius-sm);padding:8px 12px}
+  .sheet{background:var(--ct-surface);border-radius:var(--ct-radius-lg) var(--ct-radius-lg) 0 0;margin-top:auto;padding:16px;display:flex;flex-direction:column;gap:8px;box-shadow:0 -6px 20px rgba(0,0,0,.15)}
+  .grab{width:40px;height:4px;border-radius:2px;background:var(--ct-line);align-self:center}
+  .dim2{flex:1;background:rgba(31,23,16,.45)}
+
+  /* Bảng trạng thái */
+  table{border-collapse:collapse;width:100%;max-width:1200px;margin:16px auto;background:var(--ct-surface);border-radius:var(--ct-radius-md);overflow:hidden;font-size:13px}
+  th,td{text-align:left;padding:8px 12px;border-bottom:1px solid var(--ct-line);vertical-align:top}
+  th{background:var(--ct-surface-2);color:var(--ct-heading)}
+  .wrap{max-width:1200px;margin:24px auto;background:var(--ct-surface);border:1px solid var(--ct-line);border-radius:var(--ct-radius-lg);padding:16px 20px}
+  .wrap h2{font-size:18px;margin:0 0 8px;color:var(--ct-heading)}
+  .wrap li{margin-bottom:8px}
+  .wrap p, .wrap li{font-size:15px}
+
+  @media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
+</style></head>
+<body>
+
+<!-- Chọn ngôn ngữ: chữ vi là mặc định; bấm EN để đổi các chuỗi có data-en -->
+<header class="page">
+  <h1 data-vi="Bản phác: Bạn bè, chat, gọi" data-en="Mockup: Friends, chat, calls">Bản phác: Bạn bè, chat, gọi</h1>
+  <p class="sub" data-vi="Ảnh phác tĩnh cho người duyệt. Mỗi màn có một nút chính. Chữ nhỏ dưới mỗi khung là ghi chú." data-en="Static mockup for review. Each screen has one main button. Small text under each frame is a note.">Ảnh phác tĩnh cho người duyệt. Mỗi màn có một nút chính. Chữ nhỏ dưới mỗi khung là ghi chú.</p>
+  <div class="toolbar" role="group" aria-label="Ngôn ngữ / Language">
+    <button class="langbtn" type="button" id="lang-vi" aria-pressed="true">VI</button>
+    <button class="langbtn" type="button" id="lang-en" aria-pressed="false">EN</button>
+    <a href="#s1">1 Tin nhắn</a><a href="#s2">2 Trò chuyện</a><a href="#s3">3 Ghi âm</a><a href="#s4">4 Tìm bạn</a><a href="#s5">5 Lời mời</a><a href="#s6">6 Cổng tuổi</a><a href="#s6b">6b Dưới 18</a><a href="#s7">7 Tạo nhóm</a><a href="#s8">8 Thông tin nhóm</a><a href="#s9">9 Gọi 1-1</a><a href="#s10">10 Gọi nhóm</a><a href="#s11">11 Cuộc gọi đến</a><a href="#s12">12 Báo cáo, chặn</a><a href="#s13">13 Riêng tư</a><a href="#trang-thai">Trạng thái</a>
+  </div>
+  <div class="note" data-vi="Nguyên tắc: một nút chính mỗi màn; vùng chạm ≥ 44 px; 4 cỡ chữ (26 / 18 / 15 / 13); khoảng cách theo lưới 4/8; khung điện thoại 390 px. Màu đỏ (danger) chỉ dùng cho sai, xóa, chặn, kết thúc cuộc gọi." data-en="Rules: one main button per screen; touch targets ≥ 44 px; 4 font sizes (26 / 18 / 15 / 13); spacing on a 4/8 grid; phone frame 390 px. Red (danger) is used only for errors, delete, block and ending a call.">Nguyên tắc: một nút chính mỗi màn; vùng chạm ≥ 44 px; 4 cỡ chữ (26 / 18 / 15 / 13); khoảng cách theo lưới 4/8; khung điện thoại 390 px. Màu đỏ (danger) chỉ dùng cho sai, xóa, chặn, kết thúc cuộc gọi.</div>
+</header>
+
+<main class="grid">
+
+<!-- ============ 1. DANH SÁCH TIN NHẮN ============ -->
+<section class="scr" id="s1" aria-labelledby="t1">
+  <p class="cap" id="t1"><b data-vi="1. Danh sách tin nhắn" data-en="1. Message list">1. Danh sách tin nhắn</b><br><span data-vi="Có tin chưa đọc và thanh 'Đang kết nối lại'. Lối vào: Hồ sơ › Tin nhắn." data-en="Has unread messages and a 'Reconnecting' bar. Entry: Profile › Messages.">Có tin chưa đọc và thanh "Đang kết nối lại". Lối vào: Hồ sơ › Tin nhắn.</span></p>
+  <div class="phone">
+    <div class="status"><span>9:41</span><span>5G ▮</span></div>
+    <div class="top"><h3 class="title" data-vi="Tin nhắn" data-en="Messages">Tin nhắn</h3><button class="ico" type="button" aria-label="Tìm">🔍</button></div>
+    <div class="body">
+      <div class="banner" data-vi="Đang kết nối lại…" data-en="Reconnecting…">Đang kết nối lại…</div>
+      <div class="row"><span class="av g">N</span><div class="mid"><div class="name" data-vi="Nhóm Tiếng Việt K12" data-en="Vietnamese K12 group">Nhóm Tiếng Việt K12</div><div class="last" data-vi="Lan: Mai học bài nào chưa?" data-en="Lan: Did Mai study the lesson yet?">Lan: Mai học bài nào chưa?</div></div><div style="text-align:right"><div class="time">10:24</div><span class="badge">3</span></div></div>
+      <div class="row"><span class="av">M</span><div class="mid"><div class="name">Minh</div><div class="last" data-vi="🎤 Tin thoại 0:12" data-en="🎤 Voice message 0:12">🎤 Tin thoại 0:12</div></div><div class="time" data-vi="Hôm qua" data-en="Yesterday">Hôm qua</div></div>
+      <div class="row"><span class="av c3">H</span><div class="mid"><div class="name" data-vi="Thu Hà" data-en="Thu Ha">Thu Hà</div><div class="last" style="font-style:italic" data-vi="Đã thu hồi một tin nhắn" data-en="A message was recalled">Đã thu hồi một tin nhắn</div></div><div class="time" data-vi="T2" data-en="Mon">T2</div></div>
+    </div>
+    <div class="foot"><button class="btn btn-p" type="button" data-vi="Nhắn tin mới" data-en="New message">Nhắn tin mới</button></div>
+  </div>
+</section>
+
+<!-- ============ 2. MỘT CUỘC TRÒ CHUYỆN ============ -->
+<section class="scr" id="s2" aria-labelledby="t2">
+  <p class="cap" id="t2"><b data-vi="2. Một cuộc trò chuyện" data-en="2. One conversation">2. Một cuộc trò chuyện</b><br><span data-vi="Đủ loại tin: đã gửi, đang gửi, lỗi (có Gửi lại), đã thu hồi, ảnh, giọng nói. Mất mạng: thanh ngoại tuyến." data-en="All message types: sent, sending, failed (with Resend), recalled, photo, voice. No network: offline bar.">Đủ loại tin: đã gửi, đang gửi, lỗi (có Gửi lại), đã thu hồi, ảnh, giọng nói. Mất mạng: thanh ngoại tuyến.</span></p>
+  <div class="phone">
+    <div class="status"><span>9:41</span><span>▮</span></div>
+    <div class="top"><button class="ico" type="button" aria-label="Quay lại" data-vi="←" data-en="←">←</button><h3 class="title" style="font-size:18px">Minh</h3><button class="ico" type="button" aria-label="Thông tin" data-vi="⋯" data-en="⋯">⋯</button></div>
+    <div class="banner off" style="margin:8px 16px 0" data-vi="Bạn đang ngoại tuyến. Tin sẽ gửi khi có mạng." data-en="You are offline. Messages will send when you're back online.">Bạn đang ngoại tuyến. Tin sẽ gửi khi có mạng.</div>
+    <div class="msgs">
+      <div class="day" data-vi="Hôm nay" data-en="Today">Hôm nay</div>
+      <div class="bub in" data-vi="Chiều nay học nhóm không?" data-en="Study group this afternoon?">Chiều nay học nhóm không?</div>
+      <div class="bub out" data-vi="Có, 4 giờ nhé." data-en="Yes, at 4 o'clock.">Có, 4 giờ nhé.</div>
+      <div class="meta" data-vi="Đã xem · 09:12" data-en="Seen · 09:12">Đã xem · 09:12</div>
+      <div class="img">Ảnh bài tập</div>
+      <div class="voice"><span class="av" style="width:32px;height:32px;font-size:13px">▶</span><i></i><span>0:12</span></div>
+      <div class="bub out" data-vi="Mình gửi ảnh bài tập nha" data-en="I'll send the homework photo">Mình gửi ảnh bài tập nha</div>
+      <div class="meta" data-vi="Đang gửi…" data-en="Sending…">Đang gửi…</div>
+      <div class="bub out" data-vi="Tin này chưa đi được" data-en="This message didn't send">Tin này chưa đi được</div>
+      <div class="meta err" style="display:flex;gap:8px;align-items:center;justify-content:flex-end"><span data-vi="Không gửi được" data-en="Not sent">Không gửi được</span><button class="btn btn-t" type="button" style="min-height:44px" data-vi="Gửi lại" data-en="Resend">Gửi lại</button></div>
+      <div class="recalled" data-vi="Tin đã thu hồi" data-en="Message recalled">Tin đã thu hồi</div>
+    </div>
+    <div class="composer">
+      <button class="ico" type="button" aria-label="Đính kèm" data-vi="＋" data-en="＋">＋</button>
+      <div class="field" data-vi="Nhập tin nhắn…" data-en="Type a message…">Nhập tin nhắn…</div>
+      <button class="ico" type="button" aria-label="Giữ để ghi âm" data-vi="🎤" data-en="🎤">🎤</button>
+      <button class="send" type="button" aria-label="Gửi" data-vi="Gửi" data-en="Send">Gửi</button>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 3. GHI ÂM GIỮ-ĐỂ-NÓI ============ -->
+<section class="scr" id="s3" aria-labelledby="t3">
+  <p class="cap" id="t3"><b data-vi="3. Ghi âm giữ-để-nói, vuốt để hủy" data-en="3. Hold-to-talk recording, swipe to cancel">3. Ghi âm giữ-để-nói, vuốt để hủy</b><br><span data-vi="Giữ nút micro để nói. Thả ra để gửi. Vuốt sang trái để hủy (vùng đỏ). Đếm giờ hiện trên đầu." data-en="Hold the mic to speak. Release to send. Swipe left to cancel (red zone). Timer shows at the top.">Giữ nút micro để nói. Thả ra để gửi. Vuốt sang trái để hủy (vùng đỏ). Đếm giờ hiện trên đầu.</span></p>
+  <div class="phone">
+    <div class="status"><span>9:41</span><span>▮</span></div>
+    <div class="top"><button class="ico" type="button" aria-label="Quay lại" data-vi="←" data-en="←">←</button><h3 class="title" style="font-size:18px">Minh</h3></div>
+    <div class="dim">
+      <div class="rec">
+        <div class="hint" data-vi="Đang ghi âm · 0:04" data-en="Recording · 0:04">Đang ghi âm · 0:04</div>
+        <div class="wave" aria-hidden="true"><i style="height:16px"></i><i style="height:32px"></i><i style="height:56px"></i><i style="height:24px"></i><i style="height:44px"></i><i style="height:20px"></i><i style="height:60px"></i><i style="height:28px"></i><i style="height:40px"></i><i style="height:16px"></i></div>
+        <div class="cancel-zone"><span data-vi="← Vuốt sang trái để hủy" data-en="← Swipe left to cancel">← Vuốt sang trái để hủy</span><span data-vi="Hủy" data-en="Cancel">Hủy</span></div>
+        <div class="hold" aria-label="Thả để gửi" data-vi="Thả" data-en="Release">Thả</div>
+        <div class="hint" style="text-align:center" data-vi="Thả nút để gửi tin thoại tối đa 60 giây." data-en="Release to send a voice message up to 60 seconds.">Thả nút để gửi tin thoại tối đa 60 giây.</div>
+        <button class="btn btn-p" type="button" data-vi="Thả để gửi" data-en="Release to send">Thả để gửi</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 4. TÌM BẠN BẰNG HANDLE ============ -->
+<section class="scr" id="s4" aria-labelledby="t4">
+  <p class="cap" id="t4"><b data-vi="4. Tìm bạn bằng tên (handle)" data-en="4. Find a friend by handle">4. Tìm bạn bằng tên (handle)</b><br><span data-vi="Không hiện danh sách người dùng. Mọi trường hợp không tìm thấy đều hiện cùng một câu." data-en="No user list is shown. Every 'not found' case shows the same message.">Không hiện danh sách người dùng. Mọi trường hợp không tìm thấy đều hiện cùng một câu.</span></p>
+  <div class="phone">
+    <div class="status"><span>9:41</span><span>▮</span></div>
+    <div class="top"><button class="ico" type="button" aria-label="Quay lại" data-vi="←" data-en="←">←</button><h3 class="title" data-vi="Thêm bạn" data-en="Add friend">Thêm bạn</h3></div>
+    <div class="body">
+      <label class="lb" data-vi="Tên bạn (handle)" data-en="Friend's handle">Tên bạn (handle)</label>
+      <div class="inp focus">@thu_ha</div>
+      <div class="hint" data-vi="Nhập đúng tên, không có khoảng trắng. Tên dùng để tìm, không hiện số điện thoại hay email." data-en="Type the exact name, no spaces. It's used for search only; no phone or email is shown.">Nhập đúng tên, không có khoảng trắng. Tên dùng để tìm, không hiện số điện thoại hay email.</div>
+      <div class="err-box" data-vi="Không tìm thấy người này. Kiểm tra lại tên bạn." data-en="No one was found. Check the name again.">Không tìm thấy người này. Kiểm tra lại tên bạn.</div>
+      <div class="card" style="margin-top:4px"><span class="hint" data-vi="Gợi ý: hỏi bạn đọc tên của bạn ấy trong mục Riêng tư." data-en="Tip: ask your friend for their name from the Privacy settings.">Gợi ý: hỏi bạn đọc tên của bạn ấy trong mục Riêng tư.</span></div>
+    </div>
+    <div class="foot"><button class="btn btn-p" type="button" data-vi="Tìm" data-en="Search">Tìm</button></div>
+  </div>
+</section>
+
+<!-- ============ 5. LỜI MỜI KẾT BẠN ============ -->
+<section class="scr" id="s5" aria-labelledby="t5">
+  <p class="cap" id="t5"><b data-vi="5. Lời mời kết bạn" data-en="5. Friend requests">5. Lời mời kết bạn</b><br><span data-vi="Hai tab: Đến và Đã gửi. Khi bạn bị chặn, lời mời của họ không bao giờ hiện." data-en="Two tabs: Incoming and Sent. Requests from people you blocked never appear.">Hai tab: Đến và Đã gửi. Khi bạn bị chặn, lời mời của họ không bao giờ hiện.</span></p>
+  <div class="phone">
+    <div class="status"><span>9:41</span><span>▮</span></div>
+    <div class="top"><button class="ico" type="button" aria-label="Quay lại" data-vi="←" data-en="←">←</button><h3 class="title" data-vi="Lời mời" data-en="Requests">Lời mời</h3></div>
+    <div class="body">
+      <div class="seg"><span class="on" data-vi="Đến (2)" data-en="Incoming (2)">Đến (2)</span><span data-vi="Đã gửi" data-en="Sent">Đã gửi</span></div>
+      <div class="card"><div style="display:flex;gap:12px;align-items:center"><span class="av">M</span><div class="mid" style="flex:1"><div class="name">Minh</div><div class="hint" data-vi="Muốn kết bạn với bạn" data-en="Wants to be friends">Muốn kết bạn với bạn</div></div></div>
+        <div style="display:flex;gap:8px"><button class="btn btn-p" type="button" style="flex:1" data-vi="Chấp nhận" data-en="Accept">Chấp nhận</button><button class="btn btn-t" type="button" data-vi="Từ chối" data-en="Decline">Từ chối</button></div></div>
+      <div class="card"><div style="display:flex;gap:12px;align-items:center"><span class="av c3">L</span><div style="flex:1"><div class="name">Lan</div><div class="hint" data-vi="Muốn kết bạn với bạn" data-en="Wants to be friends">Muốn kết bạn với bạn</div></div></div>
+        <div style="display:flex;gap:8px"><button class="btn btn-s" type="button" style="flex:1" data-vi="Chấp nhận" data-en="Accept">Chấp nhận</button><button class="btn btn-t" type="button" data-vi="Từ chối" data-en="Decline">Từ chối</button></div></div>
+      <div class="hint" data-vi="Chấp nhận xong, hai bạn nhắn tin được ngay (khi cả hai đủ điều kiện)." data-en="Once accepted, you can message each other right away (if both meet the requirements).">Chấp nhận xong, hai bạn nhắn tin được ngay (khi cả hai đủ điều kiện).</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 6. CỔNG TUỔI ============ -->
+<section class="scr" id="s6" aria-labelledby="t6">
+  <p class="cap" id="t6"><b data-vi="6. Cổng tuổi (lần đầu bật chat)" data-en="6. Age check (first time turning on chat)">6. Cổng tuổi (lần đầu bật chat)</b><br><span data-vi="Chỉ hỏi năm sinh một lần để bật chat và gọi. Năm sinh không hiện cho bạn bè và không đưa vào nhật ký." data-en="Asked once to turn on chat and calls. Birth year is never shown to friends or written to logs.">Chỉ hỏi năm sinh một lần để bật chat và gọi. Năm sinh không hiện cho bạn bè và không đưa vào nhật ký.</span></p>
+  <div class="phone">
+    <div class="status"><span>9:41</span><span>▮</span></div>
+    <div class="top"><button class="ico" type="button" aria-label="Đóng" data-vi="✕" data-en="✕">✕</button><h3 class="title" data-vi="Bật tin nhắn" data-en="Turn on messages">Bật tin nhắn</h3></div>
+    <div class="body" style="gap:16px">
+      <div style="display:flex;gap:12px;align-items:center"><span class="cutit" aria-hidden="true">Cu Tít</span><div class="bub in" style="max-width:none" data-vi="Để nhắn tin với bạn bè, mình cần biết bạn sinh năm nào nhé." data-en="To chat with friends, I need to know what year you were born.">Để nhắn tin với bạn bè, mình cần biết bạn sinh năm nào nhé.</div></div>
+      <h3 style="font-size:18px;margin:0;color:var(--ct-heading)" data-vi="Bạn sinh năm nào?" data-en="What year were you born?">Bạn sinh năm nào?</h3>
+      <label class="lb" data-vi="Năm sinh" data-en="Birth year">Năm sinh</label>
+      <div class="inp ph" data-vi="Chọn năm…" data-en="Choose a year…">Chọn năm…</div>
+      <div class="card"><span class="hint" data-vi="Sau khi lưu, không đổi được trong 12 tháng. Chỉ dùng để mở hoặc khóa chat và gọi." data-en="Once saved, it can't be changed for 12 months. It is only used to turn chat and calls on or off.">Sau khi lưu, không đổi được trong 12 tháng. Chỉ dùng để mở hoặc khóa chat và gọi.</span></div>
+    </div>
+    <div class="foot"><button class="btn btn-p" type="button" data-vi="Lưu" data-en="Save">Lưu</button></div>
+  </div>
+</section>
+
+<!-- ============ 6b. DƯỚI 18 ============ -->
+<section class="scr" id="s6b" aria-labelledby="t6b">
+  <p class="cap" id="t6b"><b data-vi="6b. Chưa đủ 18 tuổi" data-en="6b. Under 18">6b. Chưa đủ 18 tuổi</b><br><span data-vi="Không báo lỗi gây sợ. Nói rõ điều đang bị khóa và vẫn cho học như bình thường." data-en="No scary error. Say what is locked and keep learning open.">Không báo lỗi gây sợ. Nói rõ điều đang bị khóa và vẫn cho học như bình thường.</span></p>
+  <div class="phone">
+    <div class="status"><span>9:41</span><span>▮</span></div>
+    <div class="top"><button class="ico" type="button" aria-label="Đóng" data-vi="✕" data-en="✕">✕</button><h3 class="title" data-vi="Tin nhắn và gọi" data-en="Messages and calls">Tin nhắn và gọi</h3></div>
+    <div class="empty" style="gap:16px">
+      <span class="cutit" aria-hidden="true">Cu Tít</span>
+      <h3 style="font-size:18px;margin:0;color:var(--ct-heading)" data-vi="Tính năng này dành cho người từ 18 tuổi" data-en="This feature is for people 18 and older">Tính năng này dành cho người từ 18 tuổi</h3>
+      <p style="margin:0;color:var(--ct-ink-soft)" data-vi="Bạn vẫn học bài, luyện nói và làm nhiệm vụ như bình thường." data-en="You can still learn, practice speaking and do quests as usual.">Bạn vẫn học bài, luyện nói và làm nhiệm vụ như bình thường.</p>
+      <div class="card" style="width:100%"><span class="hint" data-vi="Chat và gọi với bạn bè chỉ mở cho người đủ tuổi. Không cần làm gì thêm." data-en="Chat and calls with friends are only open to people of the right age. Nothing else to do.">Chat và gọi với bạn bè chỉ mở cho người đủ tuổi. Không cần làm gì thêm.</span></div>
+    </div>
+    <div class="foot"><button class="btn btn-p" type="button" data-vi="Về trang học" data-en="Back to lessons">Về trang học</button></div>
+  </div>
+</section>
+
+<!-- ============ 7. TẠO NHÓM ============ -->
+<section class="scr" id="s7" aria-labelledby="t7">
+  <p class="cap" id="t7"><b data-vi="7. Tạo nhóm học" data-en="7. Create a study group">7. Tạo nhóm học</b><br><span data-vi="Nhóm học không giới hạn thành viên. Chỉ chọn được bạn đã kết bạn và đủ điều kiện." data-en="Study groups have no member limit. You can only add friends who meet the requirements.">Nhóm học không giới hạn thành viên. Chỉ chọn được bạn đã kết bạn và đủ điều kiện.</span></p>
+  <div class="phone">
+    <div class="status"><span>9:41</span><span>▮</span></div>
+    <div class="top"><button class="ico" type="button" aria-label="Quay lại" data-vi="←" data-en="←">←</button><h3 class="title" data-vi="Nhóm mới" data-en="New group">Nhóm mới</h3></div>
+    <div class="body">
+      <label class="lb" data-vi="Tên nhóm" data-en="Group name">Tên nhóm</label>
+      <div class="inp">Nhóm Tiếng Việt K12</div>
+      <div class="sec" data-vi="Chọn bạn (3)" data-en="Choose friends (3)">Chọn bạn (3)</div>
+      <div class="row"><span class="av">M</span><div class="mid"><div class="name">Minh</div></div><span class="chk on">✓</span></div>
+      <div class="row"><span class="av c3">L</span><div class="mid"><div class="name">Lan</div></div><span class="chk on">✓</span></div>
+      <div class="row"><span class="av g">H</span><div class="mid"><div class="name" data-vi="Thu Hà" data-en="Thu Ha">Thu Hà</div></div><span class="chk on">✓</span></div>
+      <div class="row"><span class="av c1">Đ</span><div class="mid"><div class="name" data-vi="Đức" data-en="Duc">Đức</div></div><span class="chk"></span></div>
+      <div class="hint" data-vi="Gọi nhóm tối đa 6 người. Bạn có thể chọn tối đa 5 người để mời gọi." data-en="Group calls: up to 6 people. You can invite up to 5 people to a call.">Gọi nhóm tối đa 6 người. Bạn có thể chọn tối đa 5 người để mời gọi.</div>
+    </div>
+    <div class="foot"><button class="btn btn-p" type="button" data-vi="Tạo nhóm" data-en="Create group">Tạo nhóm</button></div>
+  </div>
+</section>
+
+<!-- ============ 8. THÔNG TIN NHÓM ============ -->
+<section class="scr" id="s8" aria-labelledby="t8">
+  <p class="cap" id="t8"><b data-vi="8. Thông tin nhóm" data-en="8. Group info">8. Thông tin nhóm</b><br><span data-vi="Vai trò: chủ nhóm, quản trị, thành viên. Rời nhóm là nút chữ đỏ, không đặt cạnh nút chính." data-en="Roles: owner, admin, member. Leave group is a red text button, not next to the main button.">Vai trò: chủ nhóm, quản trị, thành viên. Rời nhóm là nút chữ đỏ, không đặt cạnh nút chính.</span></p>
+  <div class="phone">
+    <div class="status"><span>9:41</span><span>▮</span></div>
+    <div class="top"><button class="ico" type="button" aria-label="Quay lại" data-vi="←" data-en="←">←</button><h3 class="title" data-vi="Thông tin nhóm" data-en="Group info">Thông tin nhóm</h3></div>
+    <div class="body" style="gap:8px">
+      <div style="display:flex;flex-direction:column;align-items:center;gap:4px"><span class="av g xl">N</span><div class="name" style="font-size:18px" data-vi="Nhóm Tiếng Việt K12" data-en="Vietnamese K12 group">Nhóm Tiếng Việt K12</div><div class="hint" data-vi="12 thành viên · Không giới hạn" data-en="12 members · No limit">12 thành viên · Không giới hạn</div></div>
+      <div class="sec" data-vi="Thành viên" data-en="Members">Thành viên</div>
+      <div class="row"><span class="av">B</span><div class="mid"><div class="name" data-vi="Bạn" data-en="You">Bạn</div></div><span class="hint" data-vi="Chủ nhóm" data-en="Owner">Chủ nhóm</span></div>
+      <div class="row"><span class="av c3">L</span><div class="mid"><div class="name">Lan</div></div><span class="hint" data-vi="Quản trị" data-en="Admin">Quản trị</span></div>
+      <div class="row"><span class="av">M</span><div class="mid"><div class="name">Minh</div></div><span class="hint" data-vi="Thành viên" data-en="Member">Thành viên</span></div>
+      <div class="row"><div class="mid"><div class="name" data-vi="Tắt thông báo nhóm" data-en="Mute group notifications">Tắt thông báo nhóm</div></div><span class="tog"></span></div>
+      <button class="btn btn-x" type="button" style="align-self:flex-start" data-vi="Rời nhóm" data-en="Leave group">Rời nhóm</button>
+    </div>
+    <div class="foot"><button class="btn btn-p" type="button" data-vi="Mời thêm bạn" data-en="Invite more friends">Mời thêm bạn</button></div>
+  </div>
+</section>
+
+<!-- ============ 9. GỌI 1-1 ============ -->
+<section class="scr" id="s9" aria-labelledby="t9">
+  <p class="cap" id="t9"><b data-vi="9. Gọi thoại 1-1" data-en="9. One-to-one voice call">9. Gọi thoại 1-1</b><br><span data-vi="Có nút micro, loa, camera (gọi video). Nút kết thúc đỏ là nút chính duy nhất. Đang nối: có chữ 'Đang kết nối…'." data-en="Has mic, speaker and camera (video) buttons. The red end button is the only main button. While connecting: 'Connecting…' text.">Có nút micro, loa, camera (gọi video). Nút kết thúc đỏ là nút chính duy nhất. Đang nối: có chữ "Đang kết nối…".</span></p>
+  <div class="phone">
+    <div class="status" style="color:#fbf3e4"><span>9:41</span><span>▮</span></div>
+    <div class="callbg">
+      <span class="av xl" aria-hidden="true">M</span>
+      <h3 style="font-size:26px;margin:0;line-height:1.25">Minh</h3>
+      <div data-vi="Đang gọi · 00:42" data-en="Calling · 00:42">Đang gọi · 00:42</div>
+      <div class="hint" style="color:#f7ecda" data-vi="Gọi qua mạng này có thể không kết nối được" data-en="This network may not connect calls">Gọi qua mạng này có thể không kết nối được</div>
+      <div style="flex:1"></div>
+      <div class="ctrls">
+        <div class="ctrl"><b aria-label="Tắt mic">🎙</b><span data-vi="Tắt mic" data-en="Mute">Tắt mic</span></div>
+        <div class="ctrl"><b aria-label="Loa ngoài">🔊</b><span data-vi="Loa ngoài" data-en="Speaker">Loa ngoài</span></div>
+        <div class="ctrl"><b aria-label="Camera">📷</b><span data-vi="Camera" data-en="Camera">Camera</span></div>
+      </div>
+      <button class="btn btn-end" type="button" data-vi="Kết thúc" data-en="End call">Kết thúc</button>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 10. GỌI NHÓM 6 NGƯỜI ============ -->
+<section class="scr" id="s10" aria-labelledby="t10">
+  <p class="cap" id="t10"><b data-vi="10. Gọi nhóm (tối đa 6 người)" data-en="10. Group call (up to 6 people)">10. Gọi nhóm (tối đa 6 người)</b><br><span data-vi="Lưới 2 cột. Người đang nói có viền xanh. Ô 'Đang nối' có viền nét đứt. Gọi trên 4 người: tắt camera mặc định (để máy đỡ nặng)." data-en="2-column grid. Person speaking has a green border. 'Connecting' tile has a dashed border. More than 4 people: camera off by default.">Lưới 2 cột. Người đang nói có viền xanh. Ô "Đang nối" có viền nét đứt. Gọi trên 4 người: tắt camera mặc định (để máy đỡ nặng).</span></p>
+  <div class="phone">
+    <div class="status"><span>9:41</span><span>▮</span></div>
+    <div class="top"><h3 class="title" style="font-size:18px" data-vi="Nhóm 4 người · 00:12" data-en="Group of 4 · 00:12">Nhóm 4 người · 00:12</h3></div>
+    <div class="body" style="background:var(--ct-canvas)">
+      <div class="tiles">
+        <div class="tile"><span class="av">B</span><span data-vi="Bạn" data-en="You">Bạn</span></div>
+        <div class="tile speak"><span class="av c3">M</span><span>Minh</span></div>
+        <div class="tile"><span class="av g">L</span><span>Lan</span></div>
+        <div class="tile"><span class="av c1">H</span><span data-vi="Thu Hà" data-en="Thu Ha">Thu Hà</span></div>
+        <div class="tile wait"><span data-vi="Đang nối…" data-en="Connecting…">Đang nối…</span></div>
+        <div class="tile wait"><span data-vi="Đang chờ…" data-en="Waiting…">Đang chờ…</span></div>
+      </div>
+      <div class="hint" style="text-align:center" data-vi="Mạng yếu: một vài ô có thể đứng hình. Tin nhắn nhóm vẫn đến." data-en="Weak network: some tiles may freeze. Group messages still arrive.">Mạng yếu: một vài ô có thể đứng hình. Tin nhắn nhóm vẫn đến.</div>
+      <div class="ctrls">
+        <div class="ctrl"><b aria-label="Tắt mic">🎙</b><span data-vi="Tắt mic" data-en="Mute">Tắt mic</span></div>
+        <div class="ctrl"><b aria-label="Loa">🔊</b><span data-vi="Loa" data-en="Speaker">Loa</span></div>
+        <div class="ctrl"><b aria-label="Camera">📷</b><span data-vi="Camera" data-en="Camera">Camera</span></div>
+      </div>
+    </div>
+    <div class="foot"><button class="btn btn-end" type="button" data-vi="Kết thúc" data-en="End call">Kết thúc</button></div>
+  </div>
+</section>
+
+<!-- ============ 11. CUỘC GỌI ĐẾN ============ -->
+<section class="scr" id="s11" aria-labelledby="t11">
+  <p class="cap" id="t11"><b data-vi="11. Cuộc gọi đến" data-en="11. Incoming call">11. Cuộc gọi đến</b><br><span data-vi="Khi app mở. Khi app đóng, thông báo nổi có nút Trả lời và Từ chối. Hết 45 giây, nút vô hiệu, người gọi thấy 'Không trả lời'." data-en="When the app is open. When closed, a floating notification has Answer and Decline buttons. After 45 seconds the buttons are disabled and the caller sees 'No answer'.">Khi app mở. Khi app đóng, thông báo nổi có nút Trả lời và Từ chối. Hết 45 giây, nút vô hiệu, người gọi thấy "Không trả lời".</span></p>
+  <div class="phone">
+    <div class="status" style="color:#fbf3e4"><span>9:41</span><span>▮</span></div>
+    <div class="callbg" style="justify-content:space-between">
+      <div style="display:flex;flex-direction:column;align-items:center;gap:12px;margin-top:48px">
+        <span class="av xl" aria-hidden="true">M</span>
+        <h3 style="font-size:26px;margin:0;line-height:1.25">Minh</h3>
+        <div data-vi="đang gọi cho bạn" data-en="is calling you">đang gọi cho bạn</div>
+        <div class="hint" style="color:#f7ecda" data-vi="Cuộc gọi thoại" data-en="Voice call">Cuộc gọi thoại</div>
+      </div>
+      <div style="width:100%;display:flex;flex-direction:column;gap:12px">
+        <div style="display:flex;gap:8px;width:100%">
+          <button class="btn btn-s" type="button" style="flex:1;background:var(--ct-surface);color:var(--ct-danger-ink);border-color:var(--ct-danger)" data-vi="Từ chối" data-en="Decline">Từ chối</button>
+        </div>
+        <button class="btn btn-p" type="button" data-vi="Trả lời" data-en="Answer">Trả lời</button>
+        <div class="hint" style="text-align:center;color:#f7ecda" data-vi="Còn 30 giây để trả lời" data-en="30 seconds left to answer">Còn 30 giây để trả lời</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 12. BÁO CÁO, CHẶN ============ -->
+<section class="scr" id="s12" aria-labelledby="t12">
+  <p class="cap" id="t12"><b data-vi="12. Báo cáo và chặn" data-en="12. Report and block">12. Báo cáo và chặn</b><br><span data-vi="Báo cáo đi tới trang quản trị (dự án 5a). Chặn có bước xác nhận. Chặn xong, người kia không nhắn và không gọi được cho bạn." data-en="Reports go to the admin page (project 5a). Blocking needs a confirmation step. After blocking, the other person can't message or call you.">Báo cáo đi tới trang quản trị (dự án 5a). Chặn có bước xác nhận. Chặn xong, người kia không nhắn và không gọi được cho bạn.</span></p>
+  <div class="phone">
+    <div class="status"><span>9:41</span><span>▮</span></div>
+    <div class="dim2" aria-hidden="true"></div>
+    <div class="sheet">
+      <div class="grab"></div>
+      <h3 style="font-size:18px;margin:0;color:var(--ct-heading)" data-vi="Báo cáo Minh" data-en="Report Minh">Báo cáo Minh</h3>
+      <div class="row" style="min-height:48px"><span class="radio on"></span><div class="mid" data-vi="Quấy rối hoặc bắt nạt" data-en="Harassment or bullying">Quấy rối hoặc bắt nạt</div></div>
+      <div class="row" style="min-height:48px"><span class="radio"></span><div class="mid" data-vi="Nội dung không phù hợp" data-en="Inappropriate content">Nội dung không phù hợp</div></div>
+      <div class="row" style="min-height:48px"><span class="radio"></span><div class="mid" data-vi="Lừa đảo hoặc giả mạo" data-en="Scam or impersonation">Lừa đảo hoặc giả mạo</div></div>
+      <div class="row" style="min-height:48px"><span class="radio"></span><div class="mid" data-vi="Khác (ghi rõ)" data-en="Other (describe)">Khác (ghi rõ)</div></div>
+      <button class="btn btn-p" type="button" data-vi="Gửi báo cáo" data-en="Send report">Gửi báo cáo</button>
+      <div style="border-top:1px solid var(--ct-line);margin-top:4px;padding-top:4px;display:flex;flex-direction:column;gap:4px">
+        <button class="btn btn-x" type="button" style="align-self:flex-start" data-vi="Chặn Minh" data-en="Block Minh">Chặn Minh</button>
+        <span class="hint" data-vi="Chặn sẽ hỏi lại một lần. Người bị chặn không thấy bạn và không gọi được." data-en="Blocking asks you once more. The blocked person can't see you or call you.">Chặn sẽ hỏi lại một lần. Người bị chặn không thấy bạn và không gọi được.</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 13. RIÊNG TƯ ============ -->
+<section class="scr" id="s13" aria-labelledby="t13">
+  <p class="cap" id="t13"><b data-vi="13. Riêng tư và thông báo" data-en="13. Privacy and notifications">13. Riêng tư và thông báo</b><br><span data-vi="Mục bật/tắt. Có chú thích giải thích từng mục. Xem trước nội dung thông báo mặc định tắt." data-en="On/off settings, each with a short explanation. Notification preview is off by default.">Mục bật/tắt. Có chú thích giải thích từng mục. Xem trước nội dung thông báo mặc định tắt.</span></p>
+  <div class="phone">
+    <div class="status"><span>9:41</span><span>▮</span></div>
+    <div class="top"><button class="ico" type="button" aria-label="Quay lại" data-vi="←" data-en="←">←</button><h3 class="title" data-vi="Riêng tư và tin nhắn" data-en="Privacy and messages">Riêng tư và tin nhắn</h3></div>
+    <div class="body" style="gap:8px">
+      <div class="sec" data-vi="Tìm bạn" data-en="Finding friends">Tìm bạn</div>
+      <div class="row"><div class="mid"><div class="name" data-vi="Cho phép tìm bằng tên (handle)" data-en="Allow search by handle">Cho phép tìm bằng tên (handle)</div><div class="hint" data-vi="Tắt thì bạn không hiện khi có người tìm." data-en="If off, people searching won't find you.">Tắt thì bạn không hiện khi có người tìm.</div></div><span class="tog on"></span></div>
+      <div class="sec" data-vi="Khi nhắn tin" data-en="When messaging">Khi nhắn tin</div>
+      <div class="row"><div class="mid"><div class="name" data-vi="Hiện đã xem" data-en="Show read receipts">Hiện đã xem</div></div><span class="tog on"></span></div>
+      <div class="row"><div class="mid"><div class="name" data-vi="Hiện đang gõ" data-en="Show typing">Hiện đang gõ</div></div><span class="tog on"></span></div>
+      <div class="sec" data-vi="Thông báo" data-en="Notifications">Thông báo</div>
+      <div class="row"><div class="mid"><div class="name" data-vi="Xem trước nội dung tin" data-en="Show message preview">Xem trước nội dung tin</div><div class="hint" data-vi="Mặc định tắt: thông báo chỉ ghi 'Có tin nhắn mới'." data-en="Off by default: notification only says 'New message'.">Mặc định tắt: thông báo chỉ ghi "Có tin nhắn mới".</div></div><span class="tog"></span></div>
+      <div class="sec" data-vi="Chặn" data-en="Blocking">Chặn</div>
+      <div class="row"><div class="mid"><div class="name" data-vi="Danh sách đã chặn (1)" data-en="Blocked list (1)">Danh sách đã chặn (1)</div></div><span class="hint">›</span></div>
+    </div>
+    <div class="foot"><button class="btn btn-p" type="button" data-vi="Xong" data-en="Done">Xong</button></div>
+  </div>
+</section>
+
+</main>
+
+<!-- ============ TRẠNG THÁI ============ -->
+<div class="wrap" id="trang-thai">
+  <h2 data-vi="Các trạng thái cần có (bảng tra)" data-en="States to include (lookup table)">Các trạng thái cần có (bảng tra)</h2>
+  <p data-vi="Mỗi màn có dữ liệu từ mạng phải có đủ bốn trạng thái: đang tải, rỗng, lỗi, ngoại tuyến. Bảng dưới cho người làm biết hình nào thể hiện trạng thái nào." data-en="Every screen with network data must have four states: loading, empty, error, offline. The table below shows which frame shows which state.">Mỗi màn có dữ liệu từ mạng phải có đủ bốn trạng thái: đang tải, rỗng, lỗi, ngoại tuyến. Bảng dưới cho người làm biết hình nào thể hiện trạng thái nào.</p>
+  <table>
+    <thead><tr><th data-vi="Trạng thái" data-en="State">Trạng thái</th><th data-vi="Chữ hiện" data-en="Text shown">Chữ hiện</th><th data-vi="Xem ở khung" data-en="See frame">Xem ở khung</th></tr></thead>
+    <tbody>
+      <tr><td data-vi="Đang nối lại" data-en="Reconnecting">Đang nối lại</td><td data-vi="Đang kết nối lại…" data-en="Reconnecting…">Đang kết nối lại…</td><td>1</td></tr>
+      <tr><td data-vi="Ngoại tuyến" data-en="Offline">Ngoại tuyến</td><td data-vi="Bạn đang ngoại tuyến. Tin sẽ gửi khi có mạng." data-en="You are offline. Messages will send when you're back online.">Bạn đang ngoại tuyến. Tin sẽ gửi khi có mạng.</td><td>2</td></tr>
+      <tr><td data-vi="Rỗng (chưa có tin)" data-en="Empty (no messages)">Rỗng (chưa có tin)</td><td data-vi="Cu Tít + 'Chưa có tin nhắn. Hãy kết bạn để bắt đầu.' + nút Thêm bạn" data-en="Cu Tít + 'No messages yet. Add a friend to start.' + Add friend button">Cu Tít + "Chưa có tin nhắn. Hãy kết bạn để bắt đầu." + nút Thêm bạn</td><td data-vi="Mô tả, dùng màn 1" data-en="Described; use frame 1">Mô tả, dùng màn 1</td></tr>
+      <tr><td data-vi="Lỗi tải" data-en="Load error">Lỗi tải</td><td data-vi="Chưa tải được. Thử lại." data-en="Couldn't load. Try again.">Chưa tải được. Thử lại.</td><td data-vi="Mô tả, dùng màn 1" data-en="Described; use frame 1">Mô tả, dùng màn 1</td></tr>
+      <tr><td data-vi="Tin đang gửi / lỗi / thu hồi" data-en="Message sending / failed / recalled">Tin đang gửi / lỗi / thu hồi</td><td data-vi="Đang gửi… · Không gửi được + Gửi lại · Tin đã thu hồi" data-en="Sending… · Not sent + Resend · Message recalled">Đang gửi… · Không gửi được + Gửi lại · Tin đã thu hồi</td><td>2</td></tr>
+      <tr><td data-vi="Ghi âm và hủy" data-en="Recording and cancel">Ghi âm và hủy</td><td data-vi="Đang ghi âm · vùng Hủy đỏ" data-en="Recording · red Cancel zone">Đang ghi âm · vùng Hủy đỏ</td><td>3</td></tr>
+      <tr><td data-vi="Chưa đủ tuổi / khách" data-en="Under age / guest">Chưa đủ tuổi / khách</td><td data-vi="Tính năng này dành cho người từ 18 tuổi" data-en="This feature is for people 18 and older">Tính năng này dành cho người từ 18 tuổi</td><td>6b</td></tr>
+      <tr><td data-vi="Không tìm thấy" data-en="Not found">Không tìm thấy</td><td data-vi="Không tìm thấy người này. Kiểm tra lại tên bạn." data-en="No one was found. Check the name again.">Không tìm thấy người này. Kiểm tra lại tên bạn.</td><td>4</td></tr>
+      <tr><td data-vi="Gọi không trả lời" data-en="No answer">Gọi không trả lời</td><td data-vi="Không trả lời" data-en="No answer">Không trả lời</td><td>11</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="wrap">
+  <h2 data-vi="Ghi chú cho người duyệt và người làm" data-en="Notes for reviewers and builders">Ghi chú cho người duyệt và người làm</h2>
+  <ul>
+    <li data-vi="Đây là ảnh phác tĩnh. Không có mã thật, không có dữ liệu thật, không gọi mạng. Mọi tên người là giả." data-en="This is a static mockup. No real code or data, no network calls. All names are fake.">Đây là ảnh phác tĩnh. Không có mã thật, không có dữ liệu thật, không gọi mạng. Mọi tên người là giả.</li>
+    <li data-vi="Quyết định người làm cần biết: nút Kết thúc cuộc gọi dùng màu đỏ (xem mục 14 của spec). Nút Từ chối cuộc gọi dùng viền đỏ, không tô đỏ đặc, để không giống nút xóa." data-en="Decisions to know: the End call button is red (see spec section 14). The Decline button has a red border, not a solid red fill, so it doesn't look like delete.">Quyết định người làm cần biết: nút Kết thúc cuộc gọi dùng màu đỏ (xem mục 14 của spec). Nút Từ chối cuộc gọi dùng viền đỏ, không tô đỏ đặc, để không giống nút xóa.</li>
+    <li data-vi="Gọi nhóm: mục 10 vẽ 6 ô. Một ô đang nối và một ô đang chờ để thể hiện trạng thái mạng." data-en="Group call: frame 10 draws 6 tiles. One connecting tile and one waiting tile show network states.">Gọi nhóm: mục 10 vẽ 6 ô. Một ô đang nối và một ô đang chờ để thể hiện trạng thái mạng.</li>
+    <li data-vi="Cỡ chữ: chỉ 26, 18, 15, 13 px. Vùng chạm: nút chính 48 px, nút khác từ 44 px, các ô chạm cách nhau ít nhất 8 px." data-en="Font sizes: only 26, 18, 15, 13 px. Touch targets: main button 48 px, other buttons at least 44 px, touch items at least 8 px apart.">Cỡ chữ: chỉ 26, 18, 15, 13 px. Vùng chạm: nút chính 48 px, nút khác từ 44 px, các ô chạm cách nhau ít nhất 8 px.</li>
+    <li data-vi="Chưa kiểm: chưa mở trên máy Android thật, chưa kiểm độ tương phản bằng công cụ (axe), chưa kiểm chế độ tối bằng ảnh chụp. Các việc này làm khi viết màn thật." data-en="Not checked yet: not opened on a real Android phone, contrast not checked with a tool (axe), dark mode not checked with screenshots. Do these when building the real screens.">Chưa kiểm: chưa mở trên máy Android thật, chưa kiểm độ tương phản bằng công cụ (axe), chưa kiểm chế độ tối bằng ảnh chụp. Các việc này làm khi viết màn thật.</li>
+  </ul>
+</div>
+
+<script>
+  // Đổi VI/EN: thay chữ của các phần tử có data-vi / data-en. Không cần mạng.
+  (function(){
+    var vi=document.getElementById('lang-vi'), en=document.getElementById('lang-en');
+    function setLang(l){
+      document.documentElement.lang = l;
+      document.querySelectorAll('[data-en]').forEach(function(el){
+        var t = l==='en' ? el.getAttribute('data-en') : el.getAttribute('data-vi');
+        if(t!==null) el.textContent = t;
+      });
+      vi.setAttribute('aria-pressed', l==='vi'); en.setAttribute('aria-pressed', l==='en');
+    }
+    vi.addEventListener('click', function(){ setLang('vi'); });
+    en.addEventListener('click', function(){ setLang('en'); });
+  })();
+</script>
+</body></html>
