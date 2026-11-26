@@ -213,6 +213,10 @@ const EnvSchema = z
     // ---- Dự án 4: bạn bè (chat, gọi, nhóm) ----
     /** Trần số yêu cầu/phút/người cho các route chat (cao hơn RATE_LIMIT_PER_MINUTE chung vì tải chat > 60/phút; chống spam thật nằm ở ChatLimiter) */
     CHAT_RATE_LIMIT_PER_MINUTE: z.coerce.number().int().positive().default(600),
+    /** Thông báo đẩy: `none` (không đẩy) | `log` (ghi log, dev/test) | `fcm`. Mặc định: `log` ở dev/test, `none` ở production */
+    PUSH_PROVIDER: z.enum(['none', 'log', 'fcm']).optional(),
+    /** Đường dẫn tệp khóa tài khoản dịch vụ Firebase (KHÔNG commit, không in). Thiếu khi PUSH_PROVIDER=fcm => chạy bản log */
+    FCM_SERVICE_ACCOUNT_FILE: z.string().min(1).optional(),
     /** Trần mềm số thành viên đang ở trong một nhóm học (spec 6.1: không giới hạn thật, nhưng Gateway không bị lạm dụng) */
     GROUP_SOFT_CAP: z.coerce.number().int().positive().default(1000)
   })
@@ -233,6 +237,7 @@ const EnvSchema = z
     APP_VERSIONS_FILE: env.APP_VERSIONS_FILE ?? DEFAULT_APP_VERSIONS_FILE,
     ADMIN_API_ENABLED: env.ADMIN_API_ENABLED ?? env.NODE_ENV !== 'production',
     CHAT_ENABLED: env.CHAT_ENABLED ?? env.NODE_ENV !== 'production',
+    PUSH_PROVIDER: env.PUSH_PROVIDER ?? (env.NODE_ENV === 'production' ? ('none' as const) : ('log' as const)),
     apkDownloadHosts: env.APK_DOWNLOAD_HOSTS.split(',')
       .map((h) => h.trim().toLowerCase())
       .filter(Boolean),
