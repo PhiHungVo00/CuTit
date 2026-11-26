@@ -710,6 +710,9 @@ export const adminSessions = pgTable(
     id: uuid('id').primaryKey().defaultRandom(),
     userId: userRef(),
     refreshHash: text('refresh_hash').notNull().unique(),
+    /** Refresh xoay vòng: băm của token ngay trước + lúc xoay. Dùng lại token cũ SAU thời gian ân hạn => thu hồi phiên (nghi bị đánh cắp) */
+    prevRefreshHash: text('prev_refresh_hash'),
+    rotatedAt: ts('rotated_at'),
     mfaAt: ts('mfa_at').notNull(),
     lastSeenAt: ts('last_seen_at').notNull().defaultNow(),
     expiresAt: ts('expires_at').notNull(),
@@ -718,8 +721,25 @@ export const adminSessions = pgTable(
     userAgent: text('user_agent'),
     createdAt: ts('created_at').notNull().defaultNow()
   },
-  (t) => [index('admin_sessions_user_idx').on(t.userId), index('admin_sessions_expires_idx').on(t.expiresAt)]
+  (t) => [
+    index('admin_sessions_user_idx').on(t.userId),
+    index('admin_sessions_expires_idx').on(t.expiresAt),
+    index('admin_sessions_prev_refresh_idx').on(t.prevRefreshHash)
+  ]
 );
+
+/**
+ * 33b. Mã mời đăng ký mã 6 số lần đầu (dùng một lần, hết hạn ngắn): `admin:grant` / `admin:reset-totp` sinh và in ra; lưu BĂM (HMAC).
+ * Bắt buộc ở `totp/enroll` => biết mật khẩu mà không có mã mời thì không giành được đăng ký TOTP của chủ.
+ */
+export const staffInvites = pgTable('staff_invites', {
+  userId: uuid('user_id')
+    .primaryKey()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  codeHash: text('code_hash').notNull(),
+  expiresAt: ts('expires_at').notNull(),
+  createdAt: ts('created_at').notNull().defaultNow()
+});
 
 /**
  * 35. Nhật ký quản trị — CHỈ THÊM: trigger ở migration `admin_audit_append_only` chặn UPDATE/DELETE/TRUNCATE;
