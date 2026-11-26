@@ -78,6 +78,13 @@
       "when": 1795572787886,
       "tag": "0010_admin_audit_append_only",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1795625439434,
+      "tag": "0011_staff_invite_session_rotation",
+      "breakpoints": true
     }
   ]
 }
