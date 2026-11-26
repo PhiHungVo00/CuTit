@@ -31,6 +31,9 @@ export const stubChatEligibility: ChatEligibilityFn = async (db, userId) => {
  */
 export const closedChatEligibility: ChatEligibilityFn = async () => ({ ok: false, reason: 'age_unknown' });
 
+/** Cổng mặc định theo môi trường: bản giả CHỈ khi NODE_ENV=test; mọi môi trường khác là cổng ĐÓNG (tới khi Task 3 cắm cổng thật). */
+export const defaultChatEligibility = (nodeEnv: string | undefined): ChatEligibilityFn => (nodeEnv === 'test' ? stubChatEligibility : closedChatEligibility);
+
 /** Lý do không đủ điều kiện → lỗi chuẩn (mã trùng contract). */
 export function ineligibleError(reason: IneligibleReason): GatewayError {
   switch (reason) {

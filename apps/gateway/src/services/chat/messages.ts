@@ -150,7 +150,8 @@ export async function sendMessage(db: Db, bus: RealtimeBus, args: SendArgs): Pro
   const now = args.now ?? new Date();
   if (kind !== 'text') throw new GatewayError(400, ChatErrorCode.attachmentInvalid, 'Tin kèm ảnh/giọng nói chưa được hỗ trợ ở API này');
   const body = args.body ?? '';
-  if (body.trim().length === 0 || body.length > CHAT_LIMITS.bodyMax) throw new GatewayError(400, 'invalid_request', `Tin phải từ 1 đến ${CHAT_LIMITS.bodyMax} ký tự`);
+  // NUL ( ) làm Postgres từ chối cột text → phải chặn ở đây (400), không để lọt thành 500
+  if (body.trim().length === 0 || body.length > CHAT_LIMITS.bodyMax || body.includes(' ')) throw new GatewayError(400, 'invalid_request', `Tin phải từ 1 đến ${CHAT_LIMITS.bodyMax} ký tự`);
 
   const { conv } = await getMembership(db, userId, conversationId);
   // gửi lại tin đã lưu thì trả tin cũ KỂ CẢ khi sau đó người kia chặn/không còn khả dụng (client mới biết tin đã tới nơi)
@@ -173,7 +174,7 @@ export async function sendMessage(db: Db, bus: RealtimeBus, args: SendArgs): Pro
       out.release = args.limiter?.enforceChatLimits(userId, conversationId, now, body);
       const [seqRow] = await tx
         .update(conversations)
-        .set({ lastSeq: sql`${conversations.lastSeq} + 1`, lastMessageAt: now })
+        .set({ lastSeq: sql`${conversations.lastSeq} + 1`, lastMessageAt: sql`greatest(coalesce(${conversations.lastMessageAt}, ${now.toISOString()}::timestamptz), ${now.toISOString()}::timestamptz)` })
         .where(eq(conversations.id, conversationId))
         .returning({ seq: conversations.lastSeq });
       const [row] = await tx

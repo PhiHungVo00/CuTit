@@ -45,7 +45,7 @@ import { startFeedbackPurgeJob } from './jobs/feedbackPurge.js';
 import { chatSocialRoutes } from './routes/chatSocial.js';
 import type { RealtimeBus } from './services/realtime/RealtimeBus.js';
 import { NoopBus } from './services/chat/noopBus.js';
-import { closedChatEligibility, stubChatEligibility, type ChatEligibilityFn } from './services/chat/eligibility.js';
+import { defaultChatEligibility, type ChatEligibilityFn } from './services/chat/eligibility.js';
 import { createChatLimiter, type ChatLimiter } from './services/chat/limits.js';
 
 /** Dọn audit_events quá hạn: mỗi ngày một lần, lần đầu sau 1 phút (không mở DB lúc khởi động/test) */
@@ -333,7 +333,7 @@ export async function buildApp(config: GatewayConfig, opts: BuildOptions = {}): 
       await v1.register(identityRoutes, deps);
       await v1.register(authMeRoutes, deps);
       await v1.register(feedbackRoutes, deps);
-      await v1.register(chatSocialRoutes, { ...deps, bus: opts.bus ?? new NoopBus(), eligibility: opts.chatEligibility ?? (config.NODE_ENV === 'test' ? stubChatEligibility : closedChatEligibility), limiter: opts.chatLimiter ?? createChatLimiter() });
+      await v1.register(chatSocialRoutes, { ...deps, bus: opts.bus ?? new NoopBus(), eligibility: opts.chatEligibility ?? defaultChatEligibility(config.NODE_ENV), limiter: opts.chatLimiter ?? createChatLimiter() });
     },
     { prefix: '/v1' }
   );

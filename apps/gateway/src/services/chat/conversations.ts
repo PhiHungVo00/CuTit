@@ -1,3 +1,4 @@
+import { z } from 'zod';
 import { and, desc, eq, gt, inArray, isNull, or, sql } from 'drizzle-orm';
 import { ChatErrorCode, CHAT_LIMITS, type Conversation } from '@vietlearning/contracts/api';
 import { schema, type Db } from '../../db/client.js';
@@ -221,12 +222,17 @@ export async function listConversations(
 }
 
 const encodeCursor = (at: Date, id: string): string => Buffer.from(`${at.toISOString()}|${id}`).toString('base64url');
+const CURSOR_ISO = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{1,3})?Z$/;
+const CURSOR_UUID = z.string().uuid();
 function decodeCursor(c?: string): { at: Date; id: string } | null {
   if (!c) return null;
-  const [iso, id] = Buffer.from(c, 'base64url').toString().split('|');
-  const at = new Date(iso ?? '');
-  if (!id || Number.isNaN(at.getTime()) || !/^[0-9a-f-]{36}$/i.test(id)) throw new GatewayError(400, 'invalid_request', 'Cursor không hợp lệ');
-  return { at, id };
+  const bad = () => new GatewayError(400, 'invalid_request', 'Cursor không hợp lệ');
+  const [iso, id, extra] = Buffer.from(c, 'base64url').toString().split('|');
+  if (extra !== undefined || !iso || !CURSOR_ISO.test(iso) || !CURSOR_UUID.safeParse(id).success) throw bad();
+  const at = new Date(iso);
+  // ngày phải thật và trong khoảng hợp lý (Postgres từ chối ngày quá xa => 500)
+  if (Number.isNaN(at.getTime()) || at.getUTCFullYear() < 2000 || at.getUTCFullYear() > 2200) throw bad();
+  return { at, id: id! };
 }
 
 /** Tổng số tin chưa đọc (cuộc đã tắt tiếng không tính vào chấm đỏ). */

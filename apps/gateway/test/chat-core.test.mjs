@@ -328,3 +328,50 @@ test('Giới hạn yêu cầu/phút của route chat cao hơn trần chung của
     await lim.close();
   }
 });
+
+test('Tin chứa ký tự NUL (\u0000) → 400 invalid_request (không phải 500 lộ lỗi DB), không ghi', async () => {
+  const a = await person(t, 'Nul A');
+  const b = await person(t, 'Nul B');
+  const cid = await openDm(t, a, b);
+  const snapshot = await dbCounts(t);
+  for (const body of ['xin\u0000chào', '\u0000']) {
+    const r = await sendHttp(t, a, cid, body);
+    assert.equal(r.statusCode, 400, body);
+    assert.equal(r.json().error, 'invalid_request');
+  }
+  assert.deepEqual(await dbCounts(t), snapshot);
+});
+
+test('Cursor hỏng (id không phải uuid, ngày không hợp lệ/ngoài khoảng) → 400 invalid_request, không phải 500', async () => {
+  const a = await person(t, 'Cur A');
+  const enc = (s) => Buffer.from(s).toString('base64url');
+  const good = '11111111-1111-4111-8111-111111111111';
+  for (const c of [enc(`2026-01-01T00:00:00.000Z|khong-phai-uuid`), enc(`+275760-09-13T00:00:00.000Z|${good}`), enc(`0001-01-01T00:00:00.000Z|${good}`), enc(`không-phải-ngày|${good}`), enc('chỉ-một-phần'), '']) {
+    const r = await call(t, a, 'GET', `/v1/chat/conversations?cursor=${c}`);
+    if (c === '') assert.equal(r.statusCode, 200);
+    else {
+      assert.equal(r.statusCode, 400, c);
+      assert.equal(r.json().error, 'invalid_request');
+    }
+  }
+});
+
+test('Cổng mặc định ngoài test là ĐÓNG; chỉ NODE_ENV=test dùng bản giả', async () => {
+  const { defaultChatEligibility, closedChatEligibility, stubChatEligibility } = await import('../dist/services/chat/eligibility.js');
+  for (const env of ['production', 'development', undefined]) assert.equal(defaultChatEligibility(env), closedChatEligibility, String(env));
+  assert.equal(defaultChatEligibility('test'), stubChatEligibility);
+  assert.deepEqual(await closedChatEligibility(null, 'x'), { ok: false, reason: 'age_unknown' });
+});
+
+test('last_message_at không bao giờ lùi (đồng hồ lệch không làm cuộc trò chuyện nhảy xuống cũ hơn)', async () => {
+  const a = await person(t, 'Gre A');
+  const b = await person(t, 'Gre B');
+  const cid = await openDm(t, a, b);
+  const { sendMessage } = await import('../dist/services/chat/messages.js');
+  const db = await t.dbp.get();
+  const later = new Date('2030-01-01T00:00:00Z');
+  await sendMessage(db, t.bus, { conversationId: cid, userId: a.userId, clientMsgId: randomUUID(), kind: 'text', body: 'tương lai', now: later });
+  await sendMessage(db, t.bus, { conversationId: cid, userId: b.userId, clientMsgId: randomUUID(), kind: 'text', body: 'quá khứ', now: new Date('2029-01-01T00:00:00Z') });
+  const [c] = await db.select().from(schema.conversations).where(eq(schema.conversations.id, cid));
+  assert.equal(c.lastMessageAt.toISOString(), later.toISOString());
+});
