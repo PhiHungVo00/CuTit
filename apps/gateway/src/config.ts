@@ -217,6 +217,10 @@ const EnvSchema = z
     CHAT_BLOB_TOTAL_CAP_MB: z.coerce.number().positive().default(5000),
     /** Khóa HMAC ký URL tệp chat (sống 5 phút), RIÊNG với mọi khóa khác. Dev/test thiếu => sinh ngẫu nhiên; production bật chat mà thiếu => lỗi cấu hình */
     CHAT_BLOB_URL_SECRET: z.string().min(32, 'CHAT_BLOB_URL_SECRET phải dài tối thiểu 32 ký tự').optional(),
+    /** Thông báo đẩy: `none` (không đẩy) | `log` (ghi log, dev/test) | `fcm`. Mặc định: `log` ở dev/test, `none` ở production */
+    PUSH_PROVIDER: z.enum(['none', 'log', 'fcm']).optional(),
+    /** Đường dẫn tệp khóa tài khoản dịch vụ Firebase (KHÔNG commit, không in). Thiếu khi PUSH_PROVIDER=fcm => chạy bản log */
+    FCM_SERVICE_ACCOUNT_FILE: z.string().min(1).optional(),
     /** Trần mềm số thành viên đang ở trong một nhóm học (spec 6.1: không giới hạn thật, nhưng Gateway không bị lạm dụng) */
     GROUP_SOFT_CAP: z.coerce.number().int().positive().default(1000)
   })
@@ -238,6 +242,7 @@ const EnvSchema = z
     ADMIN_API_ENABLED: env.ADMIN_API_ENABLED ?? env.NODE_ENV !== 'production',
     CHAT_ENABLED: env.CHAT_ENABLED ?? env.NODE_ENV !== 'production',
     CHAT_BLOB_URL_SECRET: env.CHAT_BLOB_URL_SECRET ?? (env.NODE_ENV === 'production' ? undefined : randomBytes(32).toString('hex')),
+    PUSH_PROVIDER: env.PUSH_PROVIDER ?? (env.NODE_ENV === 'production' ? ('none' as const) : ('log' as const)),
     apkDownloadHosts: env.APK_DOWNLOAD_HOSTS.split(',')
       .map((h) => h.trim().toLowerCase())
       .filter(Boolean),
