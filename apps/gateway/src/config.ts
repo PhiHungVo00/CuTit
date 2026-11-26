@@ -216,7 +216,9 @@ const EnvSchema = z
     /** Trần dung lượng ảnh/giọng nói CHAT (MB), RIÊNG với BLOB_TOTAL_CAP_MB của góp ý. Vượt => 507 storage_full cho tệp; tin chữ vẫn gửi được (Task 8) */
     CHAT_BLOB_TOTAL_CAP_MB: z.coerce.number().positive().default(5000),
     /** Khóa HMAC ký URL tệp chat (sống 5 phút), RIÊNG với mọi khóa khác. Dev/test thiếu => sinh ngẫu nhiên; production bật chat mà thiếu => lỗi cấu hình */
-    CHAT_BLOB_URL_SECRET: z.string().min(32, 'CHAT_BLOB_URL_SECRET phải dài tối thiểu 32 ký tự').optional()
+    CHAT_BLOB_URL_SECRET: z.string().min(32, 'CHAT_BLOB_URL_SECRET phải dài tối thiểu 32 ký tự').optional(),
+    /** Trần mềm số thành viên đang ở trong một nhóm học (spec 6.1: không giới hạn thật, nhưng Gateway không bị lạm dụng) */
+    GROUP_SOFT_CAP: z.coerce.number().int().positive().default(1000)
   })
   .transform((env) => ({
     ...env,

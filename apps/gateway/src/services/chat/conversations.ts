@@ -102,6 +102,16 @@ async function toViews(db: Db, userId: string, rows: Array<{ conv: ConversationR
     : [];
   const peerOf = new Map(peers.map((p) => [p.cid, p]));
 
+  const groupIds = rows.filter((r) => r.conv.kind === 'group').map((r) => r.conv.id);
+  const counts = groupIds.length
+    ? await db
+        .select({ cid: conversationMembers.conversationId, n: sql<number>`count(*)::int` })
+        .from(conversationMembers)
+        .where(and(inArray(conversationMembers.conversationId, groupIds), isNull(conversationMembers.leftAt)))
+        .groupBy(conversationMembers.conversationId)
+    : [];
+  const countOf = new Map(counts.map((c) => [c.cid, c.n]));
+
   const withLast = rows.filter((r) => r.conv.lastSeq > floorSeq(r.m));
   const lasts = withLast.length
     ? await db
@@ -148,7 +158,7 @@ async function toViews(db: Db, userId: string, rows: Array<{ conv: ConversationR
         : {}),
       unread: unreadOf(conv, m),
       muted: !!m.mutedUntil && m.mutedUntil.getTime() > now.getTime(),
-      ...(conv.kind === 'group' ? { myRole: m.role } : {})
+      ...(conv.kind === 'group' ? { myRole: m.role, memberCount: countOf.get(conv.id) ?? 0 } : {})
     };
   });
 }

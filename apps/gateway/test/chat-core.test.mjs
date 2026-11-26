@@ -308,12 +308,13 @@ test('Danh sách cuộc trò chuyện: mới nhất trước, phân trang bằng
   assert.equal((await call(t, me, 'GET', '/v1/chat/conversations?cursor=%25%25')).statusCode, 400);
 });
 
-test('Tạo nhóm chưa có ở API này (Task 12) → 501, không ghi', async () => {
+test('Tạo nhóm với người không phải bạn (Task 12 làm nhóm đầy đủ ở chat-groups.test.mjs) → peer_unavailable, không ghi', async () => {
   const a = await person(t, 'An13');
   const b = await person(t, 'Bình13');
   const snapshot = await dbCounts(t);
   const r = await call(t, a, 'POST', '/v1/chat/conversations', { title: 'Nhóm', memberIds: [b.userId] });
-  assert.equal(r.statusCode, 501);
+  assert.equal(r.statusCode, 404);
+  assert.equal(r.json().error, 'peer_unavailable');
   assert.deepEqual(await dbCounts(t), snapshot);
 });
 

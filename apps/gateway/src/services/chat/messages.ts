@@ -178,6 +178,9 @@ export async function sendMessage(db: Db, bus: RealtimeBus, args: SendArgs): Pro
   const out: { release?: () => void; inserted?: MessageRow; duplicate?: Message } = {};
   try {
     await db.transaction(async (tx) => {
+      // khóa dòng cuộc trò chuyện TRƯỚC khi kiểm thành viên: nhóm xóa/rời người cùng lúc (groups.ts khóa cùng dòng) thì người vừa bị
+      // xóa không chen thêm được một tin sau tin hệ thống "bị xóa"
+      await tx.select({ id: conversations.id }).from(conversations).where(eq(conversations.id, conversationId)).for('update');
       await getMembership(tx, userId, conversationId);
       out.duplicate = (await existing(tx)) ?? undefined;
       if (out.duplicate) return;

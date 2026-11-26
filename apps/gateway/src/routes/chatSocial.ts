@@ -19,6 +19,7 @@ import { parseOr400, respond } from '../lib/validate.js';
 import { GatewayError, requireUserId } from '../pipeline/RequestPipeline.js';
 import type { RealtimeBus } from '../services/realtime/RealtimeBus.js';
 import { getOrCreateDm, getConversation, hideConversation, listConversations, muteConversation, unhideConversation, unreadSummary } from '../services/chat/conversations.js';
+import { createGroup } from '../services/chat/groups.js';
 import { assertEligible, closedChatEligibility, type ChatEligibilityFn } from '../services/chat/eligibility.js';
 import type { ChatLimiter } from '../services/chat/limits.js';
 import { listMessages, sendMessage } from '../services/chat/messages.js';
@@ -79,7 +80,9 @@ export const chatSocialRoutes: FastifyPluginAsync<ChatSocialDeps> = async (serve
     const { userId, d } = await ctx(req);
     const body = parseOr400(ConversationCreateRequestSchema, req.body, reply);
     if (!body) return reply;
-    if (!('peerFriendshipId' in body)) throw new GatewayError(501, 'not_implemented', 'Tạo nhóm chưa có ở bản này (Task 12)');
+    if (!('peerFriendshipId' in body)) {
+      return respond(ConversationSchema, await createGroup(d, bus, userId, body, { gate: eligibility, softCap: config.GROUP_SOFT_CAP, now: clock() }));
+    }
     return respond(ConversationSchema, await getOrCreateDm(d, userId, body.peerFriendshipId, { gate: eligibility, now: clock() }));
   });
 
