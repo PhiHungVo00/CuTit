@@ -212,7 +212,9 @@ const EnvSchema = z
     FEEDBACK_IP_PER_HOUR: z.coerce.number().int().positive().default(20),
     // ---- Dự án 4: bạn bè (chat, gọi, nhóm) ----
     /** Trần số yêu cầu/phút/người cho các route chat (cao hơn RATE_LIMIT_PER_MINUTE chung vì tải chat > 60/phút; chống spam thật nằm ở ChatLimiter) */
-    CHAT_RATE_LIMIT_PER_MINUTE: z.coerce.number().int().positive().default(600)
+    CHAT_RATE_LIMIT_PER_MINUTE: z.coerce.number().int().positive().default(600),
+    /** Trần mềm số thành viên đang ở trong một nhóm học (spec 6.1: không giới hạn thật, nhưng Gateway không bị lạm dụng) */
+    GROUP_SOFT_CAP: z.coerce.number().int().positive().default(1000)
   })
   .transform((env) => ({
     ...env,
