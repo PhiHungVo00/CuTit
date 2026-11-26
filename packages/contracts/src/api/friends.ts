@@ -169,3 +169,10 @@ export const FriendRequestListSchema = z.object({ requests: z.array(FriendReques
 export const FriendRequestIdParamsSchema = z.object({ id: z.string().uuid() });
 // POST /v1/friends/:id/quest-active
 export const FriendQuestActiveRequestSchema = z.object({ questActive: z.boolean() });
+
+// ---------- Dự án 4 Task 3: phản hồi của lời mời / chặn (bổ sung; chỉ thêm, không đổi gì cũ) ----------
+/** POST /v1/friends/requests: `accepted` khi hai lời mời chéo nhau (A→B và B→A) được ghép thành bạn ngay */
+export const FriendRequestCreateResponseSchema = z.object({ status: z.enum(['pending', 'accepted']) });
+export type FriendRequestCreateResponse = z.infer<typeof FriendRequestCreateResponseSchema>;
+/** POST /v1/friends/requests/:id/decline */
+export const FriendRequestDeclineResponseSchema = z.object({ declined: z.literal(true) });
