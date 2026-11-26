@@ -44,6 +44,9 @@ import { createBlobStore } from './services/blob/index.js';
 import type { BlobStore } from './services/blob/BlobStore.js';
 import { startFeedbackPurgeJob } from './jobs/feedbackPurge.js';
 import { chatSocialRoutes } from './routes/chatSocial.js';
+import { pushTokenRoutes } from './routes/pushTokens.js';
+import { createPushProvider, type PushProvider } from './services/push/PushProvider.js';
+import { startPushNotifier, type PushNotifier } from './services/push/notify.js';
 import type { ChatEligibilityFn } from './services/chat/eligibility.js';
 import { chatEligibility } from './services/social/eligibility.js';
 import { createChatLimiter, type ChatLimiter } from './services/chat/limits.js';
@@ -65,6 +68,8 @@ declare module 'fastify' {
     audit: AuditLog;
     /** Dự án 5a: cảnh báo email quản trị (chỉ khi ADMIN_API_ENABLED); test dùng `app.adminAlerts?.flush()` */
     adminAlerts?: AdminAlerts;
+    /** Dự án 4 (Task 10): bộ gửi thông báo đẩy (chỉ khi CHAT_ENABLED); test dùng `app.push?.flush()` */
+    push?: PushNotifier;
     /** Dự án 4: bộ phát tin WebSocket (đóng kết nối khi thu hồi quyền: `app.realtime.closeUser`; test: `sweep()`) */
     realtime: RealtimeHub;
   }
@@ -148,6 +153,8 @@ export interface BuildOptions {
   bus?: RealtimeBus;
   /** Dự án 4: test chỉnh hub (đồng hồ giả, giới hạn, tắt tự quét) */
   realtime?: Partial<Pick<RealtimeOptions, 'now' | 'limits' | 'sweepMs'>>;
+  /** Dự án 4 (Task 10): test tiêm nhà cung cấp push giả (null = tắt) và chỉnh thời gian chờ/thử lại; bỏ trống = theo PUSH_PROVIDER */
+  push?: { provider?: PushProvider | null; delayMs?: number; retryDelaysMs?: readonly number[]; largeGroupMembers?: number };
 }
 
 export async function buildApp(config: GatewayConfig, opts: BuildOptions = {}): Promise<FastifyInstance> {
@@ -240,6 +247,7 @@ export async function buildApp(config: GatewayConfig, opts: BuildOptions = {}): 
     accountTimer = setInterval(() => void purgeAccounts(), ACCOUNT_PURGE_EVERY_MS).unref();
   }, AUDIT_PURGE_FIRST_MS).unref();
 
+  let pushNotifier: PushNotifier | undefined;
   // Ghi nốt nhật ký đang dở TRƯỚC khi đóng DB (DB tiêm từ test thì test tự đóng)
   app.addHook('onClose', async () => {
     clearTimeout(purgeTimer);
@@ -250,6 +258,7 @@ export async function buildApp(config: GatewayConfig, opts: BuildOptions = {}): 
     accountTimer = undefined;
     await adminAlerts?.flush();
     stopFeedbackPurge();
+    await pushNotifier?.stop();
     hub.dispose(); // đóng mọi WebSocket (1001) trước khi đóng DB
     await audit.flush();
     if (!opts.db) await db.close();
@@ -275,6 +284,21 @@ export async function buildApp(config: GatewayConfig, opts: BuildOptions = {}): 
   });
   app.decorate('realtime', hub);
   const deps: RouteDeps = { pipeline, ttsCache, config, llm, vision, stt, tts, tutor: createTutor(llm, app.log, vision), db, audit, mail, clock, blob, bus: opts.bus ?? hub };
+  // Dự án 4 (Task 10): thông báo đẩy nối qua bus (sau commit, không chặn gửi tin). Chỉ chạy khi chat bật.
+  if (config.CHAT_ENABLED) {
+    pushNotifier = startPushNotifier({
+      db,
+      bus: deps.bus,
+      provider: opts.push?.provider !== undefined ? opts.push.provider : createPushProvider(config, app.log),
+      eligibility: opts.chatEligibility ?? chatEligibility,
+      log: app.log,
+      now: clock,
+      delayMs: opts.push?.delayMs,
+      retryDelaysMs: opts.push?.retryDelaysMs,
+      largeGroupMembers: opts.push?.largeGroupMembers
+    });
+    app.decorate('push', pushNotifier);
+  }
   deps.identity = opts.identity !== undefined ? opts.identity : createIdentityProviderFromEnv();
   app.log.info({ llm: llm?.name ?? 'mock', vision: vision?.name ?? 'mock', stt: stt?.name ?? 'mock' }, 'AI providers');
 
@@ -360,6 +384,7 @@ export async function buildApp(config: GatewayConfig, opts: BuildOptions = {}): 
       await v1.register(feedbackRoutes, deps);
       await v1.register(chatSocialRoutes, { ...deps, eligibility: opts.chatEligibility ?? chatEligibility, limiter: opts.chatLimiter ?? createChatLimiter() });
       await v1.register(meAgeRoutes, deps);
+      await v1.register(pushTokenRoutes, { ...deps, eligibility: opts.chatEligibility ?? chatEligibility });
     },
     { prefix: '/v1' }
   );
