@@ -72,6 +72,8 @@ export class RealtimeHub implements RealtimeBus {
   private timer: NodeJS.Timeout | undefined;
   private clientFrameHandler: ((userId: string, frame: WsClientFrame) => void) | undefined;
   private disposed = false;
+  /** userId → lúc gọi `closeUser` gần nhất (giữ ~30 giây): chặn hello đang chờ DB đăng ký sau khi quyền đã bị thu hồi */
+  private readonly revokedAt = new Map<string, number>();
 
   constructor(private readonly opts: RealtimeOptions) {
     this.now = opts.now ?? Date.now;
@@ -131,6 +133,9 @@ export class RealtimeHub implements RealtimeBus {
 
   /** Thu hồi quyền (khóa chat, xóa tài khoản, đăng xuất mọi máy): đóng MỌI kết nối của người đó ngay. */
   closeUser(userId: string, code: number = WsCloseCode.forbidden, reason = 'revoked'): void {
+    const now = this.now();
+    this.revokedAt.set(userId, now);
+    for (const [id, at] of this.revokedAt) if (now - at > 30_000) this.revokedAt.delete(id);
     for (const c of [...(this.byUser.get(userId) ?? [])]) this.closeConn(c, code, reason);
   }
 
@@ -290,6 +295,7 @@ export class RealtimeHub implements RealtimeBus {
 
   private async onHello(conn: Conn, frame: Extract<WsClientFrame, { t: 'hello' }>): Promise<void> {
     conn.busy = true;
+    const startedAt = this.now();
     let result: WsVerifyResult;
     try {
       result = await this.opts.verify(frame.token);
@@ -303,6 +309,10 @@ export class RealtimeHub implements RealtimeBus {
     }
     if (!this.opts.buildAllowed(frame.build, conn.channel)) {
       this.closeConn(conn, WsCloseCode.updateRequired, 'update_required');
+      return;
+    }
+    if ((this.revokedAt.get(result.userId) ?? -1) >= startedAt) {
+      this.closeConn(conn, WsCloseCode.forbidden, 'revoked');
       return;
     }
     this.register(conn, result.userId, frame.device, result.expMs);
@@ -364,6 +374,7 @@ export class RealtimeHub implements RealtimeBus {
   private async onTyping(conn: Conn, cid: string, now: number): Promise<void> {
     const last = conn.typingAt.get(cid);
     if (last !== undefined && now - last < TYPING_MIN_INTERVAL_MS) return;
+    // ghi mốc TRƯỚC khi await: nhiều khung typing tới liền nhau không cùng lọt qua bộ giãn
     if (conn.typingAt.size > 200) conn.typingAt.clear();
     conn.typingAt.set(cid, now);
     const userId = conn.userId;

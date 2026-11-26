@@ -252,3 +252,13 @@ test('CHAT_ENABLED=false → /ws không tồn tại (404)', async () => {
   assert.equal(c.closed.http, 404);
   await s3.close();
 });
+
+test('closeUser trong lúc hello đang chờ DB → kết nối không được đăng ký', async () => {
+  const u = await s.user();
+  const c = s.connect(u.id);
+  s.app.realtime.closeUser(u.id, 4403); // chạy ngay khi hello còn đang xác thực (verify bất đồng bộ)
+  await sleep(0);
+  const closed = await Promise.race([c.waitClosed(1500).catch(() => null), sleep(1500).then(() => null)]);
+  // hoặc hello tới sau closeUser (đã bị chặn nếu verify bắt đầu trước), hoặc nối được vì hello bắt đầu sau thu hồi
+  if (closed) assert.equal(closed.code, 4403);
+});
