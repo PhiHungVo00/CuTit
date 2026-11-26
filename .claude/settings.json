@@ -25,5 +25,14 @@
         ]
       }
     ]
+  },
+  "permissions": {
+    "allow": [
+      "mcp__ccd_pr__get_status",
+      "mcp__ccd_session_mgmt__list_events",
+      "Bash(git fetch)",
+      "Bash(git fetch origin)",
+      "Bash(git fetch -q origin)"
+    ]
   }
 }

@@ -129,7 +129,7 @@ Effort chọn theo **rủi ro và mức mơ hồ**, không theo độ dài. Bố
 - `dung-am-thanh`
 - `chup-man-hinh-app`
 
-**Plugin đã cài:** code-review, Android Emulator QA, Playwright MCP, security review, TypeScript LSP (cách dùng trong skill `kiem-truoc-khi-gop`). Trợ năng dùng công cụ miễn phí trong repo (`@axe-core/playwright` ở `e2e/a11y.spec.ts`, Lighthouse) thay plugin Axe trả phí (gỡ 22/11). Nguyên tắc thiết kế UI/UX (dùng khi thiết kế, không phải bước kiểm): `docs/thiet-ke/NGUYEN-TAC-UI-UX.md`.
+**Lệnh `/` và skill dùng thay plugin hoặc thay cách làm tay (25/11; bảng đầy đủ ở mục 6):** `/code-review` (thay plugin code-review), `/security-review` (thay plugin security review), `/simplify` (tùy chọn). **Plugin còn dùng:** Android Emulator QA, Playwright MCP, TypeScript LSP (cách dùng trong skill `kiem-truoc-khi-gop`). **Chưa dùng, cần người dùng cho phép trước (đăng nhập hoặc trả phí hoặc đổi cài đặt):** `render:*`, `cloudflare:*`, `neon:*`, `sentry:*` (giai đoạn 9–10, triển khai hoãn tới cuối), `/fewer-permission-prompts` (sửa `.claude/settings.json`), `/code-review ultra` (tính phí). `/ship` và `/steward` chỉ người dùng tự gõ được (Claude không gọi) và `/ship` không gộp PR, nên không thay quy trình gộp của dự án. Trợ năng dùng công cụ miễn phí trong repo (`@axe-core/playwright` ở `e2e/a11y.spec.ts`, Lighthouse) thay plugin Axe trả phí (gỡ 22/11). Nguyên tắc thiết kế UI/UX (dùng khi thiết kế, không phải bước kiểm): `docs/thiet-ke/NGUYEN-TAC-UI-UX.md`.
 
 **Hook** (`.claude/settings.json`):
 - chặn sửa migration đã phát hành;
@@ -151,11 +151,11 @@ Bản đầy đủ: `docs/QUY-TRINH-VIBE-CODING.md`. Người dùng không phả
 |---|---|
 | 1 Yêu cầu · 2 Kiến trúc · 3 Database · 4 Giao diện | skill `superpowers:brainstorming` ⇒ spec `docs/superpowers/specs/` (có mục phương án, mục tiêu/không làm, người đọc độc lập rà) ⇒ người dùng duyệt. Giai đoạn 4 thiết kế màn/bản phác theo `docs/thiet-ke/NGUYEN-TAC-UI-UX.md` |
 | 5 Thiết lập dự án | monorepo sẵn có; `.env.example` không chứa khóa; bí mật ở `~/.becutit/gateway.env` |
-| 6 Lập trình từng chức năng | `superpowers:writing-plans` ⇒ kế hoạch `docs/superpowers/plans/` chia đợt ⇒ phiên con TDD, commit nhỏ |
-| 7 Bảo mật | 7 nguyên tắc mục 2; `kien-truc` xem lại khi đụng DB/auth; plugin security review |
-| 8 Kiểm thử | build/test/boundaries/size/e2e/a11y (axe-core)/AVD — skill `kiem-truoc-khi-gop` |
+| 6 Lập trình từng chức năng | `superpowers:writing-plans` ⇒ kế hoạch `docs/superpowers/plans/` chia đợt ⇒ phiên con làm theo `superpowers:test-driven-development` (test đỏ trước), commit nhỏ; gặp lỗi/test đỏ khó hiểu: `superpowers:systematic-debugging` (tìm nguyên nhân trước khi sửa); trước khi báo "xong": `superpowers:verification-before-completion` (chạy lệnh kiểm rồi mới nói); PR lớn: `/simplify` |
+| 7 Bảo mật | 7 nguyên tắc mục 2; `kien-truc` xem lại khi đụng DB/auth; lệnh `/security-review` |
+| 8 Kiểm thử | build/test/boundaries/size/e2e/a11y (axe-core)/AVD — skill `kiem-truoc-khi-gop`; rà mã bằng `/code-review high`; nhận phản hồi review theo `superpowers:receiving-code-review` (kiểm đúng sai rồi mới sửa, không làm theo mù quáng); xong nhánh: `superpowers:finishing-a-development-branch` |
 | 9 Triển khai | hoãn tới cuối (`docs/thiet-ke/DE-XUAT-TRIEN-KHAI.md`); không tự triển khai production |
-| 10 Bảo trì | nhật ký, sao lưu (`docs/van-hanh/`), góp ý người dùng |
+| 10 Bảo trì | nhật ký, sao lưu (`docs/van-hanh/`), góp ý người dùng; dọn bộ nhớ Claude định kỳ bằng skill `anthropic-skills:consolidate-memory`; việc lặp (kiểm sức khỏe, nhắc xoay khóa) xin phép người dùng rồi dùng `/schedule` hoặc `/loop` |
 
 **Bắt buộc:** không làm vượt bước; xin xác nhận trước khi đổi kiến trúc quan trọng, xóa/ghi đè dữ liệu, đổi DB có rủi ro, dùng dịch vụ có phí, triển khai production; đọc hiểu + tìm nguyên nhân trước khi sửa; **phân biệt rõ** đã viết code / đã chạy thử / đã kiểm thử / đã triển khai / đã nghiệm thu; ưu tiên giải pháp đơn giản.
 
