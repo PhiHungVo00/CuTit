@@ -24,6 +24,9 @@ const AUTH_EXPIRING_BEFORE_MS = 60_000;
 const CLOSE_GRACE_MS = 2_000;
 /** "đang gõ": chuyển tiếp tối đa 1 khung / khoảng này cho mỗi (kết nối, cuộc trò chuyện) */
 const TYPING_MIN_INTERVAL_MS = 2_000;
+/** Ngân sách truy vấn DB cho khung cần chạm DB (typing): tối đa chừng này lần / cửa sổ mỗi kết nối, vượt thì bỏ khung (không đóng) */
+const DB_FRAME_BUDGET = 10;
+const DB_FRAME_WINDOW_MS = 10_000;
 
 export interface RealtimeOptions {
   /** Kiểm token + điều kiện chat (`createWsVerifier`) */
@@ -58,6 +61,8 @@ interface Conn {
   rateBucket: number;
   rateCount: number;
   readonly typingAt: Map<string, number>;
+  dbWindowStart: number;
+  dbWindowCount: number;
 }
 
 /**
@@ -211,7 +216,9 @@ export class RealtimeHub implements RealtimeBus {
       nextPingAt: now + this.limits.pingMs,
       rateBucket: Math.floor(now / 1000),
       rateCount: 0,
-      typingAt: new Map()
+      typingAt: new Map(),
+      dbWindowStart: now,
+      dbWindowCount: 0
     };
     if (this.disposed) {
       this.closeConn(conn, WsClose.goingAway, 'server_shutdown');
@@ -374,6 +381,13 @@ export class RealtimeHub implements RealtimeBus {
   private async onTyping(conn: Conn, cid: string, now: number): Promise<void> {
     const last = conn.typingAt.get(cid);
     if (last !== undefined && now - last < TYPING_MIN_INTERVAL_MS) return;
+    // ngân sách DB: cid ngẫu nhiên dồn dập không biến thành hàng chục truy vấn/giây (cid hợp lệ vẫn qua trong ngân sách)
+    if (now - conn.dbWindowStart >= DB_FRAME_WINDOW_MS) {
+      conn.dbWindowStart = now;
+      conn.dbWindowCount = 0;
+    }
+    if (conn.dbWindowCount >= DB_FRAME_BUDGET) return;
+    conn.dbWindowCount += 1;
     // ghi mốc TRƯỚC khi await: nhiều khung typing tới liền nhau không cùng lọt qua bộ giãn
     if (conn.typingAt.size > 200) conn.typingAt.clear();
     conn.typingAt.set(cid, now);

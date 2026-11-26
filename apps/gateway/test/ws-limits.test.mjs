@@ -157,3 +157,39 @@ test('bão khung rác từ nhiều kết nối không sập tiến trình và kh
   assert.deepEqual(s.uncaught, []);
   await stillServing(await s.user());
 });
+
+test('typing với cid ngẫu nhiên dồn dập: số truy vấn DB bị chặn bởi ngân sách; typing hợp lệ vẫn đi sau cửa sổ', async () => {
+  let calls = 0;
+  const handlers = {};
+  const sent = [];
+  let now = 1_000_000;
+  const hub = new RealtimeHub({
+    verify: async () => ({ ok: true, userId: 'u1', expMs: now + 900_000 }),
+    directory: {
+      typingAudience: async (_u, cid) => {
+        calls += 1;
+        return cid === '00000000-0000-4000-8000-000000000001' ? ['u2'] : [];
+      },
+      presenceAudience: async () => []
+    },
+    buildAllowed: () => true,
+    now: () => now,
+    sweepMs: 0
+  });
+  hub.subscribe((ids, f) => f.t === 'typing' && sent.push(ids));
+  hub.attach(
+    { readyState: 1, bufferedAmount: 0, send() {}, close() {}, terminate() {}, on(ev, fn) { handlers[ev] = fn; return this; } },
+    {}
+  );
+  const send = (o) => handlers.message(Buffer.from(JSON.stringify(o)), false);
+  send({ t: 'hello', v: 1, token: 'x'.repeat(30), build: 1, device: '11111111-1111-4111-8111-111111111111' });
+  await sleep(30);
+  for (let i = 0; i < 25; i += 1) send({ t: 'typing', cid: `00000000-0000-4000-8000-${String(100 + i).padStart(12, '0')}` });
+  await sleep(50);
+  assert.ok(calls <= 10, `truy vấn DB ${calls}`);
+  now += 10_500; // cửa sổ mới
+  send({ t: 'typing', cid: '00000000-0000-4000-8000-000000000001' });
+  await sleep(30);
+  assert.deepEqual(sent, [['u2']]);
+  hub.dispose();
+});
