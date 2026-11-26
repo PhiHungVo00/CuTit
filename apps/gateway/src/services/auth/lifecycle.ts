@@ -37,6 +37,8 @@ export async function scheduleDeletion(db: Db, userId: string, now: Date): Promi
     const deleteAt = u.deleteAt ?? new Date(now.getTime() + GRACE_MS);
     if (!u.deleteAt) await tx.update(users).set({ deleteAt }).where(eq(users.id, userId));
     await tx.update(refreshTokens).set({ revokedAt: now }).where(and(eq(refreshTokens.userId, userId), isNull(refreshTokens.revokedAt)));
+    // Hẹn xóa tài khoản => đóng luôn phiên quản trị (rà kien-truc PR #50, TB1)
+    await tx.update(schema.adminSessions).set({ revokedAt: now }).where(and(eq(schema.adminSessions.userId, userId), isNull(schema.adminSessions.revokedAt)));
     await tx.delete(friendInvites).where(eq(friendInvites.userId, userId));
     return deleteAt;
   });

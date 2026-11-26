@@ -43,13 +43,21 @@ export async function signedIn(app: FastifyInstance, db: Db, userId: string, now
   };
 }
 
-/** Thu hồi MỌI refresh token còn hiệu lực của người dùng (đổi/đặt lại mật khẩu) */
+/**
+ * Thu hồi MỌI refresh token còn hiệu lực của người dùng (đổi/đặt lại mật khẩu) VÀ mọi phiên quản trị còn sống của họ
+ * (rà kien-truc PR #50, TB1: đổi mật khẩu phải đuổi được kẻ đang giữ phiên quản trị).
+ */
 export async function revokeAllRefreshTokens(db: Db, userId: string, now: Date): Promise<void> {
   const t = schema.refreshTokens;
   await db
     .update(t)
     .set({ revokedAt: now })
     .where(and(eq(t.userId, userId), isNull(t.revokedAt)));
+  const a = schema.adminSessions;
+  await db
+    .update(a)
+    .set({ revokedAt: now })
+    .where(and(eq(a.userId, userId), isNull(a.revokedAt)));
 }
 
 /** Lý do credential nằm trong bia mộ (`deleted_accounts`), null = không có. /auth/recover cần phân biệt `upgraded`. */
