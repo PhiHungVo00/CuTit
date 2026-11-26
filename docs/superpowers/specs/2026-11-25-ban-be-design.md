@@ -57,7 +57,7 @@ Tất cả chạy trên hạ tầng **miễn phí** (người dùng chốt), đ�
 - **Migration** đánh số tiếp từ migration hiện có (`0010_admin_audit_append_only` là mới nhất ở `main` lúc viết). Số thật lấy bằng `db:generate` **lúc gộp**, không đặt số tay, không sửa migration đã phát hành. PGlite (dev/test) và Postgres đều phải chạy: **không dùng extension** (`citext`, `pg_trgm`…); chữ thường hóa bằng `lower()` + chỉ mục duy nhất.
 - **i18n:** mọi chuỗi UI có vi + en (`apps/mfe-social/src/i18n.ts`, theo quy ước `defineMessages` của `packages/state`). Nội dung học vẫn tiếng Việt. Trang quản trị chỉ tiếng Việt.
 - **Hiệu năng:** màn chat và màn gọi **nạp lười**, không vào gói đầu; thư viện WebSocket client = `WebSocket` có sẵn của trình duyệt (không thêm gói). Thêm mục `size-limit` cho từng chunk (mục 9). Không nới ngân sách hiện có.
-- **Phụ thuộc chưa gộp lúc viết:** dự án 5a Task 2 (PR #46: `BlobStore`, giới hạn multipart theo request) và Task 4–5 (đăng nhập quản trị, hàng chờ). Nêu rõ ở mục 12. Task nào cần mà chưa có thì **chờ**, không tự copy sang.
+- **Phụ thuộc:** dự án 5a Task 2 (`BlobStore`, giới hạn multipart theo request; PR #46) **đã gộp vào `main`**. 5a Task 4 (đăng nhập quản trị, PR #50) **đã qua rà ĐẠT nhưng chưa gộp**; Task 5–6 (hàng chờ, `apps/admin`) chưa có. Nêu rõ ở mục 12. Task nào cần mà chưa gộp thì **chờ**, không tự copy sang.
 - **Người dùng mặc định là người đủ tuổi** (quyết định 21/11) — đổi so với D4 cũ ("trẻ em dùng như mọi người", 19/11). Phải ghi vào `docs/KE_HOACH_PHAT_TRIEN_TOAN_DIEN.md` mục 9 (PR này làm).
 - Phần này đụng DB, auth, dữ liệu người dùng, native Android và pháp lý ⇒ **`kien-truc` xem lại**, chạy skill `kiem-truoc-khi-gop`, thử trên AVD (mục 11).
 - Repo công khai: không commit `google-services.json`, khóa dịch vụ Firebase, khóa TURN. Chúng nằm ở `~/.becutit/gateway.env` hoặc secret của CI.
@@ -82,7 +82,7 @@ Người dùng đã chốt hướng ở mục 2; bảng này ghi các **quyết 
 - **Cờ tuổi:** thêm cột `users.is_adult boolean NULL` (NULL = chưa khai) và `users.age_declared_at timestamptz NULL`. **Không có cột năm sinh/ngày sinh.**
 - **Khai tuổi:** `PUT /v1/me/age { birthYear }` (Bearer). Server tính `is_adult`, **bỏ giá trị năm sinh ngay**: không ghi DB, không ghi audit (`age.declared` chỉ ghi `outcome`), không vào log (Fastify không log body; test chứng minh).
   - `birthYear` hợp lệ: số nguyên từ 1900 tới năm hiện tại.
-  - **Luật đủ 18 chỉ từ năm sinh** *(gọi của người thiết kế)*: đủ 18 ⇔ `năm hiện tại − birthYear ≥ 19`. Người sinh năm `hiện tại − 18` có thể mới 17 hoặc đã 18; coi là **chưa đủ** để an toàn (mất vài tháng, đổi lại không để trẻ 17 vào nhầm). Hỏi lại ở Q2.
+  - **Luật đủ 18 chỉ từ năm sinh** *(người dùng chốt 26/11)*: đủ 18 ⇔ `năm hiện tại − birthYear ≥ 18`. Người khai năm sinh đúng 18 năm trước **chưa chắc đã đủ 18 tuổi thực** (có thể mới 17 tuổi tới cuối năm), nhưng đây là lựa chọn của người dùng vì không lưu ngày sinh; rủi ro này ghi trong đánh giá tác động pháp lý (Task 19). Hệ thống chỉ lưu cờ đủ/chưa đủ, không lưu năm sinh.
   - Đã khai `false` thì **khóa 12 tháng** (`age_declared_at`), sau đó khai lại được; đã khai `true` thì không đổi ngược lại. Lý do: khai tuổi là tự khai, nên chỉ chặn việc thử đi thử lại ngay lập tức; không có cách xác minh khác nếu không lưu ngày sinh (đã loại).
 - **Cổng tuổi hiện ở:** (1) bước cuối màn Tạo tài khoản của dự án 3 (client gọi `PUT /v1/me/age` ngay sau khi đăng ký); (2) lần đầu mở tab Tin nhắn nếu `is_adult` còn NULL (tài khoản cũ, đăng nhập Google). Không chặn việc học khi chưa khai.
 - **Ai dùng được chat/gọi** *(gọi của người thiết kế)*: tài khoản **không phải khách** (`is_guest=false`), **không chờ xóa**, `is_adult=true`, đã đặt handle, không bị khóa chat. Khách bị loại vì: (a) tài khoản khách gắn với một máy, mất máy là mất cả lịch sử "vĩnh viễn"; (b) chống tài khoản tạo-hàng-loạt để spam. Khách vẫn học và vẫn dùng nhiệm vụ bạn học hiện có.
@@ -174,7 +174,7 @@ Tất cả lược đồ ở `packages/contracts/src/api/chat-social.ts` (tên t
 - **Tin hệ thống** (`kind='system'`, `system_event` JSON có kiểu): "đã thêm / rời / bị xóa khỏi nhóm", "đổi tên nhóm", "cuộc gọi nhỡ / đã gọi N phút". Client dựng chữ theo ngôn ngữ từ `system_event`, **server không lưu chữ tiếng nào** (để i18n vi/en đúng).
 
 ### 5.5 Ảnh và giọng nói (dùng `BlobStore` của dự án 5a)
-- **Phụ thuộc:** `BlobStore` (`fs` | `r2`), `sniffMedia`, kho tệp ở `apps/gateway/src/services/blob/` từ **PR #46 (chưa gộp)**. Task tệp đính kèm **chờ PR #46 gộp**; trước đó chỉ làm chat chữ.
+- **Phụ thuộc:** `BlobStore` (`fs` | `r2`), `sniffMedia`, kho tệp ở `apps/gateway/src/services/blob/` từ dự án 5a Task 2 (PR #46, **đã gộp**). Task tệp đính kèm chỉ cần Task 4 của dự án này xong.
 - **Ảnh:** app vẽ lại qua canvas thành WebP, cạnh dài ≤ 1280 px (mất EXIF/GPS, nhẹ hơn mức 1920 của góp ý vì chat gửi nhiều), ≤ 2 MB. Server kiểm **magic bytes** (WebP/JPEG/PNG), từ chối còn lại.
 - **Giọng nói:** ghi bằng `MediaRecorder` (Opus/WebM; trên WebView/Android không có thì AAC/MP4), tối đa **120 giây**, tối đa **3 MB**. Server kiểm magic bytes (WebM/Ogg/MP4). Hiển thị dạng sóng đơn giản (tính cục bộ trên client từ vài mẫu biên độ gửi kèm `waveform` ≤ 64 số, **không phải** thuật toán A1/A2).
 - **Luồng:** (1) `POST /v1/chat/attachments` ghi thẳng vào kho (streaming, không đọc hết vào RAM, quá cỡ thì hủy và xóa tệp dở), trả `attachmentId` ở trạng thái chưa gắn; (2) `POST …/messages` gắn `attachmentId` (chỉ người đã tải lên, cùng cuộc trò chuyện). Tệp chưa gắn quá **1 giờ** bị dọn.
@@ -314,7 +314,7 @@ Bản đầu: thông báo đẩy ưu tiên cao hiện nổi **"<tên> đang gọ
 ## 11. Kiểm thử bắt buộc
 - **Contract:** Zod mọi khung WS và lược đồ REST; giới hạn và mã lỗi; `CallJoinInfo` union; từ chối `body` 4001 ký tự, `waveform` > 64, `clientMsgId` không phải uuid, `birthYear` ngoài khoảng.
 - **Gateway (PGlite `memory://`, bus trong bộ nhớ, `BlobStore` fs tạm):**
-  - tuổi: 2007 so với năm hiện tại, ranh giới `năm−18` là chưa đủ, `năm−19` là đủ; **không** có chỗ nào ghi năm sinh (kiểm DB, audit, log); khai `false` bị khóa 12 tháng; dưới 18 không tạo được 1-1/nhóm/lời mời;
+  - tuổi: 2007 so với năm hiện tại, ranh giới `năm−18` là **đủ**, `năm−17` là chưa đủ; **không** có chỗ nào ghi năm sinh (kiểm DB, audit, log); khai `false` bị khóa 12 tháng; dưới 18 không tạo được 1-1/nhóm/lời mời;
   - khách và tài khoản chờ xóa không vào được `/ws` và `/v1/chat/*`;
   - `handle`: tra khớp đúng; không tồn tại / không `discoverable` / bị chặn / dưới 18 → **cùng** `handle_not_found`; giới hạn 20/ngày;
   - **thứ tự & trùng:** 50 người gửi đồng thời vào một cuộc trò chuyện → `seq` 1..50 không lỗ không trùng; gửi lại cùng `clientMsgId` → trả đúng tin cũ, `seq` không tăng; rớt WS giữa chừng rồi bù bằng `afterSeq` đủ;
@@ -338,7 +338,7 @@ Bản đầu: thông báo đẩy ưu tiên cao hiện nổi **"<tên> đang gọ
 ## 12. Phụ thuộc và thứ tự gộp
 | Phần của dự án 4 | Cần gì | Từ đâu | Nếu chưa có |
 |---|---|---|---|
-| Tệp đính kèm (ảnh/giọng nói), URL ký, xóa tệp khi xóa tài khoản | `BlobStore`, `sniffMedia`, `blob_deletions`, `purgeUserFeedbackBlobs` mẫu | dự án 5a Task 2 (**PR #46, chưa gộp**) | Chat chữ làm trước; Task tệp đính kèm chờ #46 gộp |
+| Tệp đính kèm (ảnh/giọng nói), URL ký, xóa tệp khi xóa tài khoản | `BlobStore`, `sniffMedia`, `blob_deletions`, `purgeUserFeedbackBlobs` mẫu | dự án 5a Task 2 (PR #46, **đã gộp**) | Không còn chờ |
 | Báo cáo → hàng chờ quản trị, khóa chat, nhật ký quản trị | hook `/admin/v1`, `admin_audit_log`, hàng chờ, `apps/admin` | 5a Task 4–6 | Test bằng phiên quản trị giả; ghép UI quản trị sau |
 | Cổng tuổi ở màn tạo tài khoản | màn Tạo tài khoản, `PUT /v1/me/age` | dự án 3 Task 7 (đã gộp **[?: kiểm lại `main`]**) | Cổng tuổi ở lần mở Tin nhắn vẫn chạy độc lập |
 | Chờ xóa 30 ngày, xóa cứng | `purgeExpiredAccounts`, `lifecycle.ts` | dự án 3 Task 4 (đã có ở `main`) | — |
@@ -348,14 +348,14 @@ Bản đầu: thông báo đẩy ưu tiên cao hiện nổi **"<tên> đang gọ
 ## 13. Kết quả người đọc độc lập rà
 Người đọc độc lập (subagent chạy `builder-check-prompt.md`) hỏi 9 câu. Cách xử lý:
 - **Đã có sẵn trong dự án hoặc là việc nhỏ → đã đưa vào tài liệu:** vòng đời WebSocket (mục 9: mở khi nền trước); bản đầu có nút Khóa + CLI (5.8); gộp từng đợt dưới cờ `CHAT_ENABLED` (mục 10); dự án 3 đã gộp (mục 10); tuổi chỉ áp cho chat, luồng mã mời cũ giữ nguyên (5.1); gọi nhóm lớn mời người được chọn (7.1); link mời bản đầu là mã + `becutit://` (mục 10); nghiệm thu trên máy dev (mục 10).
-- **Chỉ người dùng trả lời được:** luật tuổi `≥ 19` hay `≥ 18`; dưới 18 có được chat với bạn cùng tuổi không. Việc tay (Firebase, Cloudflare TURN, dung lượng) nằm ở danh sách cuối báo cáo.
+- **Chỉ người dùng trả lời được:** luật tuổi và dưới 18 đã được người dùng chốt 26/11 (đóng hẳn chat/gọi/nhóm; đủ 18 = năm hiện tại − năm sinh ≥ 18). Việc tay (Firebase, Cloudflare TURN, dung lượng) nằm ở danh sách cuối báo cáo.
 
 ## 14. Các điểm người thiết kế tự quyết (người dùng xem khi duyệt)
 1. Giao thức: gửi tin bằng **REST**, WebSocket chỉ để đẩy/báo hiệu (4-A).
 2. MFE mới `apps/mfe-social` (4-B); màn Bạn bè cũ giữ ở `mfe-learner`.
 3. Thứ tự tin bằng `seq` theo cuộc trò chuyện, một dòng tin cho mọi thành viên (4-C, 4-D).
 4. Handle riêng, lấy tên đăng nhập làm sẵn cho tài khoản mật khẩu (4-G).
-5. Luật "đủ 18" từ năm sinh: phải cách năm sinh ≥ 19 năm; khai "chưa đủ" thì khóa 12 tháng (5.1).
+5. Luật "đủ 18" từ năm sinh: cách năm sinh ≥ 18 năm (**người dùng chốt 26/11**); khai "chưa đủ" thì khóa 12 tháng (5.1).
 6. **Dưới 18 đóng hẳn chat/gọi/nhóm** (chặt hơn mức người dùng nêu) (5.1). Khách không dùng chat (5.1).
 7. Chỉ thêm vào nhóm người **là bạn** của mình; không có link mời nhóm; trần mềm 1.000 (6.1).
 8. Bằng chứng báo cáo giữ 30 ngày sau khi đóng; xóa tài khoản xóa nội dung tin (5.9).
