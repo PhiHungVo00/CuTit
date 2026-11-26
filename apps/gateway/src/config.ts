@@ -168,6 +168,11 @@ const EnvSchema = z
     APP_VERSION_RATE_LIMIT_PER_MINUTE: z.coerce.number().int().positive().default(30),
     /** Host (cách nhau bằng dấu phẩy) được phép trong apkFile.url của kênh apk; rỗng = không cho phép apkFile */
     APK_DOWNLOAD_HOSTS: z.string().default(''),
+    // ---- Dự án 4 (Task 5): WebSocket /ws ----
+    /** Cờ chat/gọi. Mặc định: TẮT ở production, BẬT ở dev/test. Tắt => /ws không đăng ký (404). (Task 4 dùng chung cờ này.) */
+    CHAT_ENABLED: boolFromEnv.optional(),
+    /** Giới hạn bắt tay GET /ws theo IP (số lần nối/phút); sau khi nối còn giới hạn khung/giây theo kết nối */
+    WS_RATE_LIMIT_PER_MINUTE: z.coerce.number().int().positive().default(30),
     // ---- Dự án 5a: trang quản trị /admin/v1 (spec docs/superpowers/specs/2026-11-21-gop-y-bao-loi-design.md mục 5.4) ----
     /** Bật khối /admin/v1. Mặc định: TẮT ở production, BẬT ở dev/test. Tắt => các đường dẫn /admin/v1 trả 404 (không đăng ký) */
     ADMIN_API_ENABLED: boolFromEnv.optional(),
@@ -222,6 +227,7 @@ const EnvSchema = z
     BLOB_DIR: env.BLOB_DIR ?? DEFAULT_BLOB_DIR,
     APP_VERSIONS_FILE: env.APP_VERSIONS_FILE ?? DEFAULT_APP_VERSIONS_FILE,
     ADMIN_API_ENABLED: env.ADMIN_API_ENABLED ?? env.NODE_ENV !== 'production',
+    CHAT_ENABLED: env.CHAT_ENABLED ?? env.NODE_ENV !== 'production',
     apkDownloadHosts: env.APK_DOWNLOAD_HOSTS.split(',')
       .map((h) => h.trim().toLowerCase())
       .filter(Boolean),
