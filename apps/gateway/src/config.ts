@@ -198,7 +198,12 @@ const EnvSchema = z
     /** Trần dung lượng kho tệp (MB). Vượt => 507 storage_full cho yêu cầu CÓ tệp; bản chỉ có chữ vẫn nhận */
     BLOB_TOTAL_CAP_MB: z.coerce.number().positive().default(8000),
     /** Giới hạn số lần gửi góp ý theo IP mỗi giờ (cộng 5 góp ý/người/ngày) */
-    FEEDBACK_IP_PER_HOUR: z.coerce.number().int().positive().default(20)
+    FEEDBACK_IP_PER_HOUR: z.coerce.number().int().positive().default(20),
+    // ---- Dự án 4: bạn bè (chat, gọi, nhóm) ----
+    /** Cờ bật chat/gọi. Mặc định: TẮT ở production, BẬT ở dev/test. Tắt => mọi route /v1/chat/conversations|messages trả 404 chat_disabled */
+    CHAT_ENABLED: boolFromEnv.optional(),
+    /** Trần số yêu cầu/phút/người cho các route chat (cao hơn RATE_LIMIT_PER_MINUTE chung vì tải chat > 60/phút; chống spam thật nằm ở ChatLimiter) */
+    CHAT_RATE_LIMIT_PER_MINUTE: z.coerce.number().int().positive().default(600)
   })
   .transform((env) => ({
     ...env,
@@ -216,6 +221,7 @@ const EnvSchema = z
     BLOB_DIR: env.BLOB_DIR ?? DEFAULT_BLOB_DIR,
     APP_VERSIONS_FILE: env.APP_VERSIONS_FILE ?? DEFAULT_APP_VERSIONS_FILE,
     ADMIN_API_ENABLED: env.ADMIN_API_ENABLED ?? env.NODE_ENV !== 'production',
+    CHAT_ENABLED: env.CHAT_ENABLED ?? env.NODE_ENV !== 'production',
     apkDownloadHosts: env.APK_DOWNLOAD_HOSTS.split(',')
       .map((h) => h.trim().toLowerCase())
       .filter(Boolean),
