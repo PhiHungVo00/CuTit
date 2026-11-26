@@ -19,7 +19,10 @@ const SCREENS: [string, string][] = [
   ['chat', '/hoi-thoai'],
   // Dự án 3: đăng nhập/đăng ký + Cài đặt › Tài khoản của khách
   ['dang-nhap', '/dang-nhap'],
-  ['cai-dat-tai-khoan', '/cai-dat/tai-khoan']
+  ['cai-dat-tai-khoan', '/cai-dat/tai-khoan'],
+  // Dự án 5a: Góp ý / Báo lỗi + Góp ý của tôi
+  ['gop-y', '/gop-y'],
+  ['gop-y-cua-toi', '/gop-y/cua-toi']
 ];
 
 async function scan(page: Page) {
