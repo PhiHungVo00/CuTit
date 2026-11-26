@@ -143,6 +143,8 @@ export const PRIVACY_ROUTE = pathRoute('/quyen-rieng-tu', () => import('./screen
 export const TONE_GYM_ROUTE = pathRoute('/phong-thanh', () => import('./screens/ToneGymRoute'));
 /** Trang công khai hướng dẫn xóa tài khoản (Google Play Data safety): chỉ chữ + link, không gọi Gateway nên không tạo tài khoản khách */
 export const DELETE_ACCOUNT_INFO_ROUTE = pathRoute('/xoa-tai-khoan', () => import('./screens/DeleteAccountInfoRoute'));
+/** Dự án 5a: Góp ý / Báo lỗi (mfe-learner) — mở từ Hồ sơ hoặc nút "Báo lỗi" của màn lỗi; hai đường dẫn dùng chung một chunk */
+const loadFeedback = () => import('./screens/FeedbackRoute');
 export const PATH_ROUTES: PathRoute[] = [
   pathRoute('/bai-hoc/:lessonId', () => import('./screens/LessonRoute')),
   pathRoute('/kiem-tra/:unitId', () => import('./screens/TestOutRoute')),
@@ -155,6 +157,8 @@ export const PATH_ROUTES: PathRoute[] = [
   pathRoute('/ban-be', () => import('./screens/FriendsRoute')),
   // Dự án 3: đăng nhập/đăng ký (mfe-learner); mở từ Hồ sơ, thẻ mời và Cài đặt › Tài khoản
   pathRoute('/dang-nhap', () => import('./screens/AuthRoute')),
+  pathRoute('/gop-y', loadFeedback),
+  pathRoute('/gop-y/cua-toi', loadFeedback),
   pathRoute('/cai-dat', () => import('./screens/SettingsRoute')),
   pathRoute('/cai-dat/:nhom', () => import('./screens/SettingsRoute')),
   PRIVACY_ROUTE,

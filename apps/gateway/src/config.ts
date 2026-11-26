@@ -24,6 +24,8 @@ loadDotenv({ path: process.env.BECUTIT_ENV_FILE ?? join(homedir(), '.becutit', '
 const DEFAULT_PGLITE_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', '.data', 'pglite');
 /** apps/gateway/.data/tts: âm thanh dựng sẵn (GĐ2), không commit */
 const DEFAULT_TTS_AUDIO_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', '.data', 'tts');
+/** ~/.becutit/blobs: tệp đính kèm góp ý (dự án 5a), NGOÀI repo */
+const DEFAULT_BLOB_DIR = join(homedir(), '.becutit', 'blobs');
 /** apps/gateway/config/app-versions.json: phiên bản app mới nhất/tối thiểu theo kênh (dự án 8) */
 const DEFAULT_APP_VERSIONS_FILE = join(dirname(fileURLToPath(import.meta.url)), '..', 'config', 'app-versions.json');
 
@@ -40,6 +42,17 @@ const CHAIN_RE = /^[\w.@/-]+(:[\w.@/:+-]+)?(,[\w.@/-]+(:[\w.@/:+-]+)?)*$/;
 
 /** Biến môi trường của các nhà cung cấp AI kiểu OpenAI-compatible (khóa, URL, chế độ JSON): đọc trực tiếp ở providers/registry.ts */
 const AI_ENV_RE = /^[A-Z][A-Z0-9_]*_(API_KEY|API_TOKEN|BASE_URL|JSON_MODE|ACCOUNT_ID)$/;
+
+/** Khóa 32 byte từ hex (64 ký tự) hoặc base64 (44 ký tự); không hợp lệ => null */
+export function decodeKey32(v: string): Buffer | null {
+  const s = v.trim();
+  if (/^[0-9a-fA-F]{64}$/.test(s)) return Buffer.from(s, 'hex');
+  if (/^[A-Za-z0-9+/]{43}=$/.test(s)) {
+    const b = Buffer.from(s, 'base64');
+    return b.length === 32 ? b : null;
+  }
+  return null;
+}
 
 const EnvSchema = z
   .object({
@@ -154,7 +167,38 @@ const EnvSchema = z
     /** Giới hạn theo IP cho GET /v1/app/version */
     APP_VERSION_RATE_LIMIT_PER_MINUTE: z.coerce.number().int().positive().default(30),
     /** Host (cách nhau bằng dấu phẩy) được phép trong apkFile.url của kênh apk; rỗng = không cho phép apkFile */
-    APK_DOWNLOAD_HOSTS: z.string().default('')
+    APK_DOWNLOAD_HOSTS: z.string().default(''),
+    // ---- Dự án 5a: trang quản trị /admin/v1 (spec docs/superpowers/specs/2026-11-21-gop-y-bao-loi-design.md mục 5.4) ----
+    /** Bật khối /admin/v1. Mặc định: TẮT ở production, BẬT ở dev/test. Tắt => các đường dẫn /admin/v1 trả 404 (không đăng ký) */
+    ADMIN_API_ENABLED: boolFromEnv.optional(),
+    /** Nguồn CORS DUY NHẤT của /admin/v1 (có credentials); /v1 không bao giờ nhận nguồn này. Chỉ gồm giao thức + máy chủ + cổng */
+    ADMIN_ORIGIN: z
+      .string()
+      .url()
+      .refine((v) => /^https?:$/.test(new URL(v).protocol), 'ADMIN_ORIGIN phải là http(s)')
+      .refine((v) => new URL(v).pathname === '/' && !new URL(v).search && !new URL(v).hash, 'ADMIN_ORIGIN chỉ gồm giao thức + máy chủ + cổng')
+      .transform((v) => new URL(v).origin)
+      .default('http://localhost:5180'),
+    /**
+     * Khóa AES-256-GCM mã hóa bí mật TOTP: ĐÚNG 32 byte, viết dạng hex (64 ký tự) hoặc base64 (44 ký tự).
+     * KHÔNG sinh ngẫu nhiên khi thiếu (bí mật đã mã hóa sẽ không giải mã được sau khi khởi động lại). Thiếu => /admin/v1 trả 503 admin_disabled.
+     * Đổi khóa => mọi người phải đăng ký lại mã 6 số (chạy admin:reset-totp). Không bao giờ ghi vào log.
+     */
+    ADMIN_MFA_KEY: z
+      .string()
+      .refine((v) => decodeKey32(v) !== null, 'ADMIN_MFA_KEY phải là đúng 32 byte, dạng hex (64 ký tự) hoặc base64 (44 ký tự)')
+      .optional(),
+    /** Khóa ký access JWT quản trị (typ:'admin'), RIÊNG với JWT_SECRET. Thiếu => /admin/v1 trả 503 admin_disabled */
+    ADMIN_JWT_SECRET: z.string().min(32, 'ADMIN_JWT_SECRET phải dài tối thiểu 32 ký tự').optional(),
+    // ---- Dự án 5a: góp ý/báo lỗi + kho tệp (spec docs/superpowers/specs/2026-11-21-gop-y-bao-loi-design.md §5.3) ----
+    /** Kho tệp đính kèm. `fs` (mặc định, dev/test) hoặc `r2` (làm ở dự án triển khai) */
+    BLOB_PROVIDER: z.enum(['fs', 'r2']).default('fs'),
+    /** Thư mục kho tệp `fs`; mặc định ~/.becutit/blobs (ngoài repo) */
+    BLOB_DIR: z.string().min(1).optional(),
+    /** Trần dung lượng kho tệp (MB). Vượt => 507 storage_full cho yêu cầu CÓ tệp; bản chỉ có chữ vẫn nhận */
+    BLOB_TOTAL_CAP_MB: z.coerce.number().positive().default(8000),
+    /** Giới hạn số lần gửi góp ý theo IP mỗi giờ (cộng 5 góp ý/người/ngày) */
+    FEEDBACK_IP_PER_HOUR: z.coerce.number().int().positive().default(20)
   })
   .transform((env) => ({
     ...env,
@@ -169,7 +213,9 @@ const EnvSchema = z
     AUTH_OTP_PEPPER: env.AUTH_OTP_PEPPER ?? (env.NODE_ENV === 'production' ? undefined : randomBytes(32).toString('hex')),
     PGLITE_DIR: env.PGLITE_DIR ?? (env.NODE_ENV === 'test' ? 'memory://' : DEFAULT_PGLITE_DIR),
     TTS_AUDIO_DIR: env.TTS_AUDIO_DIR ?? DEFAULT_TTS_AUDIO_DIR,
+    BLOB_DIR: env.BLOB_DIR ?? DEFAULT_BLOB_DIR,
     APP_VERSIONS_FILE: env.APP_VERSIONS_FILE ?? DEFAULT_APP_VERSIONS_FILE,
+    ADMIN_API_ENABLED: env.ADMIN_API_ENABLED ?? env.NODE_ENV !== 'production',
     apkDownloadHosts: env.APK_DOWNLOAD_HOSTS.split(',')
       .map((h) => h.trim().toLowerCase())
       .filter(Boolean),
@@ -204,6 +250,13 @@ const EnvSchema = z
         code: z.ZodIssueCode.custom,
         path: ['MAIL_SMTP_USER'],
         message: 'MAIL_PROVIDER=gmail-smtp cần MAIL_SMTP_USER và MAIL_SMTP_PASS (mật khẩu ứng dụng Gmail)'
+      });
+    }
+    if (env.ADMIN_JWT_SECRET && (env.ADMIN_JWT_SECRET === env.JWT_SECRET || env.ADMIN_JWT_SECRET === env.AUDIT_IP_SALT || env.ADMIN_JWT_SECRET === env.AUTH_OTP_PEPPER)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['ADMIN_JWT_SECRET'],
+        message: 'ADMIN_JWT_SECRET phải khác JWT_SECRET, AUDIT_IP_SALT và AUTH_OTP_PEPPER (tách khóa quản trị khỏi khóa app)'
       });
     }
     if (env.corsOrigins.includes('*')) {

@@ -25,6 +25,10 @@
       "types": "./dist/session.d.ts",
       "default": "./dist/session.js"
     },
+    "./feedback": {
+      "types": "./dist/feedback.d.ts",
+      "default": "./dist/feedback.js"
+    },
     "./config": {
       "types": "./dist/config.d.ts",
       "default": "./dist/config.js"

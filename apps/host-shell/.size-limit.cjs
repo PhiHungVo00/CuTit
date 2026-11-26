@@ -38,6 +38,9 @@ module.exports = [
   // Bạn bè là màn thật (FriendsPanel chuyển từ Tiến độ sang, nằm trong chunk FriendsRoute nên không còn mục riêng). Kế hoạch cho phép ≤ 6 kB mỗi màn. Đo: Cài đặt 5,3 kB, Bạn bè 4,97 kB.
   { name: 'M9 Tiến độ chi tiết: ôn SM-2, 7 ngày, độ chính xác (lazy; đo 2,8 kB)', path: 'dist/assets/ProgressRoute-*.js', limit: '3.5 kB', gzip: true },
   { name: 'M9 Hồ sơ (lazy)', path: 'dist/assets/ProfileRoute-*.js', limit: '5 kB', gzip: true },
+  // Dự án 5a Task 3 (2026-11-25): màn Góp ý / Báo lỗi + Góp ý của tôi (mfe-learner + client XHR) và chấm đỏ tab Hồ sơ; cả hai lười, KHÔNG vào gói đầu (đo 4.65 kB và 0.65 kB)
+  { name: 'Dự án 5a Góp ý / Báo lỗi + Góp ý của tôi (lazy)', path: 'dist/assets/FeedbackRoute-*.js', limit: '5.3 kB', gzip: true },
+  { name: 'Dự án 5a Chấm đỏ góp ý chưa đọc trên tab Hồ sơ (lazy)', path: 'dist/assets/FeedbackDot-*.js', limit: '0.9 kB', gzip: true },
   { name: 'M12 Cài đặt mục lục + trang con (lazy)', path: 'dist/assets/SettingsRoute-*.js', limit: '6 kB', gzip: true },
   { name: 'M1 Trò chuyện (lazy)', path: 'dist/assets/ChatRoute-*.js', limit: '6 kB', gzip: true },
   { name: 'M7 Nhập vai (lazy)', path: 'dist/assets/RoleplayRoute-*.js', limit: '6 kB', gzip: true },
