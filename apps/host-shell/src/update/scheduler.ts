@@ -1,6 +1,6 @@
 import { AppVersionResponseSchema, type AppChannel, type AppVersionResponse } from '@vietlearning/contracts/api';
 import { isBusy } from './busy';
-import type { ChannelUpdater, UpdaterHooks } from './channel';
+import type { ApkCard, ChannelUpdater, UpdaterHooks } from './channel';
 import { readState, writeState } from './state';
 import type { UpdateErrorKey } from './updateI18n';
 
@@ -46,6 +46,8 @@ export interface UpdateView {
   progress: number | null;
   /** Tải xong, chờ người dùng bấm (Play: khởi động lại) */
   ready: (() => Promise<void>) | null;
+  /** Chỉ kênh apk: thẻ hỏi dữ liệu di động / xin quyền cài / sẵn sàng cài / lỗi */
+  card: ApkCard | null;
   /** SW web báo có bản mới / tab này lỡ bản mới */
   webReload: boolean;
   error: UpdateErrorKey | null;
@@ -62,6 +64,8 @@ export interface Engine {
   markWebRefresh(): void;
   dismissWebRefresh(): void;
   dismissError(): void;
+  /** Đóng thẻ APK (xin quyền/lỗi) — thẻ "sẵn sàng cài" dùng `snooze` */
+  dismissCard(): void;
   getView(): UpdateView;
   subscribe(cb: () => void): () => void;
 }
@@ -72,6 +76,7 @@ export function createEngine(deps: EngineDeps): Engine {
   let progress: number | null = null;
   let ready: (() => Promise<void>) | null = null;
   let webReload = false;
+  let card: ApkCard | null = null;
   let error: UpdateErrorKey | null = null;
   /** Lần kiểm gần nhất hỏng vì mạng (timeout/không tới được Gateway, vd. cổng đăng nhập Wi-Fi): coi như offline */
   let networkFailed = false;
@@ -104,8 +109,10 @@ export function createEngine(deps: EngineDeps): Engine {
       forced: req && online && idle,
       forcedOffline: req && !online,
       soft: softOk && idle ? r : null,
-      progress: idle && !req ? progress : null,
+      // Bản bắt buộc cũng hiện % tải (màn chặn); thẻ "sẵn sàng cài" tôn trọng "Để sau" như nhắc mềm
+      progress: idle ? progress : null,
       ready: idle && !req ? ready : null,
+      card: idle && card && (req || card.kind !== 'ready' || !snoozed) ? card : null,
       webReload: webReload && idle && !req,
       error
     };
@@ -173,11 +180,13 @@ export function createEngine(deps: EngineDeps): Engine {
     }
     if (!opts.force && deps.now() - Math.max(readState().lastCheckAt, lastFailAt) < MIN_RECHECK_MS) {
       evaluate();
+      maybePrepare(readState().lastResponse);
       return Promise.resolve();
     }
     inflight = doCheck().finally(() => {
       inflight = null;
       evaluate();
+      maybePrepare(readState().lastResponse);
     });
     return inflight;
   }
@@ -194,8 +203,21 @@ export function createEngine(deps: EngineDeps): Engine {
     setError(key) {
       error = key;
       evaluate();
+    },
+    setCard(c) {
+      card = c;
+      evaluate();
     }
   };
+
+  /** Kênh apk: tự tải ngầm bản mới (prepare lo chuyện chỉ làm một lần/build và giới hạn số lần lỗi) */
+  function maybePrepare(r: AppVersionResponse | null): void {
+    if (deps.channel !== 'apk' || !r || r.status !== 'update_available' || deps.build >= r.latestBuild) return;
+    void deps
+      .loadUpdater()
+      .then((u) => u.prepare?.(r, hooks))
+      .catch(() => undefined);
+  }
 
   function fallbackResponse(): AppVersionResponse {
     return {
@@ -278,6 +300,10 @@ export function createEngine(deps: EngineDeps): Engine {
     },
     dismissError() {
       error = null;
+      evaluate();
+    },
+    dismissCard() {
+      card = null;
       evaluate();
     },
     getView: () => view,
