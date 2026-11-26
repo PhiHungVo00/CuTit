@@ -13,11 +13,13 @@ export default function UpdateLayer() {
   const { pathname } = useLocation();
   useEffect(() => engine.setPath(pathname), [pathname]);
 
-  if (view.forced) return <ForcedUpdate onUpdate={() => void engine.runForced()} errorKey={view.error} />;
+  if (view.forced) return <ForcedUpdate onUpdate={() => void engine.runForced()} errorKey={view.error} percent={view.progress} card={view.card} />;
   return (
     <>
       {view.forcedOffline && <ForcedOfflineBanner />}
-      {view.ready ? (
+      {view.card ? (
+        <UpdatePrompt kind="apk" card={view.card} onLater={view.card.kind === 'ready' ? engine.snooze : engine.dismissCard} />
+      ) : view.ready ? (
         <UpdatePrompt kind="ready" onPrimary={() => void view.ready?.()} />
       ) : view.progress !== null ? (
         <UpdatePrompt kind="downloading" percent={view.progress} />

@@ -1,4 +1,5 @@
 import type { CapacitorConfig } from '@capacitor/cli';
+import { parseApkHosts } from './scripts/apk-hosts.mjs';
 
 /**
  * Đóng gói Host Shell (đã ghép toàn bộ MFE lúc build) thành app Android/iOS.
@@ -22,6 +23,9 @@ const config: CapacitorConfig = {
     adjustMarginsForEdgeToEdge: 'auto'
   },
   plugins: {
+    // Chỉ flavor `apk` có plugin này (flavor play bỏ qua khóa lạ). Bản release chỉ tải APK từ các host này:
+    // đặt APK_DOWNLOAD_HOSTS lúc build, GIỐNG HỆT danh sách của Gateway (docs/van-hanh/PHAT-HANH-BAN-MOI.md)
+    ApkUpdater: { allowedHosts: parseApkHosts(process.env.APK_DOWNLOAD_HOSTS) },
     SplashScreen: {
       launchShowDuration: 0, // ẩn thủ công ngay khi React đã vẽ xong (main.tsx)
       launchAutoHide: false,

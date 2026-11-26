@@ -1,18 +1,33 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Button, CuTit } from '@vietlearning/ui';
+import type { ApkCard } from './channel';
 import { updateMessages, type UpdateErrorKey } from './updateI18n';
+
+const STALL_MS = 15_000;
 
 export interface ForcedUpdateProps {
   onUpdate: () => void;
   errorKey?: UpdateErrorKey | null;
+  /** % tải APK (0–100) khi đang tải; null/bỏ trống = không tải */
+  percent?: number | null;
+  /** Thẻ APK (xin quyền cài / lỗi) hiện ngay trong màn chặn */
+  card?: ApkCard | null;
 }
 
 /**
  * Màn "Cần cập nhật để học tiếp" (spec 5.5, bản có mạng): che toàn bộ, `role="alertdialog"`, focus vào tiêu đề,
  * KHÔNG có nút đóng, MỘT nút chính. Phần còn lại của trang bị `inert` để bàn phím/trình đọc màn hình không lọt ra.
  */
-export function ForcedUpdate({ onUpdate, errorKey }: ForcedUpdateProps) {
+export function ForcedUpdate({ onUpdate, errorKey, percent = null, card }: ForcedUpdateProps) {
   const t = updateMessages.useT();
+  // Tải đứng ở 0% (DownloadManager chờ mạng, cổng đăng nhập Wi-Fi…): sau STALL_MS bật lại nút để thử lại
+  const [stalled, setStalled] = useState(false);
+  useEffect(() => {
+    setStalled(false);
+    if (percent !== 0) return;
+    const id = setTimeout(() => setStalled(true), STALL_MS);
+    return () => clearTimeout(id);
+  }, [percent]);
   const root = useRef<HTMLDivElement>(null);
   const title = useRef<HTMLHeadingElement>(null);
 
@@ -50,19 +65,46 @@ export function ForcedUpdate({ onUpdate, errorKey }: ForcedUpdateProps) {
     >
       <CuTit mood="dong-vien" size={120} alt="" />
       <h1 id="update-forced-title" ref={title} tabIndex={-1} style={{ margin: 0, fontSize: '1.4rem', color: 'var(--ct-heading)', outline: 'none' }}>
-        {t('forcedTitle')}
+        {card?.kind === 'allow' ? t('apkAllowTitle') : t('forcedTitle')}
       </h1>
       <p id="update-forced-body" style={{ margin: 0, maxWidth: 340, color: 'var(--ct-ink-soft)' }}>
-        {t('forcedBody')}
+        {card?.kind === 'allow' ? t('apkAllowBody') : percent !== null ? t('downloading', { percent }) : t('forcedBody')}
       </p>
+      {percent !== null && (
+        <div
+          role="progressbar"
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={percent}
+          aria-label={t('downloading', { percent })}
+          style={{ width: 240, height: 6, borderRadius: 3, background: 'var(--ct-surface-2)', overflow: 'hidden' }}
+        >
+          <div style={{ width: `${percent}%`, height: '100%', background: 'var(--ct-accent)' }} />
+        </div>
+      )}
+      {card?.kind === 'failed' && (
+        <p role="alert" style={{ margin: 0, maxWidth: 340, color: 'var(--ct-danger)' }}>
+          {t('apkFailed')}
+        </p>
+      )}
       {errorKey && (
         <p role="alert" style={{ margin: 0, maxWidth: 340, color: 'var(--ct-danger)' }}>
           {t(errorKey)}
         </p>
       )}
-      <Button size="lg" onClick={onUpdate} style={{ minHeight: 52, minWidth: 220 }}>
-        {t('forcedAction')}
+      <Button
+        size="lg"
+        disabled={percent !== null && !stalled}
+        onClick={card?.kind === 'allow' ? () => void card.openSettings() : onUpdate}
+        style={{ minHeight: 52, minWidth: 220 }}
+      >
+        {card?.kind === 'allow' ? t('apkAllowAction') : t('forcedAction')}
       </Button>
+      {card?.kind === 'failed' && card.openPage && (
+        <Button variant="ghost" onClick={card.openPage} style={{ minHeight: 44 }}>
+          {t('apkOpenPage')}
+        </Button>
+      )}
     </div>
   );
 }
