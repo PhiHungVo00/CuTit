@@ -67,12 +67,20 @@ export const users = pgTable(
      * job dọn xóa cứng khi `delete_at <= now()`. Đăng nhập lại trước hạn => hỏi khôi phục (đặt lại NULL).
      * (`deleted_at` cũ vẫn không dùng.)
      */
-    deleteAt: ts('delete_at')
+    deleteAt: ts('delete_at'),
+    /**
+     * Dự án 4 — cổng tuổi: NULL = chưa khai; true = đủ 18 (không đổi ngược); false = chưa đủ (khóa khai lại 12 tháng
+     * tính từ `age_declared_at`). KHÔNG có cột năm/ngày sinh: server tính cờ rồi bỏ giá trị.
+     */
+    isAdult: boolean('is_adult'),
+    ageDeclaredAt: ts('age_declared_at')
   },
   (t) => [
     index('users_delete_at_idx')
       .on(t.deleteAt)
-      .where(sql`${t.deleteAt} is not null`)
+      .where(sql`${t.deleteAt} is not null`),
+    // cờ và mốc luôn đi cùng nhau
+    check('users_age_flag_ck', sql`(${t.isAdult} is null) = (${t.ageDeclaredAt} is null)`)
   ]
 );
 
@@ -376,13 +384,33 @@ export const aiGlobalUsage = pgTable(
  * `daily_activity` => xóa tài khoản (cascade) là mất luôn đóng góp, không còn bản sao nào.
  */
 /** Tên hiển thị tự chọn (tài khoản khách không có tên thật) — chỉ bạn bè thấy */
-export const socialProfiles = pgTable('social_profiles', {
-  userId: uuid('user_id')
-    .primaryKey()
-    .references(() => users.id, { onDelete: 'cascade' }),
-  displayName: text('display_name').notNull(),
-  updatedAt: ts('updated_at').notNull().defaultNow()
-});
+export const socialProfiles = pgTable(
+  'social_profiles',
+  {
+    userId: uuid('user_id')
+      .primaryKey()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    displayName: text('display_name').notNull(),
+    updatedAt: ts('updated_at').notNull().defaultNow(),
+    /** Dự án 4 — tên bạn bè: 3–24 ký tự a-z0-9._, duy nhất KHÔNG phân biệt hoa thường; NULL = chưa đặt */
+    handle: text('handle'),
+    /** lần đổi handle gần nhất (giới hạn 1 lần/30 ngày) */
+    handleChangedAt: ts('handle_changed_at'),
+    discoverable: boolean('discoverable').notNull().default(true),
+    showOnline: boolean('show_online').notNull().default(true),
+    showReadReceipts: boolean('show_read_receipts').notNull().default(true),
+    showPushPreview: boolean('show_push_preview').notNull().default(false)
+  },
+  (t) => [
+    uniqueIndex('social_profiles_handle_lower_uq')
+      .on(sql`lower(${t.handle})`)
+      .where(sql`${t.handle} is not null`),
+    check(
+      'social_profiles_handle_fmt_ck',
+      sql`${t.handle} is null or (${t.handle} ~* '^[a-z0-9._]{3,24}$' and ${t.handle} !~ '^[.]|[.]$' and position('..' in ${t.handle}) = 0)`
+    )
+  ]
+);
 
 /**
  * Mã mời đang sống: mỗi người MỘT mã, dùng một lần, hạn 48 giờ. Giữ mã gốc (không băm) để chủ mã mở lại app vẫn
@@ -405,7 +433,9 @@ export const friendships = pgTable(
     userA: userRef('user_a'),
     userB: userRef('user_b'),
     goalMinutes: integer('goal_minutes').notNull().default(60),
-    createdAt: ts('created_at').notNull().defaultNow()
+    createdAt: ts('created_at').notNull().defaultNow(),
+    /** Dự án 4: tối đa 5 cặp có nhiệm vụ tuần cùng lúc (MAX_FRIENDS); bạn thứ 6+ vẫn là bạn nhưng quest_active=false */
+    questActive: boolean('quest_active').notNull().default(true)
   },
   (t) => [uniqueIndex('friendships_pair_uq').on(t.userA, t.userB), index('friendships_user_b_idx').on(t.userB)]
 );
@@ -745,5 +775,350 @@ export const adminAuditLog = pgTable(
     check('admin_audit_log_actor_kind_ck', sql`${t.actorKind} in ('user', 'cli')`),
     check('admin_audit_log_cli_actor_ck', sql`${t.actorKind} <> 'cli' or ${t.actorUserId} is null`),
     index('admin_audit_log_created_idx').on(t.createdAt)
+  ]
+);
+
+/* ======================================================================================================
+ * Dự án 4 — Bạn bè: chat, nhóm, gọi, báo cáo, thông báo đẩy. Spec 2026-11-25-ban-be-design.md mục 5.3.
+ * Tên bảng tránh trùng bảng chat AI `messages`/`sessions`. Mọi khóa ngoại tới users có ON DELETE rõ ràng
+ * (cascade hoặc set null) để `DELETE /v1/me` không bao giờ bị chặn. Enum = CHECK (như 5a).
+ * ====================================================================================================== */
+
+/** 36. Lời mời kết bạn bằng handle. `pending` duy nhất theo (from, to). */
+export const friendRequests = pgTable(
+  'friend_requests',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    fromUserId: userRef('from_user_id'),
+    toUserId: userRef('to_user_id'),
+    status: text('status').$type<'pending' | 'accepted' | 'declined' | 'canceled'>().notNull().default('pending'),
+    createdAt: ts('created_at').notNull().defaultNow(),
+    resolvedAt: ts('resolved_at')
+  },
+  (t) => [
+    check('friend_requests_status_ck', sql`${t.status} in ('pending', 'accepted', 'declined', 'canceled')`),
+    check('friend_requests_not_self_ck', sql`${t.fromUserId} <> ${t.toUserId}`),
+    check('friend_requests_resolved_ck', sql`(${t.status} = 'pending') = (${t.resolvedAt} is null)`),
+    uniqueIndex('friend_requests_pending_uq')
+      .on(t.fromUserId, t.toUserId)
+      .where(sql`${t.status} = 'pending'`),
+    index('friend_requests_to_idx').on(t.toUserId, t.status, t.createdAt.desc()),
+    index('friend_requests_from_idx').on(t.fromUserId, t.createdAt.desc())
+  ]
+);
+
+/** 37. Chặn người dùng */
+export const userBlocks = pgTable(
+  'user_blocks',
+  {
+    blockerId: userRef('blocker_id'),
+    blockedId: userRef('blocked_id'),
+    createdAt: ts('created_at').notNull().defaultNow()
+  },
+  (t) => [
+    primaryKey({ columns: [t.blockerId, t.blockedId] }),
+    check('user_blocks_not_self_ck', sql`${t.blockerId} <> ${t.blockedId}`),
+    index('user_blocks_blocked_idx').on(t.blockedId)
+  ]
+);
+
+/** 38. Cuộc trò chuyện (1-1 hoặc nhóm). `last_seq` = số thứ tự tin cuối, cấp bằng UPDATE … RETURNING trong transaction. */
+export const conversations = pgTable(
+  'conversations',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    kind: text('kind').$type<'dm' | 'group'>().notNull(),
+    /** nhóm: 1–60 ký tự; 1-1: NULL */
+    title: text('title'),
+    /** 1-1: min(userId)||':'||max(userId) — mỗi cặp một cuộc trò chuyện */
+    dmKey: text('dm_key').unique(),
+    createdBy: uuid('created_by').references(() => users.id, { onDelete: 'set null' }),
+    createdAt: ts('created_at').notNull().defaultNow(),
+    lastSeq: bigint('last_seq', { mode: 'number' }).notNull().default(0),
+    lastMessageAt: ts('last_message_at')
+  },
+  (t) => [
+    check('conversations_kind_ck', sql`${t.kind} in ('dm', 'group')`),
+    check('conversations_dm_key_ck', sql`(${t.kind} = 'dm') = (${t.dmKey} is not null)`),
+    check(
+      'conversations_title_ck',
+      sql`(${t.kind} = 'dm' and ${t.title} is null) or (${t.kind} = 'group' and ${t.title} is not null and char_length(${t.title}) between 1 and 60)`
+    ),
+    check('conversations_last_seq_ck', sql`${t.lastSeq} >= 0`),
+    index('conversations_last_message_idx').on(t.lastMessageAt.desc())
+  ]
+);
+
+/** 39. Thành viên. Mỗi người giữ `last_read_seq` (D2: một dòng tin, không nhân bản hộp thư). */
+export const conversationMembers = pgTable(
+  'conversation_members',
+  {
+    conversationId: uuid('conversation_id')
+      .notNull()
+      .references(() => conversations.id, { onDelete: 'cascade' }),
+    userId: userRef('user_id'),
+    role: text('role').$type<'owner' | 'admin' | 'member'>().notNull().default('member'),
+    joinedAt: ts('joined_at').notNull().defaultNow(),
+    /** last_seq của cuộc trò chuyện lúc vào: người mới không thấy tin cũ */
+    joinedSeq: bigint('joined_seq', { mode: 'number' }).notNull().default(0),
+    leftAt: ts('left_at'),
+    lastReadSeq: bigint('last_read_seq', { mode: 'number' }).notNull().default(0),
+    /** "xóa cuộc trò chuyện cho riêng mình" */
+    hiddenBeforeSeq: bigint('hidden_before_seq', { mode: 'number' }).notNull().default(0),
+    mutedUntil: ts('muted_until')
+  },
+  (t) => [
+    primaryKey({ columns: [t.conversationId, t.userId] }),
+    check('conversation_members_role_ck', sql`${t.role} in ('owner', 'admin', 'member')`),
+    check(
+      'conversation_members_seq_ck',
+      sql`${t.joinedSeq} >= 0 and ${t.lastReadSeq} >= 0 and ${t.hiddenBeforeSeq} >= 0`
+    ),
+    index('conversation_members_user_idx').on(t.userId, t.leftAt)
+  ]
+);
+
+/** 40. Tệp đính kèm (ảnh / giọng nói) trong BlobStore (5a). Tải lên trước, gắn vào tin sau (chat_messages.attachment_id). */
+export const chatAttachments = pgTable(
+  'chat_attachments',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    conversationId: uuid('conversation_id')
+      .notNull()
+      .references(() => conversations.id, { onDelete: 'cascade' }),
+    uploaderId: uuid('uploader_id').references(() => users.id, { onDelete: 'set null' }),
+    /** chat/<conversationId>/<uuid>.<ext> — không chứa tên gốc */
+    blobKey: text('blob_key').notNull(),
+    media: text('media').$type<'image' | 'voice'>().notNull(),
+    contentType: text('content_type').notNull(),
+    bytes: integer('bytes').notNull(),
+    durationMs: integer('duration_ms'),
+    width: integer('width'),
+    height: integer('height'),
+    /** sóng âm đơn giản ≤ 64 số 0..255 (không phải thuật toán A1/A2) */
+    waveform: jsonb('waveform').$type<number[]>(),
+    createdAt: ts('created_at').notNull().defaultNow(),
+    /** tệp thuộc snapshot của báo cáo còn mở: không bị dọn */
+    pinnedByReport: boolean('pinned_by_report').notNull().default(false),
+    purgedAt: ts('purged_at')
+  },
+  (t) => [
+    uniqueIndex('chat_attachments_blob_key_uq').on(t.blobKey),
+    check('chat_attachments_media_ck', sql`${t.media} in ('image', 'voice')`),
+    check(
+      'chat_attachments_type_ck',
+      sql`(${t.media} = 'image' and ${t.contentType} in ('image/webp', 'image/jpeg', 'image/png') and ${t.bytes} <= 2097152)
+        or (${t.media} = 'voice' and ${t.contentType} in ('audio/webm', 'audio/ogg', 'audio/mp4') and ${t.bytes} <= 3145728)`
+    ),
+    check('chat_attachments_bytes_ck', sql`${t.bytes} > 0`),
+    check('chat_attachments_duration_ck', sql`${t.durationMs} is null or ${t.durationMs} between 0 and 120000`),
+    check(
+      'chat_attachments_dims_ck',
+      sql`(${t.width} is null or ${t.width} between 1 and 1280) and (${t.height} is null or ${t.height} between 1 and 1280)`
+    ),
+    check(
+      'chat_attachments_waveform_ck',
+      sql`${t.waveform} is null or (jsonb_typeof(${t.waveform}) = 'array' and jsonb_array_length(${t.waveform}) <= 64)`
+    ),
+    index('chat_attachments_conv_idx').on(t.conversationId),
+    index('chat_attachments_uploader_idx').on(t.uploaderId),
+    // dọn tệp chưa gắn quá 1 giờ / đo tổng dung lượng
+    index('chat_attachments_live_created_idx')
+      .on(t.createdAt)
+      .where(sql`${t.purgedAt} is null`)
+  ]
+);
+
+/**
+ * 41. Tin nhắn. `seq` liên tục trong từng cuộc trò chuyện (bù tin bằng afterSeq). Xóa mềm: `deleted_at` + `deleted_kind`.
+ * Xóa tài khoản người gửi: sender_id → NULL (FK SET NULL), body/attachment_id → NULL, deleted_kind='account_deleted'
+ * — GIỮ dòng để seq liên tục và cuộc trò chuyện không vỡ.
+ */
+export const chatMessages = pgTable(
+  'chat_messages',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    conversationId: uuid('conversation_id')
+      .notNull()
+      .references(() => conversations.id, { onDelete: 'cascade' }),
+    seq: bigint('seq', { mode: 'number' }).notNull(),
+    senderId: uuid('sender_id').references(() => users.id, { onDelete: 'set null' }),
+    /** khóa chống trùng khi gửi lại; tin hệ thống tự sinh */
+    clientMsgId: uuid('client_msg_id').notNull().defaultRandom(),
+    kind: text('kind').$type<'text' | 'image' | 'voice' | 'system'>().notNull(),
+    body: text('body'),
+    /**
+     * FK KHÔNG cascade/set null (NO ACTION): không xóa được dòng tệp còn gắn vào tin — muốn bỏ tệp thì đặt
+     * `chat_attachments.purged_at` (hoặc xóa tài khoản: gỡ attachment_id + deleted_kind='account_deleted' TRƯỚC).
+     * Xóa cả cuộc trò chuyện vẫn chạy (tin và tệp cùng bị cascade trong một câu lệnh).
+     */
+    attachmentId: uuid('attachment_id').references(() => chatAttachments.id),
+    /** server KHÔNG lưu chữ tiếng nào: client dựng chữ từ `type` */
+    systemEvent: jsonb('system_event').$type<Record<string, unknown>>(),
+    createdAt: ts('created_at').notNull().defaultNow(),
+    deletedAt: ts('deleted_at'),
+    deletedKind: text('deleted_kind').$type<'recalled' | 'account_deleted'>()
+  },
+  (t) => [
+    uniqueIndex('chat_messages_conv_seq_uq').on(t.conversationId, t.seq),
+    uniqueIndex('chat_messages_dedupe_uq').on(t.conversationId, t.senderId, t.clientMsgId),
+    index('chat_messages_conv_seq_desc_idx').on(t.conversationId, t.seq.desc()),
+    // một tệp chỉ gắn vào một tin
+    uniqueIndex('chat_messages_attachment_uq')
+      .on(t.attachmentId)
+      .where(sql`${t.attachmentId} is not null`),
+    index('chat_messages_sender_idx').on(t.senderId),
+    check('chat_messages_kind_ck', sql`${t.kind} in ('text', 'image', 'voice', 'system')`),
+    check('chat_messages_seq_ck', sql`${t.seq} >= 1`),
+    check('chat_messages_body_len_ck', sql`${t.body} is null or char_length(${t.body}) <= 4000`),
+    check('chat_messages_deleted_kind_ck', sql`${t.deletedKind} is null or ${t.deletedKind} in ('recalled', 'account_deleted')`),
+    check('chat_messages_deleted_pair_ck', sql`(${t.deletedAt} is null) = (${t.deletedKind} is null)`),
+    // nội dung khớp loại tin (tin đã xóa tài khoản được phép rỗng)
+    check(
+      'chat_messages_content_ck',
+      sql`(${t.kind} = 'text' and ${t.attachmentId} is null and ${t.systemEvent} is null)
+        or (${t.kind} in ('image', 'voice') and ${t.body} is null and ${t.systemEvent} is null and (${t.attachmentId} is not null or coalesce(${t.deletedKind} = 'account_deleted', false)))
+        or (${t.kind} = 'system' and ${t.systemEvent} is not null and ${t.body} is null and ${t.attachmentId} is null)`
+    )
+  ]
+);
+
+/** 42. Báo cáo tin/người. `snapshot` = ≤ 30 tin quanh tin bị báo, chụp lúc báo cáo (bằng chứng độc lập với thu hồi). */
+export const chatReports = pgTable(
+  'chat_reports',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    reporterId: uuid('reporter_id').references(() => users.id, { onDelete: 'set null' }),
+    reportedUserId: uuid('reported_user_id').references(() => users.id, { onDelete: 'set null' }),
+    conversationId: uuid('conversation_id').references(() => conversations.id, { onDelete: 'set null' }),
+    messageId: uuid('message_id').references(() => chatMessages.id, { onDelete: 'set null' }),
+    reason: text('reason').$type<'spam' | 'harassment' | 'sexual' | 'minor_safety' | 'scam' | 'other'>().notNull(),
+    note: text('note'),
+    snapshot: jsonb('snapshot').$type<unknown[]>().notNull().default(sql`'[]'::jsonb`),
+    status: text('status').$type<'open' | 'reviewing' | 'actioned' | 'dismissed'>().notNull().default('open'),
+    createdAt: ts('created_at').notNull().defaultNow(),
+    resolvedAt: ts('resolved_at'),
+    resolvedBy: uuid('resolved_by').references(() => users.id, { onDelete: 'set null' }),
+    action: text('action').$type<'dismiss' | 'warn' | 'restrict'>()
+  },
+  (t) => [
+    check('chat_reports_reason_ck', sql`${t.reason} in ('spam', 'harassment', 'sexual', 'minor_safety', 'scam', 'other')`),
+    check('chat_reports_status_ck', sql`${t.status} in ('open', 'reviewing', 'actioned', 'dismissed')`),
+    check('chat_reports_action_ck', sql`${t.action} is null or ${t.action} in ('dismiss', 'warn', 'restrict')`),
+    check('chat_reports_note_ck', sql`${t.note} is null or char_length(${t.note}) <= 500`),
+    check('chat_reports_snapshot_ck', sql`jsonb_typeof(${t.snapshot}) = 'array' and jsonb_array_length(${t.snapshot}) <= 30`),
+    // đã xử lý ⇔ có resolved_at
+    check('chat_reports_resolved_ck', sql`(${t.status} in ('actioned', 'dismissed')) = (${t.resolvedAt} is not null)`),
+    check(
+      'chat_reports_not_self_ck',
+      sql`${t.reporterId} is null or ${t.reportedUserId} is null or ${t.reporterId} <> ${t.reportedUserId}`
+    ),
+    index('chat_reports_status_idx').on(t.status, t.createdAt.desc()),
+    index('chat_reports_reporter_idx').on(t.reporterId, t.createdAt.desc()),
+    index('chat_reports_reported_idx').on(t.reportedUserId)
+  ]
+);
+
+/** 43. Khóa chat (do chủ app đặt qua báo cáo hoặc CLI). `until` NULL = vĩnh viễn. */
+export const chatRestrictions = pgTable(
+  'chat_restrictions',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    userId: userRef('user_id'),
+    kind: text('kind').$type<'chat_ban'>().notNull().default('chat_ban'),
+    until: ts('until'),
+    reason: text('reason').notNull(),
+    reportId: uuid('report_id').references(() => chatReports.id, { onDelete: 'set null' }),
+    /** NULL = CLI */
+    createdBy: uuid('created_by').references(() => users.id, { onDelete: 'set null' }),
+    createdAt: ts('created_at').notNull().defaultNow(),
+    liftedAt: ts('lifted_at')
+  },
+  (t) => [
+    check('chat_restrictions_kind_ck', sql`${t.kind} = 'chat_ban'`),
+    check('chat_restrictions_reason_ck', sql`char_length(${t.reason}) between 1 and 500`),
+    index('chat_restrictions_active_idx')
+      .on(t.userId)
+      .where(sql`${t.liftedAt} is null`)
+  ]
+);
+
+/** 44. Token thiết bị cho thông báo đẩy (FCM). */
+export const pushTokens = pgTable(
+  'push_tokens',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    userId: userRef('user_id'),
+    token: text('token').notNull().unique(),
+    platform: text('platform').$type<'android'>().notNull(),
+    appBuild: integer('app_build').notNull().default(0),
+    locale: text('locale').$type<'vi' | 'en'>().notNull().default('vi'),
+    createdAt: ts('created_at').notNull().defaultNow(),
+    lastSeenAt: ts('last_seen_at').notNull().defaultNow(),
+    disabledAt: ts('disabled_at')
+  },
+  (t) => [
+    check('push_tokens_platform_ck', sql`${t.platform} = 'android'`),
+    check('push_tokens_locale_ck', sql`${t.locale} in ('vi', 'en')`),
+    check('push_tokens_build_ck', sql`${t.appBuild} >= 0`),
+    check('push_tokens_len_ck', sql`char_length(${t.token}) between 20 and 4096`),
+    index('push_tokens_user_idx').on(t.userId),
+    index('push_tokens_last_seen_idx').on(t.lastSeenAt)
+  ]
+);
+
+/** 45. Cuộc gọi. Không lưu gì về nội dung cuộc gọi. */
+export const calls = pgTable(
+  'calls',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    conversationId: uuid('conversation_id')
+      .notNull()
+      .references(() => conversations.id, { onDelete: 'cascade' }),
+    kind: text('kind').$type<'voice' | 'video'>().notNull(),
+    initiatorId: uuid('initiator_id').references(() => users.id, { onDelete: 'set null' }),
+    mode: text('mode').$type<'mesh' | 'sfu'>().notNull().default('mesh'),
+    startedAt: ts('started_at').notNull().defaultNow(),
+    endedAt: ts('ended_at'),
+    endReason: text('end_reason').$type<'hangup' | 'no_answer' | 'declined' | 'busy' | 'timeout' | 'error'>()
+  },
+  (t) => [
+    check('calls_kind_ck', sql`${t.kind} in ('voice', 'video')`),
+    check('calls_mode_ck', sql`${t.mode} in ('mesh', 'sfu')`),
+    check(
+      'calls_end_reason_ck',
+      sql`${t.endReason} is null or ${t.endReason} in ('hangup', 'no_answer', 'declined', 'busy', 'timeout', 'error')`
+    ),
+    check('calls_end_pair_ck', sql`(${t.endedAt} is null) = (${t.endReason} is null)`),
+    index('calls_conv_idx').on(t.conversationId, t.startedAt.desc()),
+    index('calls_initiator_idx').on(t.initiatorId),
+    // dọn cuộc gọi mở quá 6 giờ
+    index('calls_open_idx')
+      .on(t.startedAt)
+      .where(sql`${t.endedAt} is null`)
+  ]
+);
+
+/** 46. Người trong cuộc gọi. `relay_seconds` cộng vào ngân sách TURN (7.3). */
+export const callParticipants = pgTable(
+  'call_participants',
+  {
+    callId: uuid('call_id')
+      .notNull()
+      .references(() => calls.id, { onDelete: 'cascade' }),
+    userId: userRef('user_id'),
+    invitedAt: ts('invited_at').notNull().defaultNow(),
+    joinedAt: ts('joined_at'),
+    leftAt: ts('left_at'),
+    relaySeconds: integer('relay_seconds').notNull().default(0)
+  },
+  (t) => [
+    primaryKey({ columns: [t.callId, t.userId] }),
+    check('call_participants_relay_ck', sql`${t.relaySeconds} >= 0`),
+    // "một người một cuộc gọi": tìm cuộc gọi đang tham gia
+    index('call_participants_active_idx')
+      .on(t.userId)
+      .where(sql`${t.joinedAt} is not null and ${t.leftAt} is null`),
+    index('call_participants_user_idx').on(t.userId, t.invitedAt.desc())
   ]
 );
