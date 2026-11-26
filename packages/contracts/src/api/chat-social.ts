@@ -250,16 +250,17 @@ export const ConversationListSchema = z.object({
 });
 
 /** POST /v1/chat/conversations: tạo nhóm, hoặc tạo/lấy 1-1 theo quan hệ bạn bè */
+const uniqueIds = (ids: string[]) => new Set(ids).size === ids.length;
 export const GroupCreateSchema = z
   .object({
     title: z.string().trim().min(1).max(CHAT_LIMITS.groupTitleMax),
-    memberIds: z.array(Uuid).min(1).max(1000)
+    memberIds: z.array(Uuid).min(1).max(1000).refine(uniqueIds, 'Trùng thành viên')
   })
   .strict();
 export const DmCreateSchema = z.object({ peerFriendshipId: Uuid }).strict();
 export const ConversationCreateRequestSchema = z.union([GroupCreateSchema, DmCreateSchema]);
 
-export const GroupMemberChangeSchema = z.object({ memberIds: z.array(Uuid).min(1).max(100) }).strict();
+export const GroupMemberChangeSchema = z.object({ memberIds: z.array(Uuid).min(1).max(100).refine(uniqueIds, 'Trùng thành viên') }).strict();
 export const GroupMemberParamsSchema = z.object({ id: Uuid, userId: Uuid });
 export const GroupTitleRequestSchema = z.object({ title: z.string().trim().min(1).max(CHAT_LIMITS.groupTitleMax) }).strict();
 export const GroupRoleRequestSchema = z.object({ role: z.enum(['admin', 'member']) }).strict();

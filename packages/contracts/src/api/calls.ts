@@ -104,9 +104,18 @@ export const CallStatsSchema = z
 
 // ---------- Khung WebSocket `call.*` (gắn vào WsServerFrameSchema / WsClientFrameSchema ở chat-social.ts) ----------
 /** Dữ liệu báo hiệu (SDP/ICE) là JSON bất kỳ do client tạo, nhưng TỔNG kích thước ≤ 8 KB (kiểm ở đây, không chỉ ở khung 16 KB) */
+/** Số byte UTF-8 của chuỗi (không phụ thuộc TextEncoder/Buffer để chạy được cả trình duyệt lẫn Node) */
+export function utf8ByteLength(s: string): number {
+  let n = 0;
+  for (const ch of s) {
+    const c = ch.codePointAt(0)!;
+    n += c < 0x80 ? 1 : c < 0x800 ? 2 : c < 0x10000 ? 3 : 4;
+  }
+  return n;
+}
 export const CallSignalDataSchema = z
   .record(z.unknown())
-  .refine((d) => JSON.stringify(d).length <= CALL_LIMITS.signalMaxBytes, 'Dữ liệu báo hiệu quá lớn');
+  .refine((d) => utf8ByteLength(JSON.stringify(d)) <= CALL_LIMITS.signalMaxBytes, 'Dữ liệu báo hiệu quá lớn');
 
 export const CallServerFrameSchemas = [
   z

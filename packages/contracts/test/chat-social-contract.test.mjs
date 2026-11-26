@@ -202,6 +202,9 @@ test('Báo cáo, nhóm, push token, cài đặt', () => {
   bad(GroupCreateSchema, { title: 'a'.repeat(61), memberIds: [U] });
   bad(GroupCreateSchema, { title: 'ok', memberIds: [] });
   bad(GroupCreateSchema, { title: 'ok', memberIds: ['x'] });
+  bad(GroupCreateSchema, { title: 'ok', memberIds: [U, U] });
+  // báo hiệu tính theo BYTE (ký tự nhiều byte)
+  bad(WsClientFrameSchema, { t: 'call.signal', callId: U, to: U2, data: { s: 'é'.repeat(4000) } });
   ok(PushTokenSchema, { token: 't'.repeat(40), platform: 'android', appBuild: 12, locale: 'vi' });
   bad(PushTokenSchema, { token: 't'.repeat(40), platform: 'ios', appBuild: 12, locale: 'vi' });
   bad(PushTokenSchema, { token: 'ngắn', platform: 'android', appBuild: 12, locale: 'vi' });
