@@ -193,8 +193,10 @@ export function useConversation(client: SocialClient, cid: string) {
           const r = await client.rest.sendMessage(cid, { clientMsgId: p.clientMsgId, kind: 'text', body: p.body });
           const mine: Message = { id: r.id, cid, seq: r.seq, kind: 'text', body: p.body, createdAt: r.createdAt, mine: true };
           if (!msgs.current.some((m) => m.id === r.id)) {
+            const gapBefore = r.seq > lastSeq() + 1 && lastSeq() > 0;
             msgs.current = merge(msgs.current, [mine]);
             setMessages(msgs.current);
+            if (gapBefore) void resync(); // có tin của người khác bị lỡ trước tin của mình
           }
           setPending((l) => l.filter((x) => x.localId !== p.localId));
         } catch (e) {
@@ -202,7 +204,7 @@ export function useConversation(client: SocialClient, cid: string) {
         }
       });
     },
-    [client, cid]
+    [client, cid, resync]
   );
 
   const send = useCallback(
@@ -213,13 +215,12 @@ export function useConversation(client: SocialClient, cid: string) {
     },
     [flushOne]
   );
+  const pend = useRef<Pending[]>([]);
+  pend.current = pending;
   const resend = useCallback(
     (localId: string) => {
-      setPending((l) => {
-        const p = l.find((x) => x.localId === localId);
-        if (p) flushOne(p);
-        return l;
-      });
+      const p = pend.current.find((x) => x.localId === localId);
+      if (p && p.status === 'failed') flushOne(p);
     },
     [flushOne]
   );
@@ -236,9 +237,15 @@ export function useConversation(client: SocialClient, cid: string) {
   const restore = useCallback(
     async (id: string) => {
       await client.rest.restore(id);
-      void resync();
+      // tin hoàn tác có seq CŨ nên resync(afterSeq=mới nhất) không thấy: tải đúng trang chứa nó rồi gộp theo id
+      const seq = msgs.current.find((m) => m.id === id)?.seq;
+      if (seq) {
+        const page = await client.rest.listMessages(cid, { afterSeq: seq - 1 > 0 ? seq - 1 : undefined, limit: 1 });
+        msgs.current = merge(msgs.current, page.messages.filter((m) => m.id === id));
+        setMessages(msgs.current);
+      }
     },
-    [client, resync]
+    [client, cid]
   );
 
   const loadOlder = useCallback(async () => {

@@ -45,11 +45,10 @@ export default function FeedbackDot() {
   }, [count, pathname]);
   // Dự án 4: cùng chunk lười này hỏi số tin nhắn chưa đọc (không thêm chunk/mã vào App)
   const probe = SOCIAL_ENTRY_ENABLED ? <ChatUnreadProbe /> : null;
-  if (!host || count <= 0) return probe;
   return (
     <>
       {probe}
-      {createPortal(
+      {host && count > 0 && createPortal(
     <>
       <span aria-hidden="true" style={{ position: 'absolute', top: 0, right: -3, width: 10, height: 10, borderRadius: '50%', background: '#C0553A' }} />
       <span className="sr-only">{LABEL[lang]}</span>
