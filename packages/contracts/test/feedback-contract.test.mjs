@@ -167,7 +167,11 @@ test('Đăng nhập quản trị: hình dạng yêu cầu/phản hồi', () => {
   ok(AdminLoginResponseSchema, { ticket: 't'.repeat(32), next: 'totp' });
   ok(AdminLoginResponseSchema, { ticket: 't'.repeat(32), next: 'enroll' });
   bad(AdminLoginResponseSchema, { ticket: 't'.repeat(32), next: 'done' });
-  ok(AdminEnrollRequestSchema, { ticket: 't'.repeat(32) });
+  ok(AdminEnrollRequestSchema, { ticket: 't'.repeat(32), inviteCode: 'abcde-fghij-12345' });
+  ok(AdminEnrollRequestSchema, { ticket: 't'.repeat(32), inviteCode: ' ABCDE-FGHIJ-12345 ' });
+  bad(AdminEnrollRequestSchema, { ticket: 't'.repeat(32) }); // mã mời bắt buộc
+  bad(AdminEnrollRequestSchema, { ticket: 't'.repeat(32), inviteCode: 'abcde-fghij' });
+  bad(AdminEnrollRequestSchema, { ticket: 't'.repeat(600), inviteCode: 'abcde-fghij-12345' });
   ok(AdminEnrollResponseSchema, { otpauthUrl: 'otpauth://totp/BeCuTit:chuapp?secret=ABC&issuer=BeCuTit', secret: 'ABCDEFGH' });
   bad(AdminEnrollResponseSchema, { otpauthUrl: 'https://evil.example/', secret: 'ABCDEFGH' });
   ok(AdminTotpConfirmSchema, { ticket: 't'.repeat(32), code: '123456' });
