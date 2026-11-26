@@ -101,6 +101,28 @@ Mục này dành cho người biết dùng Docker. Chủ dự án không cần l
 
 ---
 
+## 5b. Kiểm soát chi phí: hai lớp, và giới hạn của chúng
+
+**Sự thật về tiền:** Cloudflare là bên đo lượng dữ liệu TURN thật và tính tiền. Số do **app tự báo** (đường `POST /v1/calls/:id/stats`) chỉ dùng để ước lượng, **không** phải nguồn sự thật, vì app có thể bị giả mạo hoặc báo sai. Vì vậy không được coi con số app báo là căn cứ để tính tiền.
+
+**Lớp 1 — trong bảng điều khiển Cloudflare (kiểm soát chi phí thật):**
+1. Vào trang Cloudflare, mục Billing (thanh toán) và đặt **cảnh báo ngân sách** (budget alert) ở mức thấp, ví dụ 70% mức dự kiến.
+2. Nếu Cloudflare có tùy chọn **giới hạn chi tiêu**, bật nó. Nếu không có, ghi rõ điều đó vào nhật ký.
+3. Mỗi tuần đối chiếu số GB đã dùng trên bảng điều khiển Realtime với con số ước lượng của Gateway (mục 6).
+
+**Lớp 2 — trong Gateway (giảm số lần cấp, không phải trần tiền):**
+1. **Thời hạn ngắn** cho thông tin đăng nhập TURN (spec ghi 1 giờ).
+2. **Giới hạn số lần cấp** theo người dùng (ví dụ 30 lần mỗi giờ mỗi người, như spec) và **giới hạn theo ngày** cho từng người (3 giờ gọi qua trung chuyển mỗi ngày).
+3. **Giới hạn tổng toàn hệ thống** mỗi ngày, để một lỗi hoặc một người lạm dụng không kéo cả hệ thống vượt mức.
+4. **Ước lượng ngân sách** phía server, theo công thức bảo thủ: **số cuộc gọi × thời lượng tối đa mỗi cuộc × băng thông giả định**. Ước lượng này **không** dựa vào số app báo, nên không bị lệch vì app báo sai. Nó cao hơn thực tế, nhưng an toàn hơn.
+5. **Mốc 70%** của ngân sách ước lượng: Gateway ghi cảnh báo cho chủ app.
+6. **Mốc 100%**: Gateway **ngừng cấp** thông tin TURN mới. App hiện "Gọi qua mạng này có thể không kết nối được" và **vẫn thử nối trực tiếp (P2P)**. Gọi vẫn được thử; chỉ phần trung chuyển bị dừng.
+
+**Giới hạn cần biết (quan trọng):**
+- **Không có "trần cứng" tự động** từ phía Gateway nếu Cloudflare không cho đặt giới hạn chi tiêu. Lớp 2 chỉ giảm số lần cấp, nó không chặn được mọi khoản phí.
+- Vì vậy **chủ dự án phải tự kiểm tra hóa đơn Cloudflare mỗi tháng**, dù hệ thống đã có cảnh báo.
+- Nếu Cloudflare tính tiền vượt mức thay vì dừng (theo tài liệu 21/11, chưa xác nhận), lớp 1 là lớp bảo vệ quan trọng nhất.
+
 ## 6. Đối chiếu hằng tuần (việc định kỳ, để không bị tính tiền bất ngờ)
 
 Mỗi tuần, một lần, làm đúng ba bước:
